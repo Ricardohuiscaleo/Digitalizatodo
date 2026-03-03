@@ -1,53 +1,52 @@
+/* ── Theme tokens ─────────────────────────────────────────── */
 .digital-menu-container {
-    --digital-neon: #fac815;
-    --digital-bg: rgba(6, 0, 16, 0.99);
-    --digital-text: #ffffff;
-    --digital-accent: #00f2ff;
-
+    --neon: #fac815;
+    --bg: rgba(6, 0, 16, 0.99);
+    --text: #ffffff;
+    --accent: #00f2ff;
     position: relative;
     z-index: 100;
 }
 
-/* Header Styling */
+/* ── Header ──────────────────────────────────────────────── */
 .digital-header {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
+    inset: 0 0 auto 0;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 1rem 1.5rem;
+    justify-content: space-between;
+    padding: 0.75rem 1.5rem;
     z-index: 110;
-    transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-    background: transparent;
+    transition: background 0.5s ease, border-color 0.5s ease;
+}
+
+.digital-header:not(.menu-open) {
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    background: rgba(0, 0, 0, 0.45);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 @media (min-width: 1024px) {
     .digital-header {
-        padding: 1.5rem 3rem;
+        padding: 1rem 3rem;
     }
 }
 
-.digital-header:not(.menu-open) {
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    background: rgba(0, 0, 0, 0.4);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-}
-
-/* Brand Section */
+/* ── Brand (left) ────────────────────────────────────────── */
 .digital-brand {
     display: flex;
     align-items: center;
+    gap: 0.75rem;
     cursor: pointer;
     user-select: none;
+    flex-shrink: 0;
 }
 
 .logo-icon-wrapper {
-    position: relative;
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -59,28 +58,36 @@
     object-fit: contain;
 }
 
+/* Two-row text block — mirrors the button's two-row layout */
+.brand-text-block {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
 .logo-text {
     font-family: 'Inter', sans-serif;
     font-weight: 900;
-    font-size: 1.1rem;
+    font-size: 1rem;
     letter-spacing: -0.02em;
-    color: var(--digital-text);
-    line-height: 1;
+    color: var(--text);
+    line-height: 1.2;
 }
 
+/* ── Status (bottom row of brand) ───────────────────────── */
 .status-indicator {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    margin-top: 0.2rem;
+    gap: 0.35rem;
+    margin-top: 0.1rem;
 }
 
 .status-dot {
-    width: 4px;
-    height: 4px;
-    background: var(--digital-neon);
+    width: 5px;
+    height: 5px;
+    background: var(--neon);
     border-radius: 50%;
-    box-shadow: 0 0 8px var(--digital-neon);
+    box-shadow: 0 0 8px var(--neon);
     animation: pulse-neon 2s infinite;
 }
 
@@ -89,105 +96,112 @@
     0%,
     100% {
         opacity: 1;
-        box-shadow: 0 0 8px var(--digital-neon);
+        box-shadow: 0 0 8px var(--neon);
     }
 
     50% {
-        opacity: 0.5;
-        box-shadow: 0 0 2px var(--digital-neon);
+        opacity: 0.4;
+        box-shadow: 0 0 2px var(--neon);
     }
 }
 
 .status-label {
-    font-size: 0.55rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    opacity: 0.6;
-    color: var(--digital-text);
+    font-size: 0.52rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.55;
+    color: var(--text);
 }
 
-/* Refined Toggle Button */
-.digital-toggle-refined {
+/* ── Menu label button (right side, two-row) ─────────────── */
+.menu-label-btn {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-end;
+    /* right-aligned label */
     background: transparent;
     border: none;
     cursor: pointer;
-    color: var(--digital-text);
-    transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+    padding: 0;
+    gap: 0.1rem;
+    flex-shrink: 0;
 }
 
-.toggle-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-}
-
-.toggle-icons {
+/* ROW 1 → text + arrow  (aligned to "DIGITALIZA TODO") */
+.menu-label-top {
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: rgba(255, 255, 255, 0.05);
-    padding: 6px 12px;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
+    gap: 0.4rem;
+    height: 1.2rem;
+    /* matches .logo-text line-height */
 }
 
-.digital-toggle-refined:hover .toggle-icons {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: var(--digital-neon);
-    transform: translateY(-2px);
-}
-
-.icon-main {
-    color: var(--digital-text);
+.menu-label-text {
+    font-family: 'Inter', sans-serif;
+    font-weight: 900;
+    font-size: 1rem;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    line-height: 1.2;
+    white-space: nowrap;
     transition: color 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
-.icon-arrow {
+.menu-label-btn:hover .menu-label-text {
+    color: var(--neon);
+}
+
+.menu-label-arrow {
     display: flex;
     align-items: center;
-    justify-content: center;
     will-change: transform;
 }
 
-.toggle-label-dynamic {
-    white-space: nowrap;
+.neon-icon {
+    color: var(--neon);
 }
 
-/* Lateral Menu Overlay */
+.white-icon {
+    color: var(--text);
+}
+
+/* ROW 2 → toggle icon  (aligned to "SOFTWARE FACTORY") */
+.menu-label-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    height: 0.9rem;
+    /* matches .status-label row height */
+}
+
+.toggle-icon-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.3s ease;
+}
+
+.menu-label-btn:hover .toggle-icon-inner {
+    color: var(--neon);
+}
+
+/* ── Lateral panel ───────────────────────────────────────── */
 .digital-menu-content-lateral {
     position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    max-width: 420px;
-    background: var(--digital-bg);
+    inset: 0 auto 0 0;
+    width: min(420px, 100%);
+    background: var(--bg);
     z-index: 100;
-    display: flex;
-    flex-direction: column;
     padding: 2.5rem;
-    border-right: 1px solid rgba(250, 200, 21, 0.1);
+    border-right: 1px solid rgba(250, 200, 21, 0.08);
     box-shadow: 20px 0 80px rgba(0, 0, 0, 0.8);
     will-change: transform;
-}
-
-@media (max-width: 480px) {
-    .digital-menu-content-lateral {
-        width: 100%;
-        max-width: none;
-        padding: 2rem;
-    }
+    display: flex;
+    flex-direction: column;
 }
 
 .menu-inner-lateral {
-    width: 100%;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -211,7 +225,6 @@
 }
 
 .menu-item-lateral {
-    position: relative;
     will-change: transform, opacity;
 }
 
@@ -219,40 +232,38 @@
     display: flex;
     align-items: center;
     text-decoration: none;
-    color: var(--digital-text);
-    padding: 0.8rem 0;
-    transition: all 0.3s ease;
+    color: var(--text);
+    padding: 0.6rem 0;
 }
 
+/* Icon square */
 .item-icon-wrapper {
     flex-shrink: 0;
-    color: var(--digital-text);
-    opacity: 0.6;
-    transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-    margin-right: 1.5rem;
+    width: 48px;
+    height: 48px;
+    margin-right: 1.25rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 48px;
-    height: 48px;
     background: rgba(255, 255, 255, 0.03);
     border-radius: 12px;
+    color: rgba(255, 255, 255, 0.65);
+    transition: all 0.45s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 .menu-link-lateral:hover .item-icon-wrapper {
-    color: var(--digital-neon);
-    opacity: 1;
-    transform: scale(1.1) rotate(-8deg);
+    color: var(--neon);
     background: rgba(250, 200, 21, 0.1);
+    transform: scale(1.1) rotate(-8deg);
 }
 
 .item-number-lateral {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.7rem;
-    color: var(--digital-neon);
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--neon);
     opacity: 0.5;
-    font-weight: 700;
-    margin-bottom: 0.2rem;
+    margin-bottom: 0.15rem;
+    font-family: 'Space Mono', monospace;
 }
 
 .item-label-lateral {
@@ -271,30 +282,30 @@
 }
 
 .menu-link-lateral:hover .item-label-lateral {
-    color: var(--digital-neon);
+    color: var(--neon);
     transform: translateX(12px);
     text-shadow: 0 0 20px rgba(250, 200, 21, 0.2);
 }
 
-/* Footer Lateral */
+/* ── Footer ─────────────────────────────────────────────── */
 .menu-footer-lateral {
-    padding-top: 3rem;
+    padding-top: 2.5rem;
     margin-top: auto;
 }
 
 .footer-line {
     width: 40px;
     height: 2px;
-    background: var(--digital-neon);
-    margin-bottom: 1.5rem;
-    box-shadow: 0 0 10px var(--digital-neon);
+    background: var(--neon);
+    box-shadow: 0 0 10px var(--neon);
+    margin-bottom: 1.25rem;
 }
 
 .copyright-lateral {
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     font-weight: 700;
     letter-spacing: 0.2em;
     line-height: 1.8;
-    opacity: 0.4;
+    opacity: 0.35;
     text-transform: uppercase;
 }
