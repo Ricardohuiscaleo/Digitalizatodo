@@ -40,12 +40,14 @@ type GradualBlurProps = {
   gpuOptimized?: boolean;
   hoverIntensity?: number;
   target?: 'parent' | 'page';
+  show?: boolean;
   onAnimationComplete?: () => void;
   className?: string;
   style?: CSSProperties;
 };
 
 const DEFAULT_CONFIG: Partial<GradualBlurProps> = {
+  show: true,
   position: 'bottom',
   strength: 2,
   height: '6rem',
@@ -182,6 +184,8 @@ const GradualBlur: React.FC<PropsWithChildren<GradualBlurProps>> = props => {
 
     const curveFunc = CURVE_FUNCTIONS[config.curve] || CURVE_FUNCTIONS.linear;
 
+    if (!config.show) return [];
+
     for (let i = 1; i <= config.divCount; i++) {
       let progress = i / config.divCount;
       progress = curveFunc(progress);
@@ -233,9 +237,10 @@ const GradualBlur: React.FC<PropsWithChildren<GradualBlurProps>> = props => {
 
     const baseStyle: CSSProperties = {
       position: isPageTarget ? 'fixed' : 'absolute',
-      pointerEvents: config.hoverIntensity ? 'auto' : 'none',
-      opacity: isVisible ? 1 : 0,
-      transition: config.animated ? `opacity ${config.duration} ${config.easing}` : undefined,
+      pointerEvents: (config.hoverIntensity && config.show) ? 'auto' : 'none',
+      opacity: (isVisible && config.show) ? 1 : 0,
+      visibility: config.show ? 'visible' : 'hidden',
+      transition: config.animated ? `opacity ${config.duration} ${config.easing}, visibility ${config.duration} ${config.easing}` : 'opacity 0.3s, visibility 0.3s',
       zIndex: isPageTarget ? config.zIndex + 100 : config.zIndex,
       ...config.style
     };

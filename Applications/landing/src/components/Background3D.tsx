@@ -59,7 +59,7 @@ export function Background3D() {
         } else if (isLowEnd) {
             setParticleCount(250); // Lowered even more
         } else {
-            setParticleCount(600); // Optimized for performance
+            setParticleCount(350); // Lowered for maximum fluidity
         }
     }, []);
 
@@ -76,7 +76,7 @@ export function Background3D() {
                     stencil: false,
                     depth: false
                 }}
-                dpr={[1, 1.5]} // Limit pixel ratio on high-res screens
+                dpr={1} // Force 1:1 pixel ratio for max fluidity
             >
                 <Stars count={particleCount} />
             </Canvas>
