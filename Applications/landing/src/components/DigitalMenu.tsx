@@ -13,9 +13,11 @@ export interface DigitalMenuProps {
 }
 
 const DEFAULT_ITEMS: DigitalMenuItem[] = [
-    { label: 'Inicio', link: '#inicio' },
+    { label: 'Inicio', link: '#hero' },
+    { label: 'Proceso', link: '#roadmap' },
     { label: 'Servicios', link: '#servicios' },
-    { label: 'Portafolio', link: '#portafolio' },
+    { label: 'Proyectos', link: '#proyectos' },
+    { label: 'Nosotros', link: '#nosotros' },
     { label: 'Contacto', link: '#contacto' },
 ];
 
@@ -27,7 +29,6 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
     const openRef = useRef(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
-    const revealLineRef = useRef<HTMLDivElement>(null);
     const menuItemsRef = useRef<(HTMLLIElement | null)[]>([]);
     const busyRef = useRef(false);
 
@@ -40,9 +41,8 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
 
     useLayoutEffect(() => {
         const ctx = gsap.context(() => {
-            // Set initial state
-            gsap.set(contentRef.current, { yPercent: -100, visibility: 'hidden' });
-            gsap.set(revealLineRef.current, { scaleX: 0, opacity: 0 });
+            // Set initial state: Content hidden off-screen to the left
+            gsap.set(contentRef.current, { xPercent: -100, visibility: 'hidden' });
         }, containerRef);
         return () => ctx.revert();
     }, []);
@@ -59,38 +59,23 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
             }
         });
 
-        tl.to(revealLineRef.current, {
-            scaleX: 1,
-            opacity: 1,
-            duration: 0.4,
-            ease: 'power2.inOut'
+        tl.to(contentRef.current, {
+            xPercent: 0,
+            visibility: 'visible',
+            duration: 0.8,
+            ease: 'power4.out'
         })
-            .to(revealLineRef.current, {
-                top: '100%',
-                duration: 0.6,
-                ease: 'power3.inOut'
-            }, '-=0.1')
-            .to(contentRef.current, {
-                yPercent: 0,
-                visibility: 'visible',
-                duration: 0.6,
-                ease: 'power3.inOut'
-            }, '<')
             .fromTo(menuItemsRef.current,
-                { opacity: 0, y: 30 },
+                { opacity: 0, x: -30 },
                 {
                     opacity: 1,
-                    y: 0,
-                    duration: 0.5,
-                    stagger: 0.1,
-                    ease: 'back.out(1.7)'
+                    x: 0,
+                    duration: 0.6,
+                    stagger: 0.08,
+                    ease: 'power3.out'
                 },
-                '-=0.2'
-            )
-            .to(revealLineRef.current, {
-                opacity: 0,
-                duration: 0.3
-            });
+                '-=0.4'
+            );
     }, []);
 
     const playClose = useCallback(() => {
@@ -109,16 +94,16 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
 
         tl.to(menuItemsRef.current, {
             opacity: 0,
-            y: -20,
+            x: -20,
             duration: 0.3,
-            stagger: 0.05,
+            stagger: 0.04,
             ease: 'power2.in'
         })
             .to(contentRef.current, {
-                yPercent: -100,
-                duration: 0.5,
-                ease: 'power3.inOut'
-            });
+                xPercent: -100,
+                duration: 0.6,
+                ease: 'power3.in'
+            }, '-=0.2');
     }, []);
 
     const toggleMenu = () => {
@@ -136,50 +121,56 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
         <div ref={containerRef} className="digital-menu-container" data-open={open}>
             {/* Dynamic Header */}
             <header className={`digital-header ${open ? 'menu-open' : ''}`}>
-                <div className="digital-logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-                    <span className="logo-text">{logoText}</span>
-                    <span className="logo-dot"></span>
+                <div className="digital-brand gap-3" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                    <div className="logo-icon-wrapper">
+                        <img src="/DLogo-v2.webp" alt="Digitaliza Todo" className="logo-icon" draggable={false} />
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="logo-text">{logoText}</span>
+                        <div className="status-indicator">
+                            <span className="status-dot"></span>
+                            <span className="status-label">SYSTEM ACTIVE</span>
+                        </div>
+                    </div>
                 </div>
 
                 <button
-                    className="digital-toggle"
+                    className="digital-toggle-refined"
                     onClick={toggleMenu}
                     aria-label="Toggle Menu"
                 >
-                    <div className="toggle-box">
-                        <span className="line top"></span>
-                        <span className="line mid"></span>
-                        <span className="line bot"></span>
+                    <div className="toggle-inner">
+                        <span className="toggle-line line-1"></span>
+                        <span className="toggle-line line-2"></span>
+                        <span className="toggle-line line-3"></span>
                     </div>
-                    <span className="toggle-label">{open ? 'CERRAR' : 'MENU'}</span>
+                    <span className="toggle-text">{open ? 'EXIT' : 'MENU'}</span>
                 </button>
             </header>
 
-            {/* Reveal Line Effect */}
-            <div ref={revealLineRef} className="digital-reveal-line" />
-
-            {/* Menu Content */}
-            <div ref={contentRef} className="digital-menu-content">
-                <div className="menu-inner">
-                    <nav className="menu-nav">
-                        <ul className="menu-list">
+            {/* Menu Content Overlay (Slides from left) */}
+            <div ref={contentRef} className="digital-menu-content-lateral">
+                <div className="menu-inner-lateral">
+                    <nav className="menu-nav-lateral">
+                        <ul className="menu-list-lateral">
                             {items.map((item, i) => (
                                 <li
                                     key={i}
                                     ref={el => { menuItemsRef.current[i] = el; }}
-                                    className="menu-item"
+                                    className="menu-item-lateral"
                                 >
-                                    <a href={item.link} onClick={toggleMenu} className="menu-link">
-                                        <span className="item-number">0{i + 1}</span>
-                                        <span className="item-label">{item.label}</span>
+                                    <a href={item.link} onClick={toggleMenu} className="menu-link-lateral">
+                                        <span className="item-number-lateral">0{i + 1}</span>
+                                        <span className="item-label-lateral">{item.label}</span>
                                     </a>
                                 </li>
                             ))}
                         </ul>
                     </nav>
 
-                    <div className="menu-footer">
-                        <p className="copyright">© 2026 DIGITALIZA TODO. SOLUTIONS FOR THE FUTURE.</p>
+                    <div className="menu-footer-lateral">
+                        <div className="footer-line"></div>
+                        <p className="copyright-lateral">© 2026 DIGITALIZA TODO. EST. CHILE. ALL RIGHTS RESERVED.</p>
                     </div>
                 </div>
             </div>
