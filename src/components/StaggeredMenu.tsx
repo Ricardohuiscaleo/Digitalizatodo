@@ -92,28 +92,28 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
   const isLeft = position === 'left';
   const offscreenX = isLeft ? '-100%' : '100%';
 
-  const springConfig = { type: "spring" as const, stiffness: 300, damping: 30, mass: 1 };
-  const bounceConfig = { type: "spring" as const, stiffness: 400, damping: 25, mass: 1 };
+  const springConfig = { type: "spring" as const, stiffness: 450, damping: 35, mass: 1 };
+  const bounceConfig = { type: "spring" as const, stiffness: 500, damping: 28, mass: 1 };
 
   const layerVariants = {
-    closed: { x: offscreenX, transition: { duration: 0.3, ease: [0.42, 0, 1, 1] as const } },
+    closed: { x: offscreenX, transition: { duration: 0.25, ease: [0.42, 0, 1, 1] as const } },
     open: (i: number) => ({
       x: 0,
-      transition: { ...springConfig, delay: i * 0.05 }
+      transition: { ...springConfig, delay: i * 0.03 }
     })
   };
 
   const panelVariants = {
-    closed: { x: offscreenX, transition: { duration: 0.3, ease: [0.42, 0, 1, 1] as const } },
+    closed: { x: offscreenX, transition: { duration: 0.25, ease: [0.42, 0, 1, 1] as const } },
     open: {
       x: 0,
-      transition: { ...springConfig, delay: (arr.length - 1) * 0.05 }
+      transition: { ...springConfig, delay: (arr.length - 1) * 0.03 }
     }
   };
 
   const staggerList = {
-    closed: { transition: { staggerChildren: 0.03, staggerDirection: -1 } },
-    open: { transition: { staggerChildren: 0.08, delayChildren: 0.2 } }
+    closed: { transition: { staggerChildren: 0.02, staggerDirection: -1 } },
+    open: { transition: { staggerChildren: 0.06, delayChildren: 0.12 } }
   };
 
   const itemVariants = {
