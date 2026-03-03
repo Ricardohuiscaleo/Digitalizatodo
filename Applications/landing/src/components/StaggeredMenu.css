@@ -153,6 +153,9 @@
   pointer-events: auto;
   visibility: hidden;
   will-change: transform;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  perspective: 1000px;
 }
 
 [data-position='left'] .staggered-menu-panel {
@@ -183,6 +186,8 @@
   width: 100%;
   visibility: hidden;
   will-change: transform;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
 }
 
 .sm-panel-inner {

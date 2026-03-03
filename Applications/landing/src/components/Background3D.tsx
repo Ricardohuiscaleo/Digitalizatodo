@@ -2,6 +2,12 @@ import { useRef, useMemo, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Points, PointMaterial } from '@react-three/drei';
 
+declare global {
+    interface Window {
+        __STAGGERED_MENU_OPEN__: boolean;
+    }
+}
+
 
 function Stars(props: any) {
     const ref = useRef<any>(null);
@@ -25,6 +31,8 @@ function Stars(props: any) {
     }, [count]);
 
     useFrame(() => {
+        if (typeof window !== 'undefined' && window.__STAGGERED_MENU_OPEN__) return;
+
         if (ref.current) {
             const scrollPos = typeof window !== 'undefined' ? window.scrollY : 0;
             ref.current.rotation.x = scrollPos * 0.0005;
