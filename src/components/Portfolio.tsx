@@ -8,7 +8,7 @@ export function Portfolio() {
         {
             title: "La Ruta 11",
             category: "Punto de Venta",
-            image: "/proyectos/app.laruta11.cl.png",
+            image: "/proyectos/app.laruta11.cl.webp",
             url: "https://app.laruta11.cl",
             stack: "Astro • React • MySQL",
             color: "rgba(59, 130, 246, 0.1)", // blue
@@ -17,7 +17,7 @@ export function Portfolio() {
         {
             title: "Matemágica",
             category: "EdTech & IA",
-            image: "/proyectos/matemagica.agenterag.com.png",
+            image: "/proyectos/matemagica.agenterag.com.webp",
             url: "https://matemagica.agenterag.com",
             stack: "PWA • IA • Supabase",
             color: "rgba(168, 85, 247, 0.1)", // purple
@@ -26,7 +26,7 @@ export function Portfolio() {
         {
             title: "Agente RAG",
             category: "Inteligencia Artificial",
-            image: "/proyectos/agenterag.com.png",
+            image: "/proyectos/agenterag.com.webp",
             url: "https://agenterag.com",
             stack: "Python • LLM • React",
             color: "rgba(20, 184, 166, 0.1)", // teal
@@ -35,7 +35,7 @@ export function Portfolio() {
         {
             title: "Estudio Jurídico",
             category: "Sitio Corporativo",
-            image: "/proyectos/patriciosepulveda.cl.png",
+            image: "/proyectos/patriciosepulveda.cl.webp",
             url: "https://patriciosepulveda.cl",
             stack: "Astro • SEO • UX/UI",
             color: "rgba(148, 163, 184, 0.1)", // slate
@@ -44,7 +44,7 @@ export function Portfolio() {
         {
             title: "Automotora Demo",
             category: "Catálogo Autos",
-            image: "/proyectos/demo.automotora.online.png",
+            image: "/proyectos/demo.automotora.online.webp",
             url: "https://demo.automotora.online",
             stack: "Astro • Filtros • WhatsApp",
             color: "rgba(239, 68, 68, 0.1)", // red
@@ -53,7 +53,7 @@ export function Portfolio() {
         {
             title: "Pocos Click",
             category: "SaaS Restaurantes",
-            image: "/proyectos/pocos.click.png",
+            image: "/proyectos/pocos.click.webp",
             url: "https://pocos.click",
             stack: "Astro • QR • KDS • Maps",
             color: "rgba(249, 115, 22, 0.1)", // orange
