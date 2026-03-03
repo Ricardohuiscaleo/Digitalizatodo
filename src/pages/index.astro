@@ -60,10 +60,10 @@ import { StaggeredMenu } from '../components/StaggeredMenu';
   <main>
     <HeroSection client:load />
     
-    <StatsRibbon client:load />
+    <StatsRibbon client:visible />
     
-    <Roadmap client:load />
-    <ServicesGrid client:load />
+    <Roadmap client:visible />
+    <ServicesGrid client:visible />
     
     <section id="nosotros" class="py-32 px-4 relative overflow-hidden bg-slate-950 text-white z-10 border-y border-white/5">
       <div class="max-w-5xl mx-auto relative z-10 text-center">
@@ -78,7 +78,7 @@ import { StaggeredMenu } from '../components/StaggeredMenu';
       </div>
     </section>
 
-    <Portfolio client:load />
+    <Portfolio client:visible />
     <ContactForm client:visible />
   </main>
 </body>

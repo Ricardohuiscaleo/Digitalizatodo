@@ -168,9 +168,9 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
       <GradualBlur
         position="top"
         target="parent"
-        height="150px"
-        strength={5}
-        divCount={20}
+        height="120px"
+        strength={4}
+        divCount={6}
         curve="ease-in"
         exponential={true}
         zIndex={10}
