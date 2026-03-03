@@ -8,12 +8,13 @@ export function StatsRibbon() {
             <div className="flex w-full overflow-hidden whitespace-nowrap">
                 {/* Utilizamos dos bloques idénticos y animamos ambos hacia la izquierda para un loop perfecto */}
                 <motion.div
-                    className="flex whitespace-nowrap min-w-full items-center"
+                    className="flex whitespace-nowrap min-w-full items-center will-change-transform"
                     animate={{ x: ["0%", "-100%"] }}
+                    style={{ backfaceVisibility: "hidden" }}
                     transition={{
                         repeat: Infinity,
                         ease: "linear",
-                        duration: 30, // Tiempo que tarda en dar una vuelta
+                        duration: 40, // Slightly slower for better perception of smoothness
                     }}
                 >
                     <span className="text-sm md:text-lg font-bold text-emerald-400 px-4 md:px-8 tracking-wider uppercase">

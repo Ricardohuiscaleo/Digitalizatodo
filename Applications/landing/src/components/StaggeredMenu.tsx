@@ -165,17 +165,19 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
         ))}
       </div>
 
-      <GradualBlur
-        position="top"
-        target="parent"
-        height="120px"
-        strength={4}
-        divCount={6}
-        curve="ease-in"
-        exponential={true}
-        zIndex={10}
-        className="pointer-events-none !fixed !top-0 !left-0 !w-full !m-0 !p-0"
-      />
+      {!open && (
+        <GradualBlur
+          position="top"
+          target="parent"
+          height="120px"
+          strength={4}
+          divCount={6}
+          curve="ease-in"
+          exponential={true}
+          zIndex={10}
+          className="pointer-events-none !fixed !top-0 !left-0 !w-full !m-0 !p-0"
+        />
+      )}
 
       <header className="staggered-menu-header" aria-label="Main navigation header">
         <div className="sm-logo" aria-label="Logo">
