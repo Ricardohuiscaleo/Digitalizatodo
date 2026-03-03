@@ -92,50 +92,58 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [closeOnClickAway, open]);
 
-  // Framer Motion Variants
+  // Framer Motion Variants - Using spring for that "rebote" feel
   const isLeft = position === 'left';
   const offscreenX = isLeft ? '-100%' : '100%';
 
+  const springConfig = { type: "spring" as const, stiffness: 300, damping: 30, mass: 1 };
+  const bounceConfig = { type: "spring" as const, stiffness: 400, damping: 25, mass: 1 };
+
   const layerVariants = {
-    closed: { x: offscreenX, transition: { duration: 0.32, ease: [0.42, 0, 1, 1] as const } },
+    closed: { x: offscreenX, transition: { duration: 0.3, ease: [0.42, 0, 1, 1] as const } },
     open: (i: number) => ({
       x: 0,
-      transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const, delay: i * 0.07 }
+      transition: { ...springConfig, delay: i * 0.05 }
     })
   };
 
   const panelVariants = {
-    closed: { x: offscreenX, transition: { duration: 0.32, ease: [0.42, 0, 1, 1] as const } },
+    closed: { x: offscreenX, transition: { duration: 0.3, ease: [0.42, 0, 1, 1] as const } },
     open: {
       x: 0,
-      transition: { duration: 0.65, ease: [0.16, 1, 0.3, 1] as const, delay: (arr.length - 1) * 0.07 }
+      transition: { ...springConfig, delay: (arr.length - 1) * 0.05 }
     }
   };
 
   const staggerList = {
-    closed: { transition: { staggerChildren: 0.05, staggerDirection: -1 } },
-    open: { transition: { staggerChildren: 0.1, delayChildren: 0.15 + (arr.length - 1) * 0.07 } }
+    closed: { transition: { staggerChildren: 0.03, staggerDirection: -1 } },
+    open: { transition: { staggerChildren: 0.08, delayChildren: 0.2 } }
   };
 
   const itemVariants = {
-    closed: { y: "140%", rotate: 10, opacity: 0, transition: { duration: 0.3 } },
-    open: { y: "0%", rotate: 0, opacity: 1, transition: { duration: 1, ease: [0.16, 1, 0.3, 1] as const } }
+    closed: { y: "110%", rotate: 5, opacity: 0, transition: { duration: 0.3 } },
+    open: {
+      y: "0%",
+      rotate: 0,
+      opacity: 1,
+      transition: { ...bounceConfig }
+    }
   };
 
   const socialVariants = {
-    closed: { y: 25, opacity: 0, transition: { duration: 0.3 } },
-    open: { y: 0, opacity: 1, transition: { duration: 0.55, ease: [0, 0, 0.58, 1] as const } }
+    closed: { y: 20, opacity: 0, transition: { duration: 0.2 } },
+    open: { y: 0, opacity: 1, transition: { ...springConfig } }
   };
 
   const numVariants = {
-    closed: { opacity: 0 },
-    open: { opacity: 1, transition: { duration: 0.6 } }
+    closed: { opacity: 0, x: 10 },
+    open: { opacity: 1, x: 0, transition: { duration: 0.4, ease: [0, 0, 0.58, 1] as const } }
   };
 
   const textVariants = {
     initial: { y: "100%", opacity: 0 },
-    animate: { y: "0%", opacity: 1, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const } },
-    exit: { y: "-100%", opacity: 0, transition: { duration: 0.3, ease: [0.42, 0, 1, 1] as const } }
+    animate: { y: "0%", opacity: 1, transition: { type: "spring" as const, stiffness: 400, damping: 30 } },
+    exit: { y: "-100%", opacity: 0, transition: { duration: 0.2 } }
   };
 
   const currentToggleColor = changeMenuColorOnOpen && open ? openMenuButtonColor : menuButtonColor;
@@ -211,12 +219,12 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
             <motion.span
               className="sm-icon-line"
               animate={{ rotate: open ? 225 : 0 }}
-              transition={{ duration: open ? 0.8 : 0.35, ease: open ? [0.16, 1, 0.3, 1] : "easeInOut" }}
+              transition={{ duration: open ? 0.8 : 0.35, ease: open ? [0.16, 1, 0.3, 1] as const : "easeInOut" }}
             />
             <motion.span
               className="sm-icon-line sm-icon-line-v"
               animate={{ rotate: open ? 225 + 90 : 90 }}
-              transition={{ duration: open ? 0.8 : 0.35, ease: open ? [0.16, 1, 0.3, 1] : "easeInOut" }}
+              transition={{ duration: open ? 0.8 : 0.35, ease: open ? [0.16, 1, 0.3, 1] as const : "easeInOut" }}
             />
           </span>
         </motion.button>
@@ -248,7 +256,7 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
                     </motion.span>
                     {displayItemNumbering && (
                       <motion.span
-                        className="absolute right-0 top-1 text-lg font-normal text-[var(--sm-accent,#5227ff)] pointer-events-none select-none transition-opacity duration-300 group-hover:opacity-100"
+                        className="absolute right-0 top-1 text-lg font-normal text-[var(--sm-accent,#5227ff)] pointer-events-none select-none group-hover:opacity-100"
                         variants={numVariants}
                       >
                         {(idx + 1).toString().padStart(2, '0')}
