@@ -55,12 +55,8 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const toggleBtnRef = useRef<HTMLButtonElement>(null);
 
-  const resolvedColors = colors && colors.length ? colors.slice(0, 4) : ['#1e1e22', '#35353c'];
+  const resolvedColors = colors && colors.length ? colors.slice(0, 6) : ['#1e1e22', '#35353c'];
   let arr = [...resolvedColors];
-  if (arr.length >= 3) {
-    const mid = Math.floor(arr.length / 2);
-    arr.splice(mid, 1);
-  }
 
   const toggleMenu = () => {
     const newState = !open;
