@@ -137,7 +137,8 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
 
     const tl = gsap.timeline({
       paused: true,
-      onStart: () => setOpen(true) // Disable blur when animation starts
+      onStart: () => setOpen(true),
+      defaults: { force3D: true }
     });
 
     layerStates.forEach((ls, i) => {
@@ -223,6 +224,7 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
     if (tl) {
       tl.eventCallback('onComplete', () => {
         busyRef.current = false;
+        // Ensure GradualBlur is strictly hidden when open
       });
       tl.play(0);
     } else {
@@ -244,9 +246,13 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
     const offscreen = position === 'left' ? -100 : 100;
     closeTweenRef.current = gsap.to(all, {
       xPercent: offscreen,
-      duration: 0.32,
-      ease: 'power3.in',
+      duration: 0.42, // Slightly slower for perceived smoothness
+      ease: 'power3.inOut',
       overwrite: 'auto',
+      force3D: true,
+      onStart: () => {
+        // Optionally do something
+      },
       onComplete: () => {
         setOpen(false); // Enable blur when close animation finishes
         const itemEls = Array.from(panel.querySelectorAll('.sm-panel-itemLabel')) as HTMLElement[];
@@ -394,19 +400,18 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
         })()}
       </div>
 
-      {!open && (
-        <GradualBlur
-          position="top"
-          target="parent"
-          height="120px"
-          strength={4}
-          divCount={3}
-          curve="ease-in"
-          exponential={true}
-          zIndex={10}
-          className="pointer-events-none !fixed !top-0 !left-0 !w-full !m-0 !p-0"
-        />
-      )}
+      <GradualBlur
+        show={!open}
+        position="top"
+        target="parent"
+        height="120px"
+        strength={4}
+        divCount={3}
+        curve="ease-in"
+        exponential={true}
+        zIndex={10}
+        className="pointer-events-none !fixed !top-0 !left-0 !w-full !m-0 !p-0"
+      />
 
       <header className="staggered-menu-header" aria-label="Main navigation header">
         <div className="sm-logo" aria-label="Logo">
