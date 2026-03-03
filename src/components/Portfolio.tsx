@@ -99,7 +99,14 @@ export function Portfolio() {
                                     <div className="flex flex-col sm:flex-row h-full relative z-10">
                                         <div className="sm:w-2/5 md:w-5/12 h-48 sm:h-auto shrink-0 overflow-hidden relative border-b sm:border-b-0 sm:border-r border-white/10">
                                             <div className="absolute inset-0 bg-indigo-500/20 mix-blend-overlay z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                                            <img src={p.image} alt={p.title} className="w-full h-full object-cover group-hover:scale-110 group-hover:rotate-1 transition-transform duration-700 ease-out" />
+                                            <img
+                                                src={p.image}
+                                                alt={p.title}
+                                                width="662"
+                                                height="372"
+                                                loading="lazy"
+                                                className="w-full h-full object-cover group-hover:scale-110 group-hover:rotate-1 transition-transform duration-700 ease-out"
+                                            />
                                         </div>
                                         <CardContent className="flex-1 p-6 md:p-8 flex flex-col justify-between">
                                             <div>

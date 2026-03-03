@@ -49,8 +49,8 @@ export function Roadmap() {
                 viewport={{ once: true }}
                 className="text-center mb-16"
             >
-                <h3 className="text-sm font-mono text-indigo-400 font-bold uppercase tracking-widest mb-3">Flujo de Trabajo</h3>
-                <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight">Ciclo de Desarrollo</h2>
+                <h2 className="text-sm font-mono text-indigo-400 font-bold uppercase tracking-widest mb-3">Flujo de Trabajo</h2>
+                <h3 className="text-3xl md:text-5xl font-black text-white tracking-tight">Ciclo de Desarrollo</h3>
             </motion.div>
 
             <div className="relative">

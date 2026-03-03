@@ -18,7 +18,7 @@ export function HeroSection() {
                 <motion.h1
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
                     className="text-5xl md:text-7xl lg:text-8xl font-black text-slate-900 dark:text-white tracking-tighter leading-[1.1]"
                 >
                     <span className="block whitespace-nowrap text-transparent bg-clip-text bg-gradient-to-b from-slate-200 via-slate-400 to-slate-800">
@@ -44,9 +44,9 @@ export function HeroSection() {
                 </motion.h1>
 
                 <motion.p
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
                     className="text-lg md:text-2xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed font-medium"
                 >
                     Desarrollo de software y páginas web con lógica de negocio, automatización de procesos y estrategias digitales que <strong className="text-emerald-500">reducen costos</strong>.

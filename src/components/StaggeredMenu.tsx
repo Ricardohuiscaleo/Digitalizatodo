@@ -233,7 +233,7 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
         initial="closed"
         animate={open ? "open" : "closed"}
         aria-hidden={!open}
-        style={{ visibility: 'visible' }}
+        style={{ visibility: open ? 'visible' : 'hidden' }}
       >
         <div className="sm-panel-inner">
           <motion.ul
