@@ -332,25 +332,6 @@
   color: var(--sm-accent, #5227ff);
 }
 
-.sm-panel-list[data-numbering] {
-  counter-reset: smItem;
-}
-
-.sm-panel-list[data-numbering] .sm-panel-item::after {
-  counter-increment: smItem;
-  content: counter(smItem, decimal-leading-zero);
-  position: absolute;
-  top: 0.1em;
-  right: 3.2em;
-  font-size: 18px;
-  font-weight: 400;
-  color: var(--sm-accent, #5227ff);
-  letter-spacing: 0;
-  pointer-events: none;
-  user-select: none;
-  opacity: var(--sm-num-opacity, 0);
-}
-
 @media (max-width: 1024px) {
   .staggered-menu-panel {
     width: 100%;
