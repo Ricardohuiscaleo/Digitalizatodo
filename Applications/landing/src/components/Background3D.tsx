@@ -43,20 +43,29 @@ export function Background3D() {
         const isMobile = window.innerWidth < 768;
         const isLowEnd = navigator.hardwareConcurrency <= 4;
         if (isMobile) {
-            setParticleCount(0); // Disabled on mobile
+            setParticleCount(0); // Still disabled on mobile
         } else if (isLowEnd) {
-            setParticleCount(500); // Low-end desktop
+            setParticleCount(250); // Lowered even more
         } else {
-            setParticleCount(1000); // Normal desktop
+            setParticleCount(600); // Optimized for performance
         }
     }, []);
 
-    // Don't render until we know device capability
     if (particleCount === null || particleCount === 0) return null;
 
     return (
         <div className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none opacity-80">
-            <Canvas camera={{ position: [0, 0, 1] }}>
+            <Canvas
+                camera={{ position: [0, 0, 1] }}
+                gl={{
+                    antialias: false,
+                    powerPreference: "high-performance",
+                    alpha: true,
+                    stencil: false,
+                    depth: false
+                }}
+                dpr={[1, 1.5]} // Limit pixel ratio on high-res screens
+            >
                 <Stars count={particleCount} />
             </Canvas>
             <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-black/40 to-black/90 pointer-events-none z-10"></div>
