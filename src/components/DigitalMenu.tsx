@@ -146,20 +146,13 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                     </div>
                 </div>
 
-                <div className="header-actions flex items-center gap-4">
-                    <div className="toggle-label-wrapper hidden md:flex flex-col items-end">
-                        <span className="label-main text-[10px] font-black uppercase tracking-[0.2em] text-digital-neon leading-none mb-1">
-                            {open ? 'Cerrar menú' : 'Desplegar menú'}
-                        </span>
-                        <div className="label-line w-8 h-[1px] bg-digital-neon/30"></div>
-                    </div>
-
-                    <button
-                        className="digital-toggle-refined group"
-                        onClick={toggleMenu}
-                        aria-label="Toggle Menu"
-                    >
-                        <div className="toggle-icons flex items-center gap-2">
+                <button
+                    className="digital-toggle-refined group"
+                    onClick={toggleMenu}
+                    aria-label="Toggle Menu"
+                >
+                    <div className="toggle-content flex flex-col items-center gap-1">
+                        <div className="toggle-icons flex items-center gap-3">
                             <div className="icon-main relative flex items-center justify-center w-8 h-8">
                                 {open ? (
                                     <XIcon size={24} className="text-white group-hover:text-digital-neon transition-colors" />
@@ -171,8 +164,11 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                                 <ChevronRightIcon size={20} className="text-digital-neon" />
                             </div>
                         </div>
-                    </button>
-                </div>
+                        <span className="toggle-label-dynamic text-[10px] font-black uppercase tracking-[0.1em] text-white/70 group-hover:text-digital-neon transition-colors">
+                            {open ? 'Cerrar menú' : 'Desplegar menú'}
+                        </span>
+                    </div>
+                </button>
             </header>
 
             {/* Menu Content Overlay (Slides from left) */}
