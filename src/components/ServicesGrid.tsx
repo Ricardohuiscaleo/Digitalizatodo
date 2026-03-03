@@ -1,15 +1,35 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Smartphone, Globe, BarChart, Code, Settings, Lightbulb, ArrowUpRight, MessageCircle, Mail } from "lucide-react";
+import './ServicesGrid.css';
 
 export function ServicesGrid() {
     const [selectedService, setSelectedService] = useState<any>(null);
     const [clientName, setClientName] = useState("");
+    const sectionRef = useRef<HTMLElement>(null);
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsVisible(true);
+                    observer.unobserve(entry.target);
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        if (sectionRef.current) {
+            observer.observe(sectionRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, []);
 
     const services = [
         {
@@ -94,32 +114,21 @@ export function ServicesGrid() {
     };
 
     return (
-        <section id="servicios" className="py-24 px-4 relative z-10 font-sans">
+        <section id="servicios" ref={sectionRef} className="py-24 px-4 relative z-10 font-sans overflow-hidden">
             <div className="max-w-6xl mx-auto">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    className="flex items-center gap-4 mb-14"
-                >
+                <div className={`services-title-view flex items-center gap-4 mb-14 ${isVisible ? 'is-visible' : ''}`}>
                     <div className="h-px bg-slate-800 flex-1"></div>
                     <h2 className="text-sm md:text-base font-bold text-slate-400 uppercase tracking-widest font-mono">
                         Servicios & Cotizaciones
                     </h2>
                     <div className="h-px bg-slate-800 flex-1"></div>
-                </motion.div>
+                </div>
 
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {services.map((s, i) => {
                         const colors = getColorConfig(s.colorClass).split(" ");
                         return (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, y: 30 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.1 }}
-                            >
+                            <div key={i} className={`service-card-view delay-${i} ${isVisible ? 'is-visible' : ''}`}>
                                 <Card className={`flex flex-col h-full relative overflow-hidden group hover:-translate-y-2 transition-all duration-300 border backdrop-blur-xl bg-slate-900/40 shadow-xl hover:shadow-2xl ${colors[0]} ${colors[1]}`}>
                                     <div className={`absolute top-0 right-0 w-32 h-32 blur-[50px] rounded-full mix-blend-screen opacity-20 transition-opacity group-hover:opacity-40 pointer-events-none ${colors[4]}`}></div>
 
@@ -198,7 +207,7 @@ export function ServicesGrid() {
                                         </div>
                                     </CardContent>
                                 </Card>
-                            </motion.div>
+                            </div>
                         );
                     })}
                 </div>

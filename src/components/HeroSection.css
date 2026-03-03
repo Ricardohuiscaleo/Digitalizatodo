@@ -1,0 +1,107 @@
+/* HeroSection Animations */
+
+@keyframes hero-fade-in-up {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes hero-fade-in-scale {
+    0% {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes hero-text-gradient {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@keyframes hero-shine {
+    0% {
+        transform: translateX(-200%) skewX(-12deg);
+    }
+
+    100% {
+        transform: translateX(200%) skewX(-12deg);
+    }
+}
+
+@keyframes hero-float {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(0);
+    }
+
+    25% {
+        transform: translateY(-4px) rotate(10deg);
+    }
+
+    75% {
+        transform: translateY(-2px) rotate(-10deg);
+    }
+}
+
+.hero-animate-fade-in-up {
+    animation: hero-fade-in-up 0.8s ease-out forwards;
+}
+
+.hero-animate-fade-in-scale {
+    animation: hero-fade-in-scale 0.6s ease-out forwards;
+}
+
+.hero-gradient-text {
+    background-size: 200% auto;
+    animation: hero-text-gradient 5s linear infinite;
+}
+
+.hero-btn-shine {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: hero-shine 2.5s ease-in-out infinite;
+    animation-delay: 1.5s;
+}
+
+.hero-icon-float {
+    animation: hero-float 2s ease-in-out infinite;
+}
+
+.hero-delay-600 {
+    animation-delay: 0.6s;
+}
+
+.hero-delay-150 {
+    animation-delay: 0.15s;
+}
+
+/* will-change optimizations */
+.hero-animate-fade-in-up,
+.hero-animate-fade-in-scale,
+.hero-gradient-text,
+.hero-btn-shine,
+.hero-icon-float {
+    will-change: transform, opacity;
+}

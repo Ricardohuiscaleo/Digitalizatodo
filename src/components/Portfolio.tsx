@@ -1,9 +1,31 @@
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MousePointer2, Layers } from "lucide-react";
+import './Portfolio.css';
 
 export function Portfolio() {
+    const sectionRef = useRef<HTMLElement>(null);
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsVisible(true);
+                    observer.unobserve(entry.target);
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        if (sectionRef.current) {
+            observer.observe(sectionRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, []);
+
     const projects = [
         {
             title: "La Ruta 11",
@@ -62,14 +84,9 @@ export function Portfolio() {
     ];
 
     return (
-        <section id="proyectos" className="py-24 px-4 relative z-10 font-sans">
+        <section id="proyectos" ref={sectionRef} className="py-24 px-4 relative z-10 font-sans overflow-hidden">
             <div className="max-w-6xl mx-auto">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    className="flex justify-between items-end mb-14"
-                >
+                <div className={`portfolio-header-view flex justify-between items-end mb-14 ${isVisible ? 'is-visible' : ''}`}>
                     <div className="w-full">
                         <div className="text-sm font-mono text-indigo-400 font-bold mb-3 tracking-widest uppercase">
                             PORTAFOLIO
@@ -78,17 +95,13 @@ export function Portfolio() {
                             Últimos Proyectos Desplegados
                         </h2>
                     </div>
-                </motion.div>
+                </div>
 
                 <div className="grid md:grid-cols-2 gap-8">
                     {projects.map((p, i) => (
-                        <motion.div
+                        <div
                             key={i}
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: i * 0.1 }}
-                            className="h-full"
+                            className={`portfolio-item-view portfolio-delay-${i} h-full ${isVisible ? 'is-visible' : ''}`}
                         >
                             <a href={p.url} target="_blank" rel="noreferrer" className="block h-full outline-none group">
                                 <Card
@@ -132,7 +145,7 @@ export function Portfolio() {
                                     </div>
                                 </Card>
                             </a>
-                        </motion.div>
+                        </div>
                     ))}
                 </div>
             </div>

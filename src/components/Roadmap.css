@@ -1,0 +1,41 @@
+/* Roadmap Animations */
+
+.roadmap-header-view {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    will-change: transform, opacity;
+}
+
+.roadmap-header-view.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.roadmap-item-view {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform, opacity;
+}
+
+.roadmap-item-view.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.roadmap-delay-0 {
+    transition-delay: 0s;
+}
+
+.roadmap-delay-1 {
+    transition-delay: 0.15s;
+}
+
+.roadmap-delay-2 {
+    transition-delay: 0.3s;
+}
+
+.roadmap-delay-3 {
+    transition-delay: 0.45s;
+}
