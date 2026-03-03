@@ -1,0 +1,72 @@
+---
+import '../styles/global.css';
+
+// React Components
+import { Background3D } from '../components/Background3D';
+import { StatsRibbon } from '../components/StatsRibbon';
+import { HeroSection } from '../components/HeroSection';
+import { Roadmap } from '../components/Roadmap';
+import { ServicesGrid } from '../components/ServicesGrid';
+import { Portfolio } from '../components/Portfolio';
+import { ContactForm } from '../components/ContactForm';
+import { StaggeredMenu } from '../components/StaggeredMenu';
+---
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth dark">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Digitaliza Todo | Transformamos Ideas en Soluciones Digitales</title>
+  <link rel="icon" href="/DLogo-v2.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+</head>
+<body class="font-sans text-slate-300 min-h-screen selection:bg-indigo-500 selection:text-white bg-black transition-colors relative overflow-x-hidden">
+
+  {/* Interactive 3D Background */}
+  <Background3D client:only="react" />
+
+  {/* Header Menu */}
+  <StaggeredMenu 
+    client:load 
+    isFixed={true}
+    logoUrl="/DLogo-v2.png"
+    colors={['#0a0a0a', '#171717', '#262626', '#333333']}
+    accentColor="#6366f1"
+    items={[
+      { label: 'Inicio', ariaLabel: 'Inicio', link: '#hero' },
+      { label: 'Proceso', ariaLabel: 'Proceso', link: '#roadmap' },
+      { label: 'Servicios', ariaLabel: 'Servicios', link: '#servicios' },
+      { label: 'Proyectos', ariaLabel: 'Proyectos', link: '#proyectos' },
+      { label: 'Nosotros', ariaLabel: 'Nosotros', link: '#nosotros' }
+    ]}
+    socialItems={[
+      { label: 'Hablemos 💬', link: '#contacto' }
+    ]}
+  />
+
+  <main>
+    <HeroSection client:load />
+    
+    <StatsRibbon client:load />
+    
+    <Roadmap client:load />
+    <ServicesGrid client:load />
+    
+    <section id="nosotros" class="py-32 px-4 relative overflow-hidden bg-slate-950 text-white z-10 border-y border-white/5">
+      <div class="max-w-5xl mx-auto relative z-10 text-center">
+        <h2 class="text-4xl md:text-6xl font-black mb-8 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">Ingeniería + Negocios</h2>
+        <p class="text-xl md:text-2xl font-medium text-slate-300 mb-12 max-w-4xl mx-auto leading-relaxed">
+          "No solo escribimos código. Diseñamos sistemas que generan rentabilidad. Liderados por <a href="https://ricardohuiscaleo.digitalizatodo.cl" target="_blank" class="text-emerald-400 hover:text-emerald-300 underline underline-offset-8 decoration-emerald-500/50 transition-colors">Ricardo Huiscaleo</a>, Ingeniero con certificación Lean Six Sigma Black Belt."
+        </p>
+        <div class="flex flex-wrap justify-center gap-4">
+          <div class="px-8 py-4 bg-white/5 backdrop-blur-md rounded-2xl text-sm font-bold font-mono tracking-widest border border-white/10 uppercase shadow-xl hover:bg-white/10 hover:-translate-y-1 transition-all">Misión: Digitalizar Chile</div>
+          <div class="px-8 py-4 bg-white/5 backdrop-blur-md rounded-2xl text-sm font-bold font-mono tracking-widest border border-white/10 uppercase shadow-xl hover:bg-white/10 hover:-translate-y-1 transition-all">Visión: Acceso Universal</div>
+        </div>
+      </div>
+    </section>
+
+    <Portfolio client:load />
+    <ContactForm client:visible />
+  </main>
+</body>
+</html>

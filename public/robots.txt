@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# Disallow API endpoints
+Disallow: /api/
+
+# Allow important files
+Allow: /DLogo.png
+Allow: /og-image.jpg
+
+# Sitemap
+Sitemap: https://digitalizatodo.cl/sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
