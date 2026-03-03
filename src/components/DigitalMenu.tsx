@@ -2,9 +2,20 @@ import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import './DigitalMenu.css';
 
+// Animated Icons
+import { MenuIcon } from './animated-icons/icons/lucide/menu-icon';
+import { XIcon } from './animated-icons/icons/lucide/x-icon';
+import { HouseIcon } from './animated-icons/icons/lucide/house-icon';
+import { ActivityIcon } from './animated-icons/icons/lucide/activity-icon';
+import { BlocksIcon } from './animated-icons/icons/lucide/blocks-icon';
+import { LayoutGridIcon } from './animated-icons/icons/lucide/layout-grid-icon';
+import { UsersRoundIcon } from './animated-icons/icons/lucide/users-round-icon';
+import { MessageCircleIcon } from './animated-icons/icons/lucide/message-circle-icon';
+
 export interface DigitalMenuItem {
     label: string;
     link: string;
+    icon?: React.ReactNode;
 }
 
 export interface DigitalMenuProps {
@@ -13,12 +24,12 @@ export interface DigitalMenuProps {
 }
 
 const DEFAULT_ITEMS: DigitalMenuItem[] = [
-    { label: 'Inicio', link: '#hero' },
-    { label: 'Proceso', link: '#roadmap' },
-    { label: 'Servicios', link: '#servicios' },
-    { label: 'Proyectos', link: '#proyectos' },
-    { label: 'Nosotros', link: '#nosotros' },
-    { label: 'Contacto', link: '#contacto' },
+    { label: 'Inicio', link: '#hero', icon: <HouseIcon size={28} /> },
+    { label: 'Proceso', link: '#roadmap', icon: <ActivityIcon size={28} /> },
+    { label: 'Servicios', link: '#servicios', icon: <BlocksIcon size={28} /> },
+    { label: 'Proyectos', link: '#proyectos', icon: <LayoutGridIcon size={28} /> },
+    { label: 'Nosotros', link: '#nosotros', icon: <UsersRoundIcon size={28} /> },
+    { label: 'Contacto', link: '#contacto', icon: <MessageCircleIcon size={28} /> },
 ];
 
 export const DigitalMenu: React.FC<DigitalMenuProps> = ({
@@ -135,16 +146,18 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                 </div>
 
                 <button
-                    className="digital-toggle-refined"
+                    className="digital-toggle-refined group"
                     onClick={toggleMenu}
                     aria-label="Toggle Menu"
                 >
-                    <div className="toggle-inner">
-                        <span className="toggle-line line-1"></span>
-                        <span className="toggle-line line-2"></span>
-                        <span className="toggle-line line-3"></span>
+                    <div className="toggle-icon-wrapper relative flex items-center justify-center w-8 h-8">
+                        {open ? (
+                            <XIcon size={24} className="text-white group-hover:text-digital-neon transition-colors" />
+                        ) : (
+                            <MenuIcon size={24} className="text-white group-hover:text-digital-neon transition-colors" />
+                        )}
                     </div>
-                    <span className="toggle-text">{open ? 'EXIT' : 'MENU'}</span>
+                    <span className="toggle-text ml-2">{open ? 'EXIT' : 'MENU'}</span>
                 </button>
             </header>
 
@@ -159,9 +172,14 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                                     ref={el => { menuItemsRef.current[i] = el; }}
                                     className="menu-item-lateral"
                                 >
-                                    <a href={item.link} onClick={toggleMenu} className="menu-link-lateral">
-                                        <span className="item-number-lateral">0{i + 1}</span>
-                                        <span className="item-label-lateral">{item.label}</span>
+                                    <a href={item.link} onClick={toggleMenu} className="menu-link-lateral group">
+                                        <div className="item-icon-wrapper transition-transform group-hover:scale-110 group-hover:text-digital-neon mr-4">
+                                            {item.icon}
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="item-number-lateral">0{i + 1}</span>
+                                            <span className="item-label-lateral">{item.label}</span>
+                                        </div>
                                     </a>
                                 </li>
                             ))}
