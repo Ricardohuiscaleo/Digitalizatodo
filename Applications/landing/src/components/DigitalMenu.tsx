@@ -2,7 +2,7 @@ import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import './DigitalMenu.css';
 
-// Animated Icons from animateicons repo
+// Animated Icons
 import { MenuIcon } from './animated-icons/icons/lucide/menu-icon';
 import { XIcon } from './animated-icons/icons/lucide/x-icon';
 import { ChevronRightIcon } from './animated-icons/icons/lucide/chevron-right-icon';
@@ -59,7 +59,6 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
         if (busyRef.current) return;
         busyRef.current = true;
         setBgThrottled(true);
-
         gsap.timeline({ onComplete: () => { busyRef.current = false; setBgThrottled(false); } })
             .to(contentRef.current, { xPercent: 0, visibility: 'visible', duration: 0.8, ease: 'power4.out' })
             .fromTo(menuItemsRef.current,
@@ -73,7 +72,6 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
         if (busyRef.current) return;
         busyRef.current = true;
         setBgThrottled(true);
-
         gsap.timeline({
             onComplete: () => { setBgThrottled(false); setOpen(false); busyRef.current = false; gsap.set(contentRef.current, { visibility: 'hidden' }); }
         })
@@ -91,57 +89,67 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
     return (
         <div ref={containerRef} className="digital-menu-container" data-open={open}>
 
-            {/* ─── Header ─── */}
+            {/* ── Header ─────────────────────────────────────── */}
             <header className={`digital-header ${open ? 'menu-open' : ''}`}>
 
-                {/* LEFT: Logo + Brand text */}
-                <div className="digital-brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                {/* LEFT: Logo + name */}
+                <div
+                    className="digital-brand"
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Ir al inicio"
+                >
                     <div className="logo-icon-wrapper">
                         <img src="/DLogo-v2.webp" alt="Digitaliza Todo" className="logo-icon" draggable={false} />
                     </div>
                     <div className="brand-text-block">
                         <span className="logo-text">{logoText}</span>
                         <div className="status-indicator">
-                            <span className="status-dot"></span>
+                            <span className="status-dot" />
                             <span className="status-label">SOFTWARE FACTORY</span>
                         </div>
                     </div>
                 </div>
 
-                {/* CENTER: "Desplegar menú" label — same row as brand, right of DIGITALIZA TODO */}
-                <button className="menu-label-btn group" onClick={toggleMenu} aria-label="Toggle Menu">
-                    {/* Top row: same height as "DIGITALIZA TODO" */}
-                    <div className="menu-label-top">
-                        <span className="menu-label-text">{open ? 'Cerrar menú' : 'Desplegar menú'}</span>
-                        <div className={`menu-label-arrow transition-transform duration-500 ${open ? 'rotate-180' : 'rotate-0'}`}>
-                            <ChevronRightIcon size={16} className="neon-icon" />
-                        </div>
-                    </div>
-                    {/* Bottom row: toggle icon, same height as "SOFTWARE FACTORY" */}
-                    <div className="menu-label-bottom">
-                        <div className="toggle-icon-inner">
-                            {open
-                                ? <XIcon size={18} className="neon-icon" />
-                                : <MenuIcon size={18} className="white-icon group-hover:text-yellow-400 transition-colors" />
-                            }
-                        </div>
-                    </div>
+                {/* RIGHT: Toggle button — text + arrow + icon in one clean line */}
+                <button
+                    className="digital-toggle-btn group"
+                    onClick={toggleMenu}
+                    aria-label="Abrir/Cerrar menú"
+                >
+                    <span className="toggle-label">
+                        {open ? 'Cerrar menú' : 'Desplegar menú'}
+                    </span>
+                    <span className={`toggle-arrow ${open ? 'is-open' : ''}`}>
+                        <ChevronRightIcon size={14} />
+                    </span>
+                    <span className="toggle-icon">
+                        {open
+                            ? <XIcon size={20} />
+                            : <MenuIcon size={20} />
+                        }
+                    </span>
                 </button>
 
             </header>
 
-            {/* ─── Lateral Panel ─── */}
+            {/* ── Lateral panel ──────────────────────────────── */}
             <div ref={contentRef} className="digital-menu-content-lateral">
                 <div className="menu-inner-lateral">
                     <nav className="menu-nav-lateral">
                         <ul className="menu-list-lateral">
                             {items.map((item, i) => (
-                                <li key={i} ref={el => { menuItemsRef.current[i] = el; }} className="menu-item-lateral">
+                                <li
+                                    key={i}
+                                    ref={el => { menuItemsRef.current[i] = el; }}
+                                    className="menu-item-lateral"
+                                >
                                     <a href={item.link} onClick={toggleMenu} className="menu-link-lateral group">
                                         <div className="item-icon-wrapper">
                                             {item.icon}
                                         </div>
-                                        <div className="flex flex-col">
+                                        <div className="item-text-block">
                                             <span className="item-number-lateral">0{i + 1}</span>
                                             <span className="item-label-lateral">{item.label}</span>
                                         </div>
@@ -152,7 +160,7 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                     </nav>
 
                     <div className="menu-footer-lateral">
-                        <div className="footer-line"></div>
+                        <div className="footer-line" />
                         <p className="copyright-lateral">© 2026 DIGITALIZA TODO · SOFTWARE FACTORY · CHILE</p>
                     </div>
                 </div>

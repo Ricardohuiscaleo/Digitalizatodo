@@ -1,23 +1,22 @@
-/* ── Theme tokens ─────────────────────────────────────────── */
+/* ── Theme ──────────────────────────────────────── */
 .digital-menu-container {
     --neon: #fac815;
     --bg: rgba(6, 0, 16, 0.99);
     --text: #ffffff;
-    --accent: #00f2ff;
     position: relative;
     z-index: 100;
 }
 
-/* ── Header ──────────────────────────────────────────────── */
+/* ── Header ──────────────────────────────────────── */
 .digital-header {
     position: fixed;
     inset: 0 0 auto 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.75rem 1.5rem;
+    padding: 0.85rem 1.5rem;
     z-index: 110;
-    transition: background 0.5s ease, border-color 0.5s ease;
+    transition: background 0.4s ease;
 }
 
 .digital-header:not(.menu-open) {
@@ -27,20 +26,19 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-@media (min-width: 1024px) {
+@media (min-width:1024px) {
     .digital-header {
         padding: 1rem 3rem;
     }
 }
 
-/* ── Brand (left) ────────────────────────────────────────── */
+/* ── Brand (left) ────────────────────────────────── */
 .digital-brand {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     cursor: pointer;
     user-select: none;
-    flex-shrink: 0;
 }
 
 .logo-icon-wrapper {
@@ -58,11 +56,9 @@
     object-fit: contain;
 }
 
-/* Two-row text block — mirrors the button's two-row layout */
 .brand-text-block {
     display: flex;
     flex-direction: column;
-    justify-content: center;
 }
 
 .logo-text {
@@ -71,15 +67,13 @@
     font-size: 1rem;
     letter-spacing: -0.02em;
     color: var(--text);
-    line-height: 1.2;
+    line-height: 1.25;
 }
 
-/* ── Status (bottom row of brand) ───────────────────────── */
 .status-indicator {
     display: flex;
     align-items: center;
     gap: 0.35rem;
-    margin-top: 0.1rem;
 }
 
 .status-dot {
@@ -106,7 +100,7 @@
 }
 
 .status-label {
-    font-size: 0.52rem;
+    font-size: 0.5rem;
     font-weight: 800;
     letter-spacing: 0.18em;
     text-transform: uppercase;
@@ -114,79 +108,71 @@
     color: var(--text);
 }
 
-/* ── Menu label button (right side, two-row) ─────────────── */
-.menu-label-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    /* right-aligned label */
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    gap: 0.1rem;
-    flex-shrink: 0;
-}
-
-/* ROW 1 → text + arrow  (aligned to "DIGITALIZA TODO") */
-.menu-label-top {
+/* ── Toggle button (right) ─ one clean row ───────── */
+.digital-toggle-btn {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    height: 1.2rem;
-    /* matches .logo-text line-height */
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    /* pill */
+    padding: 0.4rem 0.8rem 0.4rem 1rem;
+    cursor: pointer;
+    color: var(--text);
+    transition: background 0.3s ease, border-color 0.3s ease, transform 0.25s ease;
 }
 
-.menu-label-text {
+.digital-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: var(--neon);
+    transform: translateY(-1px);
+}
+
+.toggle-label {
     font-family: 'Inter', sans-serif;
-    font-weight: 900;
-    font-size: 1rem;
-    letter-spacing: -0.02em;
-    color: var(--text);
-    line-height: 1.2;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
     white-space: nowrap;
     transition: color 0.3s ease;
 }
 
-.menu-label-btn:hover .menu-label-text {
+.digital-toggle-btn:hover .toggle-label {
     color: var(--neon);
 }
 
-.menu-label-arrow {
+/* Animated chevron */
+.toggle-arrow {
     display: flex;
     align-items: center;
+    color: var(--neon);
+    transition: transform 0.45s cubic-bezier(0.19, 1, 0.22, 1);
     will-change: transform;
 }
 
-.neon-icon {
-    color: var(--neon);
+.toggle-arrow.is-open {
+    transform: rotate(180deg);
 }
 
-.white-icon {
-    color: var(--text);
-}
-
-/* ROW 2 → toggle icon  (aligned to "SOFTWARE FACTORY") */
-.menu-label-bottom {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    height: 0.9rem;
-    /* matches .status-label row height */
-}
-
-.toggle-icon-inner {
+/* Menu / X icon */
+.toggle-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: color 0.3s ease;
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+    transition: background 0.3s ease, color 0.3s ease;
 }
 
-.menu-label-btn:hover .toggle-icon-inner {
-    color: var(--neon);
+.digital-toggle-btn:hover .toggle-icon {
+    background: var(--neon);
+    color: #000;
 }
 
-/* ── Lateral panel ───────────────────────────────────────── */
+/* ── Lateral panel ────────────────────────────────── */
 .digital-menu-content-lateral {
     position: fixed;
     inset: 0 auto 0 0;
@@ -233,10 +219,10 @@
     align-items: center;
     text-decoration: none;
     color: var(--text);
-    padding: 0.6rem 0;
+    padding: 0.5rem 0;
 }
 
-/* Icon square */
+/* Icon box */
 .item-icon-wrapper {
     flex-shrink: 0;
     width: 48px;
@@ -247,14 +233,19 @@
     justify-content: center;
     background: rgba(255, 255, 255, 0.03);
     border-radius: 12px;
-    color: rgba(255, 255, 255, 0.65);
+    color: rgba(255, 255, 255, 0.6);
     transition: all 0.45s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 .menu-link-lateral:hover .item-icon-wrapper {
     color: var(--neon);
     background: rgba(250, 200, 21, 0.1);
-    transform: scale(1.1) rotate(-8deg);
+    transform: scale(1.1) rotate(-7deg);
+}
+
+.item-text-block {
+    display: flex;
+    flex-direction: column;
 }
 
 .item-number-lateral {
@@ -262,7 +253,7 @@
     font-weight: 800;
     color: var(--neon);
     opacity: 0.5;
-    margin-bottom: 0.15rem;
+    margin-bottom: 0.1rem;
     font-family: 'Space Mono', monospace;
 }
 
@@ -275,7 +266,7 @@
     transition: all 0.3s ease;
 }
 
-@media (min-width: 1024px) {
+@media (min-width:1024px) {
     .item-label-lateral {
         font-size: 2.8rem;
     }
@@ -287,7 +278,7 @@
     text-shadow: 0 0 20px rgba(250, 200, 21, 0.2);
 }
 
-/* ── Footer ─────────────────────────────────────────────── */
+/* Footer */
 .menu-footer-lateral {
     padding-top: 2.5rem;
     margin-top: auto;
