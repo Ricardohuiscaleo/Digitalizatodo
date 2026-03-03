@@ -95,64 +95,25 @@
 .digital-toggle-refined {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.5rem;
     background: transparent;
     border: none;
     cursor: pointer;
     color: var(--digital-text);
     padding: 0.5rem;
-    transition: transform 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
-.digital-toggle-refined:hover {
-    transform: scale(1.05);
-}
-
-.toggle-inner {
-    position: relative;
-    width: 20px;
-    height: 14px;
+.toggle-icon-wrapper {
+    color: var(--digital-text);
+    transition: color 0.3s ease;
     display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    align-items: center;
+    justify-content: center;
 }
 
-.toggle-line {
-    display: block;
-    width: 100%;
-    height: 2px;
-    background: currentColor;
-    border-radius: 4px;
-    transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-}
-
-.line-1 {
-    width: 100%;
-}
-
-.line-2 {
-    width: 60%;
-    align-self: flex-end;
-}
-
-.line-3 {
-    width: 80%;
-    align-self: flex-end;
-}
-
-.digital-menu-container[data-open] .line-1 {
-    transform: translate(0, 6px) rotate(45deg);
-    width: 100%;
-}
-
-.digital-menu-container[data-open] .line-2 {
-    opacity: 0;
-    transform: translateX(10px);
-}
-
-.digital-menu-container[data-open] .line-3 {
-    transform: translate(0, -6px) rotate(-45deg);
-    width: 100%;
+.digital-toggle-refined:hover .toggle-icon-wrapper {
+    color: var(--digital-neon);
 }
 
 .toggle-text {
@@ -174,7 +135,7 @@
     z-index: 100;
     display: flex;
     flex-direction: column;
-    padding: 2rem;
+    padding: 2.5rem;
     border-right: 1px solid rgba(255, 255, 255, 0.05);
     box-shadow: 20px 0 60px rgba(0, 0, 0, 0.5);
     will-change: transform;
@@ -184,6 +145,7 @@
     .digital-menu-content-lateral {
         width: 100%;
         max-width: none;
+        padding: 1.5rem;
     }
 }
 
@@ -207,7 +169,7 @@
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 2rem;
 }
 
 .menu-item-lateral {
@@ -217,23 +179,39 @@
 
 .menu-link-lateral {
     display: flex;
-    align-items: center;
-    gap: 1.2rem;
+    align-items: flex-start;
     text-decoration: none;
     color: var(--digital-text);
     padding: 0.5rem 0;
+    transition: transform 0.3s ease;
+}
+
+.item-icon-wrapper {
+    flex-shrink: 0;
+    color: var(--digital-text);
+    opacity: 0.7;
+    transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+    margin-top: 0.2rem;
+    margin-right: 1.5rem;
+}
+
+.menu-link-lateral:hover .item-icon-wrapper {
+    color: var(--digital-neon);
+    opacity: 1;
+    transform: scale(1.15) rotate(-5deg);
 }
 
 .item-number-lateral {
     font-family: 'Space Mono', monospace;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--digital-neon);
     opacity: 0.6;
     font-weight: 700;
+    margin-bottom: 0.2rem;
 }
 
 .item-label-lateral {
-    font-size: 2.5rem;
+    font-size: 2.2rem;
     font-weight: 900;
     line-height: 1;
     letter-spacing: -0.04em;
@@ -243,13 +221,13 @@
 
 @media (min-width: 1024px) {
     .item-label-lateral {
-        font-size: 3.5rem;
+        font-size: 3rem;
     }
 }
 
 .menu-link-lateral:hover .item-label-lateral {
     color: var(--digital-neon);
-    transform: translateX(15px);
+    transform: translateX(10px);
 }
 
 /* Footer Lateral */
