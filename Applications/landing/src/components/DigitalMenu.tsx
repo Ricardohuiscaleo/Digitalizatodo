@@ -164,7 +164,7 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                                 <ChevronRightIcon size={20} className="text-digital-neon" />
                             </div>
                         </div>
-                        <span className="toggle-label-dynamic text-[10px] font-black uppercase tracking-[0.1em] text-white/70 group-hover:text-digital-neon transition-colors">
+                        <span className="toggle-label-dynamic text-[9px] font-black uppercase tracking-[0.1em] text-white/50 group-hover:text-digital-neon transition-colors mt-1">
                             {open ? 'Cerrar menú' : 'Desplegar menú'}
                         </span>
                     </div>
