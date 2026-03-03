@@ -2,7 +2,7 @@ import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import './DigitalMenu.css';
 
-// Animated Icons
+// Animated Icons from animateicons repo
 import { MenuIcon } from './animated-icons/icons/lucide/menu-icon';
 import { XIcon } from './animated-icons/icons/lucide/x-icon';
 import { ChevronRightIcon } from './animated-icons/icons/lucide/chevron-right-icon';
@@ -44,16 +44,12 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
     const menuItemsRef = useRef<(HTMLLIElement | null)[]>([]);
     const busyRef = useRef(false);
 
-    // Background Throttling
-    const setBgThrottled = (throttled: boolean) => {
-        if (typeof window !== 'undefined') {
-            (window as any).__STAGGERED_MENU_OPEN__ = throttled;
-        }
+    const setBgThrottled = (t: boolean) => {
+        if (typeof window !== 'undefined') (window as any).__STAGGERED_MENU_OPEN__ = t;
     };
 
     useLayoutEffect(() => {
         const ctx = gsap.context(() => {
-            // Set initial state: Content hidden off-screen to the left
             gsap.set(contentRef.current, { xPercent: -100, visibility: 'hidden' });
         }, containerRef);
         return () => ctx.revert();
@@ -64,28 +60,11 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
         busyRef.current = true;
         setBgThrottled(true);
 
-        const tl = gsap.timeline({
-            onComplete: () => {
-                busyRef.current = false;
-                setBgThrottled(false);
-            }
-        });
-
-        tl.to(contentRef.current, {
-            xPercent: 0,
-            visibility: 'visible',
-            duration: 0.8,
-            ease: 'power4.out'
-        })
+        gsap.timeline({ onComplete: () => { busyRef.current = false; setBgThrottled(false); } })
+            .to(contentRef.current, { xPercent: 0, visibility: 'visible', duration: 0.8, ease: 'power4.out' })
             .fromTo(menuItemsRef.current,
                 { opacity: 0, x: -30 },
-                {
-                    opacity: 1,
-                    x: 0,
-                    duration: 0.6,
-                    stagger: 0.08,
-                    ease: 'power3.out'
-                },
+                { opacity: 1, x: 0, duration: 0.6, stagger: 0.08, ease: 'power3.out' },
                 '-=0.4'
             );
     }, []);
@@ -95,95 +74,71 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
         busyRef.current = true;
         setBgThrottled(true);
 
-        const tl = gsap.timeline({
-            onComplete: () => {
-                setBgThrottled(false);
-                setOpen(false);
-                busyRef.current = false;
-                gsap.set(contentRef.current, { visibility: 'hidden' });
-            }
-        });
-
-        tl.to(menuItemsRef.current, {
-            opacity: 0,
-            x: -20,
-            duration: 0.3,
-            stagger: 0.04,
-            ease: 'power2.in'
+        gsap.timeline({
+            onComplete: () => { setBgThrottled(false); setOpen(false); busyRef.current = false; gsap.set(contentRef.current, { visibility: 'hidden' }); }
         })
-            .to(contentRef.current, {
-                xPercent: -100,
-                duration: 0.6,
-                ease: 'power3.in'
-            }, '-=0.2');
+            .to(menuItemsRef.current, { opacity: 0, x: -20, duration: 0.3, stagger: 0.04, ease: 'power2.in' })
+            .to(contentRef.current, { xPercent: -100, duration: 0.6, ease: 'power3.in' }, '-=0.2');
     }, []);
 
     const toggleMenu = () => {
         const target = !openRef.current;
         openRef.current = target;
-        if (target) {
-            setOpen(true);
-            playOpen();
-        } else {
-            playClose();
-        }
+        if (target) { setOpen(true); playOpen(); }
+        else { playClose(); }
     };
 
     return (
         <div ref={containerRef} className="digital-menu-container" data-open={open}>
-            {/* Dynamic Header */}
+
+            {/* ─── Header ─── */}
             <header className={`digital-header ${open ? 'menu-open' : ''}`}>
-                <div className="digital-brand gap-3" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+
+                {/* LEFT: Logo + Brand text */}
+                <div className="digital-brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
                     <div className="logo-icon-wrapper">
                         <img src="/DLogo-v2.webp" alt="Digitaliza Todo" className="logo-icon" draggable={false} />
                     </div>
-                    <div className="flex flex-col">
+                    <div className="brand-text-block">
                         <span className="logo-text">{logoText}</span>
                         <div className="status-indicator">
                             <span className="status-dot"></span>
-                            <span className="status-label">SYSTEM ACTIVE</span>
+                            <span className="status-label">SOFTWARE FACTORY</span>
                         </div>
                     </div>
                 </div>
 
-                <button
-                    className="digital-toggle-refined group"
-                    onClick={toggleMenu}
-                    aria-label="Toggle Menu"
-                >
-                    <div className="toggle-content flex flex-col items-center gap-1">
-                        <div className="toggle-icons flex items-center gap-3">
-                            <div className="icon-main relative flex items-center justify-center w-8 h-8">
-                                {open ? (
-                                    <XIcon size={24} className="text-white group-hover:text-digital-neon transition-colors" />
-                                ) : (
-                                    <MenuIcon size={24} className="text-white group-hover:text-digital-neon transition-colors" />
-                                )}
-                            </div>
-                            <div className={`icon-arrow transition-transform duration-500 ${open ? 'rotate-180' : 'rotate-0'}`}>
-                                <ChevronRightIcon size={20} className="text-digital-neon" />
-                            </div>
+                {/* CENTER: "Desplegar menú" label — same row as brand, right of DIGITALIZA TODO */}
+                <button className="menu-label-btn group" onClick={toggleMenu} aria-label="Toggle Menu">
+                    {/* Top row: same height as "DIGITALIZA TODO" */}
+                    <div className="menu-label-top">
+                        <span className="menu-label-text">{open ? 'Cerrar menú' : 'Desplegar menú'}</span>
+                        <div className={`menu-label-arrow transition-transform duration-500 ${open ? 'rotate-180' : 'rotate-0'}`}>
+                            <ChevronRightIcon size={16} className="neon-icon" />
                         </div>
-                        <span className="toggle-label-dynamic text-[9px] font-black uppercase tracking-[0.1em] text-white/50 group-hover:text-digital-neon transition-colors mt-1">
-                            {open ? 'Cerrar menú' : 'Desplegar menú'}
-                        </span>
+                    </div>
+                    {/* Bottom row: toggle icon, same height as "SOFTWARE FACTORY" */}
+                    <div className="menu-label-bottom">
+                        <div className="toggle-icon-inner">
+                            {open
+                                ? <XIcon size={18} className="neon-icon" />
+                                : <MenuIcon size={18} className="white-icon group-hover:text-yellow-400 transition-colors" />
+                            }
+                        </div>
                     </div>
                 </button>
+
             </header>
 
-            {/* Menu Content Overlay (Slides from left) */}
+            {/* ─── Lateral Panel ─── */}
             <div ref={contentRef} className="digital-menu-content-lateral">
                 <div className="menu-inner-lateral">
                     <nav className="menu-nav-lateral">
                         <ul className="menu-list-lateral">
                             {items.map((item, i) => (
-                                <li
-                                    key={i}
-                                    ref={el => { menuItemsRef.current[i] = el; }}
-                                    className="menu-item-lateral"
-                                >
+                                <li key={i} ref={el => { menuItemsRef.current[i] = el; }} className="menu-item-lateral">
                                     <a href={item.link} onClick={toggleMenu} className="menu-link-lateral group">
-                                        <div className="item-icon-wrapper transition-transform group-hover:scale-110 group-hover:text-digital-neon mr-4">
+                                        <div className="item-icon-wrapper">
                                             {item.icon}
                                         </div>
                                         <div className="flex flex-col">
@@ -198,10 +153,11 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
 
                     <div className="menu-footer-lateral">
                         <div className="footer-line"></div>
-                        <p className="copyright-lateral">© 2026 DIGITALIZA TODO. EST. CHILE. ALL RIGHTS RESERVED.</p>
+                        <p className="copyright-lateral">© 2026 DIGITALIZA TODO · SOFTWARE FACTORY · CHILE</p>
                     </div>
                 </div>
             </div>
+
         </div>
     );
 };
