@@ -1,7 +1,29 @@
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
 import { Search, Server, Code, Rocket } from "lucide-react";
+import './Roadmap.css';
 
 export function Roadmap() {
+    const sectionRef = useRef<HTMLElement>(null);
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsVisible(true);
+                    observer.unobserve(entry.target);
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        if (sectionRef.current) {
+            observer.observe(sectionRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, []);
+
     const roadmap = [
         {
             step: "01",
@@ -42,16 +64,11 @@ export function Roadmap() {
     ];
 
     return (
-        <section className="py-24 px-4 max-w-6xl mx-auto relative z-10 font-sans" id="roadmap">
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="text-center mb-16"
-            >
+        <section ref={sectionRef} className="py-24 px-4 max-w-6xl mx-auto relative z-10 font-sans overflow-hidden" id="roadmap">
+            <div className={`roadmap-header-view text-center mb-16 ${isVisible ? 'is-visible' : ''}`}>
                 <h2 className="text-sm font-mono text-indigo-400 font-bold uppercase tracking-widest mb-3">Flujo de Trabajo</h2>
                 <h3 className="text-3xl md:text-5xl font-black text-white tracking-tight">Ciclo de Desarrollo</h3>
-            </motion.div>
+            </div>
 
             <div className="relative">
                 {/* Line Connector (Desktop) */}
@@ -62,13 +79,9 @@ export function Roadmap() {
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative z-10">
                     {roadmap.map((item, idx) => (
-                        <motion.div
+                        <div
                             key={idx}
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: idx * 0.15, type: 'spring', damping: 20 }}
-                            className="flex md:flex-col items-start md:items-center gap-6 md:gap-8 group"
+                            className={`roadmap-item-view roadmap-delay-${idx} flex md:flex-col items-start md:items-center gap-6 md:gap-8 group ${isVisible ? 'is-visible' : ''}`}
                         >
                             {/* Step Circle - Glassmorphism */}
                             <div className={`w-20 h-20 rounded-2xl flex items-center justify-center bg-gradient-to-br ${item.color} backdrop-blur-md shadow-lg ${item.shadow} group-hover:scale-110 transition-all duration-300 relative z-10 shrink-0 border border-white/20 ring-4 ring-slate-950`}>
@@ -80,7 +93,7 @@ export function Roadmap() {
 
                             {/* Content Card - Glassmorphism */}
                             <div className="bg-slate-900/60 backdrop-blur-xl p-6 rounded-2xl border border-white/10 shadow-xl flex-1 md:w-full md:text-center group-hover:border-indigo-500/50 transition-all duration-300 relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${item.color} opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${item.color} opacity-0 group-hover:opacity-100 transition-opacity`}></div>
 
                                 <h4 className="font-extrabold text-white mb-2 text-xl tracking-tight group-hover:text-indigo-400 transition-colors">{item.title}</h4>
                                 <p className="text-sm text-slate-400 mb-4 leading-relaxed">{item.desc}</p>
@@ -89,7 +102,7 @@ export function Roadmap() {
                                     {item.simple}
                                 </div>
                             </div>
-                        </motion.div>
+                        </div>
                     ))}
                 </div>
             </div>

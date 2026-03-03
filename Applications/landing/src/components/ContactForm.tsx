@@ -5,7 +5,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Mail, MessageCircle, Linkedin } from "lucide-react";
-import { motion } from "framer-motion";
 
 export function ContactForm() {
     const [name, setName] = useState("");
@@ -75,18 +74,18 @@ export function ContactForm() {
                                 onClick={handleEmail}
                                 className="group flex-1 h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200/50 dark:shadow-none transition-all gap-2 text-base"
                             >
-                                <motion.div whileHover={{ y: -2 }} transition={{ type: "spring", stiffness: 400 }}>
+                                <div className="transition-transform group-hover:-translate-y-1">
                                     <Mail className="w-5 h-5" />
-                                </motion.div>
+                                </div>
                                 Enviar por Email
                             </Button>
                             <Button
                                 onClick={handleWhatsApp}
                                 className="group flex-1 h-14 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl shadow-lg shadow-green-200/50 dark:shadow-none transition-all gap-2 text-base"
                             >
-                                <motion.div whileHover={{ scale: 1.2 }} transition={{ type: "spring", stiffness: 400 }}>
+                                <div className="transition-transform group-hover:scale-110">
                                     <MessageCircle className="w-5 h-5" />
-                                </motion.div>
+                                </div>
                                 Enviar por WhatsApp
                             </Button>
                         </div>
