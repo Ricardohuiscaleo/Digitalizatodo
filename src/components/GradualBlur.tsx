@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo, type CSSProperties, type PropsWithChildren } from 'react';
-import * as math from 'mathjs';
+
 
 import './GradualBlur.css';
 
@@ -189,16 +189,16 @@ const GradualBlur: React.FC<PropsWithChildren<GradualBlurProps>> = props => {
       let blurValue: number;
       if (config.exponential) {
         // (2^(p*4) - 1) / 15 * strength  => starts at 0, ends at strength
-        blurValue = ((Number(math.pow(2, progress * 4)) - 1) / 15) * currentStrength;
+        blurValue = ((Math.pow(2, progress * 4) - 1) / 15) * currentStrength;
       } else {
         // linear scaling starting at 0
         blurValue = progress * currentStrength;
       }
 
-      const p1 = math.round((increment * i - increment) * 10) / 10;
-      const p2 = math.round(increment * i * 10) / 10;
-      const p3 = math.round((increment * i + increment) * 10) / 10;
-      const p4 = math.round((increment * i + increment * 2) * 10) / 10;
+      const p1 = Math.round((increment * i - increment) * 10) / 10;
+      const p2 = Math.round(increment * i * 10) / 10;
+      const p3 = Math.round((increment * i + increment) * 10) / 10;
+      const p4 = Math.round((increment * i + increment * 2) * 10) / 10;
 
       let gradient = `transparent ${p1}%, black ${p2}%`;
       if (p3 <= 100) gradient += `, black ${p3}%`;
