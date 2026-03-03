@@ -1,0 +1,283 @@
+---
+import '../styles/global.css';
+const title = "Ricardo Huiscaleo | Panel de Impacto Operacional 4.0";
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title}</title>
+    
+    <script is:inline src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #fafaf9;
+            color: #292524;
+        }
+        
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f5f5f4; 
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #d6d3d1; 
+            border-radius: 3px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #a8a29e; 
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-amber-100 selection:text-amber-900">
+
+    <nav class="bg-white border-b border-stone-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="shrink-0 flex items-center gap-3">
+                        <div class="h-10 w-10 bg-stone-800 rounded-lg flex items-center justify-center text-white font-bold text-xl">R</div>
+                        <div>
+                            <h1 class="font-bold text-lg tracking-tight text-stone-900">Ricardo Huiscaleo</h1>
+                            <p class="text-xs text-stone-500 uppercase tracking-wide">Ingeniería & Datos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-8">
+                    <button onclick="scrollToSection('dashboard')" class="text-stone-500 hover:text-stone-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Dashboard</button>
+                    <button onclick="scrollToSection('skills')" class="text-stone-500 hover:text-stone-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Competencias</button>
+                    <button onclick="scrollToSection('experience')" class="text-stone-500 hover:text-stone-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Trayectoria</button>
+                    <a href="mailto:ricardo.huiscaleo@gmail.com" class="bg-stone-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors shadow-sm">
+                        Contactar
+                    </a>
+                </div>
+                <div class="flex items-center sm:hidden">
+                    <button type="button" onclick="toggleMobileMenu()" class="text-stone-500 hover:text-stone-900 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="mobile-menu" class="hidden sm:hidden bg-white border-t border-stone-200">
+            <div class="pt-2 pb-3 space-y-1 px-4">
+                <button onclick="scrollToSection('dashboard')" class="block w-full text-left px-3 py-2 text-base font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-50 rounded-md">Dashboard</button>
+                <button onclick="scrollToSection('skills')" class="block w-full text-left px-3 py-2 text-base font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-50 rounded-md">Competencias</button>
+                <button onclick="scrollToSection('experience')" class="block w-full text-left px-3 py-2 text-base font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-50 rounded-md">Trayectoria</button>
+            </div>
+        </div>
+    </nav>
+
+    <header class="bg-stone-50 py-12 sm:py-20 border-b border-stone-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800 mb-6">
+                <i class="fas fa-bolt mr-2"></i> Perfil Híbrido: Operaciones + Tecnología
+            </div>
+            <h2 class="text-4xl sm:text-5xl font-bold text-stone-900 mb-6 leading-tight">
+                Transformando Datos en <span class="text-amber-600">Excelencia Operacional</span>
+            </h2>
+            <p class="max-w-2xl mx-auto text-xl text-stone-600 mb-10 leading-relaxed">
+                Ingeniero en Control de Gestión y Lean Six Sigma Black Belt que automatiza lo que otros administran. 
+                Generando ahorros anuales de <strong>$298k USD</strong> mediante Python, Automatización y Estrategia.
+            </p>
+            <div class="flex justify-center gap-4">
+                <button onclick="scrollToSection('dashboard')" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-stone-900 hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-500 transition-all">
+                    Ver Métricas de Impacto
+                </button>
+                <a href="https://www.linkedin.com/in/rhuiscaleo/" target="_blank" class="inline-flex items-center px-6 py-3 border border-stone-300 text-base font-medium rounded-lg text-stone-700 bg-white hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-500 transition-all">
+                    <i class="fab fa-linkedin mr-2"></i> LinkedIn
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-24">
+
+        <section id="dashboard" class="scroll-mt-24">
+            <div class="mb-10 text-center sm:text-left">
+                <h3 class="text-2xl font-bold text-stone-900 flex items-center gap-3 justify-center sm:justify-start">
+                    <i class="fas fa-chart-line text-emerald-600"></i>
+                    Impacto Cuantificable
+                </h3>
+                <p class="mt-2 text-stone-600 max-w-3xl">
+                    Este panel visualiza los resultados financieros y operativos obtenidos mediante la implementación de ecosistemas digitales, 
+                    reducción de desperdicios (Lean) y automatización de procesos en CMPC, CAM y otras industrias.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm card-hover flex flex-col items-center text-center">
+                    <div class="h-12 w-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mb-4">
+                        <i class="fas fa-sack-dollar text-xl"></i>
+                    </div>
+                    <span class="text-4xl font-bold text-stone-900" id="kpi-savings">$298k</span>
+                    <span class="text-sm font-semibold text-emerald-600 uppercase tracking-wider">USD Ahorro Anual</span>
+                    <p class="text-xs text-stone-500 mt-2">Automatización de gestión de inventarios y ACRs en Be Quarks/CMPC.</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm card-hover flex flex-col items-center text-center">
+                    <div class="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-4">
+                        <i class="fas fa-clock text-xl"></i>
+                    </div>
+                    <span class="text-4xl font-bold text-stone-900" id="kpi-time">90%</span>
+                    <span class="text-sm font-semibold text-blue-600 uppercase tracking-wider">Reducción Tiempos (MTTR)</span>
+                    <p class="text-xs text-stone-500 mt-2">Implementación de Chatbots IA y Machine Learning en CAM Seguridad.</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm card-hover flex flex-col items-center text-center">
+                    <div class="h-12 w-12 bg-amber-100 rounded-full flex items-center justify-center text-amber-600 mb-4">
+                        <i class="fas fa-smile text-xl"></i>
+                    </div>
+                    <span class="text-4xl font-bold text-stone-900" id="kpi-nps">97%</span>
+                    <span class="text-sm font-semibold text-amber-600 uppercase tracking-wider">NPS (Calidad)</span>
+                    <p class="text-xs text-stone-500 mt-2">Subida desde 40% mediante reingeniería de procesos Kaizen.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
+                    <h4 class="text-lg font-semibold text-stone-800 mb-6 border-l-4 border-emerald-500 pl-3">Impacto Financiero por Empresa</h4>
+                    <div class="chart-container">
+                        <canvas id="financialChart"></canvas>
+                    </div>
+                    <p class="mt-4 text-xs text-stone-400 italic text-center">*Valores normalizados para visualización. Fuente: Reportes de gestión internos.</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
+                    <h4 class="text-lg font-semibold text-stone-800 mb-6 border-l-4 border-blue-500 pl-3">Ganancias de Eficiencia (Antes vs. Después)</h4>
+                    <div class="chart-container">
+                        <canvas id="efficiencyChart"></canvas>
+                    </div>
+                     <p class="mt-4 text-xs text-stone-400 italic text-center">Comparativa pre y post automatización de procesos clave.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="skills" class="scroll-mt-24 bg-stone-100 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-16">
+            <div class="max-w-7xl mx-auto">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <h3 class="text-2xl font-bold text-stone-900 mb-4">La Convergencia: <span class="text-amber-600">Ops + Tech</span></h3>
+                        <p class="text-stone-600 mb-6 text-lg">
+                            Mi perfil profesional cierra la brecha histórica entre la Gerencia de Operaciones y el Departamento de TI. 
+                            Utilizo el código como una herramienta de Lean Six Sigma, permitiendo soluciones más rápidas, baratas y adaptables que el desarrollo tradicional.
+                        </p>
+
+                        <div class="mt-8 flex flex-wrap gap-2">
+                            <span class="px-3 py-1 bg-white border border-stone-300 rounded-full text-xs font-semibold text-stone-600">Python</span>
+                            <span class="px-3 py-1 bg-white border border-stone-300 rounded-full text-xs font-semibold text-stone-600">JavaScript</span>
+                            <span class="px-3 py-1 bg-white border border-stone-300 rounded-full text-xs font-semibold text-stone-600">TypeScript</span>
+                            <span class="px-3 py-1 bg-white border border-stone-300 rounded-full text-xs font-semibold text-stone-600">PHP</span>
+                            <span class="px-3 py-1 bg-white border border-stone-300 rounded-full text-xs font-semibold text-stone-600">SQL</span>
+                            <span class="px-3 py-1 bg-white border border-stone-300 rounded-full text-xs font-semibold text-stone-600">MySQL</span>
+                            <span class="px-3 py-1 bg-white border border-stone-300 rounded-full text-xs font-semibold text-stone-600">PostgreSQL</span>
+                            <span class="px-3 py-1 bg-white border border-stone-300 rounded-full text-xs font-semibold text-stone-600">React</span>
+                            <span class="px-3 py-1 bg-white border border-stone-300 rounded-full text-xs font-semibold text-stone-600">Node.js</span>
+                            <span class="px-3 py-1 bg-white border border-stone-300 rounded-full text-xs font-semibold text-stone-600">Astro</span>
+                            <span class="px-3 py-1 bg-white border border-stone-300 rounded-full text-xs font-semibold text-stone-600">Power BI</span>
+                            <span class="px-3 py-1 bg-white border border-stone-300 rounded-full text-xs font-semibold text-stone-600">Tableau</span>
+                            <span class="px-3 py-1 bg-white border border-stone-300 rounded-full text-xs font-semibold text-stone-600">Pandas</span>
+                            <span class="px-3 py-1 bg-white border border-stone-300 rounded-full text-xs font-semibold text-stone-600">Lean Six Sigma</span>
+                            <span class="px-3 py-1 bg-white border border-stone-300 rounded-full text-xs font-semibold text-stone-600">SAP B1</span>
+                            <span class="px-3 py-1 bg-white border border-stone-300 rounded-full text-xs font-semibold text-stone-600">Git</span>
+                            <span class="px-3 py-1 bg-white border border-stone-300 rounded-full text-xs font-semibold text-stone-600">Docker</span>
+                            <span class="px-3 py-1 bg-white border border-stone-300 rounded-full text-xs font-semibold text-stone-600">AWS</span>
+                            <span class="px-3 py-1 bg-white border border-stone-300 rounded-full text-xs font-semibold text-stone-600">API REST</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-lg border border-stone-200">
+                        <div class="chart-container">
+                            <canvas id="skillsRadar"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="experience" class="scroll-mt-24">
+            <div class="mb-10">
+                <h3 class="text-2xl font-bold text-stone-900 flex items-center gap-3">
+                    <i class="fas fa-briefcase text-stone-700"></i>
+                    Trayectoria Profesional
+                </h3>
+                <p class="mt-2 text-stone-600">
+                    Seleccione un rol para ver los detalles técnicos y logros clave.
+                </p>
+            </div>
+
+            <!-- Mobile: Accordion Style -->
+            <div class="lg:hidden space-y-3" id="timeline-mobile"></div>
+
+            <!-- Desktop: Sidebar + Detail -->
+            <div class="hidden lg:flex gap-8">
+                <div class="w-1/3 space-y-3 max-h-175 overflow-y-auto custom-scroll pr-2" id="timeline-desktop"></div>
+                <div class="w-2/3">
+                    <div id="role-detail" class="bg-white rounded-xl border border-stone-200 shadow-md p-8 min-h-100 transition-all duration-300">
+                        <div class="flex items-center justify-center h-full text-stone-400">
+                            <i class="fas fa-spinner fa-spin mr-2"></i> Cargando datos...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-stone-900 text-stone-300 py-12 border-t border-stone-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div>
+                    <h2 class="text-2xl font-bold text-white mb-2">Ricardo Huiscaleo</h2>
+                    <p class="mb-4">Ingeniero de Control de Gestión & Desarrollador Full Stack</p>
+                    <div class="flex space-x-4">
+                        <a href="mailto:ricardo.huiscaleo@gmail.com" class="hover:text-amber-500 transition-colors"><i class="fas fa-envelope text-xl"></i></a>
+                        <a href="https://www.linkedin.com/in/rhuiscaleo/" target="_blank" class="hover:text-amber-500 transition-colors"><i class="fab fa-linkedin text-xl"></i></a>
+                        <a href="tel:+56922504275" class="hover:text-amber-500 transition-colors"><i class="fas fa-phone text-xl"></i></a>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm text-stone-500">Diseñado para la Industria 4.0</p>
+                    <p class="text-sm text-stone-600 mt-2">© 2026 Ricardo Huiscaleo. Arica - Santiago, Chile.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <button id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" class="fixed bottom-8 right-8 bg-amber-600 text-white p-3 rounded-full shadow-lg hover:bg-amber-700 transition-all opacity-0 pointer-events-none z-50">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <script is:inline src="/scripts/main.js"></script>
+</body>
+</html>

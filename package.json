@@ -1,26 +1,14 @@
 {
-  "name": "@digitalizatodo/landing",
-  "type": "module",
-  "version": "0.0.1",
-  "scripts": {
-    "dev": "astro dev",
-    "start": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview"
-  },
-  "dependencies": {
-    "@astrojs/react": "^4.4.2",
-    "@astrojs/tailwind": "^6.0.2",
-    "@types/react": "^19.2.6",
-    "@types/react-dom": "^19.2.3",
-    "astro": "^4.0.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "tailwindcss": "^3.4.19",
-    "three": "^0.181.1"
-  },
-  "devDependencies": {
-    "@astrojs/check": "^0.3.0",
-    "typescript": "^5.0.0"
-  }
+    "name": "digitalizatodo-monorepo",
+    "private": true,
+    "workspaces": [
+        "Applications/landing",
+        "Applications/ricardohuiscaleo"
+    ],
+    "scripts": {
+        "dev:landing": "npm run dev --workspace @digitalizatodo/landing",
+        "dev:ricardo": "npm run dev --workspace ricardohuiscaleo",
+        "build:landing": "npm run build --workspace @digitalizatodo/landing",
+        "build:ricardo": "npm run build --workspace ricardohuiscaleo"
+    }
 }

@@ -1,0 +1,1 @@
+import"./hoisted.byjo0CtG.js";let i=0;const d=document.querySelector(".top-header");window.addEventListener("scroll",()=>{const e=window.scrollY;e<=0?d?.classList.remove("hidden"):e>i?d?.classList.add("hidden"):d?.classList.remove("hidden"),i=e});typeof window.lucide<"u"&&window.lucide.createIcons();

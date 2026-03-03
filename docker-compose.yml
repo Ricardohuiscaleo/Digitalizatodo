@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  landing:
+    build:
+      context: ./Applications/landing
+      dockerfile: Dockerfile
+    ports:
+      - "4321:80"
+    volumes:
+      - ./Applications/landing:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+
+  ricardohuiscaleo:
+    build:
+      context: ./Applications/ricardohuiscaleo
+      dockerfile: Dockerfile
+    ports:
+      - "4322:80"
+    volumes:
+      - ./Applications/ricardohuiscaleo:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
