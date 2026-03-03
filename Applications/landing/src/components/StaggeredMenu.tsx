@@ -176,9 +176,9 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
         {
           yPercent: 0,
           rotate: 0,
-          duration: 1,
+          duration: 1.2, // Slightly longer for smoothness
           ease: 'power4.out',
-          stagger: { each: 0.06, from: 'start' }
+          stagger: { each: 0.08, from: 'start' }
         },
         itemsStart
       );
@@ -186,24 +186,24 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
         tl.to(
           numberEls,
           {
-            duration: 0.6,
+            duration: 0.7,
             ease: 'power2.out',
             '--sm-num-opacity': 1,
-            stagger: { each: 0.05, from: 'start' }
+            stagger: { each: 0.07, from: 'start' }
           },
-          itemsStart + 0.08
+          itemsStart + 0.1
         );
       }
     }
 
     if (socialTitle || socialLinks.length) {
-      const socialsStart = panelInsertTime + panelDuration * 0.4;
+      const socialsStart = panelInsertTime + panelDuration * 0.45;
       if (socialTitle) {
         tl.to(
           socialTitle,
           {
             opacity: 1,
-            duration: 0.5,
+            duration: 0.6,
             ease: 'power2.out'
           },
           socialsStart
@@ -215,9 +215,9 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
           {
             y: 0,
             opacity: 1,
-            duration: 0.55,
+            duration: 0.6,
             ease: 'power3.out',
-            stagger: { each: 0.06, from: 'start' },
+            stagger: { each: 0.08, from: 'start' },
             onComplete: () => {
               gsap.set(socialLinks, { clearProps: 'opacity' });
             }
@@ -407,17 +407,11 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
         })()}
       </div>
 
-      <GradualBlur
-        show={!open}
-        position="top"
-        target="parent"
-        height="120px"
-        strength={4}
-        divCount={3}
-        curve="ease-in"
-        exponential={true}
-        zIndex={10}
-        className="pointer-events-none !fixed !top-0 !left-0 !w-full !m-0 !p-0"
+      {/* Backdrop from reference project */}
+      <div
+        className="sm-backdrop"
+        onClick={closeMenu}
+        aria-hidden="true"
       />
 
       <header className="staggered-menu-header" aria-label="Main navigation header">
