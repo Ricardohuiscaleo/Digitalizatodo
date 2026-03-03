@@ -9,7 +9,7 @@ import { Roadmap } from '../components/Roadmap';
 import { ServicesGrid } from '../components/ServicesGrid';
 import { Portfolio } from '../components/Portfolio';
 import { ContactForm } from '../components/ContactForm';
-import { StaggeredMenu } from '../components/StaggeredMenu';
+import { DigitalMenu } from '../components/DigitalMenu';
 ---
 <!DOCTYPE html>
 <html lang="es" class="scroll-smooth dark">
@@ -39,21 +39,16 @@ import { StaggeredMenu } from '../components/StaggeredMenu';
   <Background3D client:idle />
 
   {/* Header Menu */}
-  <StaggeredMenu 
+  <DigitalMenu 
     client:load 
-    isFixed={true}
-    logoUrl="/DLogo-v2.webp"
-    colors={['#FDBA74', '#0a0a0a', '#171717', '#262626']}
-    accentColor="#6366f1"
+    logoText="DIGITALIZA TODO"
     items={[
-      { label: 'Inicio', ariaLabel: 'Inicio', link: '#hero' },
-      { label: 'Proceso', ariaLabel: 'Proceso', link: '#roadmap' },
-      { label: 'Servicios', ariaLabel: 'Servicios', link: '#servicios' },
-      { label: 'Proyectos', ariaLabel: 'Proyectos', link: '#proyectos' },
-      { label: 'Nosotros', ariaLabel: 'Nosotros', link: '#nosotros' }
-    ]}
-    socialItems={[
-      { label: 'Hablemos 💬', link: '#contacto' }
+      { label: 'Inicio', link: '#hero' },
+      { label: 'Proceso', link: '#roadmap' },
+      { label: 'Servicios', link: '#servicios' },
+      { label: 'Proyectos', link: '#proyectos' },
+      { label: 'Nosotros', link: '#nosotros' },
+      { label: 'Contacto', link: '#contacto' }
     ]}
   />
 
