@@ -91,36 +91,63 @@
     color: var(--digital-text);
 }
 
+/* Header Actions & Labels */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.toggle-label-wrapper {
+    transition: all 0.3s ease;
+}
+
+.label-main {
+    text-shadow: 0 0 10px rgba(250, 200, 21, 0.3);
+}
+
 /* Refined Toggle Button */
 .digital-toggle-refined {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
     background: transparent;
     border: none;
     cursor: pointer;
     color: var(--digital-text);
-    padding: 0.5rem;
     transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
-.toggle-icon-wrapper {
-    color: var(--digital-text);
-    transition: color 0.3s ease;
+.toggle-icons {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 0.5rem;
 }
 
-.digital-toggle-refined:hover .toggle-icon-wrapper {
+.icon-main {
+    color: var(--digital-text);
+    transition: color 0.3s ease;
+}
+
+.digital-toggle-refined:hover .icon-main {
     color: var(--digital-neon);
 }
 
-.toggle-text {
-    font-size: 0.7rem;
-    font-weight: 900;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+.icon-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    will-change: transform;
+}
+
+/* Hide arrow on mobile to keep header clean */
+@media (max-width: 768px) {
+    .icon-arrow {
+        display: none;
+    }
+
+    .toggle-label-wrapper {
+        display: none;
+    }
 }
 
 /* Lateral Menu Overlay */
@@ -193,6 +220,11 @@
     transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
     margin-top: 0.2rem;
     margin-right: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
 }
 
 .menu-link-lateral:hover .item-icon-wrapper {
