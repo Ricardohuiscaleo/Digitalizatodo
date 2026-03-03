@@ -61,7 +61,11 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
   const iconRef = useRef<HTMLSpanElement | null>(null);
   const textInnerRef = useRef<HTMLSpanElement | null>(null);
   const textWrapRef = useRef<HTMLSpanElement | null>(null);
-  const [textLines, setTextLines] = useState<string[]>(['Menu', 'Close']);
+  const [textLines] = useState<string[]>(['Menu', 'Close', 'Menu', 'Close', 'Menu', 'Close']); // Pre-filled for cycling
+  const itemElsRef = useRef<HTMLElement[]>([]);
+  const numberElsRef = useRef<HTMLElement[]>([]);
+  const socialTitleRef = useRef<HTMLElement | null>(null);
+  const socialLinksRef = useRef<HTMLElement[]>([]);
 
   const openTlRef = useRef<gsap.core.Timeline | null>(null);
   const closeTweenRef = useRef<gsap.core.Tween | null>(null);
@@ -111,12 +115,15 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
     }
     itemEntranceTweenRef.current?.kill();
 
-    const itemEls = Array.from(panel.querySelectorAll('.sm-panel-itemLabel')) as HTMLElement[];
-    const numberEls = Array.from(
-      panel.querySelectorAll('.sm-panel-list[data-numbering] .sm-panel-item')
-    ) as HTMLElement[];
-    const socialTitle = panel.querySelector('.sm-socials-title') as HTMLElement | null;
-    const socialLinks = Array.from(panel.querySelectorAll('.sm-socials-link')) as HTMLElement[];
+    const itemEls = itemElsRef.current.length ? itemElsRef.current : Array.from(panel.querySelectorAll('.sm-panel-itemLabel')) as HTMLElement[];
+    const numberEls = numberElsRef.current.length ? numberElsRef.current : Array.from(panel.querySelectorAll('.sm-panel-list[data-numbering] .sm-panel-item')) as HTMLElement[];
+    const socialTitle = socialTitleRef.current ? socialTitleRef.current : panel.querySelector('.sm-socials-title') as HTMLElement | null;
+    const socialLinks = socialLinksRef.current.length ? socialLinksRef.current : Array.from(panel.querySelectorAll('.sm-socials-link')) as HTMLElement[];
+
+    itemElsRef.current = itemEls;
+    numberElsRef.current = numberEls;
+    socialTitleRef.current = socialTitle;
+    socialLinksRef.current = socialLinks;
 
     const offscreen = position === 'left' ? -100 : 100;
     const layerStates = layers.map(el => ({ el, start: offscreen }));
@@ -137,8 +144,15 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
 
     const tl = gsap.timeline({
       paused: true,
-      onStart: () => setOpen(true),
-      defaults: { force3D: true }
+      onStart: () => {
+        setOpen(true);
+        if (typeof window !== 'undefined') window.__STAGGERED_MENU_OPEN__ = true;
+      },
+      onComplete: () => {
+        if (typeof window !== 'undefined') window.__STAGGERED_MENU_OPEN__ = false;
+        busyRef.current = false;
+      },
+      defaults: { force3D: true, lazy: true }
     });
 
     layerStates.forEach((ls, i) => {
@@ -251,10 +265,11 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
       overwrite: 'auto',
       force3D: true,
       onStart: () => {
-        // Optionally do something
+        if (typeof window !== 'undefined') window.__STAGGERED_MENU_OPEN__ = true;
       },
       onComplete: () => {
         setOpen(false); // Enable blur when close animation finishes
+        if (typeof window !== 'undefined') window.__STAGGERED_MENU_OPEN__ = false;
         const itemEls = Array.from(panel.querySelectorAll('.sm-panel-itemLabel')) as HTMLElement[];
         if (itemEls.length) {
           gsap.set(itemEls, { yPercent: 140, rotate: 10 });
@@ -310,25 +325,17 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
     if (!inner) return;
     textCycleAnimRef.current?.kill();
 
-    const currentLabel = opening ? 'Menu' : 'Close';
-    const targetLabel = opening ? 'Close' : 'Menu';
-    const cycles = 3;
-    const seq: string[] = [currentLabel];
-    let last = currentLabel;
-    for (let i = 0; i < cycles; i++) {
-      last = last === 'Menu' ? 'Close' : 'Menu';
-      seq.push(last);
-    }
-    if (last !== targetLabel) seq.push(targetLabel);
-    seq.push(targetLabel);
-    setTextLines(seq);
+    const lineCount = 6; // Pre-filled in state
+    const targetIndex = opening ? 1 : 0; // Rough targets
+    const cycles = 4;
+
+    // We scroll through the pre-rendered lines
+    const finalShift = ((cycles - 1) / lineCount) * 100;
 
     gsap.set(inner, { yPercent: 0 });
-    const lineCount = seq.length;
-    const finalShift = ((lineCount - 1) / lineCount) * 100;
     textCycleAnimRef.current = gsap.to(inner, {
       yPercent: -finalShift,
-      duration: 0.5 + lineCount * 0.07,
+      duration: 0.6,
       ease: 'power4.out'
     });
   }, []);
