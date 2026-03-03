@@ -5,6 +5,7 @@ import './DigitalMenu.css';
 // Animated Icons
 import { MenuIcon } from './animated-icons/icons/lucide/menu-icon';
 import { XIcon } from './animated-icons/icons/lucide/x-icon';
+import { ChevronRightIcon } from './animated-icons/icons/lucide/chevron-right-icon';
 import { HouseIcon } from './animated-icons/icons/lucide/house-icon';
 import { ActivityIcon } from './animated-icons/icons/lucide/activity-icon';
 import { BlocksIcon } from './animated-icons/icons/lucide/blocks-icon';
@@ -145,20 +146,33 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                     </div>
                 </div>
 
-                <button
-                    className="digital-toggle-refined group"
-                    onClick={toggleMenu}
-                    aria-label="Toggle Menu"
-                >
-                    <div className="toggle-icon-wrapper relative flex items-center justify-center w-8 h-8">
-                        {open ? (
-                            <XIcon size={24} className="text-white group-hover:text-digital-neon transition-colors" />
-                        ) : (
-                            <MenuIcon size={24} className="text-white group-hover:text-digital-neon transition-colors" />
-                        )}
+                <div className="header-actions flex items-center gap-4">
+                    <div className="toggle-label-wrapper hidden md:flex flex-col items-end">
+                        <span className="label-main text-[10px] font-black uppercase tracking-[0.2em] text-digital-neon leading-none mb-1">
+                            {open ? 'Cerrar menú' : 'Desplegar menú'}
+                        </span>
+                        <div className="label-line w-8 h-[1px] bg-digital-neon/30"></div>
                     </div>
-                    <span className="toggle-text ml-2">{open ? 'EXIT' : 'MENU'}</span>
-                </button>
+
+                    <button
+                        className="digital-toggle-refined group"
+                        onClick={toggleMenu}
+                        aria-label="Toggle Menu"
+                    >
+                        <div className="toggle-icons flex items-center gap-2">
+                            <div className="icon-main relative flex items-center justify-center w-8 h-8">
+                                {open ? (
+                                    <XIcon size={24} className="text-white group-hover:text-digital-neon transition-colors" />
+                                ) : (
+                                    <MenuIcon size={24} className="text-white group-hover:text-digital-neon transition-colors" />
+                                )}
+                            </div>
+                            <div className={`icon-arrow transition-transform duration-500 ${open ? 'rotate-180' : 'rotate-0'}`}>
+                                <ChevronRightIcon size={20} className="text-digital-neon" />
+                            </div>
+                        </div>
+                    </button>
+                </div>
             </header>
 
             {/* Menu Content Overlay (Slides from left) */}
