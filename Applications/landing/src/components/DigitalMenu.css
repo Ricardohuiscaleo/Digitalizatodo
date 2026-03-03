@@ -62,7 +62,7 @@
 .logo-text {
     font-family: 'Inter', sans-serif;
     font-weight: 900;
-    font-size: 1rem;
+    font-size: 1.1rem;
     letter-spacing: -0.02em;
     color: var(--digital-text);
     line-height: 1;
@@ -81,29 +81,29 @@
     background: var(--digital-neon);
     border-radius: 50%;
     box-shadow: 0 0 8px var(--digital-neon);
+    animation: pulse-neon 2s infinite;
+}
+
+@keyframes pulse-neon {
+
+    0%,
+    100% {
+        opacity: 1;
+        box-shadow: 0 0 8px var(--digital-neon);
+    }
+
+    50% {
+        opacity: 0.5;
+        box-shadow: 0 0 2px var(--digital-neon);
+    }
 }
 
 .status-label {
-    font-size: 0.5rem;
+    font-size: 0.55rem;
     font-weight: 700;
     letter-spacing: 0.15em;
-    opacity: 0.5;
+    opacity: 0.6;
     color: var(--digital-text);
-}
-
-/* Header Actions & Labels */
-.header-actions {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-}
-
-.toggle-label-wrapper {
-    transition: all 0.3s ease;
-}
-
-.label-main {
-    text-shadow: 0 0 10px rgba(250, 200, 21, 0.3);
 }
 
 /* Refined Toggle Button */
@@ -115,21 +115,39 @@
     cursor: pointer;
     color: var(--digital-text);
     transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+    position: relative;
+}
+
+.toggle-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
 }
 
 .toggle-icons {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.digital-toggle-refined:hover .toggle-icons {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--digital-neon);
+    transform: translateY(-2px);
 }
 
 .icon-main {
     color: var(--digital-text);
     transition: color 0.3s ease;
-}
-
-.digital-toggle-refined:hover .icon-main {
-    color: var(--digital-neon);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .icon-arrow {
@@ -139,15 +157,8 @@
     will-change: transform;
 }
 
-/* Hide arrow on mobile to keep header clean */
-@media (max-width: 768px) {
-    .icon-arrow {
-        display: none;
-    }
-
-    .toggle-label-wrapper {
-        display: none;
-    }
+.toggle-label-dynamic {
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.1);
 }
 
 /* Lateral Menu Overlay */
@@ -157,22 +168,22 @@
     left: 0;
     bottom: 0;
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
     background: var(--digital-bg);
     z-index: 100;
     display: flex;
     flex-direction: column;
     padding: 2.5rem;
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 20px 0 60px rgba(0, 0, 0, 0.5);
+    border-right: 1px solid rgba(250, 200, 21, 0.1);
+    box-shadow: 20px 0 80px rgba(0, 0, 0, 0.8);
     will-change: transform;
 }
 
-@media (max-width: 400px) {
+@media (max-width: 480px) {
     .digital-menu-content-lateral {
         width: 100%;
         max-width: none;
-        padding: 1.5rem;
+        padding: 2rem;
     }
 }
 
@@ -181,13 +192,14 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding-top: 6rem;
+    padding-top: 7rem;
 }
 
 .menu-nav-lateral {
     flex: 1;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .menu-list-lateral {
@@ -196,7 +208,7 @@
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.5rem;
 }
 
 .menu-item-lateral {
@@ -206,80 +218,84 @@
 
 .menu-link-lateral {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     text-decoration: none;
     color: var(--digital-text);
-    padding: 0.5rem 0;
-    transition: transform 0.3s ease;
+    padding: 0.8rem 0;
+    transition: all 0.3s ease;
 }
 
 .item-icon-wrapper {
     flex-shrink: 0;
     color: var(--digital-text);
-    opacity: 0.7;
-    transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-    margin-top: 0.2rem;
+    opacity: 0.6;
+    transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
     margin-right: 1.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
 }
 
 .menu-link-lateral:hover .item-icon-wrapper {
     color: var(--digital-neon);
     opacity: 1;
-    transform: scale(1.15) rotate(-5deg);
+    transform: scale(1.1) rotate(-8deg);
+    background: rgba(250, 200, 21, 0.1);
 }
 
 .item-number-lateral {
     font-family: 'Space Mono', monospace;
     font-size: 0.7rem;
     color: var(--digital-neon);
-    opacity: 0.6;
+    opacity: 0.5;
     font-weight: 700;
     margin-bottom: 0.2rem;
 }
 
 .item-label-lateral {
-    font-size: 2.2rem;
+    font-size: 2rem;
     font-weight: 900;
     line-height: 1;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.02em;
     text-transform: uppercase;
-    transition: color 0.3s ease, transform 0.3s ease;
+    transition: all 0.3s ease;
 }
 
 @media (min-width: 1024px) {
     .item-label-lateral {
-        font-size: 3rem;
+        font-size: 2.8rem;
     }
 }
 
 .menu-link-lateral:hover .item-label-lateral {
     color: var(--digital-neon);
-    transform: translateX(10px);
+    transform: translateX(12px);
+    text-shadow: 0 0 20px rgba(250, 200, 21, 0.2);
 }
 
 /* Footer Lateral */
 .menu-footer-lateral {
-    padding-top: 2rem;
+    padding-top: 3rem;
     margin-top: auto;
 }
 
 .footer-line {
-    width: 30px;
+    width: 40px;
     height: 2px;
     background: var(--digital-neon);
     margin-bottom: 1.5rem;
+    box-shadow: 0 0 10px var(--digital-neon);
 }
 
 .copyright-lateral {
-    font-size: 0.6rem;
+    font-size: 0.65rem;
     font-weight: 700;
-    letter-spacing: 0.15em;
-    line-height: 1.6;
-    opacity: 0.3;
+    letter-spacing: 0.2em;
+    line-height: 1.8;
+    opacity: 0.4;
     text-transform: uppercase;
 }
