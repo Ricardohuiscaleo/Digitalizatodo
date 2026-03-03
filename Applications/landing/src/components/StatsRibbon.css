@@ -1,0 +1,30 @@
+.stats-ribbon-container {
+    overflow: hidden;
+    white-space: nowrap;
+    display: flex;
+    width: 100%;
+}
+
+.stats-ribbon-track {
+    display: flex;
+    flex-shrink: 0;
+    width: max-content;
+    animation: stats-marquee 30s linear infinite;
+    will-change: transform;
+}
+
+@keyframes stats-marquee {
+    0% {
+        transform: translate3d(0, 0, 0);
+    }
+
+    100% {
+        transform: translate3d(-50%, 0, 0);
+    }
+}
+
+.stats-ribbon-item {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
