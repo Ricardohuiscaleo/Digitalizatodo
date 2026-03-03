@@ -1,0 +1,13 @@
+El archivo index-pro.astro necesita:
+
+✅ Hero (completo)
+✅ Stats (completo)
+❌ Roadmap (falta)
+❌ Servicios (falta)
+❌ Proyectos (falta)
+❌ Nosotros (falta)
+❌ Contacto (falta)
+❌ Modales (falta)
+❌ Scripts (falta)
+
+Total estimado: ~800 líneas de HTML/CSS inline
