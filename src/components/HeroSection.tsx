@@ -26,8 +26,10 @@ export function HeroSection() {
                         Transformamos Ideas en
                     </span>
                     <span className="relative inline-block mt-4 md:whitespace-nowrap">
-                        <span className="absolute inset-0 rounded-full bg-white/20 blur-[10px]"></span>
-                        <span className="hero-gradient-text relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 pr-2 pb-1">
+                        <span
+                            className="hero-gradient-text relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 pr-2 pb-1"
+                            style={{ filter: 'drop-shadow(0 0 12px rgba(255, 255, 255, 0.15))' }}
+                        >
                             Soluciones Digitales
                         </span>
                     </span>
