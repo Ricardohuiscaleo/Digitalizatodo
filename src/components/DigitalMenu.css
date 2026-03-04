@@ -373,6 +373,9 @@
     width: 28px;
     height: 28px;
     stroke-width: 2.5px;
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 @media (min-width: 480px) {
