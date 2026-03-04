@@ -64,27 +64,42 @@
     }
 }
 
-@keyframes hero-glow-movement {
+@keyframes hero-drift {
+    0% {
+        transform: translate(-15%, -10%) scale(1.2);
+    }
 
-    0%,
+    50% {
+        transform: translate(15%, 10%) scale(1.4);
+    }
+
     100% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.2;
-    }
-
-    33% {
-        transform: translate(3%, 4%) scale(1.15);
-        opacity: 0.4;
-    }
-
-    66% {
-        transform: translate(-2%, 2%) scale(0.9);
-        opacity: 0.15;
+        transform: translate(-15%, -10%) scale(1.2);
     }
 }
 
-.hero-glow-move {
-    animation: hero-glow-movement 8s ease-in-out infinite;
+@keyframes hero-float {
+    0% {
+        transform: translate(10%, 15%) scale(1.3);
+    }
+
+    50% {
+        transform: translate(-15%, -10%) scale(1.5);
+    }
+
+    100% {
+        transform: translate(10%, 15%) scale(1.3);
+    }
+}
+
+.hero-glow-drift {
+    animation: hero-drift 18s linear infinite;
+    opacity: 0.15;
+}
+
+.hero-glow-float {
+    animation: hero-float 22s linear infinite;
+    opacity: 0.12;
 }
 
 .hero-animate-fade-in-up {
