@@ -63,11 +63,11 @@ export function Background3D() {
         const isMobile = window.innerWidth < 768;
         const isLowEnd = navigator.hardwareConcurrency <= 4;
         if (isMobile) {
-            setParticleCount(0); // Still disabled on mobile
+            setParticleCount(150); // Optimized for mobile fluidity
         } else if (isLowEnd) {
-            setParticleCount(250); // Lowered even more
+            setParticleCount(250);
         } else {
-            setParticleCount(350); // Lowered for maximum fluidity
+            setParticleCount(450); // High-end desktop
         }
     }, []);
 
