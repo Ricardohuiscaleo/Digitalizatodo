@@ -4,8 +4,11 @@ import './DigitalMenu.css';
 
 // Animated Icons
 import { MenuIcon } from './animated-icons/icons/lucide/menu-icon';
+import type { MenuIconHandle } from './animated-icons/icons/lucide/menu-icon';
 import { XIcon } from './animated-icons/icons/lucide/x-icon';
+import type { XIconHandle } from './animated-icons/icons/lucide/x-icon';
 import { ChevronLeftIcon } from './animated-icons/icons/lucide/chevron-left-icon';
+import type { ChevronLeftIconHandle } from './animated-icons/icons/lucide/chevron-left-icon';
 import { HouseIcon } from './animated-icons/icons/lucide/house-icon';
 import { ActivityIcon } from './animated-icons/icons/lucide/activity-icon';
 import { BlocksIcon } from './animated-icons/icons/lucide/blocks-icon';
@@ -42,6 +45,11 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
     const contentRef = useRef<HTMLDivElement>(null);
     const menuItemsRef = useRef<(HTMLLIElement | null)[]>([]);
     const busyRef = useRef(false);
+
+    // Refs for header icons
+    const chevronRef = useRef<ChevronLeftIconHandle>(null);
+    const menuIconRef = useRef<MenuIconHandle>(null);
+    const xIconRef = useRef<XIconHandle>(null);
 
     const setBgThrottled = (t: boolean) => {
         if (typeof window !== 'undefined') (window as any).__STAGGERED_MENU_OPEN__ = t;
@@ -85,6 +93,19 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
         else { playClose(); }
     };
 
+    // Hover triggers for the entire pill
+    const handlePillEnter = () => {
+        chevronRef.current?.startAnimation();
+        menuIconRef.current?.startAnimation();
+        xIconRef.current?.startAnimation();
+    };
+
+    const handlePillLeave = () => {
+        chevronRef.current?.stopAnimation();
+        menuIconRef.current?.stopAnimation();
+        xIconRef.current?.stopAnimation();
+    };
+
     return (
         <div ref={containerRef} className="digital-menu-container" data-open={open}>
 
@@ -111,7 +132,13 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                 </div>
 
                 {/* Toggle pill */}
-                <button className="digital-toggle-btn group" onClick={toggleMenu} aria-label="Abrir/Cerrar menú">
+                <button
+                    className="digital-toggle-btn group"
+                    onClick={toggleMenu}
+                    onMouseEnter={handlePillEnter}
+                    onMouseLeave={handlePillLeave}
+                    aria-label="Abrir/Cerrar menú"
+                >
                     {/* Text: full on tablet+, short on mobile */}
                     <span className="toggle-label toggle-label--full">
                         {open ? 'Cerrar menú' : 'Desplegar menú'}
@@ -121,11 +148,15 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                     </span>
 
                     <span className={`toggle-arrow ${open ? 'is-open' : ''}`}>
-                        <ChevronLeftIcon size={14} />
+                        <ChevronLeftIcon ref={chevronRef} size={14} isAnimated={false} />
                     </span>
 
                     <span className="toggle-icon">
-                        {open ? <XIcon size={22} /> : <MenuIcon size={22} />}
+                        {open ? (
+                            <XIcon ref={xIconRef} size={22} isAnimated={false} />
+                        ) : (
+                            <MenuIcon ref={menuIconRef} size={22} isAnimated={false} />
+                        )}
                     </span>
                 </button>
 
