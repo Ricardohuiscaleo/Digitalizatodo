@@ -9,17 +9,24 @@ import { XIcon } from './animated-icons/icons/lucide/x-icon';
 import type { XIconHandle } from './animated-icons/icons/lucide/x-icon';
 import { ChevronLeftIcon } from './animated-icons/icons/lucide/chevron-left-icon';
 import type { ChevronLeftIconHandle } from './animated-icons/icons/lucide/chevron-left-icon';
+// Lateral Menu Icons
 import { HouseIcon } from './animated-icons/icons/lucide/house-icon';
+import type { HouseHandle } from './animated-icons/icons/lucide/house-icon';
 import { ActivityIcon } from './animated-icons/icons/lucide/activity-icon';
+import type { ActivityIconHandle } from './animated-icons/icons/lucide/activity-icon';
 import { BlocksIcon } from './animated-icons/icons/lucide/blocks-icon';
+import type { BlocksIconHandle } from './animated-icons/icons/lucide/blocks-icon';
 import { LayoutGridIcon } from './animated-icons/icons/lucide/layout-grid-icon';
+import type { LayoutGridHandle } from './animated-icons/icons/lucide/layout-grid-icon';
 import { UsersRoundIcon } from './animated-icons/icons/lucide/users-round-icon';
+import type { UsersRoundHandle } from './animated-icons/icons/lucide/users-round-icon';
 import { MessageCircleIcon } from './animated-icons/icons/lucide/message-circle-icon';
+import type { MessageCircleIconHandle } from './animated-icons/icons/lucide/message-circle-icon';
 
 export interface DigitalMenuItem {
     label: string;
     link: string;
-    icon?: React.ReactNode;
+    Icon?: React.ElementType;
 }
 export interface DigitalMenuProps {
     items?: DigitalMenuItem[];
@@ -27,12 +34,12 @@ export interface DigitalMenuProps {
 }
 
 const DEFAULT_ITEMS: DigitalMenuItem[] = [
-    { label: 'Inicio', link: '#hero', icon: <HouseIcon size={28} /> },
-    { label: 'Proceso', link: '#roadmap', icon: <ActivityIcon size={28} /> },
-    { label: 'Servicios', link: '#servicios', icon: <BlocksIcon size={28} /> },
-    { label: 'Proyectos', link: '#proyectos', icon: <LayoutGridIcon size={28} /> },
-    { label: 'Nosotros', link: '#nosotros', icon: <UsersRoundIcon size={28} /> },
-    { label: 'Contacto', link: '#contacto', icon: <MessageCircleIcon size={28} /> },
+    { label: 'Inicio', link: '#hero', Icon: HouseIcon },
+    { label: 'Proceso', link: '#roadmap', Icon: ActivityIcon },
+    { label: 'Servicios', link: '#servicios', Icon: BlocksIcon },
+    { label: 'Proyectos', link: '#proyectos', Icon: LayoutGridIcon },
+    { label: 'Nosotros', link: '#nosotros', Icon: UsersRoundIcon },
+    { label: 'Contacto', link: '#contacto', Icon: MessageCircleIcon },
 ];
 
 export const DigitalMenu: React.FC<DigitalMenuProps> = ({
@@ -50,6 +57,9 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
     const chevronRef = useRef<ChevronLeftIconHandle>(null);
     const menuIconRef = useRef<MenuIconHandle>(null);
     const xIconRef = useRef<XIconHandle>(null);
+
+    // Refs for lateral menu icons
+    const lateralIconsRef = useRef<(any | null)[]>([]);
 
     const setBgThrottled = (t: boolean) => {
         if (typeof window !== 'undefined') (window as any).__STAGGERED_MENU_OPEN__ = t;
@@ -95,15 +105,24 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
 
     // Hover triggers for the entire pill
     const handlePillEnter = () => {
-        chevronRef.current?.startAnimation();
-        menuIconRef.current?.startAnimation();
-        xIconRef.current?.startAnimation();
+        chevronRef.current?.startAnimation?.();
+        menuIconRef.current?.startAnimation?.();
+        xIconRef.current?.startAnimation?.();
     };
 
     const handlePillLeave = () => {
-        chevronRef.current?.stopAnimation();
-        menuIconRef.current?.stopAnimation();
-        xIconRef.current?.stopAnimation();
+        chevronRef.current?.stopAnimation?.();
+        menuIconRef.current?.stopAnimation?.();
+        xIconRef.current?.stopAnimation?.();
+    };
+
+    // Lateral menu item handlers
+    const handleLateralEnter = (index: number) => {
+        lateralIconsRef.current[index]?.startAnimation?.();
+    };
+
+    const handleLateralLeave = (index: number) => {
+        lateralIconsRef.current[index]?.stopAnimation?.();
     };
 
     return (
@@ -173,8 +192,22 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                                     ref={el => { menuItemsRef.current[i] = el; }}
                                     className="menu-item-lateral"
                                 >
-                                    <a href={item.link} onClick={toggleMenu} className="menu-link-lateral">
-                                        <div className="item-icon-wrapper">{item.icon}</div>
+                                    <a
+                                        href={item.link}
+                                        onClick={toggleMenu}
+                                        className="menu-link-lateral"
+                                        onMouseEnter={() => handleLateralEnter(i)}
+                                        onMouseLeave={() => handleLateralLeave(i)}
+                                    >
+                                        <div className="item-icon-wrapper">
+                                            {item.Icon && (
+                                                <item.Icon
+                                                    ref={(el: any) => { lateralIconsRef.current[i] = el; }}
+                                                    size={28}
+                                                    isAnimated={false}
+                                                />
+                                            )}
+                                        </div>
                                         <div className="item-text-block">
                                             <span className="item-number-lateral">0{i + 1}</span>
                                             <span className="item-label-lateral">{item.label}</span>
