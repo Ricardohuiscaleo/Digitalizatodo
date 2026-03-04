@@ -5,7 +5,7 @@ import './DigitalMenu.css';
 // Animated Icons
 import { MenuIcon } from './animated-icons/icons/lucide/menu-icon';
 import { XIcon } from './animated-icons/icons/lucide/x-icon';
-import { ChevronRightIcon } from './animated-icons/icons/lucide/chevron-right-icon';
+import { ChevronLeftIcon } from './animated-icons/icons/lucide/chevron-left-icon';
 import { HouseIcon } from './animated-icons/icons/lucide/house-icon';
 import { ActivityIcon } from './animated-icons/icons/lucide/activity-icon';
 import { BlocksIcon } from './animated-icons/icons/lucide/blocks-icon';
@@ -24,12 +24,12 @@ export interface DigitalMenuProps {
 }
 
 const DEFAULT_ITEMS: DigitalMenuItem[] = [
-    { label: 'Inicio', link: '#hero', icon: <HouseIcon size={24} /> },
-    { label: 'Proceso', link: '#roadmap', icon: <ActivityIcon size={24} /> },
-    { label: 'Servicios', link: '#servicios', icon: <BlocksIcon size={24} /> },
-    { label: 'Proyectos', link: '#proyectos', icon: <LayoutGridIcon size={24} /> },
-    { label: 'Nosotros', link: '#nosotros', icon: <UsersRoundIcon size={24} /> },
-    { label: 'Contacto', link: '#contacto', icon: <MessageCircleIcon size={24} /> },
+    { label: 'Inicio', link: '#hero', icon: <HouseIcon size={28} /> },
+    { label: 'Proceso', link: '#roadmap', icon: <ActivityIcon size={28} /> },
+    { label: 'Servicios', link: '#servicios', icon: <BlocksIcon size={28} /> },
+    { label: 'Proyectos', link: '#proyectos', icon: <LayoutGridIcon size={28} /> },
+    { label: 'Nosotros', link: '#nosotros', icon: <UsersRoundIcon size={28} /> },
+    { label: 'Contacto', link: '#contacto', icon: <MessageCircleIcon size={28} /> },
 ];
 
 export const DigitalMenu: React.FC<DigitalMenuProps> = ({
@@ -121,11 +121,11 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                     </span>
 
                     <span className={`toggle-arrow ${open ? 'is-open' : ''}`}>
-                        <ChevronRightIcon size={13} />
+                        <ChevronLeftIcon size={14} />
                     </span>
 
                     <span className="toggle-icon">
-                        {open ? <XIcon size={18} /> : <MenuIcon size={18} />}
+                        {open ? <XIcon size={22} /> : <MenuIcon size={22} />}
                     </span>
                 </button>
 
