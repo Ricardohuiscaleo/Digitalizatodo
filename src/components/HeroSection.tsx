@@ -20,7 +20,7 @@ export function HeroSection() {
 
                 <h1
                     className="hero-animate-fade-in-scale font-black text-slate-900 dark:text-white tracking-tighter leading-[1.15]"
-                    style={{ fontSize: 'clamp(2rem, 10vw, 8rem)' }}
+                    style={{ fontSize: 'clamp(1.25rem, 8vw, 8rem)' }}
                 >
                     <span className="block text-transparent bg-clip-text bg-gradient-to-b from-slate-200 via-slate-400 to-slate-800">
                         Transformamos Ideas en
