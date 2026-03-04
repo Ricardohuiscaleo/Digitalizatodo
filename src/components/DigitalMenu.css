@@ -355,25 +355,31 @@
 /* Icon box */
 .item-icon-wrapper {
     flex-shrink: 0;
-    /* 40px on mobile, 48px on tablet */
-    width: 40px;
-    height: 40px;
-    margin-right: 1rem;
+    /* Increased 20% from 40px to ~48px */
+    width: 48px;
+    height: 48px;
+    margin-right: 1.25rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 10px;
-    color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    color: var(--neon);
+    /* Force neon color for icons */
     transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.item-icon-wrapper svg {
+    width: 28px;
+    height: 28px;
+    stroke-width: 2.5px;
 }
 
 @media (min-width: 480px) {
     .item-icon-wrapper {
-        width: 48px;
-        height: 48px;
-        margin-right: 1.25rem;
-        border-radius: 12px;
+        width: 52px;
+        height: 52px;
+        margin-right: 1.5rem;
     }
 }
 
@@ -389,10 +395,11 @@
 }
 
 .item-number-lateral {
-    font-size: 0.6rem;
+    font-size: 0.75rem;
+    /* Increased 20% from 0.6rem */
     font-weight: 800;
     color: var(--neon);
-    opacity: 0.5;
+    opacity: 0.6;
     margin-bottom: 0.1rem;
     font-family: 'Space Mono', monospace;
 }
@@ -404,8 +411,8 @@
     letter-spacing: -0.02em;
     text-transform: uppercase;
     transition: all 0.3s ease;
-    /* 393px → 1.55rem; grows up */
-    font-size: clamp(1.55rem, 5.5vw, 2.8rem);
+    /* Increased base from 1.55rem to 1.95rem (~20%+) */
+    font-size: clamp(1.95rem, 6.5vw, 3.2rem);
 }
 
 .menu-link-lateral:hover .item-label-lateral {
