@@ -4,8 +4,30 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  /* Ensure content doesn't overflow on small screens */
+  max-width: 100vw;
+}
+
+/* Base responsive helpers */
+@media (max-width: 430px) {
+
+  /* Prevent any fixed-size element from overflowing */
+  * {
+    max-width: 100vw;
+    box-sizing: border-box;
+  }
+
+  /* Tighten section vertical spacing on mobile */
+  section {
+    scroll-margin-top: 56px;
+  }
 }
 
 .service-card {

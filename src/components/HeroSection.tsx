@@ -10,11 +10,11 @@ export function HeroSection() {
                     Bienvenido al futuro de tu negocio
                 </div>
 
-                <h1 className="hero-animate-fade-in-scale text-5xl md:text-7xl lg:text-8xl font-black text-slate-900 dark:text-white tracking-tighter leading-[1.1]">
-                    <span className="block whitespace-nowrap text-transparent bg-clip-text bg-gradient-to-b from-slate-200 via-slate-400 to-slate-800">
+                <h1 className="hero-animate-fade-in-scale text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black text-slate-900 dark:text-white tracking-tighter leading-[1.1]">
+                    <span className="block text-transparent bg-clip-text bg-gradient-to-b from-slate-200 via-slate-400 to-slate-800">
                         Transformamos Ideas en
                     </span>
-                    <span className="relative inline-block mt-4 whitespace-nowrap">
+                    <span className="relative inline-block mt-4">
                         <span className="absolute -inset-1 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 opacity-40 blur-xl animate-pulse"></span>
                         <span className="hero-gradient-text relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400 pr-2 pb-1">
                             Soluciones Digitales
@@ -22,14 +22,14 @@ export function HeroSection() {
                     </span>
                 </h1>
 
-                <p className="hero-animate-fade-in-up hero-delay-150 text-lg md:text-2xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed font-medium">
+                <p className="hero-animate-fade-in-up hero-delay-150 text-base md:text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed font-medium">
                     Desarrollo de software y páginas web con lógica de negocio, automatización de procesos y estrategias digitales que <strong className="text-emerald-500">reducen costos</strong>.
                 </p>
 
                 <div className="hero-animate-fade-in-up hero-delay-600 flex flex-col sm:flex-row gap-8 justify-center items-center pt-8">
                     <Button
                         size="lg"
-                        className="group relative w-[85%] sm:w-auto text-xl h-16 px-10 rounded-2xl bg-indigo-600 hover:bg-indigo-400 text-white font-black transition-all hover:scale-105 active:scale-95 border-2 border-[#7c6d64] hover:border-indigo-400 gap-3 overflow-hidden shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_40px_rgba(99,102,241,0.6)]"
+                        className="group relative w-full sm:w-auto text-xl h-16 px-10 rounded-2xl bg-indigo-600 hover:bg-indigo-400 text-white font-black transition-all hover:scale-105 active:scale-95 border-2 border-[#7c6d64] hover:border-indigo-400 gap-3 overflow-hidden shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_40px_rgba(99,102,241,0.6)]"
                         onClick={() => document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' })}
                     >
                         {/* Glowing Background Effect */}
