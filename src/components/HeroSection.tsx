@@ -26,7 +26,7 @@ export function HeroSection() {
                         Transformamos Ideas en
                     </span>
                     <span className="relative inline-block mt-4 md:whitespace-nowrap">
-                        <span className="absolute inset-2 rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 hero-glow-move blur-2xl"></span>
+                        <span className="absolute inset-1 rounded-full bg-gradient-to-r from-indigo-400 via-purple-400 to-emerald-400 hero-glow-move blur-xl"></span>
                         <span className="hero-gradient-text relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 pr-2 pb-1">
                             Soluciones Digitales
                         </span>
