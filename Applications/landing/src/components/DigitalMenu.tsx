@@ -18,19 +18,18 @@ export interface DigitalMenuItem {
     link: string;
     icon?: React.ReactNode;
 }
-
 export interface DigitalMenuProps {
     items?: DigitalMenuItem[];
     logoText?: string;
 }
 
 const DEFAULT_ITEMS: DigitalMenuItem[] = [
-    { label: 'Inicio', link: '#hero', icon: <HouseIcon size={28} /> },
-    { label: 'Proceso', link: '#roadmap', icon: <ActivityIcon size={28} /> },
-    { label: 'Servicios', link: '#servicios', icon: <BlocksIcon size={28} /> },
-    { label: 'Proyectos', link: '#proyectos', icon: <LayoutGridIcon size={28} /> },
-    { label: 'Nosotros', link: '#nosotros', icon: <UsersRoundIcon size={28} /> },
-    { label: 'Contacto', link: '#contacto', icon: <MessageCircleIcon size={28} /> },
+    { label: 'Inicio', link: '#hero', icon: <HouseIcon size={24} /> },
+    { label: 'Proceso', link: '#roadmap', icon: <ActivityIcon size={24} /> },
+    { label: 'Servicios', link: '#servicios', icon: <BlocksIcon size={24} /> },
+    { label: 'Proyectos', link: '#proyectos', icon: <LayoutGridIcon size={24} /> },
+    { label: 'Nosotros', link: '#nosotros', icon: <UsersRoundIcon size={24} /> },
+    { label: 'Contacto', link: '#contacto', icon: <MessageCircleIcon size={24} /> },
 ];
 
 export const DigitalMenu: React.FC<DigitalMenuProps> = ({
@@ -60,11 +59,11 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
         busyRef.current = true;
         setBgThrottled(true);
         gsap.timeline({ onComplete: () => { busyRef.current = false; setBgThrottled(false); } })
-            .to(contentRef.current, { xPercent: 0, visibility: 'visible', duration: 0.8, ease: 'power4.out' })
+            .to(contentRef.current, { xPercent: 0, visibility: 'visible', duration: 0.7, ease: 'power4.out' })
             .fromTo(menuItemsRef.current,
-                { opacity: 0, x: -30 },
-                { opacity: 1, x: 0, duration: 0.6, stagger: 0.08, ease: 'power3.out' },
-                '-=0.4'
+                { opacity: 0, x: -24 },
+                { opacity: 1, x: 0, duration: 0.5, stagger: 0.07, ease: 'power3.out' },
+                '-=0.35'
             );
     }, []);
 
@@ -75,8 +74,8 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
         gsap.timeline({
             onComplete: () => { setBgThrottled(false); setOpen(false); busyRef.current = false; gsap.set(contentRef.current, { visibility: 'hidden' }); }
         })
-            .to(menuItemsRef.current, { opacity: 0, x: -20, duration: 0.3, stagger: 0.04, ease: 'power2.in' })
-            .to(contentRef.current, { xPercent: -100, duration: 0.6, ease: 'power3.in' }, '-=0.2');
+            .to(menuItemsRef.current, { opacity: 0, x: -16, duration: 0.25, stagger: 0.03, ease: 'power2.in' })
+            .to(contentRef.current, { xPercent: -100, duration: 0.5, ease: 'power3.in' }, '-=0.15');
     }, []);
 
     const toggleMenu = () => {
@@ -89,10 +88,9 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
     return (
         <div ref={containerRef} className="digital-menu-container" data-open={open}>
 
-            {/* ── Header ─────────────────────────────────────── */}
             <header className={`digital-header ${open ? 'menu-open' : ''}`}>
 
-                {/* LEFT: Logo + name */}
+                {/* Brand */}
                 <div
                     className="digital-brand"
                     onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -112,29 +110,28 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                     </div>
                 </div>
 
-                {/* RIGHT: Toggle button — text + arrow + icon in one clean line */}
-                <button
-                    className="digital-toggle-btn group"
-                    onClick={toggleMenu}
-                    aria-label="Abrir/Cerrar menú"
-                >
-                    <span className="toggle-label">
+                {/* Toggle pill */}
+                <button className="digital-toggle-btn group" onClick={toggleMenu} aria-label="Abrir/Cerrar menú">
+                    {/* Text: full on tablet+, short on mobile */}
+                    <span className="toggle-label toggle-label--full">
                         {open ? 'Cerrar menú' : 'Desplegar menú'}
                     </span>
-                    <span className={`toggle-arrow ${open ? 'is-open' : ''}`}>
-                        <ChevronRightIcon size={14} />
+                    <span className="toggle-label toggle-label--short">
+                        {open ? 'Cerrar' : 'Menú'}
                     </span>
+
+                    <span className={`toggle-arrow ${open ? 'is-open' : ''}`}>
+                        <ChevronRightIcon size={13} />
+                    </span>
+
                     <span className="toggle-icon">
-                        {open
-                            ? <XIcon size={20} />
-                            : <MenuIcon size={20} />
-                        }
+                        {open ? <XIcon size={18} /> : <MenuIcon size={18} />}
                     </span>
                 </button>
 
             </header>
 
-            {/* ── Lateral panel ──────────────────────────────── */}
+            {/* Lateral panel */}
             <div ref={contentRef} className="digital-menu-content-lateral">
                 <div className="menu-inner-lateral">
                     <nav className="menu-nav-lateral">
@@ -145,10 +142,8 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                                     ref={el => { menuItemsRef.current[i] = el; }}
                                     className="menu-item-lateral"
                                 >
-                                    <a href={item.link} onClick={toggleMenu} className="menu-link-lateral group">
-                                        <div className="item-icon-wrapper">
-                                            {item.icon}
-                                        </div>
+                                    <a href={item.link} onClick={toggleMenu} className="menu-link-lateral">
+                                        <div className="item-icon-wrapper">{item.icon}</div>
                                         <div className="item-text-block">
                                             <span className="item-number-lateral">0{i + 1}</span>
                                             <span className="item-label-lateral">{item.label}</span>
@@ -158,7 +153,6 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                             ))}
                         </ul>
                     </nav>
-
                     <div className="menu-footer-lateral">
                         <div className="footer-line" />
                         <p className="copyright-lateral">© 2026 DIGITALIZA TODO · SOFTWARE FACTORY · CHILE</p>

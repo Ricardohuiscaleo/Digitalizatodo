@@ -1,4 +1,4 @@
-/* ── Theme ──────────────────────────────────────── */
+/* ── Theme tokens ─────────────────────────────── */
 .digital-menu-container {
     --neon: #fac815;
     --bg: rgba(6, 0, 16, 0.99);
@@ -7,14 +7,18 @@
     z-index: 100;
 }
 
-/* ── Header ──────────────────────────────────────── */
+/* ╔═══════════════════════════════════════════════╗
+   ║  HEADER                                       ║
+   ╚═══════════════════════════════════════════════╝ */
 .digital-header {
     position: fixed;
     inset: 0 0 auto 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.85rem 1.5rem;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    /* mobile-first */
     z-index: 110;
     transition: background 0.4s ease;
 }
@@ -22,32 +26,50 @@
 .digital-header:not(.menu-open) {
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(0, 0, 0, 0.5);
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-@media (min-width:1024px) {
+/* tablet+ */
+@media (min-width: 600px) {
+    .digital-header {
+        padding: 0.85rem 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
     .digital-header {
         padding: 1rem 3rem;
     }
 }
 
-/* ── Brand (left) ────────────────────────────────── */
+/* ── Brand (left) ─────────────────────────────── */
 .digital-brand {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.6rem;
     cursor: pointer;
     user-select: none;
+    flex-shrink: 0;
+    min-width: 0;
+    /* allow text to shrink if needed */
 }
 
 .logo-icon-wrapper {
-    width: 36px;
-    height: 36px;
+    width: 30px;
+    height: 30px;
+    /* 30 on mobile, grows on tablet */
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+@media (min-width: 600px) {
+    .logo-icon-wrapper {
+        width: 36px;
+        height: 36px;
+    }
 }
 
 .logo-icon {
@@ -59,30 +81,47 @@
 .brand-text-block {
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 .logo-text {
     font-family: 'Inter', sans-serif;
     font-weight: 900;
-    font-size: 1rem;
-    letter-spacing: -0.02em;
+    font-size: 0.82rem;
+    /* tight on 393px */
+    letter-spacing: -0.01em;
     color: var(--text);
     line-height: 1.25;
+    white-space: nowrap;
+}
+
+@media (min-width: 480px) {
+    .logo-text {
+        font-size: 0.95rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .logo-text {
+        font-size: 1.05rem;
+    }
 }
 
 .status-indicator {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.3rem;
+    margin-top: 0.05rem;
 }
 
 .status-dot {
-    width: 5px;
-    height: 5px;
+    width: 4px;
+    height: 4px;
     background: var(--neon);
     border-radius: 50%;
-    box-shadow: 0 0 8px var(--neon);
+    box-shadow: 0 0 6px var(--neon);
     animation: pulse-neon 2s infinite;
+    flex-shrink: 0;
 }
 
 @keyframes pulse-neon {
@@ -90,7 +129,7 @@
     0%,
     100% {
         opacity: 1;
-        box-shadow: 0 0 8px var(--neon);
+        box-shadow: 0 0 6px var(--neon);
     }
 
     50% {
@@ -100,49 +139,95 @@
 }
 
 .status-label {
-    font-size: 0.5rem;
+    font-size: 0.45rem;
     font-weight: 800;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     opacity: 0.55;
     color: var(--text);
+    white-space: nowrap;
 }
 
-/* ── Toggle button (right) ─ one clean row ───────── */
+@media (min-width: 480px) {
+    .status-label {
+        font-size: 0.5rem;
+    }
+}
+
+/* ╔═══════════════════════════════════════════════╗
+   ║  TOGGLE PILL BUTTON (right)                   ║
+   ╚═══════════════════════════════════════════════╝ */
 .digital-toggle-btn {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 0.35rem;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 999px;
-    /* pill */
-    padding: 0.4rem 0.8rem 0.4rem 1rem;
+    /* mobile padding */
+    padding: 0.35rem 0.55rem 0.35rem 0.7rem;
     cursor: pointer;
     color: var(--text);
+    flex-shrink: 0;
     transition: background 0.3s ease, border-color 0.3s ease, transform 0.25s ease;
 }
 
+@media (min-width: 480px) {
+    .digital-toggle-btn {
+        padding: 0.4rem 0.7rem 0.4rem 0.9rem;
+        gap: 0.45rem;
+    }
+}
+
 .digital-toggle-btn:hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.13);
     border-color: var(--neon);
     transform: translateY(-1px);
 }
 
-.toggle-label {
+/* Full label: hidden on mobile, shown on 480px+ */
+.toggle-label--full {
+    display: none;
+}
+
+.toggle-label--short {
+    display: block;
+}
+
+@media (min-width: 480px) {
+    .toggle-label--full {
+        display: block;
+    }
+
+    .toggle-label--short {
+        display: none;
+    }
+}
+
+.toggle-label--full,
+.toggle-label--short {
     font-family: 'Inter', sans-serif;
-    font-size: 0.8rem;
+    font-size: 0.72rem;
     font-weight: 700;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.005em;
     white-space: nowrap;
     transition: color 0.3s ease;
 }
 
-.digital-toggle-btn:hover .toggle-label {
+@media (min-width: 600px) {
+
+    .toggle-label--full,
+    .toggle-label--short {
+        font-size: 0.8rem;
+    }
+}
+
+.digital-toggle-btn:hover .toggle-label--full,
+.digital-toggle-btn:hover .toggle-label--short {
     color: var(--neon);
 }
 
-/* Animated chevron */
+/* Arrow chevron */
 .toggle-arrow {
     display: flex;
     align-items: center;
@@ -155,16 +240,24 @@
     transform: rotate(180deg);
 }
 
-/* Menu / X icon */
+/* Icon circle */
 .toggle-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
-    background: rgba(255, 255, 255, 0.08);
+    width: 24px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.09);
     border-radius: 50%;
     transition: background 0.3s ease, color 0.3s ease;
+    flex-shrink: 0;
+}
+
+@media (min-width: 480px) {
+    .toggle-icon {
+        width: 28px;
+        height: 28px;
+    }
 }
 
 .digital-toggle-btn:hover .toggle-icon {
@@ -172,26 +265,51 @@
     color: #000;
 }
 
-/* ── Lateral panel ────────────────────────────────── */
+/* ╔═══════════════════════════════════════════════╗
+   ║  LATERAL PANEL                                ║
+   ╚═══════════════════════════════════════════════╝ */
 .digital-menu-content-lateral {
     position: fixed;
     inset: 0 auto 0 0;
-    width: min(420px, 100%);
+    /* On 393px = full width; tablet+ capped at 420px */
+    width: 100%;
+    max-width: 420px;
     background: var(--bg);
     z-index: 100;
-    padding: 2.5rem;
-    border-right: 1px solid rgba(250, 200, 21, 0.08);
-    box-shadow: 20px 0 80px rgba(0, 0, 0, 0.8);
+    /* tighter padding on mobile */
+    padding: 1.25rem;
+    border-right: 1px solid rgba(250, 200, 21, 0.07);
+    box-shadow: 20px 0 80px rgba(0, 0, 0, 0.85);
     will-change: transform;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
+}
+
+@media (min-width: 480px) {
+    .digital-menu-content-lateral {
+        padding: 2rem;
+    }
+}
+
+@media (min-width: 600px) {
+    .digital-menu-content-lateral {
+        padding: 2.5rem;
+    }
 }
 
 .menu-inner-lateral {
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding-top: 7rem;
+    /* top padding accounts for fixed header ~56px on mobile */
+    padding-top: 5rem;
+}
+
+@media (min-width: 600px) {
+    .menu-inner-lateral {
+        padding-top: 7rem;
+    }
 }
 
 .menu-nav-lateral {
@@ -207,7 +325,19 @@
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1rem;
+}
+
+@media (min-width: 480px) {
+    .menu-list-lateral {
+        gap: 1.4rem;
+    }
+}
+
+@media (min-width: 600px) {
+    .menu-list-lateral {
+        gap: 1.6rem;
+    }
 }
 
 .menu-item-lateral {
@@ -219,22 +349,32 @@
     align-items: center;
     text-decoration: none;
     color: var(--text);
-    padding: 0.5rem 0;
+    padding: 0.4rem 0;
 }
 
 /* Icon box */
 .item-icon-wrapper {
     flex-shrink: 0;
-    width: 48px;
-    height: 48px;
-    margin-right: 1.25rem;
+    /* 40px on mobile, 48px on tablet */
+    width: 40px;
+    height: 40px;
+    margin-right: 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(255, 255, 255, 0.03);
-    border-radius: 12px;
+    border-radius: 10px;
     color: rgba(255, 255, 255, 0.6);
-    transition: all 0.45s cubic-bezier(0.19, 1, 0.22, 1);
+    transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+@media (min-width: 480px) {
+    .item-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        margin-right: 1.25rem;
+        border-radius: 12px;
+    }
 }
 
 .menu-link-lateral:hover .item-icon-wrapper {
@@ -249,7 +389,7 @@
 }
 
 .item-number-lateral {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     font-weight: 800;
     color: var(--neon);
     opacity: 0.5;
@@ -257,45 +397,41 @@
     font-family: 'Space Mono', monospace;
 }
 
+/* Label — scales with screen */
 .item-label-lateral {
-    font-size: 2rem;
     font-weight: 900;
     line-height: 1;
     letter-spacing: -0.02em;
     text-transform: uppercase;
     transition: all 0.3s ease;
-}
-
-@media (min-width:1024px) {
-    .item-label-lateral {
-        font-size: 2.8rem;
-    }
+    /* 393px → 1.55rem; grows up */
+    font-size: clamp(1.55rem, 5.5vw, 2.8rem);
 }
 
 .menu-link-lateral:hover .item-label-lateral {
     color: var(--neon);
-    transform: translateX(12px);
-    text-shadow: 0 0 20px rgba(250, 200, 21, 0.2);
+    transform: translateX(8px);
+    text-shadow: 0 0 18px rgba(250, 200, 21, 0.2);
 }
 
 /* Footer */
 .menu-footer-lateral {
-    padding-top: 2.5rem;
+    padding-top: 2rem;
     margin-top: auto;
 }
 
 .footer-line {
-    width: 40px;
+    width: 32px;
     height: 2px;
     background: var(--neon);
-    box-shadow: 0 0 10px var(--neon);
-    margin-bottom: 1.25rem;
+    box-shadow: 0 0 8px var(--neon);
+    margin-bottom: 1rem;
 }
 
 .copyright-lateral {
-    font-size: 0.62rem;
+    font-size: 0.55rem;
     font-weight: 700;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.15em;
     line-height: 1.8;
     opacity: 0.35;
     text-transform: uppercase;
