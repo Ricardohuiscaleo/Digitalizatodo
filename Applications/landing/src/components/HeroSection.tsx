@@ -10,7 +10,7 @@ export function HeroSection() {
                     Bienvenido al futuro de tu negocio
                 </div>
 
-                <h1 className="hero-animate-fade-in-scale text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black text-slate-900 dark:text-white tracking-tighter leading-[1.1]">
+                <h1 className="hero-animate-fade-in-scale font-black text-slate-900 dark:text-white tracking-tighter leading-[1.15]" style={{ fontSize: 'clamp(1.3rem, 8.5vw, 5rem)' }}>
                     <span className="block text-transparent bg-clip-text bg-gradient-to-b from-slate-200 via-slate-400 to-slate-800">
                         Transformamos Ideas en
                     </span>
