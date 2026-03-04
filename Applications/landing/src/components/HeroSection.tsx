@@ -43,7 +43,7 @@ export function HeroSection() {
                 <div className="hero-animate-fade-in-up hero-delay-600 flex flex-col sm:flex-row gap-4 sm:gap-8 justify-center items-center pt-6">
                     <Button
                         size="lg"
-                        className="group relative w-[85%] sm:w-auto text-xl h-16 px-10 mx-auto rounded-2xl bg-indigo-600 hover:bg-indigo-400 text-white font-black transition-all hover:scale-105 active:scale-95 border-2 border-[#7c6d64] hover:border-indigo-400 gap-3 overflow-hidden shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_40px_rgba(99,102,241,0.6)]"
+                        className="group relative w-[85%] sm:w-auto text-xl h-16 px-10 mx-auto sm:mx-0 rounded-2xl bg-indigo-600 hover:bg-indigo-400 text-white font-black transition-all hover:scale-105 active:scale-95 border-2 border-[#7c6d64] hover:border-indigo-400 gap-3 overflow-hidden shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_40px_rgba(99,102,241,0.6)]"
                         onClick={() => document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' })}
                     >
                         {/* Glowing Background Effect */}
@@ -65,7 +65,7 @@ export function HeroSection() {
                     <Button
                         variant="ghost"
                         size="lg"
-                        className="group w-full sm:w-auto text-xl h-16 px-6 text-[#92817a] dark:text-[#92817a] font-extrabold hover:bg-transparent transition-all gap-3 relative"
+                        className="group w-[85%] sm:w-auto text-xl h-16 px-6 mx-auto sm:mx-0 text-[#92817a] dark:text-[#92817a] font-extrabold hover:bg-transparent transition-all gap-3 relative"
                         onClick={() => document.getElementById('servicios')?.scrollIntoView({ behavior: 'smooth' })}
                     >
                         <span className="relative">
