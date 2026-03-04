@@ -14,8 +14,8 @@ export function HeroSection() {
             }}
         >
             <div className="w-full max-w-7xl xl:max-w-[1450px] 2xl:max-w-[1650px] 3xl:max-w-[1850px] 4xl:max-w-[2100px] mx-auto text-center relative z-10 space-y-8">
-                <div className="hero-animate-fade-in-up inline-block mb-4 px-4 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 backdrop-blur-md text-xs md:text-sm font-semibold tracking-wide text-indigo-600 dark:text-indigo-400">
-                    Bienvenido al futuro de tu negocio
+                <div className="hero-animate-fade-in-up inline-block mb-4 px-4 py-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 backdrop-blur-md text-xs md:text-sm font-bold tracking-wide text-amber-500 dark:text-amber-400">
+                    Entregamos prototipos en 48hrs
                 </div>
 
                 <h1
