@@ -271,31 +271,53 @@
 .digital-menu-content-lateral {
     position: fixed;
     inset: 0 0 0 auto;
-    /* On 393px = full width; tablet+ capped at 580px to fit text in one line */
-    width: 100%;
-    max-width: 580px;
+    /* Width fits the content (text) to prevent wrapping */
+    width: auto;
+    min-width: 280px;
+    max-width: 90vw;
     background: var(--bg);
     z-index: 100;
     /* tighter padding on mobile */
-    padding: 1.25rem;
-    border-left: 1px solid rgba(250, 200, 21, 0.07);
-    box-shadow: -20px 0 80px rgba(0, 0, 0, 0.85);
+    padding: 1.25rem 2.5rem 1.25rem 1.25rem;
+    border-left: 1px solid rgba(250, 200, 21, 0.15);
+    box-shadow: -20px 0 80px rgba(0, 0, 0, 0.9);
     will-change: transform;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    white-space: nowrap;
+    /* Prevent any text from wrapping */
 
     /* Base closed state */
     transform: translate3d(100%, 0, 0);
     visibility: hidden;
-    transition: transform 0.15s ease-in, visibility 0s linear 0.15s;
+    transition: transform 0.25s cubic-bezier(0.19, 1, 0.22, 1), visibility 0.25s;
+}
+
+/* Blur overlay when menu is open */
+.digital-menu-container::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.4s ease, visibility 0.4s;
+    z-index: 95;
+}
+
+.digital-menu-container[data-open="true"]::before {
+    opacity: 1;
+    visibility: visible;
 }
 
 /* Open state overrides */
 .digital-menu-content-lateral.is-open {
     transform: translate3d(0, 0, 0);
     visibility: visible;
-    transition: transform 0.2s cubic-bezier(0.05, 0.7, 0.1, 1), visibility 0s linear 0s;
+    transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1), visibility 0s linear 0s;
 }
 
 @media (min-width: 480px) {
