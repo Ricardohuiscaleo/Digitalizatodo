@@ -271,9 +271,9 @@
 .digital-menu-content-lateral {
     position: fixed;
     inset: 0 0 0 auto;
-    /* On 393px = full width; tablet+ capped at 420px */
+    /* On 393px = full width; tablet+ capped at 580px to fit text in one line */
     width: 100%;
-    max-width: 420px;
+    max-width: 580px;
     background: var(--bg);
     z-index: 100;
     /* tighter padding on mobile */
@@ -499,12 +499,14 @@
 
 /* Ensure same weight and size as other menu items */
 .client-access-item .item-label-lateral {
-    font-size: clamp(1.85rem, 6vw, 3.2rem);
+    font-size: clamp(1.4rem, 6.5vw, 3.2rem);
+    /* Slightly smaller base for mobile */
 }
 
 .client-login-icon svg {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    /* Slightly smaller on mobile to save space */
+    height: 24px;
     color: var(--neon);
 }
 
