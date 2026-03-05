@@ -110,7 +110,7 @@ export function ServicesGrid() {
         if (!clientName) return alert("Ingresa tu nombre para cotizar");
         const subject = `Cotización ${selectedService?.title} - ${clientName}`;
         const body = `Hola, soy ${clientName}.\n\nQuiero cotizar: ${selectedService?.title}\nPrecio listado: ${selectedService?.price}`;
-        window.open(`mailto:hola@digitalizatodo.cl?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+        window.open(`mailto:info@digitalizatodo.cl?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
     };
 
     return (
