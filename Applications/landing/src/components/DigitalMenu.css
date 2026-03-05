@@ -52,8 +52,9 @@
     user-select: none;
     flex-shrink: 0;
     min-width: 0;
-    padding: 0.4rem 0.9rem 0.4rem 0.4rem;
-    /* Glassmorphism Premium: Darker base with radial highlight */
+    min-height: 48px;
+    /* Fixed height for both cards */
+    padding: 0 1rem 0 0.5rem;
     background: radial-gradient(circle at top left, rgba(25, 20, 45, 0.85), rgba(10, 5, 20, 0.95));
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -63,7 +64,6 @@
     box-shadow:
         0 8px 32px 0 rgba(0, 0, 0, 0.8),
         inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-    /* Soft inner glow */
 
     border-radius: 14px;
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
@@ -104,15 +104,13 @@
 .logo-icon-wrapper {
     width: 32px;
     height: 32px;
-    /* Fixed size to act as the card's anchor */
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 6px;
-    /* Inner rounded for the logo badge */
-    overflow: hidden;
+    background: transparent;
+    border: none;
+    overflow: visible;
 }
 
 @media (min-width: 600px) {
@@ -221,12 +219,14 @@
     display: flex;
     align-items: center;
     gap: 0.35rem;
+    min-height: 48px;
+    /* Fixed height for both cards */
     background: radial-gradient(circle at top left, rgba(25, 20, 45, 0.85), rgba(10, 5, 20, 0.95));
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 14px;
-    padding: 0.35rem 0.55rem 0.35rem 0.8rem;
+    padding: 0 0.8rem 0 1rem;
     cursor: pointer;
     color: var(--text);
     flex-shrink: 0;
@@ -238,10 +238,11 @@
     overflow: hidden;
 }
 
-@media (min-width: 480px) {
+@media (min-width: 600px) {
+
+    .digital-brand,
     .digital-toggle-btn {
-        padding: 0.45rem 1rem 0.45rem 1.1rem;
-        gap: 0.5rem;
+        min-height: 56px;
     }
 }
 
