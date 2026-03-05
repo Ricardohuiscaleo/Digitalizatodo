@@ -131,25 +131,30 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                     onClick={toggleMenu}
                     aria-label="Abrir/Cerrar menú"
                 >
-                    {/* Text: full on tablet+, short on mobile */}
-                    <span className="toggle-label toggle-label--full">
-                        {open ? 'Cerrar menú' : 'Desplegar menú'}
-                    </span>
-                    <span className="toggle-label toggle-label--short">
-                        {open ? 'Cerrar' : 'Menú'}
-                    </span>
+                    <div className="toggle-content-wrapper">
+                        {/* Text: full on tablet+, short on mobile */}
+                        <div className="toggle-text-stack">
+                            <span className="toggle-label toggle-label--full">
+                                {open ? 'Cerrar menú' : 'Desplegar menú'}
+                            </span>
+                            <span className="toggle-label toggle-label--short">
+                                {open ? 'Cerrar' : 'Menú'}
+                            </span>
+                            {!open && <span className="toggle-subtitle-neon">Acceso Clientes</span>}
+                        </div>
 
-                    <span className={`toggle-arrow ${open ? 'is-open' : ''}`}>
-                        <ChevronLeft size={14} />
-                    </span>
+                        <span className={`toggle-arrow ${open ? 'is-open' : ''}`}>
+                            <ChevronLeft size={14} />
+                        </span>
 
-                    <span className="toggle-icon">
-                        {open ? (
-                            <X size={22} />
-                        ) : (
-                            <Menu size={22} />
-                        )}
-                    </span>
+                        <span className="toggle-icon">
+                            {open ? (
+                                <X size={22} />
+                            ) : (
+                                <Menu size={22} />
+                            )}
+                        </span>
+                    </div>
                 </button>
 
             </header>
@@ -171,13 +176,13 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                                         </div>
                                     </div>
                                     <div className="item-text-block">
-                                        <span className="item-number-lateral">ACCESO</span>
-                                        <span className="item-label-lateral">CLIENTES</span>
+                                        <span className="item-number-lateral">VIP</span>
+                                        <span className="item-label-lateral">ACCESO CLIENTES</span>
                                     </div>
                                 </a>
                             </li>
 
-                            <div className="menu-separator" />
+                            <div className="menu-separator-green" />
 
                             {items.map((item, i) => (
                                 <li

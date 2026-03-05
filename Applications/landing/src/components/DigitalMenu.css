@@ -461,37 +461,60 @@
     /* Removed margin-top: auto to pull it up */
 }
 
-.footer-line {
-    width: 32px;
-    height: 2px;
-    background: var(--neon);
-    box-shadow: 0 0 8px var(--neon);
-    margin-bottom: 1rem;
+/* ── Toggle Button Stack ─────────────────────── */
+.toggle-content-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.toggle-text-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    /* Align texts to the icon side */
+    gap: 1px;
+}
+
+.toggle-subtitle-neon {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.52rem;
+    font-weight: 800;
+    color: var(--neon);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.9;
+    line-height: 1;
 }
 
 /* ── Client Access & Support Styles ──────────────── */
 .client-access-item {
-    margin-bottom: 0.5rem;
+    margin-bottom: -0.25rem;
+    /* Tighten space between clients and items */
 }
 
 .client-login-link .item-label-lateral {
     color: var(--neon);
-    font-size: clamp(2rem, 7vw, 3.8rem);
-    /* Slightly larger */
+}
+
+/* Ensure same weight and size as other menu items */
+.client-access-item .item-label-lateral {
+    font-size: clamp(1.85rem, 6vw, 3.2rem);
 }
 
 .client-login-icon svg {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     color: var(--neon);
-    filter: drop-shadow(0 0 8px rgba(250, 200, 21, 0.4));
 }
 
-.menu-separator {
-    width: 40px;
-    height: 1px;
-    background: rgba(255, 255, 255, 0.1);
-    margin: 1.5rem 0 2rem 0;
+.menu-separator-green {
+    width: 48px;
+    height: 2px;
+    background: #10b981;
+    /* Emerald/Green vibrant */
+    margin: 1rem 0 1.2rem 0;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
 }
 
 .support-badge {
