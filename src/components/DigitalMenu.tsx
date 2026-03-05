@@ -1,4 +1,4 @@
-import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import './DigitalMenu.css';
 
@@ -67,11 +67,11 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
         busyRef.current = true;
         setBgThrottled(true);
         gsap.timeline({ onComplete: () => { busyRef.current = false; setBgThrottled(false); } })
-            .to(contentRef.current, { xPercent: 0, visibility: 'visible', duration: 0.4, ease: 'power3.out' })
+            .to(contentRef.current, { xPercent: 0, visibility: 'visible', duration: 0.25, ease: 'power3.out' })
             .fromTo(menuItemsRef.current,
                 { opacity: 0, x: 24 },
-                { opacity: 1, x: 0, duration: 0.35, stagger: 0.04, ease: 'power3.out' },
-                '-=0.25'
+                { opacity: 1, x: 0, duration: 0.25, stagger: 0.02, ease: 'power3.out' },
+                '-=0.2'
             );
     }, []);
 
@@ -82,8 +82,8 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
         gsap.timeline({
             onComplete: () => { setBgThrottled(false); setOpen(false); busyRef.current = false; gsap.set(contentRef.current, { visibility: 'hidden' }); }
         })
-            .to(menuItemsRef.current, { opacity: 0, x: 16, duration: 0.15, stagger: 0.02, ease: 'power2.in' })
-            .to(contentRef.current, { xPercent: 100, duration: 0.35, ease: 'power3.in' }, '-=0.1');
+            .to(menuItemsRef.current, { opacity: 0, x: 16, duration: 0.1, stagger: 0.015, ease: 'power2.in' })
+            .to(contentRef.current, { xPercent: 100, duration: 0.2, ease: 'power3.in' }, '-=0.08');
     }, []);
 
     const toggleMenu = () => {
@@ -92,6 +92,31 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
         if (target) { setOpen(true); playOpen(); }
         else { playClose(); }
     };
+
+    // Close on click outside
+    useEffect(() => {
+        if (!open) return;
+        const handleClickOutside = (e: MouseEvent) => {
+            if (openRef.current && contentRef.current && !contentRef.current.contains(e.target as Node)) {
+                // Ignore clicks on the toggle button
+                const btn = containerRef.current?.querySelector('.digital-toggle-btn');
+                if (btn && btn.contains(e.target as Node)) return;
+
+                openRef.current = false;
+                playClose();
+            }
+        };
+
+        // Add small delay to prevent immediate trigger on open click
+        const timeoutId = setTimeout(() => {
+            document.addEventListener('mousedown', handleClickOutside);
+        }, 50);
+
+        return () => {
+            clearTimeout(timeoutId);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [open, playClose]);
 
     // Lateral menu item handlers
     const handleLateralEnter = (index: number) => {
