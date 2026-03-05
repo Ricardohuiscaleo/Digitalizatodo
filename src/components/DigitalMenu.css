@@ -607,20 +607,31 @@
 }
 
 .client-login-link .item-label-lateral {
-    color: var(--neon);
+    color: #ffffff;
+}
+
+.client-access-item .item-number-lateral {
+    color: #10b981 !important;
+    /* Vibrant Green */
+    opacity: 1 !important;
+}
+
+.client-login-icon svg {
+    width: 24px;
+    height: 24px;
+    color: #10b981 !important;
+    /* Vibrant Green */
+}
+
+/* Ensure hover doesn't turn the green icon yellow */
+.client-login-link:hover .item-icon-wrapper {
+    color: #10b981 !important;
+    transform: scale(1.15) rotate(-5deg);
 }
 
 /* Ensure same weight and size as other menu items */
 .client-access-item .item-label-lateral {
     font-size: clamp(1.4rem, 6.5vw, 3.2rem);
-    /* Slightly smaller base for mobile */
-}
-
-.client-login-icon svg {
-    width: 24px;
-    /* Slightly smaller on mobile to save space */
-    height: 24px;
-    color: var(--neon);
 }
 
 .menu-separator-green {
