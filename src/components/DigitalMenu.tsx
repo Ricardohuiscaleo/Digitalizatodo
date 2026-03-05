@@ -26,7 +26,7 @@ import type { MessageCircleIconHandle } from './animated-icons/icons/lucide/mess
 export interface DigitalMenuItem {
     label: string;
     link: string;
-    Icon?: React.ElementType;
+    Icon?: any;
 }
 export interface DigitalMenuProps {
     items?: DigitalMenuItem[];
