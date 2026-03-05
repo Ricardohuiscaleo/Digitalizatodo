@@ -286,15 +286,16 @@
     overflow-y: auto;
 
     /* Base closed state */
-    transform: translateX(100%);
+    transform: translate3d(100%, 0, 0);
     visibility: hidden;
-    transition: transform 0.15s ease-out, visibility 0.15s ease-out;
+    transition: transform 0.2s cubic-bezier(0.33, 1, 0.68, 1), visibility 0s linear 0.2s;
 }
 
 /* Open state overrides */
 .digital-menu-content-lateral.is-open {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
     visibility: visible;
+    transition: transform 0.25s cubic-bezier(0.33, 1, 0.68, 1), visibility 0s linear 0s;
 }
 
 @media (min-width: 480px) {
@@ -366,38 +367,7 @@
     transform: translateX(0);
 }
 
-/* CSS Staggered delay for child items when opening */
-.digital-menu-content-lateral.is-open .menu-item-lateral:nth-child(1) {
-    transition-delay: 0.04s;
-}
-
-.digital-menu-content-lateral.is-open .menu-item-lateral:nth-child(2) {
-    transition-delay: 0.08s;
-}
-
-.digital-menu-content-lateral.is-open .menu-item-lateral:nth-child(3) {
-    transition-delay: 0.12s;
-}
-
-.digital-menu-content-lateral.is-open .menu-item-lateral:nth-child(4) {
-    transition-delay: 0.16s;
-}
-
-.digital-menu-content-lateral.is-open .menu-item-lateral:nth-child(5) {
-    transition-delay: 0.20s;
-}
-
-.digital-menu-content-lateral.is-open .menu-item-lateral:nth-child(6) {
-    transition-delay: 0.24s;
-}
-
-.digital-menu-content-lateral.is-open .menu-item-lateral:nth-child(7) {
-    transition-delay: 0.28s;
-}
-
-.digital-menu-content-lateral.is-open .menu-item-lateral:nth-child(8) {
-    transition-delay: 0.32s;
-}
+/* Removed staggered delay for child items to make it feel less 'stuck' */
 
 /* Shortest delay when closing */
 .digital-menu-content-lateral:not(.is-open) .menu-item-lateral {
