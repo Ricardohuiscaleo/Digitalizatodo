@@ -26,7 +26,7 @@ export function ContactForm() {
         }
         const subject = `Cotización desde la web - ${name}`;
         const body = `Hola, soy ${name}.\n\n${message}`;
-        window.open(`mailto:hola@digitalizatodo.cl?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+        window.open(`mailto:info@digitalizatodo.cl?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
     };
 
     return (
@@ -99,7 +99,7 @@ export function ContactForm() {
                     <a href="https://wa.me/56945392581" target="_blank" rel="noreferrer" className="p-3 bg-white/5 backdrop-blur-md rounded-full border border-white/10 shadow-sm hover:shadow-md hover:text-green-400 text-slate-400 transition-all">
                         <MessageCircle className="w-6 h-6" />
                     </a>
-                    <a href="mailto:hola@digitalizatodo.cl" className="p-3 bg-white/5 backdrop-blur-md rounded-full border border-white/10 shadow-sm hover:shadow-md hover:text-indigo-400 text-slate-400 transition-all">
+                    <a href="mailto:info@digitalizatodo.cl" className="p-3 bg-white/5 backdrop-blur-md rounded-full border border-white/10 shadow-sm hover:shadow-md hover:text-indigo-400 text-slate-400 transition-all">
                         <Mail className="w-6 h-6" />
                     </a>
                 </div>
