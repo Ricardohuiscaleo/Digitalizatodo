@@ -35,8 +35,8 @@ function Stars(props: any) {
 
         if (ref.current) {
             const scrollPos = typeof window !== 'undefined' ? window.scrollY : 0;
-            ref.current.rotation.x = scrollPos * 0.0003;
-            ref.current.rotation.y = scrollPos * 0.0002;
+            ref.current.rotation.x = scrollPos * 0.00015; /* Slower rotation */
+            ref.current.rotation.y = scrollPos * 0.0001;
         }
     });
 
@@ -46,10 +46,10 @@ function Stars(props: any) {
                 <PointMaterial
                     transparent
                     color="#00FF7F"
-                    size={0.008} /* Increased from 0.005 */
+                    size={0.005} /* Back to original size */
                     sizeAttenuation={true}
                     depthWrite={false}
-                    opacity={1.0} /* Increased from 0.8 */
+                    opacity={0.5} /* Much softer opacity for a "twinkle" effect */
                 />
             </Points>
         </group>
@@ -63,11 +63,11 @@ export function Background3D() {
         const isMobile = window.innerWidth < 768;
         const isLowEnd = navigator.hardwareConcurrency <= 4;
         if (isMobile) {
-            setParticleCount(300); // Increased from 150
+            setParticleCount(200); /* Sweet spot */
         } else if (isLowEnd) {
-            setParticleCount(500); // Increased from 250
+            setParticleCount(400);
         } else {
-            setParticleCount(1200); // Increased from 450
+            setParticleCount(800); /* Balanced density */
         }
     }, []);
 
@@ -84,11 +84,11 @@ export function Background3D() {
                     stencil: false,
                     depth: false
                 }}
-                dpr={typeof window !== 'undefined' ? window.devicePixelRatio : 1}
+                dpr={1} /* Back to standard DPR for softer look */
             >
                 <Stars count={particleCount} />
             </Canvas>
-            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-black/10 to-black/80 pointer-events-none z-10"></div>
+            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-black/30 to-black/90 pointer-events-none z-10"></div>
         </div>
     );
 }
