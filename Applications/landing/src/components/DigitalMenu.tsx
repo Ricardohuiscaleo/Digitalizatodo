@@ -54,16 +54,18 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
         setBgThrottled(target);
     };
 
-    // Close on click outside
+    // Close on click outside and escape key
     useEffect(() => {
         if (!open) return;
+
         const handleClickOutside = (e: MouseEvent) => {
-            // Find content lateral explicitly if ref is removed, or re-add it 
             const content = containerRef.current?.querySelector('.digital-menu-content-lateral');
-            if (openRef.current && content && !content.contains(e.target as Node)) {
-                // Ignore clicks on the toggle button
+            const target = e.target as Node;
+
+            if (openRef.current && content && !content.contains(target)) {
+                // Ignore clicks on the toggle button itself to avoid double-toggling
                 const btn = containerRef.current?.querySelector('.digital-toggle-btn');
-                if (btn && btn.contains(e.target as Node)) return;
+                if (btn && btn.contains(target)) return;
 
                 openRef.current = false;
                 setOpen(false);
@@ -71,14 +73,21 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
             }
         };
 
-        // Add small delay to prevent immediate trigger on open click
-        const timeoutId = setTimeout(() => {
-            document.addEventListener('mousedown', handleClickOutside);
-        }, 50);
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                openRef.current = false;
+                setOpen(false);
+                setBgThrottled(false);
+            }
+        };
+
+        // mousedown is more reliable than click for 'outside' detection
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('keydown', handleEsc);
 
         return () => {
-            clearTimeout(timeoutId);
             document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleEsc);
         };
     }, [open]);
 
