@@ -284,6 +284,17 @@
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+
+    /* Base closed state */
+    transform: translateX(100%);
+    visibility: hidden;
+    transition: transform 0.25s cubic-bezier(0.19, 1, 0.22, 1), visibility 0.25s;
+}
+
+/* Open state overrides */
+.digital-menu-content-lateral.is-open {
+    transform: translateX(0);
+    visibility: visible;
 }
 
 @media (min-width: 480px) {
@@ -345,6 +356,53 @@
 
 .menu-item-lateral {
     will-change: transform, opacity;
+    opacity: 0;
+    transform: translateX(16px);
+    transition: opacity 0.15s ease, transform 0.15s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.digital-menu-content-lateral.is-open .menu-item-lateral {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* CSS Staggered delay for child items when opening */
+.digital-menu-content-lateral.is-open .menu-item-lateral:nth-child(1) {
+    transition-delay: 0.04s;
+}
+
+.digital-menu-content-lateral.is-open .menu-item-lateral:nth-child(2) {
+    transition-delay: 0.08s;
+}
+
+.digital-menu-content-lateral.is-open .menu-item-lateral:nth-child(3) {
+    transition-delay: 0.12s;
+}
+
+.digital-menu-content-lateral.is-open .menu-item-lateral:nth-child(4) {
+    transition-delay: 0.16s;
+}
+
+.digital-menu-content-lateral.is-open .menu-item-lateral:nth-child(5) {
+    transition-delay: 0.20s;
+}
+
+.digital-menu-content-lateral.is-open .menu-item-lateral:nth-child(6) {
+    transition-delay: 0.24s;
+}
+
+.digital-menu-content-lateral.is-open .menu-item-lateral:nth-child(7) {
+    transition-delay: 0.28s;
+}
+
+.digital-menu-content-lateral.is-open .menu-item-lateral:nth-child(8) {
+    transition-delay: 0.32s;
+}
+
+/* Shortest delay when closing */
+.digital-menu-content-lateral:not(.is-open) .menu-item-lateral {
+    transition: opacity 0.1s ease, transform 0.1s ease;
+    transition-delay: 0s !important;
 }
 
 .menu-link-lateral {

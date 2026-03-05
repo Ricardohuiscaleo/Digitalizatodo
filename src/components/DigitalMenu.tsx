@@ -1,5 +1,4 @@
-import React, { useCallback, useLayoutEffect, useEffect, useRef, useState } from 'react';
-import { gsap } from 'gsap';
+import React, { useEffect, useRef, useState } from 'react';
 import './DigitalMenu.css';
 
 import { Menu, X, ChevronLeft } from 'lucide-react';
@@ -44,66 +43,31 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
     const [open, setOpen] = useState(false);
     const openRef = useRef(false);
     const containerRef = useRef<HTMLDivElement>(null);
-    const contentRef = useRef<HTMLDivElement>(null);
-    const menuItemsRef = useRef<(HTMLLIElement | null)[]>([]);
-    const busyRef = useRef(false);
-
-    // Refs for lateral menu icons
-    const lateralIconsRef = useRef<(any | null)[]>([]);
-
     const setBgThrottled = (t: boolean) => {
         if (typeof window !== 'undefined') (window as any).__STAGGERED_MENU_OPEN__ = t;
     };
 
-    useLayoutEffect(() => {
-        const ctx = gsap.context(() => {
-            gsap.set(contentRef.current, { xPercent: 100, visibility: 'hidden' });
-        }, containerRef);
-        return () => ctx.revert();
-    }, []);
-
-    const playOpen = useCallback(() => {
-        if (busyRef.current) return;
-        busyRef.current = true;
-        setBgThrottled(true);
-        gsap.timeline({ onComplete: () => { busyRef.current = false; setBgThrottled(false); } })
-            .to(contentRef.current, { xPercent: 0, visibility: 'visible', duration: 0.15, ease: 'power1.out' })
-            .fromTo(menuItemsRef.current,
-                { opacity: 0, x: 10 },
-                { opacity: 1, x: 0, duration: 0.12, stagger: 0.01, ease: 'power1.out' },
-                '-=0.1'
-            );
-    }, []);
-
-    const playClose = useCallback(() => {
-        if (busyRef.current) return;
-        busyRef.current = true;
-        setBgThrottled(true);
-        gsap.timeline({
-            onComplete: () => { setBgThrottled(false); setOpen(false); busyRef.current = false; gsap.set(contentRef.current, { visibility: 'hidden' }); }
-        })
-            .to(menuItemsRef.current, { opacity: 0, x: 10, duration: 0.08, stagger: 0.01, ease: 'power1.in' })
-            .to(contentRef.current, { xPercent: 100, duration: 0.15, ease: 'power1.in' }, '-=0.08');
-    }, []);
-
     const toggleMenu = () => {
         const target = !openRef.current;
         openRef.current = target;
-        if (target) { setOpen(true); playOpen(); }
-        else { playClose(); }
+        setOpen(target);
+        setBgThrottled(target);
     };
 
     // Close on click outside
     useEffect(() => {
         if (!open) return;
         const handleClickOutside = (e: MouseEvent) => {
-            if (openRef.current && contentRef.current && !contentRef.current.contains(e.target as Node)) {
+            // Find content lateral explicitly if ref is removed, or re-add it 
+            const content = containerRef.current?.querySelector('.digital-menu-content-lateral');
+            if (openRef.current && content && !content.contains(e.target as Node)) {
                 // Ignore clicks on the toggle button
                 const btn = containerRef.current?.querySelector('.digital-toggle-btn');
                 if (btn && btn.contains(e.target as Node)) return;
 
                 openRef.current = false;
-                playClose();
+                setOpen(false);
+                setBgThrottled(false);
             }
         };
 
@@ -116,15 +80,15 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
             clearTimeout(timeoutId);
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [open, playClose]);
+    }, [open]);
 
     // Lateral menu item handlers
     const handleLateralEnter = (index: number) => {
-        lateralIconsRef.current[index]?.startAnimation?.();
+        // Now using CSS
     };
 
     const handleLateralLeave = (index: number) => {
-        lateralIconsRef.current[index]?.stopAnimation?.();
+        // Now using CSS
     };
 
     return (
@@ -182,14 +146,13 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
             </header>
 
             {/* Lateral panel */}
-            <div ref={contentRef} className="digital-menu-content-lateral">
+            <div className={`digital-menu-content-lateral ${open ? 'is-open' : ''}`}>
                 <div className="menu-inner-lateral">
                     <nav className="menu-nav-lateral">
                         <ul className="menu-list-lateral">
                             {items.map((item, i) => (
                                 <li
                                     key={i}
-                                    ref={el => { menuItemsRef.current[i] = el; }}
                                     className="menu-item-lateral"
                                 >
                                     <a
@@ -202,9 +165,7 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                                         <div className="item-icon-wrapper">
                                             {item.Icon && (
                                                 <item.Icon
-                                                    ref={(el: any) => { lateralIconsRef.current[i] = el; }}
                                                     size={28}
-                                                    isAnimated={false}
                                                 />
                                             )}
                                         </div>
