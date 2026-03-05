@@ -35,8 +35,8 @@ function Stars(props: any) {
 
         if (ref.current) {
             const scrollPos = typeof window !== 'undefined' ? window.scrollY : 0;
-            ref.current.rotation.x = scrollPos * 0.0005;
-            ref.current.rotation.y = scrollPos * 0.0003;
+            ref.current.rotation.x = scrollPos * 0.0003;
+            ref.current.rotation.y = scrollPos * 0.0002;
         }
     });
 
@@ -46,10 +46,10 @@ function Stars(props: any) {
                 <PointMaterial
                     transparent
                     color="#00FF7F"
-                    size={0.005}
+                    size={0.008} /* Increased from 0.005 */
                     sizeAttenuation={true}
                     depthWrite={false}
-                    opacity={0.8}
+                    opacity={1.0} /* Increased from 0.8 */
                 />
             </Points>
         </group>
@@ -63,18 +63,18 @@ export function Background3D() {
         const isMobile = window.innerWidth < 768;
         const isLowEnd = navigator.hardwareConcurrency <= 4;
         if (isMobile) {
-            setParticleCount(150); // Optimized for mobile fluidity
+            setParticleCount(300); // Increased from 150
         } else if (isLowEnd) {
-            setParticleCount(250);
+            setParticleCount(500); // Increased from 250
         } else {
-            setParticleCount(450); // High-end desktop
+            setParticleCount(1200); // Increased from 450
         }
     }, []);
 
     if (particleCount === null || particleCount === 0) return null;
 
     return (
-        <div className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none opacity-80">
+        <div className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none opacity-100">
             <Canvas
                 camera={{ position: [0, 0, 1] }}
                 gl={{
@@ -84,11 +84,11 @@ export function Background3D() {
                     stencil: false,
                     depth: false
                 }}
-                dpr={1} // Force 1:1 pixel ratio for max fluidity
+                dpr={typeof window !== 'undefined' ? window.devicePixelRatio : 1}
             >
                 <Stars count={particleCount} />
             </Canvas>
-            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-black/40 to-black/90 pointer-events-none z-10"></div>
+            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-black/10 to-black/80 pointer-events-none z-10"></div>
         </div>
     );
 }
