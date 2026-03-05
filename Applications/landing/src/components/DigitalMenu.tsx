@@ -2,13 +2,8 @@ import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import './DigitalMenu.css';
 
-// Animated Icons
-import { MenuIcon } from './animated-icons/icons/lucide/menu-icon';
-import type { MenuIconHandle } from './animated-icons/icons/lucide/menu-icon';
-import { XIcon } from './animated-icons/icons/lucide/x-icon';
-import type { XIconHandle } from './animated-icons/icons/lucide/x-icon';
-import { ChevronLeftIcon } from './animated-icons/icons/lucide/chevron-left-icon';
-import type { ChevronLeftIconHandle } from './animated-icons/icons/lucide/chevron-left-icon';
+import { Menu, X, ChevronLeft } from 'lucide-react';
+
 // Lateral Menu Icons
 import { HouseIcon } from './animated-icons/icons/lucide/house-icon';
 import type { HouseHandle } from './animated-icons/icons/lucide/house-icon';
@@ -52,11 +47,6 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
     const contentRef = useRef<HTMLDivElement>(null);
     const menuItemsRef = useRef<(HTMLLIElement | null)[]>([]);
     const busyRef = useRef(false);
-
-    // Refs for header icons
-    const chevronRef = useRef<ChevronLeftIconHandle>(null);
-    const menuIconRef = useRef<MenuIconHandle>(null);
-    const xIconRef = useRef<XIconHandle>(null);
 
     // Refs for lateral menu icons
     const lateralIconsRef = useRef<(any | null)[]>([]);
@@ -103,19 +93,6 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
         else { playClose(); }
     };
 
-    // Hover triggers for the entire pill
-    const handlePillEnter = () => {
-        chevronRef.current?.startAnimation?.();
-        menuIconRef.current?.startAnimation?.();
-        xIconRef.current?.startAnimation?.();
-    };
-
-    const handlePillLeave = () => {
-        chevronRef.current?.stopAnimation?.();
-        menuIconRef.current?.stopAnimation?.();
-        xIconRef.current?.stopAnimation?.();
-    };
-
     // Lateral menu item handlers
     const handleLateralEnter = (index: number) => {
         lateralIconsRef.current[index]?.startAnimation?.();
@@ -154,8 +131,6 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                 <button
                     className="digital-toggle-btn group"
                     onClick={toggleMenu}
-                    onMouseEnter={handlePillEnter}
-                    onMouseLeave={handlePillLeave}
                     aria-label="Abrir/Cerrar menú"
                 >
                     {/* Text: full on tablet+, short on mobile */}
@@ -167,14 +142,14 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                     </span>
 
                     <span className={`toggle-arrow ${open ? 'is-open' : ''}`}>
-                        <ChevronLeftIcon ref={chevronRef} size={14} isAnimated={false} />
+                        <ChevronLeft size={14} />
                     </span>
 
                     <span className="toggle-icon">
                         {open ? (
-                            <XIcon ref={xIconRef} size={22} isAnimated={false} />
+                            <X size={22} />
                         ) : (
-                            <MenuIcon ref={menuIconRef} size={22} isAnimated={false} />
+                            <Menu size={22} />
                         )}
                     </span>
                 </button>
