@@ -67,11 +67,11 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
         busyRef.current = true;
         setBgThrottled(true);
         gsap.timeline({ onComplete: () => { busyRef.current = false; setBgThrottled(false); } })
-            .to(contentRef.current, { xPercent: 0, visibility: 'visible', duration: 0.25, ease: 'power3.out' })
+            .to(contentRef.current, { xPercent: 0, visibility: 'visible', duration: 0.15, ease: 'power1.out' })
             .fromTo(menuItemsRef.current,
-                { opacity: 0, x: 24 },
-                { opacity: 1, x: 0, duration: 0.25, stagger: 0.02, ease: 'power3.out' },
-                '-=0.2'
+                { opacity: 0, x: 10 },
+                { opacity: 1, x: 0, duration: 0.12, stagger: 0.01, ease: 'power1.out' },
+                '-=0.1'
             );
     }, []);
 
@@ -82,8 +82,8 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
         gsap.timeline({
             onComplete: () => { setBgThrottled(false); setOpen(false); busyRef.current = false; gsap.set(contentRef.current, { visibility: 'hidden' }); }
         })
-            .to(menuItemsRef.current, { opacity: 0, x: 16, duration: 0.1, stagger: 0.015, ease: 'power2.in' })
-            .to(contentRef.current, { xPercent: 100, duration: 0.2, ease: 'power3.in' }, '-=0.08');
+            .to(menuItemsRef.current, { opacity: 0, x: 10, duration: 0.08, stagger: 0.01, ease: 'power1.in' })
+            .to(contentRef.current, { xPercent: 100, duration: 0.15, ease: 'power1.in' }, '-=0.08');
     }, []);
 
     const toggleMenu = () => {
