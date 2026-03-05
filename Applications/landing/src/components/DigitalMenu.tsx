@@ -159,6 +159,26 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                 <div className="menu-inner-lateral">
                     <nav className="menu-nav-lateral">
                         <ul className="menu-list-lateral">
+                            {/* Cliente Login Section */}
+                            <li className="menu-item-lateral client-access-item">
+                                <a
+                                    href="https://admin.digitalizatodo.cl/admin/login"
+                                    className="menu-link-lateral client-login-link"
+                                >
+                                    <div className="item-icon-wrapper">
+                                        <div className="client-login-icon">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" y1="12" x2="3" y2="12" /></svg>
+                                        </div>
+                                    </div>
+                                    <div className="item-text-block">
+                                        <span className="item-number-lateral">ACCESO</span>
+                                        <span className="item-label-lateral">CLIENTES</span>
+                                    </div>
+                                </a>
+                            </li>
+
+                            <div className="menu-separator" />
+
                             {items.map((item, i) => (
                                 <li
                                     key={i}
@@ -189,6 +209,10 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                     </nav>
                     <div className="menu-footer-lateral">
                         <div className="footer-line" />
+                        <div className="support-badge">
+                            <span className="support-dot" />
+                            <span className="support-text">SOPORTE CLIENTES 24/7 · ACTIVO</span>
+                        </div>
                         <p className="copyright-lateral">© 2026 DIGITALIZA TODO · SOFTWARE FACTORY · CHILE</p>
                     </div>
                 </div>
