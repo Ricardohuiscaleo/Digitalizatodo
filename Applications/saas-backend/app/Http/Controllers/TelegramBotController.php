@@ -98,6 +98,8 @@ class TelegramBotController extends Controller
         $status = strtolower($payload['status'] ?? 'unknown'); // started, finished, failed
         $appName = $payload['name'] ?? 'Aplicación';
         $url = $payload['url'] ?? null;
+        $commitMessage = $payload['commit_message'] ?? null;
+        $commitHash = $payload['commit'] ?? null;
 
         $emoji = match ($status) {
                 'finished', 'success' => '✅',
@@ -115,6 +117,13 @@ class TelegramBotController extends Controller
 
         $message = "{$emoji} *{$statusText}*\n\n";
         $message .= "*Aplicación:* {$appName}\n";
+
+        if ($commitMessage) {
+            $message .= "*Commit:* {$commitMessage}\n";
+        }
+        elseif ($commitHash) {
+            $message .= "*Hash:* `{$commitHash}`\n";
+        }
 
         if ($url) {
             $message .= "*URL:* [Abrir Sitio]({$url})\n";
