@@ -1,65 +1,135 @@
+"use client";
+
+import { useState } from "react";
+import { useBranding } from "@/context/BrandingContext";
+import { identifyTenant, login } from "@/lib/api";
 import Image from "next/image";
 
-export default function Home() {
+export default function LoginPage() {
+  const { branding, setBranding, isLoading } = useBranding();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isIdentifying, setIsIdentifying] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!branding || !email || !password) return;
+
+    setError(null);
+    setIsLoggingIn(true);
+    const result = await login(branding.id, { email, password });
+    setIsLoggingIn(false);
+
+    if (result.token) {
+      localStorage.setItem("student_token", result.token);
+      localStorage.setItem("tenant_id", branding.id);
+      window.location.href = "/dashboard";
+    } else {
+      setError(result.message || "Error al iniciar sesión.");
+    }
+  };
+
+  const handleEmailBlur = async () => {
+    if (!email || !email.includes("@")) return;
+
+    setIsIdentifying(true);
+    const data = await identifyTenant(email);
+    setIsIdentifying(false);
+
+    if (data && data.found && data.tenants.length > 0) {
+      // Si hay varias, por ahora tomamos la primera para el branding visual
+      setBranding(data.tenants[0]);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+    <div className="flex min-h-screen flex-col items-center justify-center p-6 sm:p-12">
+      <div className="w-full max-w-md space-y-8">
+        {/* Branding Area */}
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative h-20 w-20 overflow-hidden rounded-2xl shadow-xl shadow-primary/10 transition-transform hover:scale-105">
             <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+              src={branding?.logo || "/icon.webp"}
+              alt={branding?.name || "Logo"}
+              fill
+              className="object-cover"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
+          <div className="text-center">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              {branding?.name || "Digitaliza Todo"}
+            </h1>
+            <p className="mt-1 text-sm text-foreground/60">
+              Ingresa a tu portal de alumno
+            </p>
+          </div>
         </div>
-      </main>
+
+        {/* Login Form */}
+        <div className="mt-8 rounded-3xl border border-white/5 bg-white/5 p-8 backdrop-blur-xl shadow-2xl">
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            {error && (
+              <div className="rounded-xl bg-red-500/10 p-3 text-center text-xs font-medium text-red-400 border border-red-500/20 animate-in fade-in zoom-in duration-300">
+                {error}
+              </div>
+            )}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground/80 ml-1">Correo Electrónico</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onBlur={handleEmailBlur}
+                placeholder="tu@correo.com"
+                className={`w-full rounded-2xl border bg-white/5 px-4 py-3 text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-1 transition-all ${isIdentifying ? "border-primary/50 animate-pulse" : "border-white/10 focus:border-primary/50 focus:ring-primary/50"
+                  }`}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground/80 ml-1">Contraseña</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoggingIn || isIdentifying || !branding}
+              className="w-full rounded-2xl bg-primary py-3.5 text-sm font-semibold text-background shadow-lg shadow-primary/20 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoggingIn ? "Iniciando sesión..." : "Iniciar Sesión"}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <a href="#" className="text-xs text-foreground/40 hover:text-primary transition-colors">
+              ¿Olvidaste tu contraseña?
+            </a>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <p className="mt-10 text-center text-xs text-foreground/30">
+          Digitaliza Todo &copy; 2026. Todos los derechos reservados.
+        </p>
+      </div>
     </div>
   );
 }
