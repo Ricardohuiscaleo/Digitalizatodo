@@ -1,0 +1,12 @@
+/* Ocultar enlace de GitHub y versión de Filament en el Footer */
+.fi-layout-footer nav a {
+    display: none !important;
+}
+
+/* Opcional: Centrar el contenido que dejemos (nuestro render hook) */
+.fi-layout-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
