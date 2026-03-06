@@ -85,14 +85,26 @@ class TelegramBotController extends Controller
     public function handleCoolifyDeploy(Request $request)
     {
         $payload = $request->all();
-        Log::info('Coolify Deploy Webhook Received', $payload);
+        Log::info('Coolify Webhook Received', $payload);
 
         // Seguridad: Validar token secreto si existe en el .env
         $secretToken = env('COOLIFY_WEBHOOK_SECRET');
         $providedToken = $request->header('X-Coolify-Token') ?? $request->query('token');
 
         if ($secretToken && $secretToken !== $providedToken) {
+            Log::warning('Coolify Webhook: Unauthorized', ['provided' => $providedToken]);
             return response()->json(['status' => 'unauthorized'], 401);
+        }
+
+        // Si es un ping de test directo de Coolify (formato genérico)
+        if (isset($payload['message']) && !isset($payload['status'])) {
+            $msg = "🔔 <b>Notificación de Prueba (Coolify)</b>\n\n";
+            $msg .= htmlspecialchars($payload['message']);
+            if (isset($payload['subject'])) {
+                $msg = "🔔 <b>" . htmlspecialchars($payload['subject']) . "</b>\n\n" . htmlspecialchars($payload['message']);
+            }
+            \App\Services\TelegramService::sendMessage($msg);
+            return response()->json(['status' => 'ok']);
         }
 
         $status = strtolower($payload['status'] ?? 'unknown'); // started, finished, failed
@@ -112,11 +124,11 @@ class TelegramBotController extends Controller
                 'finished', 'success' => '¡Deploy Exitoso!',
                 'failed', 'error' => 'Error en el Deploy',
                 'started' => 'Deploy Iniciado...',
-                default => 'Estado Desconocido: ' . $status,
+                default => 'Notificación de ' . ucfirst($status),
             };
 
         $message = "{$emoji} <b>{$statusText}</b>\n\n";
-        $message .= "<b>Aplicación:</b> {$appName}\n";
+        $message .= "<b>Aplicación:</b> " . htmlspecialchars($appName) . "\n";
 
         if ($commitMessage) {
             $message .= "<b>Commit:</b> " . htmlspecialchars($commitMessage) . "\n";
@@ -133,7 +145,7 @@ class TelegramBotController extends Controller
             $message .= "\n<b>Error:</b> <code>" . htmlspecialchars($payload['message']) . "</code>";
         }
 
-        $message .= "\n\n<i>Notificación: Digitaliza Todo</i>";
+        $message .= "\n\n<i>Digitaliza Todo BOT</i>";
 
         \App\Services\TelegramService::sendMessage($message);
 
