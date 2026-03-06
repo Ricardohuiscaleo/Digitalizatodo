@@ -79,6 +79,59 @@ class TelegramBotController extends Controller
     }
 
     /**
+     * Endpoint para recibir Webhooks desde Coolify (Notificaciones de Deploy)
+     * POST /api/webhooks/coolify-deploy
+     */
+    public function handleCoolifyDeploy(Request $request)
+    {
+        $payload = $request->all();
+        // Log::info('Coolify Deploy Webhook Received', $payload);
+
+        // Seguridad: Validar token secreto si existe en el .env
+        $secretToken = env('COOLIFY_WEBHOOK_SECRET');
+        $providedToken = $request->header('X-Coolify-Token') ?? $request->query('token');
+
+        if ($secretToken && $secretToken !== $providedToken) {
+            return response()->json(['status' => 'unauthorized'], 401);
+        }
+
+        $status = strtolower($payload['status'] ?? 'unknown'); // started, finished, failed
+        $appName = $payload['name'] ?? 'Aplicación';
+        $url = $payload['url'] ?? null;
+
+        $emoji = match ($status) {
+                'finished', 'success' => '✅',
+                'failed', 'error' => '❌',
+                'started' => '🚀',
+                default => '❓',
+            };
+
+        $statusText = match ($status) {
+                'finished', 'success' => '¡Deploy Exitoso!',
+                'failed', 'error' => 'Error en el Deploy',
+                'started' => 'Deploy Iniciado...',
+                default => 'Estado Desconocido: ' . $status,
+            };
+
+        $message = "{$emoji} *{$statusText}*\n\n";
+        $message .= "*Aplicación:* {$appName}\n";
+
+        if ($url) {
+            $message .= "*URL:* [Abrir Sitio]({$url})\n";
+        }
+
+        if (($status === 'failed' || $status === 'error') && isset($payload['message'])) {
+            $message .= "\n*Error:* `{$payload['message']}`";
+        }
+
+        $message .= "\n\n_Notificación: Digitaliza Todo_";
+
+        \App\Services\TelegramService::sendMessage($message);
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    /**
      * Endpoint para recibir Webhooks desde Telegram (Tus respuestas)
      */
     public function handleTelegramWebhook(Request $request)
