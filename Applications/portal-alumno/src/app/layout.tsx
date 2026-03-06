@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Digitaliza Todo | Portal Alumno",
+  title: "Digitaliza Todo | Portal Alumnos",
   description: "Tu portal para gestionar clases, pagos y asistencias.",
+  icons: [{ rel: 'icon', url: '/icon.webp' }],
   manifest: "/manifest.json",
   themeColor: "#0f172a",
   viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0",
