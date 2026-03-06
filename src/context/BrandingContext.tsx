@@ -5,6 +5,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 interface TenantBranding {
     id: string;
     name: string;
+    industry?: string;
     logo: string;
     primaryColor: string;
 }

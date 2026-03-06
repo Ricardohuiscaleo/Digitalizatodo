@@ -44,8 +44,14 @@ export default function LoginPage() {
     setIsIdentifying(false);
 
     if (data && data.found && data.tenants.length > 0) {
-      // Si hay varias, por ahora tomamos la primera para el branding visual
-      setBranding(data.tenants[0]);
+      const tenant = data.tenants[0];
+      setBranding({
+        id: tenant.id,
+        name: tenant.name,
+        industry: tenant.industry,
+        logo: tenant.logo,
+        primaryColor: tenant.primary_color
+      });
     }
   };
 
