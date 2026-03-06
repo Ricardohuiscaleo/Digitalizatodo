@@ -85,7 +85,7 @@ class TelegramBotController extends Controller
     public function handleCoolifyDeploy(Request $request)
     {
         $payload = $request->all();
-        // Log::info('Coolify Deploy Webhook Received', $payload);
+        Log::info('Coolify Deploy Webhook Received', $payload);
 
         // Seguridad: Validar token secreto si existe en el .env
         $secretToken = env('COOLIFY_WEBHOOK_SECRET');
