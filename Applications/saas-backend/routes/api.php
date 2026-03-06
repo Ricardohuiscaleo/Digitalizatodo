@@ -26,6 +26,7 @@ Route::post('identify-tenant', [TenantDiscoveryController::class , 'identify']);
 // ── Webhooks (Sin Tenant / Públicos) ──────────────────────────────────────────
 Route::post('webhooks/resend-inbound', [TelegramBotController::class , 'handleResendInbound']);
 Route::post('webhooks/telegram', [TelegramBotController::class , 'handleTelegramWebhook']);
+Route::post('webhooks/coolify-deploy', [TelegramBotController::class , 'handleCoolifyDeploy']);
 
 Route::prefix('{tenant}')->group(function () {
     // Info del tenant
