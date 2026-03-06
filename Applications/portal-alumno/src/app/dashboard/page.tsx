@@ -102,7 +102,7 @@ export default function DashboardPage() {
             <main className="mx-auto max-w-lg space-y-6 p-4 pt-8">
                 {/* Welcome Section */}
                 <section className="space-y-1">
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground">Hola, {guardian.name.split(' ')[0]} 👋</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">Hola, {guardian.name.split(' ')[0]}</h1>
                     <p className="text-sm text-foreground/50">Bienvenido a tu panel de control.</p>
                 </section>
 
