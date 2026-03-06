@@ -87,10 +87,10 @@ export default function LoginPage() {
               {branding?.name || "Digitaliza Todo"}
             </h1>
             <div className="inline-block mt-1 px-3 py-1 rounded-full border border-primary/10 bg-primary/5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">
-              {branding?.industry === 'Escuela de Artes Marciales' ? 'PORTAL ALUMNOS Y FAMILIAS' : 'PORTAL DE CLIENTES'}
+              MI CUENTA
             </div>
             <p className="mt-4 text-xs text-foreground/60">
-              {branding?.industry === 'Escuela de Artes Marciales' ? 'Ingresa a tu portal de alumno' : 'Ingresa a tu portal de clientes'}
+              Gestiona tu cuenta
             </p>
           </div>
         </div>

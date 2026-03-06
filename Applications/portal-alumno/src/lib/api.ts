@@ -21,6 +21,28 @@ export async function identifyTenant(email: string) {
     }
 }
 
+export async function getTenantInfo(tenantId: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/info`);
+        if (!response.ok) return null;
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching tenant info:', error);
+        return null;
+    }
+}
+
+export async function getPlans(tenantId: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/plans`);
+        if (!response.ok) return [];
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching plans:', error);
+        return [];
+    }
+}
+
 export async function login(tenantId: string, credentials: any) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/auth/login`, {

@@ -21,6 +21,7 @@ class Guardian extends Authenticatable
 
     protected $casts = [
         'active' => 'boolean',
+        'password' => 'hashed',
     ];
 
     public function tenant(): \Illuminate\Database\Eloquent\Relations\BelongsTo
