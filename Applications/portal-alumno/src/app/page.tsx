@@ -59,14 +59,10 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-6 sm:p-12 bg-gradient-to-br from-background via-background to-orange-500/5">
-      {/* Decorative Badge */}
-      <div className="absolute top-8 px-4 py-1.5 rounded-full border border-primary/10 bg-primary/5 backdrop-blur-md text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">
-        Portal Alumnos y Familias
-      </div>
       <div className="w-full max-w-md space-y-8">
         {/* Branding Area */}
         <div className="flex flex-col items-center gap-4">
-          <div className="relative h-20 w-20 overflow-hidden rounded-2xl shadow-xl shadow-primary/10 transition-transform hover:scale-105">
+          <div className="relative h-20 w-20 overflow-hidden">
             {branding?.logo ? (
               <Image
                 src={branding.logo}
@@ -84,7 +80,10 @@ export default function LoginPage() {
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
               {branding?.name || "Digitaliza Todo"}
             </h1>
-            <p className="mt-1 text-sm text-foreground/60">
+            <div className="inline-block mt-1 px-3 py-1 rounded-full border border-primary/10 bg-primary/5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">
+              PORTAL ALUMNOS Y FAMILIAS
+            </div>
+            <p className="mt-4 text-xs text-foreground/60">
               Ingresa a tu portal de alumno
             </p>
           </div>

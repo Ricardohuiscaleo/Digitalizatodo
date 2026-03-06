@@ -59,14 +59,10 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-6 sm:p-12 bg-gradient-to-br from-background via-background to-slate-900/50">
-      {/* Decorative Badge */}
-      <div className="absolute top-8 px-4 py-1.5 rounded-full border border-white/5 bg-white/5 backdrop-blur-md text-[10px] font-black uppercase tracking-[0.2em] text-foreground/40">
-        Academy Management
-      </div>
       <div className="w-full max-w-md space-y-8">
         {/* Branding Area */}
         <div className="flex flex-col items-center gap-4">
-          <div className="relative h-20 w-20 overflow-hidden rounded-2xl shadow-xl shadow-primary/10 transition-transform hover:scale-105">
+          <div className="relative h-20 w-20 overflow-hidden">
             {branding?.logo ? (
               <Image
                 src={branding.logo}
@@ -84,7 +80,10 @@ export default function LoginPage() {
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
               {branding?.name || "Digitaliza Todo"}
             </h1>
-            <p className="mt-1 text-sm text-foreground/60">
+            <div className="inline-block mt-1 px-3 py-1 rounded-full border border-white/5 bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-foreground/40">
+              Management
+            </div>
+            <p className="mt-4 text-xs text-foreground/60">
               Ingresa al portal de gestión
             </p>
           </div>
