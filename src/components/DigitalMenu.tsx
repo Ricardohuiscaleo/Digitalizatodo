@@ -167,7 +167,7 @@ export const DigitalMenu: React.FC<DigitalMenuProps> = ({
                             {/* Cliente Login Section */}
                             <li className="menu-item-lateral client-access-item">
                                 <a
-                                    href="https://admin.digitalizatodo.cl/admin/login"
+                                    href="https://admin.digitalizatodo.cl/clientes"
                                     className="menu-link-lateral client-login-link"
                                 >
                                     <div className="item-icon-wrapper">
