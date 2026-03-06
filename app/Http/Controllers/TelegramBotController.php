@@ -115,25 +115,25 @@ class TelegramBotController extends Controller
                 default => 'Estado Desconocido: ' . $status,
             };
 
-        $message = "{$emoji} *{$statusText}*\n\n";
-        $message .= "*Aplicación:* {$appName}\n";
+        $message = "{$emoji} <b>{$statusText}</b>\n\n";
+        $message .= "<b>Aplicación:</b> {$appName}\n";
 
         if ($commitMessage) {
-            $message .= "*Commit:* {$commitMessage}\n";
+            $message .= "<b>Commit:</b> " . htmlspecialchars($commitMessage) . "\n";
         }
         elseif ($commitHash) {
-            $message .= "*Hash:* `{$commitHash}`\n";
+            $message .= "<b>Hash:</b> <code>" . htmlspecialchars($commitHash) . "</code>\n";
         }
 
         if ($url) {
-            $message .= "*URL:* [Abrir Sitio]({$url})\n";
+            $message .= "<b>URL:</b> <a href=\"{$url}\">Abrir Sitio</a>\n";
         }
 
         if (($status === 'failed' || $status === 'error') && isset($payload['message'])) {
-            $message .= "\n*Error:* `{$payload['message']}`";
+            $message .= "\n<b>Error:</b> <code>" . htmlspecialchars($payload['message']) . "</code>";
         }
 
-        $message .= "\n\n_Notificación: Digitaliza Todo_";
+        $message .= "\n\n<i>Notificación: Digitaliza Todo</i>";
 
         \App\Services\TelegramService::sendMessage($message);
 
