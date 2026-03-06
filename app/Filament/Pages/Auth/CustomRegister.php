@@ -81,6 +81,15 @@ class CustomRegister extends BaseRegister
                 'active' => true,
             ]);
 
+            // Crear un Apoderado de prueba para que puedan entrar a mi.digitalizatodo.cl
+            $demoGuardian = \App\Models\Guardian::create([
+                'tenant_id' => $tenant->id,
+                'name' => 'Familia Demo',
+                'email' => 'familia@digitalizatodo.cl',
+                'password' => 'demo1234',
+                'active' => true,
+            ]);
+
             $names = ['Juan Pérez', 'María González', 'Carlos Silva', 'Ana Rojas', 'Pedro Morales'];
             $isArtesMarciales = $data['company_type'] === 'Escuela de Artes Marciales';
             $ranks = $isArtesMarciales ? ['Blanco', 'Azul', 'Blanco', 'Morado', 'Azul'] : ['Nivel 1', 'Nivel 2', 'Nivel 1', 'Nivel 3', 'Nivel 2'];
@@ -96,6 +105,9 @@ class CustomRegister extends BaseRegister
                     'category' => $category,
                     'created_at' => now()->subDays(rand(1, 30)),
                 ]);
+
+                // Vincular al apoderado demo
+                $student->guardians()->attach($demoGuardian->id, ['primary' => true]);
 
                 // Inscribir Alumno al Plan Demo
                 $enrollment = \App\Models\Enrollment::create([
