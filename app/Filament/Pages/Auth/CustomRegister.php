@@ -81,7 +81,16 @@ class CustomRegister extends BaseRegister
                 'active' => true,
             ]);
 
-            // Crear un Apoderado de prueba para que puedan entrar a mi.digitalizatodo.cl
+            // Crear un Apoderado de prueba con el MISMO correo del admin para que pueda probar mi.digitalizatodo.cl
+            $adminGuardian = \App\Models\Guardian::create([
+                'tenant_id' => $tenant->id,
+                'name' => $data['name'] . ' (Apoderado)',
+                'email' => $data['email'],
+                'password' => $data['password'], // Se encriptará automáticamente si el modelo tiene cast o mutator, pero en Guardian se guarda el hash
+                'active' => true,
+            ]);
+
+            // Crear un Apoderado de prueba genérico para que puedan entrar a mi.digitalizatodo.cl
             $demoGuardian = \App\Models\Guardian::create([
                 'tenant_id' => $tenant->id,
                 'name' => 'Familia Demo',
@@ -106,8 +115,9 @@ class CustomRegister extends BaseRegister
                     'created_at' => now()->subDays(rand(1, 30)),
                 ]);
 
-                // Vincular al apoderado demo
-                $student->guardians()->attach($demoGuardian->id, ['primary' => true]);
+                // Vincular al apoderado admin y al demo
+                $student->guardians()->attach($adminGuardian->id, ['primary' => true]);
+                $student->guardians()->attach($demoGuardian->id, ['primary' => false]);
 
                 // Inscribir Alumno al Plan Demo
                 $enrollment = \App\Models\Enrollment::create([

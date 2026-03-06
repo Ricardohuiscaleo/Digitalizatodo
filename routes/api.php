@@ -28,6 +28,11 @@ Route::post('webhooks/resend-inbound', [TelegramBotController::class , 'handleRe
 Route::post('webhooks/telegram', [TelegramBotController::class , 'handleTelegramWebhook']);
 
 Route::prefix('{tenant}')->group(function () {
+    // Info del tenant
+    Route::get('info', [TenantDiscoveryController::class , 'show']);
+
+    // Planes públicos
+    Route::get('plans', [PlanController::class , 'index']);
 
     // Registro público de alumnos
     Route::post('register-student', [StudentRegistrationController::class , 'register']);
