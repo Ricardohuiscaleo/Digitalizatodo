@@ -23,6 +23,11 @@ export default function LoginPage() {
     setIsLoggingIn(false);
 
     if (result.token) {
+      if (result.user_type !== 'guardian') {
+        setError("Este portal es solo para alumnos y apoderados.");
+        setIsLoggingIn(false);
+        return;
+      }
       localStorage.setItem("student_token", result.token);
       localStorage.setItem("tenant_id", branding.id);
       window.location.href = "/dashboard";

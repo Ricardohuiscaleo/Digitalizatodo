@@ -23,7 +23,12 @@ export default function LoginPage() {
     setIsLoggingIn(false);
 
     if (result.token) {
-      localStorage.setItem("student_token", result.token);
+      if (result.user_type !== 'staff') {
+        setError("Este portal es solo para profesores y administradores.");
+        setIsLoggingIn(false);
+        return;
+      }
+      localStorage.setItem("staff_token", result.token);
       localStorage.setItem("tenant_id", branding.id);
       window.location.href = "/dashboard";
     } else {
