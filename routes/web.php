@@ -23,3 +23,8 @@ Route::get('/login', function () {
 Route::get('/trial-expirado', function () {
     return view('trial-expired');
 })->name('trial.expired');
+
+// Redirección para el login del panel tenant al login global
+Route::get('/auth/login-redirect', function () {
+    return redirect('/clientes/login');
+})->name('filament.tenant.auth.login');

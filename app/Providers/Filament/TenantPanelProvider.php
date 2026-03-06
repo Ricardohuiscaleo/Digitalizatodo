@@ -66,16 +66,4 @@ class TenantPanelProvider extends PanelProvider
                 \App\Http\Middleware\CheckTenantTrial::class,
             ]);
     }
-
-    public function boot(): void
-    {
-        // Redirigir el login del panel 'tenant' al login global del panel 'portal'
-        \Filament\Facades\Filament::getPanel('tenant')->authPasswordBroker(null);
-        \Filament\Facades\Filament::serveResponseUsing(function (\Symfony\Component\HttpFoundation\Response $response) {
-            if ($response->getStatusCode() === 401 && \Filament\Facades\Filament::getCurrentPanel()->getId() === 'tenant') {
-                return redirect()->guest('/clientes/login');
-            }
-            return $response;
-        });
-    }
 }
