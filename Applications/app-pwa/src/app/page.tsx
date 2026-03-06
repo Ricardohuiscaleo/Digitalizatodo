@@ -75,7 +75,7 @@ export default function LoginPage() {
               {branding?.name || "Digitaliza Todo"}
             </h1>
             <p className="mt-1 text-sm text-foreground/60">
-              Ingresa a tu portal de alumno
+              Ingresa al portal de gestión
             </p>
           </div>
         </div>
