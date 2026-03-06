@@ -58,17 +58,27 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-6 sm:p-12">
+    <div className="flex min-h-screen flex-col items-center justify-center p-6 sm:p-12 bg-gradient-to-br from-background via-background to-orange-500/5">
+      {/* Decorative Badge */}
+      <div className="absolute top-8 px-4 py-1.5 rounded-full border border-primary/10 bg-primary/5 backdrop-blur-md text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">
+        Portal Alumnos y Familias
+      </div>
       <div className="w-full max-w-md space-y-8">
         {/* Branding Area */}
         <div className="flex flex-col items-center gap-4">
           <div className="relative h-20 w-20 overflow-hidden rounded-2xl shadow-xl shadow-primary/10 transition-transform hover:scale-105">
-            <Image
-              src={branding?.logo || "/icon.webp"}
-              alt={branding?.name || "Logo"}
-              fill
-              className="object-cover"
-            />
+            {branding?.logo ? (
+              <Image
+                src={branding.logo}
+                alt={branding.name}
+                fill
+                className="object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-primary/10 text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+              </div>
+            )}
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
