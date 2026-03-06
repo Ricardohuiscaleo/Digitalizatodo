@@ -44,8 +44,14 @@ export default function LoginPage() {
     setIsIdentifying(false);
 
     if (data && data.found && data.tenants.length > 0) {
-      // Si hay varias, por ahora tomamos la primera para el branding visual
-      setBranding(data.tenants[0]);
+      const tenant = data.tenants[0];
+      setBranding({
+        id: tenant.id,
+        name: tenant.name,
+        industry: tenant.industry,
+        logo: tenant.logo,
+        primaryColor: tenant.primary_color
+      });
     }
   };
 
@@ -81,10 +87,10 @@ export default function LoginPage() {
               {branding?.name || "Digitaliza Todo"}
             </h1>
             <div className="inline-block mt-1 px-3 py-1 rounded-full border border-primary/10 bg-primary/5 text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">
-              PORTAL ALUMNOS Y FAMILIAS
+              {branding?.industry === 'Escuela de Artes Marciales' ? 'PORTAL ALUMNOS Y FAMILIAS' : 'PORTAL DE CLIENTES'}
             </div>
             <p className="mt-4 text-xs text-foreground/60">
-              Ingresa a tu portal de alumno
+              {branding?.industry === 'Escuela de Artes Marciales' ? 'Ingresa a tu portal de alumno' : 'Ingresa a tu portal de clientes'}
             </p>
           </div>
         </div>
