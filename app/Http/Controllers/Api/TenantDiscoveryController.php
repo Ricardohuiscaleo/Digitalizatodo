@@ -34,6 +34,7 @@ class TenantDiscoveryController extends Controller
         $tenants = $guardians->map(fn($g) => [
         'id' => $g->tenant->id,
         'name' => $g->tenant->name,
+        'industry' => $g->tenant->industry,
         'logo' => $g->tenant->logo_url ?? '/icon.webp', // Asumimos logo_url o fallback
         'primary_color' => $g->tenant->primary_color ?? '#f59e0b',
         ])->unique('id')->values();
