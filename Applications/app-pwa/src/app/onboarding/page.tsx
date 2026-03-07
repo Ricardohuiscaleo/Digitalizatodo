@@ -75,10 +75,10 @@ export default function OnboardingPage() {
                             Te hemos enviado un correo con los pasos a seguir. Ya puedes acceder a tu panel de administración privado:
                         </p>
                         <div className="p-4 bg-white/5 rounded-xl border border-white/10 font-mono text-indigo-400 break-all text-center select-all cursor-pointer hover:bg-white/10 transition-colors">
-                            https://mi.digitalizatodo.cl/{formData.tenant_slug}
+                            https://admin.digitalizatodo.cl/{formData.tenant_slug}
                         </div>
                         <button
-                            onClick={() => window.location.href = `https://mi.digitalizatodo.cl/${formData.tenant_slug}`}
+                            onClick={() => window.location.href = `https://admin.digitalizatodo.cl/${formData.tenant_slug}`}
                             className="w-full h-14 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-indigo-600/20 active:scale-95"
                         >
                             Ir a mi Panel <ChevronRight className="w-5 h-5" />

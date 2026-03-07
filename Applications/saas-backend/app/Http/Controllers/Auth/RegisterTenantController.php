@@ -44,19 +44,19 @@ class RegisterTenantController extends Controller
 
         // Notificar por Telegram
         $msg = "<b>🚀 ¡NUEVO REGISTRO DE EMPRESA!</b>\n\n"
-             . "🏢 <b>Empresa:</b> {$tenant->name} ({$tenant->industry})\n"
-             . "🔗 <b>Slug:</b> {$tenant->id}\n"
-             . "👤 <b>Dueño:</b> {$user->name}\n"
-             . "📧 <b>Email:</b> {$user->email}\n\n"
-             . "🌍 <a href='https://mi.digitalizatodo.cl/{$tenant->id}'>Ver Panel mi.digitalizatodo.cl</a>";
-        
+            . "🏢 <b>Empresa:</b> {$tenant->name} ({$tenant->industry})\n"
+            . "🔗 <b>Slug:</b> {$tenant->id}\n"
+            . "👤 <b>Dueño:</b> {$user->name}\n"
+            . "📧 <b>Email:</b> {$user->email}\n\n"
+            . "🌍 <a href='https://mi.digitalizatodo.cl/{$tenant->id}'>Ver Panel mi.digitalizatodo.cl</a>";
+
         TelegramService::sendMessage($msg);
 
         return response()->json([
             'message' => '¡Empresa registrada con éxito!',
             'tenant' => $tenant,
             'user' => $user,
-            'admin_url' => "https://mi.digitalizatodo.cl/{$tenant->id}",
+            'admin_url' => "https://admin.digitalizatodo.cl/{$tenant->id}",
             'instructions' => 'Ya puedes ingresar a tu panel de administración privado y comenzar a configurar tu negocio.'
         ], 201);
     }
