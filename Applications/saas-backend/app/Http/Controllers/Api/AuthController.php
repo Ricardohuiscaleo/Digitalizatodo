@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Guardian;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -15,56 +16,46 @@ class AuthController extends Controller
      */
     public function login(Request $request): JsonResponse
     {
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string',
+        ]);
+
+        /** @var \App\Models\Tenant $tenant */
+        $tenant = app('currentTenant');
+
         try {
-            $request->validate([
-                'email' => 'required|email',
-                'password' => 'required|string',
-            ]);
+            // Buscamos el usuario en staff (User) o clientes (Guardian) de forma agnóstica
+            $query = match (true) {
+                User::where('email', $credentials['email'])->exists() => User::query(),
+                Guardian::where('email', $credentials['email'])->exists() => Guardian::query(),
+                default => null
+            };
 
-            $tenant = app('currentTenant');
-
-            // 1. Intentar buscar como Staff (User)
-            // Se permite el login a usuarios específicos del tenant o SuperAdmins (tenant_id NULL)
-            $user = \App\Models\User::with('tenant')->where(function ($q) use ($tenant) {
-                $q->where('tenant_id', $tenant->id)
-                    ->orWhereNull('tenant_id');
-            })
-                ->where('email', $request->email)
-                ->first();
-
-            if ($user && Hash::check($request->password, $user->password)) {
-                $token = $user->createToken("staff-{$tenant->id}")->plainTextToken;
-                return response()->json([
-                    'token' => $token,
-                    'user_type' => 'staff',
-                    'user' => $user->only('id', 'name', 'email'),
-                    'tenant' => $tenant->only('id', 'name', 'primary_color', 'logo'),
-                ]);
+            if (!$query) {
+                return response()->json(['message' => 'Credenciales inválidas.'], 401);
             }
 
-            // 2. Intentar buscar como Guardian
-            $guardian = Guardian::where('tenant_id', $tenant->id)
-                ->where('email', $request->email)
-                ->where('active', true)
-                ->first();
+            $user = $query->where('tenant_id', $tenant->id)->where('active', true)->first();
 
-            if ($guardian && Hash::check($request->password, $guardian->password)) {
-                $token = $guardian->createToken("portal-{$tenant->id}")->plainTextToken;
-                return response()->json([
-                    'token' => $token,
-                    'user_type' => 'guardian',
-                    'user' => $guardian->only('id', 'name', 'email', 'phone'),
-                    'tenant' => $tenant->only('id', 'name', 'primary_color', 'logo'),
-                ]);
+            if (!$user || !Hash::check($credentials['password'], $user->password)) {
+                return response()->json(['message' => 'Credenciales inválidas.'], 401);
             }
 
-            return response()->json(['message' => 'Credenciales incorrectas.'], 401);
-        }
-        catch (\Exception $e) {
+            $userType = ($user instanceof User) ? 'staff' : 'guardian';
+            $tokenPrefix = ($userType === 'staff') ? 'staff-' : 'portal-';
+            $token = $user->createToken($tokenPrefix . $tenant->id)->plainTextToken;
+
             return response()->json([
-                'message' => 'Error interno en el servidor.',
+                'token' => $token,
+                'user_type' => $userType,
+                'user' => $user->only('id', 'name', 'email', 'phone'),
+                'tenant' => $tenant->only('id', 'name', 'primary_color', 'logo'),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Error crítico en el login.',
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ], 500);
         }
     }
@@ -76,7 +67,7 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        if ($user instanceof \App\Models\User) {
+        if ($user instanceof User) {
             // Perfil de Staff
             return response()->json([
                 'user_type' => 'staff',
@@ -96,17 +87,17 @@ class AuthController extends Controller
                 'user_type' => 'guardian',
                 'guardian' => $guardian->only('id', 'name', 'email', 'phone'),
                 'students' => $guardian->students->map(fn($s) => [
-            'id' => $s->id,
-            'name' => $s->name,
-            'photo' => $s->photo,
-            'category' => $s->category,
-            'is_updated' => $s->is_updated,
-            'pending_payments' => $s->enrollments->flatMap->payments->count(),
-            'recent_attendance' => $s->attendances->map(fn($a) => [
-            'date' => $a->date->format('Y-m-d'),
-            'status' => $a->status,
-            ]),
-            ]),
+                    'id' => $s->id,
+                    'name' => $s->name,
+                    'photo' => $s->photo,
+                    'category' => $s->category,
+                    'is_updated' => $s->is_updated,
+                    'pending_payments' => $s->enrollments->flatMap->payments->count(),
+                    'recent_attendance' => $s->attendances->map(fn($a) => [
+                        'date' => $a->date->format('Y-m-d'),
+                        'status' => $a->status,
+                    ]),
+                ]),
                 'total_due' => $guardian->total_due,
             ]);
         }
