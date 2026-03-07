@@ -38,7 +38,11 @@ class AuthController extends Controller
                 return response()->json(['message' => 'Credenciales inválidas.'], 401);
             }
 
-            $user = $query->where('tenant_id', $tenant->id)->where('active', true)->first();
+            if ($userType === 'staff') {
+                $user = $query->where('tenant_id', $tenant->id)->first();
+            } else {
+                $user = $query->where('tenant_id', $tenant->id)->where('active', true)->first();
+            }
 
             if (!$user || !Hash::check($credentials['password'], $user->password)) {
                 return response()->json(['message' => 'Credenciales inválidas.'], 401);

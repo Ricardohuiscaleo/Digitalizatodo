@@ -26,9 +26,11 @@ class StudentRegistrationController extends Controller
             'guardian_name' => 'required|string|max:255',
             'guardian_email' => 'required|email|max:255',
             'guardian_phone' => 'required|string|max:20',
-            'students' => 'required|array|min:1',
-            'students.*.name' => 'required|string|max:255',
-            'students.*.category' => 'required|in:kids,adults,teen',
+            'password' => 'required|string|min:8|confirmed',
+            'is_self_register' => 'required|boolean',
+            'students' => 'required_if:is_self_register,false|array',
+            'students.*.name' => 'required_with:students|string|max:255',
+            'students.*.category' => 'required_with:students|in:kids,adults,teen',
             'plan_id' => 'required|exists:plans,id',
         ]);
 
@@ -37,22 +39,35 @@ class StudentRegistrationController extends Controller
         }
 
         return DB::transaction(function () use ($request, $tenant) {
-            // 1. Crear o buscar Apoderado
+            // 1. Crear o buscar Apoderado/Usuario dependiente
             $guardian = Guardian::updateOrCreate(
             ['email' => $request->guardian_email, 'tenant_id' => $tenant->id],
             [
                 'name' => $request->guardian_name,
                 'phone' => $request->guardian_phone,
-                'password' => Hash::make($request->guardian_phone), // Pass inicial por defecto es su cel
+                'password' => Hash::make($request->password),
                 'active' => true,
             ]
             );
 
             $plan = Plan::findOrFail($request->plan_id);
-            $studentCount = count($request->students);
+            $studentsToCreate = [];
+
+            if ($request->is_self_register) {
+                // El apoderado es el alumno titular
+                $studentsToCreate[] = [
+                    'name' => $request->guardian_name,
+                    'category' => 'adults', // Por defecto adultos si es titular, o recibir de PWA
+                ];
+            }
+            else {
+                $studentsToCreate = $request->students;
+            }
+
+            $studentCount = count($studentsToCreate);
 
             // 2. Crear Alumnos e Inscripciones
-            foreach ($request->students as $studentData) {
+            foreach ($studentsToCreate as $studentData) {
                 $student = Student::create([
                     'tenant_id' => $tenant->id,
                     'name' => $studentData['name'],
@@ -88,13 +103,13 @@ class StudentRegistrationController extends Controller
             // 4. Notificar vía Telegram
             try {
                 $telegram = app(\App\Services\TelegramService::class);
-                $msg = "*Nuevo Registro de Alumno*\n\n";
-                $msg .= "*Academia:* {$tenant->name}\n";
-                $msg .= "*Apoderado:* {$guardian->name}\n";
-                $msg .= "*Email:* {$guardian->email}\n";
-                $msg .= "*Alumnos:* {$studentCount}\n";
-                $msg .= "*Plan:* {$plan->name}\n";
-                $msg .= "\n_Gestionado automáticamente por Digitaliza Todo_";
+                $msg = "<b>🆕 NUEVO REGISTRO DE ALUMNO</b>\n\n"
+                    . "🏢 <b>Academia:</b> {$tenant->name}\n"
+                    . "👤 <b>Apoderado/Titular:</b> {$guardian->name}\n"
+                    . "📧 <b>Email:</b> {$guardian->email}\n"
+                    . "👥 <b>Alumnos Inscritos:</b> {$studentCount}\n"
+                    . "📋 <b>Plan:</b> {$plan->name}\n\n"
+                    . "<i>_Gestionado automáticamente por Digitaliza Todo_</i>";
 
                 $telegram->sendMessage($msg);
             }
@@ -103,9 +118,10 @@ class StudentRegistrationController extends Controller
             }
 
             return response()->json([
-                'message' => 'Registro exitoso.',
+                'message' => '¡Registro exitoso! Ya puedes iniciar sesión.',
                 'guardian_id' => $guardian->id,
                 'redirect_url' => '/login',
+                'tenant_name' => $tenant->name
             ], 201);
         });
     }

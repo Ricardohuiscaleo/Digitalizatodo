@@ -12,20 +12,24 @@ class TelegramService
      */
     public static function sendMessage(string $message): void
     {
-        $token = env('TELEGRAM_BOT_TOKEN');
-        $chatId = env('TELEGRAM_ADMIN_ID');
+        $token = config('services.telegram.bot_token');
+        $chatId = config('services.telegram.admin_id');
 
         if (!$token || !$chatId) {
-            Log::warning('Telegram: Token o Admin ID no configurado en .env');
+            Log::warning('Telegram: Token o Admin ID no configurado en config/services.php');
             return;
         }
 
         try {
-            Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
+            $response = Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
                 'chat_id' => $chatId,
                 'text' => $message,
                 'parse_mode' => 'HTML',
             ]);
+
+            if (!$response->successful()) {
+                Log::error('Telegram: API retornó error: ' . $response->body());
+            }
         }
         catch (\Exception $e) {
             Log::error('Telegram: Error al enviar mensaje: ' . $e->getMessage());

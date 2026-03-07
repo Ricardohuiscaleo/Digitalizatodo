@@ -69,4 +69,47 @@ class AttendanceController extends Controller
             'attendance' => $attendance
         ]);
     }
+
+    /**
+     * Valida el token del QR y registra la asistencia.
+     * POST /api/{tenant}/attendance/verify-qr
+     */
+    public function verifyQR(Request $request, \App\Models\Tenant $tenant)
+    {
+        $request->validate([
+            'qr_token' => 'required|string',
+            'student_id' => 'required|exists:students,id',
+        ]);
+
+        $tenantId = AttendanceQRController::validateToken($request->qr_token);
+
+        if (!$tenantId || $tenantId != $tenant->id) {
+            return response()->json(['message' => 'Código QR inválido o expirado'], 422);
+        }
+
+        $student = \App\Models\Student::where('id', $request->student_id)
+            ->where('tenant_id', $tenant->id)
+            ->first();
+
+        if (!$student) {
+            return response()->json(['message' => 'Estudiante no encontrado'], 404);
+        }
+
+        $attendance = Attendance::updateOrCreate(
+        [
+            'tenant_id' => $tenant->id,
+            'student_id' => $student->id,
+            'date' => now()->format('Y-m-d'),
+        ],
+        [
+            'status' => 'present',
+            'notes' => 'Registrado vía QR por el usuario',
+        ]
+        );
+
+        return response()->json([
+            'message' => '¡Asistencia registrada con éxito!',
+            'attendance' => $attendance
+        ]);
+    }
 }
