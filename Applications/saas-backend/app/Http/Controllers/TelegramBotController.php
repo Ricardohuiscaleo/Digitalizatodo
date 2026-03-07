@@ -96,66 +96,66 @@ class TelegramBotController extends Controller
             return response()->json(['status' => 'unauthorized'], 401);
         }
 
-        // Si es un ping de test o mensaje genérico de Coolify
-        if (isset($payload['message']) && !isset($payload['status'])) {
-            $msg = "🔔 <b>Notificación de Sistema (Coolify)</b>\n\n";
+        // Consolidar toda la información posible del payload
+        $status = strtolower($payload['status'] ?? ($payload['state'] ?? 'unknown'));
+        $rawMsg = $payload['message'] ?? null;
+        $subject = $payload['subject'] ?? null;
+        $appName = $payload['name'] ?? ($payload['application_name'] ?? 'Aplicación');
+        $url = $payload['url'] ?? ($payload['deployment_url'] ?? null);
+        $commitMessage = $payload['commit_message'] ?? ($payload['commit_subject'] ?? null);
+        $commitHash = $payload['commit'] ?? ($payload['commit_hash'] ?? null);
+        $author = $payload['commit_author'] ?? ($payload['author_name'] ?? null);
+        $branch = $payload['branch'] ?? ($payload['vcs_branch'] ?? null);
 
-            // Intentamos extraer algo más de "chicha" del mensaje genérico
-            $rawMsg = $payload['message'];
-            if (str_contains($rawMsg, 'successfully deployed')) {
-                $msg = "✅ <b>¡Nueva Versión en Producción!</b>\n\n";
-            }
-            elseif (str_contains($rawMsg, 'restarted')) {
-                $msg = "♻️ <b>Recurso Reiniciado</b>\n\n";
-            }
+        // Determinar el título basado en el estado o mensaje
+        $title = "🔔 <b>Notificación de Sistema</b>";
+        $emoji = "❓";
 
-            $msg .= "📝 " . htmlspecialchars($rawMsg);
-
-            if (isset($payload['subject'])) {
-                $msg .= "\n📌 <i>" . htmlspecialchars($payload['subject']) . "</i>";
-            }
-
-            $msg .= "\n\n<i>Digitaliza Todo BOT</i>";
-            \App\Services\TelegramService::sendMessage($msg);
-            return response()->json(['status' => 'ok']);
+        if ($status === 'finished' || $status === 'success' || str_contains($rawMsg, 'successfully deployed')) {
+            $title = "✅ <b>¡Nueva Versión en Producción!</b>";
+            $emoji = "✅";
+        }
+        elseif ($status === 'failed' || $status === 'error' || str_contains($rawMsg, 'failed')) {
+            $title = "❌ <b>Error en el Despliegue</b>";
+            $emoji = "❌";
+        }
+        elseif ($status === 'started' || str_contains($rawMsg, 'started')) {
+            $title = "🚀 <b>Despliegue Iniciado</b>";
+            $emoji = "🚀";
+        }
+        elseif (str_contains($rawMsg, 'restarted')) {
+            $title = "♻️ <b>Recurso Reiniciado</b>";
+            $emoji = "♻️";
         }
 
-        $status = strtolower($payload['status'] ?? 'unknown'); // started, finished, failed
-        $appName = $payload['name'] ?? 'Aplicación';
-        $url = $payload['url'] ?? null;
-        $commitMessage = $payload['commit_message'] ?? null;
-        $commitHash = $payload['commit'] ?? null;
+        $message = "{$emoji} {$title}\n\n";
+        $message .= "<b>📦 App:</b> " . htmlspecialchars($appName) . "\n";
 
-        $emoji = match ($status) {
-                'finished', 'success' => '✅',
-                'failed', 'error' => '❌',
-                'started' => '🚀',
-                default => '❓',
-            };
-
-        $statusText = match ($status) {
-                'finished', 'success' => '¡Deploy Exitoso!',
-                'failed', 'error' => 'Error en el Deploy',
-                'started' => 'Deploy Iniciado...',
-                default => 'Notificación de ' . ucfirst($status),
-            };
-
-        $message = "{$emoji} <b>{$statusText}</b>\n\n";
-        $message .= "<b>Aplicación:</b> " . htmlspecialchars($appName) . "\n";
+        if ($branch) {
+            $message .= "<b>🌿 Rama:</b> <code>" . htmlspecialchars($branch) . "</code>\n";
+        }
 
         if ($commitMessage) {
-            $message .= "<b>Commit:</b> " . htmlspecialchars($commitMessage) . "\n";
+            $message .= "<b>📝 Commit:</b> " . htmlspecialchars($commitMessage) . "\n";
         }
-        elseif ($commitHash) {
-            $message .= "<b>Hash:</b> <code>" . htmlspecialchars($commitHash) . "</code>\n";
+        elseif ($rawMsg && !str_contains($rawMsg, 'successfully deployed')) {
+            $message .= "<b>💬 Msg:</b> " . htmlspecialchars($rawMsg) . "\n";
+        }
+
+        if ($author) {
+            $message .= "<b>👤 Autor:</b> " . htmlspecialchars($author) . "\n";
+        }
+
+        if ($commitHash) {
+            $message .= "<b>🔗 Hash:</b> <code>" . substr($commitHash, 0, 7) . "</code>\n";
         }
 
         if ($url) {
-            $message .= "<b>URL:</b> <a href=\"{$url}\">Abrir Sitio</a>\n";
+            $message .= "<b>🌐 URL:</b> <a href=\"{$url}\">Ver Cambios</a>\n";
         }
 
-        if (($status === 'failed' || $status === 'error') && isset($payload['message'])) {
-            $message .= "\n<b>Error:</b> <code>" . htmlspecialchars($payload['message']) . "</code>";
+        if ($subject && $subject !== 'Coolify Notification') {
+            $message .= "\n📌 <i>" . htmlspecialchars($subject) . "</i>";
         }
 
         $message .= "\n\n<i>Digitaliza Todo BOT</i>";
@@ -206,5 +206,5 @@ class TelegramBotController extends Controller
 
         return response()->json(['status' => 'ok']);
     }
-}// Test deploy Sat Mar  7 16:46:41 -03 2026
+} // Test deploy Sat Mar  7 16:46:41 -03 2026
 // Final fix trigger Sat Mar  7 16:50:06 -03 2026
