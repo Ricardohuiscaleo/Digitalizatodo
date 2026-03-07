@@ -15,45 +15,58 @@ class AuthController extends Controller
      */
     public function login(Request $request): JsonResponse
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string',
-        ]);
-
-        $tenant = app('currentTenant');
-
-        // 1. Intentar buscar como Staff (User)
-        $user = \App\Models\User::where('tenant_id', $tenant->id)
-            ->where('email', $request->email)
-            ->first();
-
-        if ($user && Hash::check($request->password, $user->password)) {
-            $token = $user->createToken("staff-{$tenant->id}")->plainTextToken;
-            return response()->json([
-                'token' => $token,
-                'user_type' => 'staff',
-                'user' => $user->only('id', 'name', 'email'),
-                'tenant' => $tenant->only('id', 'name', 'primary_color', 'logo'),
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required|string',
             ]);
+
+            $tenant = app('currentTenant');
+
+            // 1. Intentar buscar como Staff (User)
+            // Se permite el login a usuarios específicos del tenant o SuperAdmins (tenant_id NULL)
+            $user = \App\Models\User::with('tenant')->where(function ($q) use ($tenant) {
+                $q->where('tenant_id', $tenant->id)
+                    ->orWhereNull('tenant_id');
+            })
+                ->where('email', $request->email)
+                ->first();
+
+            if ($user && Hash::check($request->password, $user->password)) {
+                $token = $user->createToken("staff-{$tenant->id}")->plainTextToken;
+                return response()->json([
+                    'token' => $token,
+                    'user_type' => 'staff',
+                    'user' => $user->only('id', 'name', 'email'),
+                    'tenant' => $tenant->only('id', 'name', 'primary_color', 'logo'),
+                ]);
+            }
+
+            // 2. Intentar buscar como Guardian
+            $guardian = Guardian::where('tenant_id', $tenant->id)
+                ->where('email', $request->email)
+                ->where('active', true)
+                ->first();
+
+            if ($guardian && Hash::check($request->password, $guardian->password)) {
+                $token = $guardian->createToken("portal-{$tenant->id}")->plainTextToken;
+                return response()->json([
+                    'token' => $token,
+                    'user_type' => 'guardian',
+                    'user' => $guardian->only('id', 'name', 'email', 'phone'),
+                    'tenant' => $tenant->only('id', 'name', 'primary_color', 'logo'),
+                ]);
+            }
+
+            return response()->json(['message' => 'Credenciales incorrectas.'], 401);
         }
-
-        // 2. Intentar buscar como Guardian
-        $guardian = Guardian::where('tenant_id', $tenant->id)
-            ->where('email', $request->email)
-            ->where('active', true)
-            ->first();
-
-        if ($guardian && Hash::check($request->password, $guardian->password)) {
-            $token = $guardian->createToken("portal-{$tenant->id}")->plainTextToken;
+        catch (\Exception $e) {
             return response()->json([
-                'token' => $token,
-                'user_type' => 'guardian',
-                'user' => $guardian->only('id', 'name', 'email', 'phone'),
-                'tenant' => $tenant->only('id', 'name', 'primary_color', 'logo'),
-            ]);
+                'message' => 'Error interno en el servidor.',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ], 500);
         }
-
-        return response()->json(['message' => 'Credenciales incorrectas.'], 401);
     }
 
     /**

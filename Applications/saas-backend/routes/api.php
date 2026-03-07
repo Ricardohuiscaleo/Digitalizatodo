@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PlanController;
+use App\Http\Middleware\ResolveTenantFromPath;
 use App\Http\Controllers\TelegramBotController;
 
 /*
@@ -29,7 +30,7 @@ Route::post('webhooks/resend-inbound', [TelegramBotController::class , 'handleRe
 Route::post('webhooks/telegram', [TelegramBotController::class , 'handleTelegramWebhook']);
 Route::post('webhooks/coolify-deploy', [TelegramBotController::class , 'handleCoolifyDeploy']);
 
-Route::prefix('{tenant}')->group(function () {
+Route::middleware([ResolveTenantFromPath::class])->prefix('{tenant}')->group(function () {
     // Info del tenant
     Route::get('info', [TenantDiscoveryController::class , 'show']);
 
