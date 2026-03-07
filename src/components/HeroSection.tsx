@@ -65,14 +65,13 @@ export function HeroSection() {
                             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </span>
                     </Button>
-                    <Button
-                        variant="ghost"
-                        size="lg"
-                        className="h-16 px-10 rounded-xl text-slate-300 font-semibold hover:bg-white/5 transition-all border border-white/5"
+                    <button
+                        className="group relative h-16 px-4 text-slate-400 font-semibold transition-all hover:text-green-400 overflow-hidden"
                         onClick={() => window.location.href = 'https://app.digitalizatodo.cl/login'}
                     >
-                        Acceso Clientes
-                    </Button>
+                        <span>Acceso Clientes</span>
+                        <span className="absolute bottom-4 left-4 right-4 h-[2px] bg-green-500 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+                    </button>
                 </div>
             </div>
         </section>
