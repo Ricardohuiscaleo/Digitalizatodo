@@ -39,18 +39,14 @@ export default function LoginPage() {
                 throw new Error(data.message || "Credenciales inválidas");
             }
 
-            // Guardar token y branding recibido del backend
-            localStorage.setItem("auth_token", data.token);
-            if (data.tenant) {
-                setBranding({
-                    id: data.tenant.id,
-                    name: data.tenant.name,
-                    logo: data.tenant.logo,
-                    primaryColor: data.tenant.primary_color,
-                });
+            // Redirección inteligente según el tipo de usuario
+            if (data.user_type === 'staff') {
+                localStorage.setItem("staff_token", data.token);
+                window.location.href = "/dashboard";
+            } else {
+                localStorage.setItem("auth_token", data.token);
+                window.location.href = "/dashboard/student";
             }
-
-            window.location.href = "/dashboard";
         } catch (err: any) {
             setError(err.message);
         } finally {

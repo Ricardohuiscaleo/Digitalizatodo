@@ -33,7 +33,6 @@ export default function RegisterPage() {
                 primaryColor: data.primaryColor || "#3b82f6",
             });
         }
-        setIdentifying(true); // Wait, I should set it to false
         setIdentifying(false);
     };
 
