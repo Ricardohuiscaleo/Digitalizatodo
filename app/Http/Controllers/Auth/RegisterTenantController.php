@@ -43,6 +43,8 @@ class RegisterTenantController extends Controller
             'message' => '¡Empresa registrada con éxito!',
             'tenant' => $tenant,
             'user' => $user,
+            'admin_url' => "https://mi.digitalizatodo.cl/{$tenant->id}",
+            'instructions' => 'Ya puedes ingresar a tu panel de administración privado y comenzar a configurar tu negocio.'
         ], 201);
     }
 }
