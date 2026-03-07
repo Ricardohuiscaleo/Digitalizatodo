@@ -99,7 +99,7 @@ class StudentRegistrationController extends Controller
                 $telegram->sendMessage($msg);
             }
             catch (\Exception $e) {
-                \Log::error("Error enviando notificación telegram registro alumno: " . $e->getMessage());
+                Log::error("Error enviando notificación telegram registro alumno: " . $e->getMessage());
             }
 
             return response()->json([
