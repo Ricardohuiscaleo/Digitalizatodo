@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Building2, User, Mail, Lock, Globe, Loader2, AlertCircle, CheckCircle2, ChevronRight, Briefcase } from "lucide-react";
+import { registerTenant } from "@/lib/api";
 
 export default function OnboardingPage() {
     const [isLoading, setIsLoading] = useState(false);
@@ -18,7 +18,7 @@ export default function OnboardingPage() {
         password_confirmation: "",
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         if (name === 'tenant_slug') {
             // Auto-format slug: lowercase, alphanumeric and hyphens only
@@ -41,15 +41,9 @@ export default function OnboardingPage() {
         }
 
         try {
-            const response = await fetch("https://saas.digitalizatodo.cl/api/register-tenant", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
-            });
+            const data = await registerTenant(formData);
 
-            const data = await response.json();
-
-            if (!response.ok) {
+            if (data.errors || data.message && data.message.includes('Error')) {
                 if (data.errors) {
                     const firstError = Object.values(data.errors)[0] as string[];
                     throw new Error(firstError[0]);
