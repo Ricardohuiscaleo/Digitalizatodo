@@ -19,25 +19,42 @@ class TenantDiscoveryController extends Controller
             'email' => 'required|email',
         ]);
 
-        $guardians = Guardian::with('tenant')
-            ->where('email', $request->email)
-            ->where('active', true)
-            ->get();
+        $email = $request->email;
 
-        if ($guardians->isEmpty()) {
+        // 1. Buscar Guardianes
+        $guardianTenants = \App\Models\Guardian::with('tenant')
+            ->where('email', $email)
+            ->where('active', true)
+            ->get()
+            ->map(fn($g) => $g->tenant);
+
+        // 2. Buscar Staff/Owners (User)
+        // Se elimina la restricción whereNotNull('tenant_id') para permitir la identificación de SuperAdmins.
+        $userTenants = \App\Models\User::with('tenant')
+            ->where('email', $email)
+            ->get()
+            ->map(fn($u) => $u->tenant);
+
+        // Combinar y filtrar nulos/inactivos
+        $allTenants = $guardianTenants->concat($userTenants)
+            ->filter(fn($t) => $t && $t->active)
+            ->unique('id')
+            ->values();
+
+        if ($allTenants->isEmpty()) {
             return response()->json([
                 'found' => false,
                 'message' => 'No se encontraron academias asociadas a este correo.',
             ], 404);
         }
 
-        $tenants = $guardians->map(fn($g) => [
-        'id' => $g->tenant->id,
-        'name' => $g->tenant->name,
-        'industry' => $g->tenant->industry,
-        'logo' => $g->tenant->logo_url ?? '/icon.webp', // Asumimos logo_url o fallback
-        'primary_color' => $g->tenant->primary_color ?? '#f59e0b',
-        ])->unique('id')->values();
+        $tenants = $allTenants->map(fn($t) => [
+        'id' => $t->id,
+        'name' => $t->name,
+        'industry' => $t->industry,
+        'logo' => $t->logo ?\Illuminate\Support\Facades\Storage::disk('public')->url($t->logo) : '/icon.webp',
+        'primary_color' => $t->primary_color ?? '#f59e0b',
+        ]);
 
         return response()->json([
             'found' => true,
