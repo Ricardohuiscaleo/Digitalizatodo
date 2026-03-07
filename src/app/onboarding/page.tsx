@@ -91,7 +91,7 @@ export default function OnboardingPage() {
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6 lg:p-12">
-            <div className="w-full max-w-[900px] grid lg:grid-cols-2 gap-12 items-center">
+            <div className="w-full max-w-[1100px] grid lg:grid-cols-[0.8fr_1.2fr] gap-12 lg:gap-20 items-center">
                 {/* Visual Side */}
                 <div className="hidden lg:flex flex-col space-y-6">
                     <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/20 text-indigo-400 font-bold text-2xl">D</div>
