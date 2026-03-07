@@ -21,6 +21,23 @@ export async function identifyTenant(email: string) {
     }
 }
 
+export async function registerTenant(data: any) {
+    try {
+        const response = await fetch(`${API_URL}/register-tenant`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error registering tenant:', error);
+        return { message: 'Error de conexión' };
+    }
+}
+
 export async function login(tenantId: string, credentials: any) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/auth/login`, {
