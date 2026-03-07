@@ -23,14 +23,14 @@ export default function LoginPage() {
     setIsLoggingIn(false);
 
     if (result.token) {
-      if (result.user_type !== 'staff') {
-        setError("Este portal es solo para profesores y administradores.");
-        setIsLoggingIn(false);
-        return;
-      }
-      localStorage.setItem("staff_token", result.token);
       localStorage.setItem("tenant_id", branding.id);
-      window.location.href = "/dashboard";
+      if (result.user_type === 'staff') {
+        localStorage.setItem("staff_token", result.token);
+        window.location.href = "/dashboard";
+      } else {
+        localStorage.setItem("auth_token", result.token);
+        window.location.href = "/dashboard/student";
+      }
     } else {
       setError(result.message || "Error al iniciar sesión.");
     }

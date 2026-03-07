@@ -5,6 +5,85 @@ import { useBranding } from "@/context/BrandingContext";
 import { getProfile, getStudents, storeAttendance } from "@/lib/api";
 import Image from "next/image";
 import Link from "next/link";
+import { getAttendanceQR } from "@/lib/api";
+import { QRCodeSVG } from "qrcode.react";
+import { QrCode, RefreshCw } from "lucide-react";
+
+function QRGenerator({ tenantId, token, primaryColor }: { tenantId: string, token: string, primaryColor?: string }) {
+    const [qrData, setQrData] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [expires, setExpires] = useState(0);
+
+    const generateQR = async () => {
+        if (!tenantId || !token) return;
+        setLoading(true);
+        const res = await getAttendanceQR(tenantId, token);
+        if (res && res.qr_data) {
+            setQrData(res.qr_data);
+            setExpires(res.expires_in);
+        }
+        setLoading(false);
+    };
+
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (expires > 0) {
+            timer = setInterval(() => {
+                setExpires(prev => prev - 1);
+            }, 1000);
+        } else if (qrData) {
+            setQrData(null);
+        }
+        return () => clearInterval(timer);
+    }, [expires, qrData]);
+
+    return (
+        <div className="p-6 bg-white/[0.03] border border-white/10 rounded-[2.5rem] space-y-4">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 bg-emerald-500/10 text-emerald-500 rounded-2xl flex items-center justify-center">
+                        <QrCode className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-bold text-white tracking-tight">QR de Asistencia</h3>
+                        <p className="text-[10px] text-gray-500 font-medium">Genera un código para el ingreso</p>
+                    </div>
+                </div>
+                {!qrData && !loading && (
+                    <button
+                        onClick={generateQR}
+                        className="h-10 px-4 bg-emerald-500 text-black text-xs font-black uppercase rounded-xl shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
+                    >
+                        Generar
+                    </button>
+                )}
+            </div>
+
+            {loading && (
+                <div className="h-48 flex items-center justify-center">
+                    <RefreshCw className="w-8 h-8 text-emerald-500 animate-spin" />
+                </div>
+            )}
+
+            {qrData && (
+                <div className="flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-300">
+                    <div className="p-4 bg-white rounded-3xl shadow-2xl">
+                        <QRCodeSVG value={qrData} size={160} />
+                    </div>
+                    <div className="text-center space-y-1">
+                        <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-tighter">Código Válido por {expires}s</p>
+                        <button
+                            onClick={generateQR}
+                            className="text-[10px] text-gray-600 hover:text-white transition-colors underline"
+                        >
+                            Regenerar ahora
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 export default function AcademyDashboardPage() {
     const { branding, setBranding } = useBranding();
@@ -117,7 +196,7 @@ export default function AcademyDashboardPage() {
 
                 {/* Stats Quick View */}
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="rounded-3xl bg-white/5 p-4 border border-white/5">
+                    <div className="rounded-3xl bg-white/5 p-4 border border-white/5 shadow-inner">
                         <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">Total Alumnos</span>
                         <p className="text-2xl font-black">{students.length}</p>
                     </div>
@@ -126,6 +205,30 @@ export default function AcademyDashboardPage() {
                         <p className="text-2xl font-black text-emerald-500">--</p>
                     </div>
                 </div>
+
+                {/* Registration Link Share */}
+                <div
+                    onClick={() => {
+                        const link = `https://app.digitalizatodo.cl/${branding?.id}/register`;
+                        navigator.clipboard.writeText(link);
+                        alert("Link de registro copiado al portapapeles: " + link);
+                    }}
+                    className="p-5 bg-indigo-500/10 border border-indigo-500/20 rounded-3xl cursor-pointer hover:bg-indigo-500/20 active:scale-[0.98] transition-all group"
+                >
+                    <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Canal de Ventas</span>
+                            <h3 className="text-sm font-bold text-white">Link de Auto-Registro</h3>
+                            <p className="text-xs text-gray-500">Comparte este link para captar nuevos alumnos.</p>
+                        </div>
+                        <div className="h-10 w-10 bg-indigo-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:rotate-6 transition-transform">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
+                        </div>
+                    </div>
+                </div>
+
+                {/* QR Attendance Generator */}
+                <QRGenerator tenantId={user?.tenant_id} token={localStorage.getItem("staff_token") || ""} primaryColor={branding?.primaryColor} />
 
                 {/* Students List */}
                 <div className="space-y-3">

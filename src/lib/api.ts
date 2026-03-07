@@ -21,6 +21,26 @@ export async function identifyTenant(email: string) {
     }
 }
 
+export async function getTenantInfo(slug: string) {
+    try {
+        const response = await fetch(`${API_URL}/${slug}/info`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            return null;
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching tenant info:', error);
+        return null;
+    }
+}
+
 export async function registerTenant(data: any) {
     try {
         const response = await fetch(`${API_URL}/register-tenant`, {
@@ -175,6 +195,41 @@ export async function storeAttendance(tenantId: string, token: string, data: { s
         return await response.json();
     } catch (error) {
         console.error('Error storing attendance:', error);
+        return { message: 'Error de conexión' };
+    }
+}
+
+export async function getAttendanceQR(tenantId: string, token: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/attendance/generate-qr`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching attendance QR:', error);
+        return null;
+    }
+}
+
+export async function markAttendanceViaQR(tenantId: string, token: string, qrToken: string, studentId: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/attendance/verify-qr`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ qr_token: qrToken, student_id: studentId }),
+        });
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error marking attendance via QR:', error);
         return { message: 'Error de conexión' };
     }
 }

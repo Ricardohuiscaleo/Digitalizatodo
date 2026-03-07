@@ -11,27 +11,101 @@ import {
     Clock,
     AlertCircle,
     ArrowUpRight,
-    LogOut
+    LogOut,
+    QrCode,
+    Loader2
 } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
-import { getProfile } from "@/lib/api";
+import { getProfile, markAttendanceViaQR } from "@/lib/api";
+
+function StudentQRScanner({ studentId, onComplete, onCancel, primaryColor }: { studentId: string, onComplete: () => void, onCancel: () => void, primaryColor: string }) {
+    const [scannedData, setScannedData] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+
+    const handleScan = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!scannedData) return;
+
+        setLoading(true);
+        setError("");
+        const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
+        const tenantId = localStorage.getItem("tenant_id");
+
+        if (token && tenantId) {
+            const res = await markAttendanceViaQR(tenantId, token, scannedData, studentId);
+            if (res.attendance) {
+                onComplete();
+            } else {
+                setError(res.message || "Error al validar el código");
+            }
+        }
+        setLoading(false);
+    };
+
+    return (
+        <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col p-6 items-center justify-center animate-in fade-in duration-300">
+            <div className="w-full max-w-sm space-y-8">
+                <div className="text-center space-y-2">
+                    <div className="w-16 h-16 bg-white/5 rounded-[2rem] border border-white/10 flex items-center justify-center mx-auto mb-4">
+                        <QrCode className="w-8 h-8 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-black text-white">Marcar Asistencia</h2>
+                    <p className="text-sm text-gray-500">Escanea el código QR del profesor</p>
+                </div>
+
+                <form onSubmit={handleScan} className="space-y-4">
+                    <div className="relative group">
+                        <input
+                            type="text"
+                            placeholder="Pega el código o escanea aquí..."
+                            autoFocus
+                            className="w-full h-16 bg-white/5 border border-white/10 rounded-2xl px-6 text-sm text-white focus:outline-none focus:border-white/20"
+                            value={scannedData}
+                            onChange={(e) => setScannedData(e.target.value)}
+                        />
+                    </div>
+                    {error && <p className="text-xs text-red-500 font-bold text-center">{error}</p>}
+
+                    <button
+                        type="submit"
+                        disabled={loading || !scannedData}
+                        className="w-full h-16 rounded-2xl text-black font-black uppercase tracking-widest disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                        style={{ backgroundColor: primaryColor }}
+                    >
+                        {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : "Confirmar Ingreso"}
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="w-full h-16 text-gray-500 text-xs font-bold uppercase tracking-widest"
+                    >
+                        Cancelar
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+}
 
 export default function StudentDashboard() {
     const { branding } = useBranding();
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [activeScanner, setActiveScanner] = useState<string | null>(null);
+
+    const refreshData = async () => {
+        const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
+        const tenantId = localStorage.getItem("tenant_id");
+        if (token && tenantId) {
+            const profile = await getProfile(tenantId, token);
+            setData(profile);
+        }
+    };
 
     useEffect(() => {
-        const fetchData = async () => {
-            const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-            const tenantId = localStorage.getItem("tenant_id");
-            if (token && tenantId) {
-                const profile = await getProfile(tenantId, token);
-                setData(profile);
-            }
-            setLoading(false);
-        };
-        fetchData();
+        refreshData().then(() => setLoading(false));
     }, []);
 
     const primaryColor = branding?.primaryColor || "#a855f7";
@@ -119,6 +193,15 @@ export default function StudentDashboard() {
                                 </div>
                             </div>
 
+                            {/* Attendance Action */}
+                            <button
+                                onClick={() => setActiveScanner(student.id)}
+                                className="mt-6 w-full h-14 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center gap-3 text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
+                            >
+                                <QrCode className="w-5 h-5" style={{ color: primaryColor }} />
+                                Registrar Ingreso (QR)
+                            </button>
+
                             {/* Attendance Quick Info */}
                             <div className="mt-6 grid grid-cols-2 gap-3 relative z-10">
                                 <div className="bg-white/5 rounded-2xl p-3 border border-white/5">
@@ -184,6 +267,18 @@ export default function StudentDashboard() {
                     </button>
                 </nav>
             </div>
+
+            {activeScanner && (
+                <StudentQRScanner
+                    studentId={activeScanner}
+                    primaryColor={primaryColor}
+                    onComplete={() => {
+                        setActiveScanner(null);
+                        refreshData();
+                    }}
+                    onCancel={() => setActiveScanner(null)}
+                />
+            )}
         </div>
     );
 }
