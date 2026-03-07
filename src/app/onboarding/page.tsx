@@ -124,7 +124,7 @@ export default function OnboardingPage() {
                     <div className="bg-[#111] border border-white/5 rounded-[2rem] p-8 lg:p-10 shadow-2xl relative overflow-hidden">
                         <div className="mb-8">
                             <h1 className="text-3xl font-black text-white mb-2">Empieza Ahora</h1>
-                            <p className="text-gray-500 text-sm">Registra tu academia o clínica en menos de 1 minuto.</p>
+                            <p className="text-gray-500 text-sm">Prueba tu software de gestión en menos de 1 minuto.</p>
                         </div>
 
                         {error && (
