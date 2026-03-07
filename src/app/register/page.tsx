@@ -89,6 +89,41 @@ export default function RegisterPage() {
         );
     }
 
+    if (!branding?.id && !identifying && formData.guardian_email === "") {
+        return (
+            <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6">
+                <div className="w-full max-w-[480px] space-y-8 text-center">
+                    <div className="inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-indigo-500/20 text-indigo-400 font-bold text-3xl">D</div>
+                    <div className="space-y-2">
+                        <h1 className="text-3xl font-black text-white tracking-tight">Elegir Tipo de Registro</h1>
+                        <p className="text-gray-500">Parece que estás en la página principal. ¿Qué deseas hacer?</p>
+                    </div>
+
+                    <div className="grid gap-4">
+                        <Link
+                            href="/onboarding"
+                            className="p-6 bg-[#111] border border-white/5 rounded-2xl text-left hover:border-indigo-500/50 transition-all group active:scale-95"
+                        >
+                            <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                                Soy Dueño de Negocio <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            </h3>
+                            <p className="text-gray-500 text-xs mt-1">Quiero registrar mi academia, clínica o gimnasio y probar el sistema gratis.</p>
+                        </Link>
+
+                        <div className="p-6 bg-white/[0.02] border border-white/[0.03] rounded-2xl text-left opacity-60">
+                            <h3 className="text-gray-400 font-bold text-lg">Soy Alumno / Apoderado</h3>
+                            <p className="text-gray-600 text-xs mt-1">Para registrarte, debes usar el enlace único que te proporcionó tu academia (ej: digitalizatodo.cl/tu-academia).</p>
+                        </div>
+                    </div>
+
+                    <p className="text-xs text-gray-600">
+                        ¿Tienes dudas? <a href="https://digitalizatodo.cl" className="underline hover:text-white transition-colors">Volver a la Landing</a>
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="flex min-h-screen flex-col bg-background p-6">
             <header className="mb-8 flex flex-col items-center gap-4 pt-8">
@@ -96,7 +131,7 @@ export default function RegisterPage() {
                     <img src={branding.logo} alt={branding.name} className="h-16 w-auto" />
                 ) : (
                     <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-primary/10 text-4xl font-black text-primary" style={{ color: branding?.primaryColor, backgroundColor: `${branding?.primaryColor}20` }}>
-                        D
+                        {branding?.name?.[0] || 'D'}
                     </div>
                 )}
                 <div className="text-center">
