@@ -45,11 +45,11 @@ function Stars(props: any) {
             <Points ref={ref} positions={sphere} stride={3} frustumCulled={false} {...props}>
                 <PointMaterial
                     transparent
-                    color="#00FF7F"
-                    size={0.005} /* Back to original size */
+                    color="#6366f1"
+                    size={0.003}
                     sizeAttenuation={true}
                     depthWrite={false}
-                    opacity={0.5} /* Much softer opacity for a "twinkle" effect */
+                    opacity={0.3}
                 />
             </Points>
         </group>

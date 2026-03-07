@@ -1,8 +1,9 @@
 /* ── Theme tokens ─────────────────────────────── */
 .digital-menu-container {
-    --neon: #fac815;
-    --bg: rgba(6, 0, 16, 0.99);
+    --neon: #818cf8;
+    --bg: rgba(3, 0, 10, 0.99);
     --text: #ffffff;
+    --accent-green: #10b981;
     position: relative;
     z-index: 100;
 }
@@ -611,21 +612,19 @@
 }
 
 .client-access-item .item-number-lateral {
-    color: #10b981 !important;
-    /* Vibrant Green */
+    color: var(--accent-green) !important;
     opacity: 1 !important;
 }
 
 .client-login-icon svg {
     width: 24px;
     height: 24px;
-    color: #10b981 !important;
-    /* Vibrant Green */
+    color: var(--accent-green) !important;
 }
 
 /* Ensure hover doesn't turn the green icon yellow */
 .client-login-link:hover .item-icon-wrapper {
-    color: #10b981 !important;
+    color: var(--accent-green) !important;
     transform: scale(1.15) rotate(-5deg);
 }
 
@@ -636,11 +635,10 @@
 
 .menu-separator-green {
     width: 48px;
-    height: 2px;
-    background: #10b981;
-    /* Emerald/Green vibrant */
+    height: 1px;
+    background: var(--accent-green);
     margin: 1rem 0 1.2rem 0;
-    box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+    opacity: 0.5;
 }
 
 .support-badge {
