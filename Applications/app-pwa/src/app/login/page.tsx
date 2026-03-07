@@ -131,7 +131,7 @@ export default function LoginPage() {
                                 <label className="text-gray-500">
                                     Contraseña
                                 </label>
-                                {branding && (
+                                {branding && branding.id !== 'digitalizatodo' && (
                                     <span className="text-gray-700 font-medium normal-case flex items-center gap-1">
                                         para <span className="text-white italic">"{branding.name}"</span>
                                     </span>
