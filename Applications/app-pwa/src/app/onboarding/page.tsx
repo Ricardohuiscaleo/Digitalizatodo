@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Building2, User, Mail, Lock, Globe, Loader2, AlertCircle, CheckCircle2, ChevronRight } from "lucide-react";
+import { Building2, User, Mail, Lock, Globe, Loader2, AlertCircle, CheckCircle2, ChevronRight, Briefcase } from "lucide-react";
 
 export default function OnboardingPage() {
     const [isLoading, setIsLoading] = useState(false);
@@ -11,6 +11,7 @@ export default function OnboardingPage() {
     const [formData, setFormData] = useState({
         tenant_name: "",
         tenant_slug: "",
+        industry: "",
         user_name: "",
         email: "",
         password: "",
@@ -161,6 +162,30 @@ export default function OnboardingPage() {
                                             placeholder="mi-negocio"
                                             className="w-full h-12 bg-white/[0.03] border border-white/[0.05] rounded-xl py-2 pl-11 pr-4 text-white placeholder:text-gray-700 focus:outline-none focus:border-indigo-500/50 transition-all text-sm font-mono"
                                         />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Nicho de Negocio</label>
+                                <div className="relative">
+                                    <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
+                                    <select
+                                        name="industry"
+                                        required
+                                        value={formData.industry}
+                                        onChange={(e: any) => handleChange(e)}
+                                        className="w-full h-12 bg-white/[0.03] border border-white/[0.05] rounded-xl py-2 pl-11 pr-4 text-white appearance-none focus:outline-none focus:border-indigo-500/50 transition-all text-sm"
+                                    >
+                                        <option value="" disabled className="bg-[#111]">Seleccionar Nicho</option>
+                                        <option value="academy" className="bg-[#111]">Dojo / Academia de Artes Marciales</option>
+                                        <option value="clinic" className="bg-[#111]">Clínica / Estética / Salud</option>
+                                        <option value="law" className="bg-[#111]">Estudio de Abogados / Consultoría</option>
+                                        <option value="gym" className="bg-[#111]">Gimnasio / Centro Deportivo</option>
+                                        <option value="other" className="bg-[#111]">Otro tipo de negocio</option>
+                                    </select>
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-600">
+                                        <ChevronRight className="w-4 h-4 rotate-90" />
                                     </div>
                                 </div>
                             </div>

@@ -17,6 +17,7 @@ class RegisterTenantController extends Controller
         $validated = $request->validate([
             'tenant_name' => 'required|string|max:255',
             'tenant_slug' => 'required|string|max:50|unique:tenants,id',
+            'industry' => 'required|string|max:50',
             'user_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:8|confirmed',
@@ -26,6 +27,7 @@ class RegisterTenantController extends Controller
         $tenant = Tenant::create([
             'id' => $validated['tenant_slug'], // Slug es el ID en nuestro caso
             'name' => $validated['tenant_name'],
+            'industry' => $validated['industry'],
             'email' => $validated['email'], // Contacto empresa
             'plan_type' => 'free',
             'active' => true,
