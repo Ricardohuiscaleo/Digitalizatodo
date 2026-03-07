@@ -68,10 +68,14 @@ export async function login(tenantId: string, credentials: any) {
             body: JSON.stringify(credentials),
         });
 
-        return await response.json();
+        const data = await response.json();
+        if (!response.ok) {
+            return { message: data.message || 'Error en el inicio de sesión' };
+        }
+        return data;
     } catch (error) {
         console.error('Error logging in:', error);
-        return { message: 'Error de conexión' };
+        return { message: 'Error de conexión o datos inválidos' };
     }
 }
 export async function getProfile(tenantId: string, token: string) {
