@@ -210,8 +210,4 @@ class TelegramBotController extends Controller
 
             }
             catch (\Exception $e) {
-                Log::error('Error al responder correo desde Telegram: ' . $e->getMessage());
-            }
-        }
-
-        return response()->json(['status' => 'ok'
+                Log::error('Error al responder co
