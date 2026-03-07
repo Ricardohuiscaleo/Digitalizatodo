@@ -6,51 +6,72 @@ import { LogIn, Mail, Lock, Loader2, AlertCircle, ChevronRight } from "lucide-re
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useBranding } from "@/context/BrandingContext";
+import { identifyTenant, login } from "@/lib/api";
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
 export default function LoginPage() {
-    const { branding, isLoading: isBrandingLoading, setBranding } = useBranding();
-    const [isLoading, setIsLoading] = useState(false);
+    const { branding, setBranding } = useBranding();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [isIdentifying, setIsIdentifying] = useState(false);
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [formData, setFormData] = useState({
-        email: "",
-        password: "",
-    });
+
+    const handleEmailBlur = async () => {
+        if (!email || !email.includes("@")) return;
+
+        setIsIdentifying(true);
+        const data = await identifyTenant(email);
+        setIsIdentifying(false);
+
+        if (data && data.found && data.tenants.length > 0) {
+            const tenant = data.tenants[0];
+            setBranding({
+                id: tenant.id,
+                name: tenant.name,
+                industry: tenant.industry,
+                logo: tenant.logo,
+                primaryColor: tenant.primary_color
+            });
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
+        if (!branding || !email || !password) {
+            if (!branding) await handleEmailBlur();
+            if (!branding) {
+                setError("No pudimos identificar tu academia. Verifica tu correo.");
+                return;
+            }
+        }
+
+        setIsLoggingIn(true);
         setError(null);
 
         try {
-            // Intentamos identificar el tenant por el dominio o parámetro (en un entorno real)
-            const response = await fetch("/api/auth/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...formData, type: 'web' }),
-            });
+            const result = await login(branding.id, { email, password });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || "Credenciales inválidas");
-            }
-
-            // Redirección inteligente según el tipo de usuario
-            if (data.user_type === 'staff') {
-                localStorage.setItem("staff_token", data.token);
-                window.location.href = "/dashboard";
+            if (result.token) {
+                if (result.user_type === 'staff') {
+                    localStorage.setItem("staff_token", result.token);
+                    localStorage.setItem("tenant_id", branding.id);
+                    window.location.href = "/dashboard";
+                } else {
+                    localStorage.setItem("auth_token", result.token);
+                    localStorage.setItem("tenant_id", branding.id);
+                    window.location.href = "/dashboard/student";
+                }
             } else {
-                localStorage.setItem("auth_token", data.token);
-                window.location.href = "/dashboard/student";
+                throw new Error(result.message || "Credenciales inválidas");
             }
         } catch (err: any) {
             setError(err.message);
         } finally {
-            setIsLoading(false);
+            setIsLoggingIn(false);
         }
     };
 
@@ -93,27 +114,36 @@ export default function LoginPage() {
                                 <input
                                     type="email"
                                     required
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    onBlur={handleEmailBlur}
                                     placeholder="correo@ejemplo.com"
-                                    className="w-full bg-white/[0.03] border border-white/[0.05] rounded-xl py-3.5 pl-11 pr-4 text-white placeholder:text-gray-700 focus:outline-none focus:border-white/20 transition-all"
+                                    className={cn(
+                                        "w-full bg-white/[0.03] border border-white/[0.05] rounded-xl py-3.5 pl-11 pr-4 text-white placeholder:text-gray-700 focus:outline-none focus:border-white/20 transition-all",
+                                        isIdentifying && "animate-pulse border-indigo-500/50"
+                                    )}
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-1.5">
-                            <div className="flex items-center justify-between ml-1">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                            <div className="flex items-center justify-between ml-1 text-[10px] font-bold uppercase tracking-widest">
+                                <label className="text-gray-500">
                                     Contraseña
                                 </label>
+                                {branding && (
+                                    <span className="text-gray-700 font-medium normal-case flex items-center gap-1">
+                                        para <span className="text-white italic">"{branding.name}"</span>
+                                    </span>
+                                )}
                             </div>
                             <div className="relative group">
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
                                 <input
                                     type="password"
                                     required
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
                                     className="w-full bg-white/[0.03] border border-white/[0.05] rounded-xl py-3.5 pl-11 pr-4 text-white placeholder:text-gray-700 focus:outline-none focus:border-white/20 transition-all"
                                 />
@@ -122,11 +152,11 @@ export default function LoginPage() {
 
                         <button
                             type="submit"
-                            disabled={isLoading}
+                            disabled={isLoggingIn || isIdentifying}
                             className="w-full text-black font-bold h-14 rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 mt-6"
                             style={{ backgroundColor: currentBranding.primaryColor }}
                         >
-                            {isLoading ? (
+                            {isLoggingIn ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />
                             ) : (
                                 <>
@@ -143,7 +173,7 @@ export default function LoginPage() {
                         ¿No tienes cuenta? Regístrate
                     </a>
                 </p>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }

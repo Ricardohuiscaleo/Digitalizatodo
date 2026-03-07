@@ -30,7 +30,7 @@ class RegisterTenantController extends Controller
             'name' => $validated['tenant_name'],
             'industry' => $validated['industry'],
             'email' => $validated['email'], // Contacto empresa
-            'plan_type' => 'free',
+            'saas_plan' => 'free',
             'active' => true,
         ]);
 
@@ -48,7 +48,8 @@ class RegisterTenantController extends Controller
             . "🔗 <b>Slug:</b> {$tenant->id}\n"
             . "👤 <b>Dueño:</b> {$user->name}\n"
             . "📧 <b>Email:</b> {$user->email}\n\n"
-            . "🌍 <a href='https://mi.digitalizatodo.cl/{$tenant->id}'>Ver Panel mi.digitalizatodo.cl</a>";
+            . "📱 <a href='https://app.digitalizatodo.cl/{$tenant->id}'>Abrir App de Gestión</a>\n"
+            . "🌍 <a href='https://admin.digitalizatodo.cl/{$tenant->id}'>Ver Panel admin.digitalizatodo.cl</a>";
 
         TelegramService::sendMessage($msg);
 
@@ -59,5 +60,4 @@ class RegisterTenantController extends Controller
             'admin_url' => "https://admin.digitalizatodo.cl/{$tenant->id}",
             'instructions' => 'Ya puedes ingresar a tu panel de administración privado y comenzar a configurar tu negocio.'
         ], 201);
-    }
-}
+ 

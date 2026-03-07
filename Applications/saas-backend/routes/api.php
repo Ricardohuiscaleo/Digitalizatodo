@@ -56,6 +56,7 @@ Route::middleware([ResolveTenantFromPath::class])->prefix('{tenant}')->group(fun
             // Alumnos y Asistencia (Guardians/Apoderados)
             Route::get('students', [StudentController::class , 'index']);
             Route::get('attendance', [AttendanceController::class , 'index']);
+            Route::post('attendance/verify-qr', [AttendanceController::class , 'verifyQR']);
 
             // Pagos
             Route::get('payments', [PaymentController::class , 'index']);
@@ -65,6 +66,7 @@ Route::middleware([ResolveTenantFromPath::class])->prefix('{tenant}')->group(fun
             // Asistencia (solo teachers/admins - Escritura)
             Route::middleware('role:teacher,admin,owner')->group(function () {
                     Route::post('attendance', [AttendanceController::class , 'store']);
+                    Route::get('attendance/generate-qr', [AttendanceQRController::class , 'generate']);
                 }
                 );
             }
