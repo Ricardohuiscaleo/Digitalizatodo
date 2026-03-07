@@ -62,14 +62,11 @@ export default function LoginPage() {
                 <div className="bg-[#111] border border-white/5 rounded-2xl p-8 shadow-xl relative">
                     {/* Header */}
                     <div className="text-center mb-8">
-                        <div
-                            className="inline-flex items-center justify-center w-14 h-14 rounded-xl mb-4 overflow-hidden"
-                            style={{ backgroundColor: currentBranding.primaryColor + '10' }}
-                        >
+                        <div className="inline-flex items-center justify-center w-auto h-12 mb-4 overflow-hidden">
                             {currentBranding.logo ? (
-                                <img src={currentBranding.logo} alt={currentBranding.name} className="w-full h-full object-cover" />
+                                <img src={currentBranding.logo} alt={currentBranding.name} className="h-full object-contain" />
                             ) : (
-                                <LogIn className="w-6 h-6" style={{ color: currentBranding.primaryColor }} />
+                                <LogIn className="w-8 h-8" style={{ color: currentBranding.primaryColor }} />
                             )}
                         </div>
                         <h1 className="text-2xl font-bold text-white tracking-tight mb-1">
