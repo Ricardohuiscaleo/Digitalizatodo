@@ -26,29 +26,21 @@ class AuthController extends Controller
 
         try {
             // Buscamos el usuario en staff (User) o clientes (Guardian) de forma agnóstica
-            $query = match (true) {
-                User::where('email', $credentials['email'])->exists() => User::query(),
-                Guardian::where('email', $credentials['email'])->exists() => Guardian::query(),
-                default => null
-            };
-            
-            /** @var \Illuminate\Database\Eloquent\Builder|null $query */
+            $user = User::where('email', $credentials['email'])->where('tenant_id', $tenant->id)->first();
+            $userType = 'staff';
 
-            if (!$query) {
-                return response()->json(['message' => 'Credenciales inválidas.'], 401);
-            }
-
-            if ($userType === 'staff') {
-                $user = $query->where('tenant_id', $tenant->id)->first();
-            } else {
-                $user = $query->where('tenant_id', $tenant->id)->where('active', true)->first();
+            if (!$user) {
+                $user = Guardian::where('email', $credentials['email'])
+                    ->where('tenant_id', $tenant->id)
+                    ->where('active', true)
+                    ->first();
+                $userType = 'guardian';
             }
 
             if (!$user || !Hash::check($credentials['password'], $user->password)) {
                 return response()->json(['message' => 'Credenciales inválidas.'], 401);
             }
 
-            $userType = ($user instanceof User) ? 'staff' : 'guardian';
             $tokenPrefix = ($userType === 'staff') ? 'staff-' : 'portal-';
             $token = $user->createToken($tokenPrefix . $tenant->id)->plainTextToken;
 
@@ -58,7 +50,8 @@ class AuthController extends Controller
                 'user' => $user->only('id', 'name', 'email', 'phone'),
                 'tenant' => $tenant->only('id', 'name', 'primary_color', 'logo'),
             ]);
-        } catch (\Throwable $e) {
+        }
+        catch (\Throwable $e) {
             return response()->json([
                 'message' => 'Error crítico en el login.',
                 'error' => $e->getMessage(),
@@ -93,17 +86,17 @@ class AuthController extends Controller
                 'user_type' => 'guardian',
                 'guardian' => $guardian->only('id', 'name', 'email', 'phone'),
                 'students' => $guardian->students->map(fn($s) => [
-                    'id' => $s->id,
-                    'name' => $s->name,
-                    'photo' => $s->photo,
-                    'category' => $s->category,
-                    'is_updated' => $s->is_updated,
-                    'pending_payments' => $s->enrollments->flatMap->payments->count(),
-                    'recent_attendance' => $s->attendances->map(fn($a) => [
-                        'date' => $a->date->format('Y-m-d'),
-                        'status' => $a->status,
-                    ]),
-                ]),
+            'id' => $s->id,
+            'name' => $s->name,
+            'photo' => $s->photo,
+            'category' => $s->category,
+            'is_updated' => $s->is_updated,
+            'pending_payments' => $s->enrollments->flatMap->payments->count(),
+            'recent_attendance' => $s->attendances->map(fn($a) => [
+            'date' => $a->date->format('Y-m-d'),
+            'status' => $a->status,
+            ]),
+            ]),
                 'total_due' => $guardian->total_due,
             ]);
         }
