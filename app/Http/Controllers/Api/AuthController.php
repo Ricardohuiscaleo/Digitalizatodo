@@ -31,6 +31,8 @@ class AuthController extends Controller
                 Guardian::where('email', $credentials['email'])->exists() => Guardian::query(),
                 default => null
             };
+            
+            /** @var \Illuminate\Database\Eloquent\Builder|null $query */
 
             if (!$query) {
                 return response()->json(['message' => 'Credenciales inválidas.'], 401);
