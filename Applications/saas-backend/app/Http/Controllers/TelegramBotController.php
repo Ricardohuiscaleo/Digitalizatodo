@@ -102,10 +102,10 @@ class TelegramBotController extends Controller
         $subject = $payload['subject'] ?? null;
         $appName = $payload['name'] ?? ($payload['application_name'] ?? 'Aplicación');
         $url = $payload['url'] ?? ($payload['deployment_url'] ?? null);
-        $commitMessage = $payload['commit_message'] ?? ($payload['commit_subject'] ?? ($payload['commit_message_body'] ?? null));
-        $commitHash = $payload['commit'] ?? ($payload['commit_hash'] ?? ($payload['hash'] ?? null));
-        $author = $payload['commit_author'] ?? ($payload['author_name'] ?? ($payload['pusher_name'] ?? null));
-        $branch = $payload['branch'] ?? ($payload['vcs_branch'] ?? ($payload['ref'] ?? null));
+        $commitMessage = $payload['commit_message'] ?? ($payload['commit_subject'] ?? ($payload['commit_message_body'] ?? ($payload['message'] ?? null)));
+        $commitHash = $payload['commit'] ?? ($payload['commit_hash'] ?? ($payload['hash'] ?? ($payload['sha'] ?? null)));
+        $author = $payload['commit_author'] ?? ($payload['author_name'] ?? ($payload['pusher_name'] ?? ($payload['pusher']['name'] ?? null)));
+        $branch = $payload['branch'] ?? ($payload['vcs_branch'] ?? ($payload['ref'] ?? ($payload['branch_name'] ?? null)));
 
         // Determinar el título basado en el estado o mensaje
         $title = "🔔 <b>Notificación de Sistema</b>";
