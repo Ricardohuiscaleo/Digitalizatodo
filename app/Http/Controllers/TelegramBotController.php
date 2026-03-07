@@ -206,4 +206,4 @@ class TelegramBotController extends Controller
 
         return response()->json(['status' => 'ok']);
     }
-}
+}// Test deploy Sat Mar  7 16:46:41 -03 2026
