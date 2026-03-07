@@ -58,7 +58,7 @@ export function HeroSection() {
                     <Button
                         size="lg"
                         className="group relative h-16 px-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all hover:scale-[1.02] active:scale-95 border border-white/10 gap-3 shadow-[0_20px_50px_rgba(79,70,229,0.3)]"
-                        onClick={() => document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' })}
+                        onClick={() => window.location.href = 'https://app.digitalizatodo.cl/onboarding'}
                     >
                         <span className="relative z-10 flex items-center gap-2">
                             Iniciar Proyecto
