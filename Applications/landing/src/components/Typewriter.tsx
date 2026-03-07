@@ -44,9 +44,9 @@ export function Typewriter({
     }, [currentText, isDeleting, currentWordIndex, words, typingSpeed, deletingSpeed, pauseTime]);
 
     return (
-        <span className={`relative ${className}`}>
-            <span className="text-white font-medium">{currentText}</span>
-            <span className="absolute -right-1 top-0 bottom-0 w-[2px] bg-indigo-400 animate-pulse ml-1 inline-block h-[1.2em] translate-y-[0.1em]"></span>
+        <span className={`relative inline-block ${className}`}>
+            <span>{currentText}</span>
+            <span className="absolute -right-1 top-0 bottom-0 w-[2px] bg-yellow-400 animate-pulse ml-1 inline-block h-[1.1em] translate-y-[0.1em]"></span>
         </span>
     );
 }
