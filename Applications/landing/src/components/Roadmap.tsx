@@ -27,39 +27,39 @@ export function Roadmap() {
     const roadmap = [
         {
             step: "01",
-            title: "Requerimientos",
-            desc: "Levantamiento de procesos y definición de lógica de negocio.",
-            simple: "Entendemos tu problema.",
+            title: "Diagnóstico",
+            desc: "Levantamiento de procesos y auditoría de lógica de negocio.",
+            simple: "Ingeniería de Requerimientos",
             icon: <Search size={22} className="text-white" />,
-            color: "from-blue-500/80 to-indigo-500/80",
-            shadow: "shadow-indigo-500/20"
+            color: "from-slate-700 to-slate-900",
+            shadow: "shadow-slate-500/10"
         },
         {
             step: "02",
             title: "Arquitectura",
-            desc: "Diseño de bases de datos y estructura del sistema.",
-            simple: "Diseñamos los cimientos.",
+            desc: "Diseño sistémico de bases de datos y escalabilidad.",
+            simple: "Diseño de Sistemas",
             icon: <Server size={22} className="text-white" />,
-            color: "from-indigo-500/80 to-purple-500/80",
-            shadow: "shadow-purple-500/20"
+            color: "from-indigo-900 to-indigo-700",
+            shadow: "shadow-indigo-500/10"
         },
         {
             step: "03",
             title: "Desarrollo",
-            desc: "Programación de interfaz (UI) y lógica (Backend).",
-            simple: "Construimos el software.",
+            desc: "Implementación de interfaz (UI/UX) y Core Backend.",
+            simple: "Software Construction",
             icon: <Code size={22} className="text-white" />,
-            color: "from-purple-500/80 to-pink-500/80",
-            shadow: "shadow-pink-500/20"
+            color: "from-indigo-600 to-indigo-800",
+            shadow: "shadow-indigo-600/10"
         },
         {
             step: "04",
-            title: "Despliegue",
-            desc: "Puesta en producción y entrega final al cliente.",
-            simple: "Tu sistema funcionando.",
+            title: "Soporte & UX",
+            desc: "Puesta en producción, monitoreo y mejora continua.",
+            simple: "Producción & Escala",
             icon: <Rocket size={22} className="text-white" />,
-            color: "from-pink-500/80 to-rose-500/80",
-            shadow: "shadow-rose-500/20"
+            color: "from-slate-600 to-slate-800",
+            shadow: "shadow-slate-600/10"
         }
     ];
 

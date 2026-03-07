@@ -96,13 +96,26 @@ class TelegramBotController extends Controller
             return response()->json(['status' => 'unauthorized'], 401);
         }
 
-        // Si es un ping de test directo de Coolify (formato genérico)
+        // Si es un ping de test o mensaje genérico de Coolify
         if (isset($payload['message']) && !isset($payload['status'])) {
-            $msg = "🔔 <b>Notificación de Prueba (Coolify)</b>\n\n";
-            $msg .= htmlspecialchars($payload['message']);
-            if (isset($payload['subject'])) {
-                $msg = "🔔 <b>" . htmlspecialchars($payload['subject']) . "</b>\n\n" . htmlspecialchars($payload['message']);
+            $msg = "🔔 <b>Notificación de Sistema (Coolify)</b>\n\n";
+
+            // Intentamos extraer algo más de "chicha" del mensaje genérico
+            $rawMsg = $payload['message'];
+            if (str_contains($rawMsg, 'successfully deployed')) {
+                $msg = "✅ <b>¡Nueva Versión en Producción!</b>\n\n";
             }
+            elseif (str_contains($rawMsg, 'restarted')) {
+                $msg = "♻️ <b>Recurso Reiniciado</b>\n\n";
+            }
+
+            $msg .= "📝 " . htmlspecialchars($rawMsg);
+
+            if (isset($payload['subject'])) {
+                $msg .= "\n📌 <i>" . htmlspecialchars($payload['subject']) . "</i>";
+            }
+
+            $msg .= "\n\n<i>Digitaliza Todo BOT</i>";
             \App\Services\TelegramService::sendMessage($msg);
             return response()->json(['status' => 'ok']);
         }
