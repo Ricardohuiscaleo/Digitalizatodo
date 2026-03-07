@@ -9,6 +9,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Services\TelegramService;
 
 class RegisterTenantController extends Controller
 {
@@ -40,6 +41,16 @@ class RegisterTenantController extends Controller
             'password' => Hash::make($validated['password']),
             'tenant_id' => $tenant->id,
         ]);
+
+        // Notificar por Telegram
+        $msg = "<b>🚀 ¡NUEVO REGISTRO DE EMPRESA!</b>\n\n"
+             . "🏢 <b>Empresa:</b> {$tenant->name} ({$tenant->industry})\n"
+             . "🔗 <b>Slug:</b> {$tenant->id}\n"
+             . "👤 <b>Dueño:</b> {$user->name}\n"
+             . "📧 <b>Email:</b> {$user->email}\n\n"
+             . "🌍 <a href='https://mi.digitalizatodo.cl/{$tenant->id}'>Ver Panel mi.digitalizatodo.cl</a>";
+        
+        TelegramService::sendMessage($msg);
 
         return response()->json([
             'message' => '¡Empresa registrada con éxito!',
