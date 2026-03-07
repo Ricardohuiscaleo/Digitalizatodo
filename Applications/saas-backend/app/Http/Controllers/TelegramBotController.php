@@ -132,7 +132,6 @@ class TelegramBotController extends Controller
             $title = "🚀 <b>Despliegue Iniciado</b>";
             $emoji = "🚀";
         }
-
         elseif (str_contains($rawMsg, 'restarted')) {
             $title = "♻️ <b>Recurso Reiniciado</b>";
             $emoji = "♻️";
