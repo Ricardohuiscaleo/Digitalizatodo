@@ -40,7 +40,7 @@ Route::middleware([ResolveTenantFromPath::class])->prefix('{tenant}')->group(fun
     // Registro público de alumnos
     Route::post('register-student', [StudentRegistrationController::class , 'register']);
 
-    Route::prefix('auth')->group(function () {
+    Route::group(['prefix' => 'auth'], function () {
             // ── Autenticación (pública) ────────────────────────────────────────
             Route::post('login', [AuthController::class , 'login']);
             Route::post('register', [AuthController::class , 'register']);
