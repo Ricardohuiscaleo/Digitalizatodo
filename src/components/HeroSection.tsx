@@ -35,17 +35,25 @@ export function HeroSection() {
                     </span>
                 </h1>
 
-                <p
-                    className="hero-animate-fade-in-up hero-delay-150 text-slate-400 max-w-2xl mx-auto leading-relaxed font-light"
-                    style={{ fontSize: 'clamp(1.1rem, 2vw, 1.35rem)' }}
-                >
-                    No solo escribimos código. Diseñamos sistemas de <span className="text-white font-medium">clase mundial</span> que reducen los costos operacionales de tu <Typewriter
-                        words={["Logística", "Gimnasio", "Academia", "Colegio", "Clínica", "Estudio de abogados"]}
-                        typingSpeed={80}
-                        deletingSpeed={40}
-                        pauseTime={1500}
-                    /> entre otros.
-                </p>
+                <div className="flex flex-col items-center gap-6">
+                    <p
+                        className="hero-animate-fade-in-up hero-delay-150 text-slate-400 max-w-2xl mx-auto leading-relaxed font-light"
+                        style={{ fontSize: 'clamp(1.1rem, 2vw, 1.35rem)' }}
+                    >
+                        No solo escribimos código. Diseñamos sistemas de <span className="text-white font-medium">clase mundial</span> que reducen los costos operacionales de tu empresa.
+                    </p>
+
+                    <div className="hero-animate-fade-in-up hero-delay-300 flex items-center gap-3 px-5 py-2.5 rounded-full border border-white/5 bg-white/5 backdrop-blur-sm shadow-2xl">
+                        <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest">Nicho:</span>
+                        <Typewriter
+                            words={["Logística", "Gimnasio", "Academia", "Colegio", "Clínica", "Estudio de abogados"]}
+                            typingSpeed={80}
+                            deletingSpeed={40}
+                            pauseTime={1500}
+                            className="text-sm border-l border-white/10 pl-3"
+                        />
+                    </div>
+                </div>
 
                 <div className="hero-animate-fade-in-up hero-delay-600 flex flex-col sm:flex-row gap-5 justify-center items-center pt-8">
                     <Button
