@@ -60,6 +60,8 @@ class TenantDiscoveryController extends Controller
             'found' => true,
             'tenants' => $tenants,
         ]);
+    }
+
     /**
      * Retorna información pública del tenant (branding).
      * GET /api/{tenant}/info
@@ -77,7 +79,7 @@ class TenantDiscoveryController extends Controller
             'id' => $tenant->id,
             'name' => $tenant->name,
             'industry' => $tenant->industry,
-            'logo' => $tenant->logo ? \Illuminate\Support\Facades\Storage::disk('public')->url($tenant->logo) : '/icon.webp',
+            'logo' => $tenant->logo ?\Illuminate\Support\Facades\Storage::disk('public')->url($tenant->logo) : '/icon.webp',
             'primary_color' => $tenant->primary_color ?? '#f59e0b',
         ]);
     }
