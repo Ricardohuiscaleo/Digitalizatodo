@@ -35,22 +35,21 @@ export function HeroSection() {
                     </span>
                 </h1>
 
-                <div className="flex flex-col items-center gap-6">
+                <div className="flex flex-col items-center gap-4">
                     <p
-                        className="hero-animate-fade-in-up hero-delay-150 text-slate-400 max-w-2xl mx-auto leading-relaxed font-light"
+                        className="hero-animate-fade-in-up hero-delay-150 text-slate-400 max-w-3xl mx-auto leading-relaxed font-light"
                         style={{ fontSize: 'clamp(1.1rem, 2vw, 1.35rem)' }}
                     >
-                        No solo escribimos código. Diseñamos sistemas de <span className="text-white font-medium">clase mundial</span> que reducen los costos operacionales de tu empresa.
+                        No solo escribimos código. Diseñamos sistemas de <span className="text-white font-medium">clase mundial</span> que reducen los costos operacionales en:
                     </p>
 
-                    <div className="hero-animate-fade-in-up hero-delay-300 flex items-center gap-3 px-5 py-2.5 rounded-full border border-white/5 bg-white/5 backdrop-blur-sm shadow-2xl">
-                        <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest">Nicho:</span>
+                    <div className="hero-animate-fade-in-up hero-delay-300 min-h-[1.8em] flex items-center justify-center">
                         <Typewriter
-                            words={["Logística", "Gimnasio", "Academia", "Colegio", "Clínica", "Estudio de abogados"]}
+                            words={["Logística", "Gimnasios", "Academias", "Colegios", "Clínicas", "Estudios de Abogados"]}
                             typingSpeed={80}
                             deletingSpeed={40}
                             pauseTime={1500}
-                            className="text-sm border-l border-white/10 pl-3"
+                            className="text-white font-bold border-b-2 border-yellow-400 pb-0.5 tracking-wide"
                         />
                     </div>
                 </div>
