@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { MessageCircle, ArrowRight } from "lucide-react";
+import { Typewriter } from "./Typewriter";
 import './HeroSection.css';
 
 export function HeroSection() {
@@ -38,7 +39,12 @@ export function HeroSection() {
                     className="hero-animate-fade-in-up hero-delay-150 text-slate-400 max-w-2xl mx-auto leading-relaxed font-light"
                     style={{ fontSize: 'clamp(1.1rem, 2vw, 1.35rem)' }}
                 >
-                    No solo escribimos código. Diseñamos sistemas de <span className="text-white font-medium">clase mundial</span> que optimizan operaciones y maximizan la rentabilidad de su empresa.
+                    No solo escribimos código. Diseñamos sistemas de <span className="text-white font-medium">clase mundial</span> que reducen los costos operacionales de tu <Typewriter
+                        words={["Logística", "Gimnasio", "Academia", "Colegio", "Clínica", "Estudio de abogados"]}
+                        typingSpeed={80}
+                        deletingSpeed={40}
+                        pauseTime={1500}
+                    />
                 </p>
 
                 <div className="hero-animate-fade-in-up hero-delay-600 flex flex-col sm:flex-row gap-5 justify-center items-center pt-8">
