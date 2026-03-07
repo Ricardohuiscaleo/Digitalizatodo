@@ -133,7 +133,7 @@ class TelegramBotController extends Controller
             $emoji = "🚀";
         }
 
-               elseif (str_contains($rawMsg, 'restarted')) {
+        elseif (str_contains($rawMsg, 'restarted')) {
             $title = "♻️ <b>Recurso Reiniciado</b>";
             $emoji = "♻️";
         }
@@ -210,4 +210,12 @@ class TelegramBotController extends Controller
 
             }
             catch (\Exception $e) {
-                Log::error('Error al responder co
+                Log::error('Error al responder con email: ' . $e->getMessage());
+            }
+
+            return response()->json(['status' => 'ok']);
+        }
+
+        return response()->json(['status' => 'ignored']);
+    }
+}
