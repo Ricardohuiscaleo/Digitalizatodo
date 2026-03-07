@@ -25,6 +25,7 @@ class TenantPanelProvider extends PanelProvider
         return $panel
             ->id('tenant')
             ->path('') // La ruta base será /
+            ->login()
             ->tenant(\App\Models\Tenant::class, slugAttribute: 'id')
             ->tenantRoutePrefix('') // para que sea /gimbox en vez de /tenant/gimbox
             ->spa()
