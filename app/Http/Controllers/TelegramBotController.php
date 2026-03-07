@@ -132,7 +132,8 @@ class TelegramBotController extends Controller
             $title = "🚀 <b>Despliegue Iniciado</b>";
             $emoji = "🚀";
         }
-        elseif (str_contains($rawMsg, 'restarted')) {
+
+               elseif (str_contains($rawMsg, 'restarted')) {
             $title = "♻️ <b>Recurso Reiniciado</b>";
             $emoji = "♻️";
         }
@@ -213,7 +214,4 @@ class TelegramBotController extends Controller
             }
         }
 
-        return response()->json(['status' => 'ok']);
-    }
-} // Test deploy Sat Mar  7 16:46:41 -03 2026
-// Final fix trigger Sat Mar  7 16:50:06 -03 2026
+        return response()->json(['status' => 'ok'
