@@ -102,21 +102,30 @@ class TelegramBotController extends Controller
         $subject = $payload['subject'] ?? null;
         $appName = $payload['name'] ?? ($payload['application_name'] ?? 'Aplicación');
         $url = $payload['url'] ?? ($payload['deployment_url'] ?? null);
-        $commitMessage = $payload['commit_message'] ?? ($payload['commit_subject'] ?? null);
-        $commitHash = $payload['commit'] ?? ($payload['commit_hash'] ?? null);
-        $author = $payload['commit_author'] ?? ($payload['author_name'] ?? null);
-        $branch = $payload['branch'] ?? ($payload['vcs_branch'] ?? null);
+        $commitMessage = $payload['commit_message'] ?? ($payload['commit_subject'] ?? ($payload['commit_message_body'] ?? null));
+        $commitHash = $payload['commit'] ?? ($payload['commit_hash'] ?? ($payload['hash'] ?? null));
+        $author = $payload['commit_author'] ?? ($payload['author_name'] ?? ($payload['pusher_name'] ?? null));
+        $branch = $payload['branch'] ?? ($payload['vcs_branch'] ?? ($payload['ref'] ?? null));
 
         // Determinar el título basado en el estado o mensaje
         $title = "🔔 <b>Notificación de Sistema</b>";
         $emoji = "❓";
 
+        // Intentar detectar si es Producción o Staging basado en nombre o URL
+        $envSuffix = "";
+        if (str_contains(strtolower($appName), 'prod') || str_contains(strtolower($url ?? ''), 'app.digitalizatodo')) {
+            $envSuffix = " [PROD]";
+        }
+        elseif (str_contains(strtolower($appName), 'stage') || str_contains(strtolower($url ?? ''), 'staging')) {
+            $envSuffix = " [STAGING]";
+        }
+
         if ($status === 'finished' || $status === 'success' || str_contains($rawMsg, 'successfully deployed')) {
-            $title = "✅ <b>¡Nueva Versión en Producción!</b>";
+            $title = "✅ <b>¡Despliegue Exitoso!</b>" . $envSuffix;
             $emoji = "✅";
         }
         elseif ($status === 'failed' || $status === 'error' || str_contains($rawMsg, 'failed')) {
-            $title = "❌ <b>Error en el Despliegue</b>";
+            $title = "❌ <b>Error en el Despliegue</b>" . $envSuffix;
             $emoji = "❌";
         }
         elseif ($status === 'started' || str_contains($rawMsg, 'started')) {
