@@ -23,7 +23,11 @@ class AuthController extends Controller
         $tenant = app('currentTenant');
 
         // 1. Intentar buscar como Staff (User)
-        $user = \App\Models\User::where('tenant_id', $tenant->id)
+        // Se permite el login a usuarios específicos del tenant o SuperAdmins (tenant_id NULL)
+        $user = \App\Models\User::where(function ($q) use ($tenant) {
+            $q->where('tenant_id', $tenant->id)
+                ->orWhereNull('tenant_id');
+        })
             ->where('email', $request->email)
             ->first();
 

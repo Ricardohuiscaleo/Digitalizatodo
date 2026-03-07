@@ -29,6 +29,7 @@ class TenantDiscoveryController extends Controller
             ->map(fn($g) => $g->tenant);
 
         // 2. Buscar Staff/Owners (User)
+        // Se elimina la restricción whereNotNull('tenant_id') para permitir la identificación de SuperAdmins.
         $userTenants = \App\Models\User::with('tenant')
             ->where('email', $email)
             ->get()
