@@ -44,7 +44,7 @@ export function HeroSection() {
                         typingSpeed={80}
                         deletingSpeed={40}
                         pauseTime={1500}
-                    />
+                    /> entre otros.
                 </p>
 
                 <div className="hero-animate-fade-in-up hero-delay-600 flex flex-col sm:flex-row gap-5 justify-center items-center pt-8">
