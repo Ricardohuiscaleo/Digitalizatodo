@@ -101,20 +101,23 @@ export default function AcademyDashboardPage() {
     const [markingId, setMarkingId] = useState<string | null>(null);
     const [showAll, setShowAll] = useState(false);
     const [activeTab, setActiveTab] = useState('attendance');
+    const [token, setToken] = useState<string | null>(null);
 
     useEffect(() => {
-        const token = localStorage.getItem("staff_token") || localStorage.getItem("student_token");
+        const storedToken = localStorage.getItem("staff_token") || localStorage.getItem("student_token");
         const tenantId = localStorage.getItem("tenant_id");
 
-        if (!token || !tenantId) {
+        if (!storedToken || !tenantId) {
             window.location.href = "/";
             return;
         }
 
+        setToken(storedToken);
+
         const fetchData = async () => {
             const [profile, studentsData] = await Promise.all([
-                getProfile(tenantId, token),
-                getStudents(tenantId, token)
+                getProfile(tenantId, storedToken),
+                getStudents(tenantId, storedToken)
             ]);
 
             if (profile) {
@@ -237,7 +240,13 @@ export default function AcademyDashboardPage() {
                 </div>
 
                 {/* QR Attendance Generator */}
-                <QRGenerator tenantId={user?.tenant_id} token={localStorage.getItem("staff_token") || ""} primaryColor={branding?.primaryColor} />
+                {token && (
+                    <QRGenerator
+                        tenantId={user?.tenant_id}
+                        token={token}
+                        primaryColor={branding?.primaryColor}
+                    />
+                )}
 
                 {/* Students List */}
                 <div className="space-y-4">
