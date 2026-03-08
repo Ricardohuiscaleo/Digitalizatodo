@@ -340,3 +340,25 @@ export async function updateLogo(tenantId: string, token: string, file: File) {
         return { message: 'Error de conexión' };
     }
 }
+
+export async function generateRegistrationPage(tenantId: string, token: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/settings/registration-page`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, 'X-Tenant-Id': tenantId },
+        });
+        return await safeJson(response);
+    } catch {
+        return { message: 'Error de conexión' };
+    }
+}
+
+export async function getRegistrationPage(code: string) {
+    try {
+        const response = await fetch(`${API_URL}/r/${code}`);
+        if (!response.ok) return null;
+        return await response.json();
+    } catch {
+        return null;
+    }
+}
