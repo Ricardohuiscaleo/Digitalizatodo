@@ -77,6 +77,8 @@ Route::middleware([ResolveTenantFromPath::class])->prefix('{tenant}')->group(fun
                     Route::post('settings/pricing', [GuardianController::class , 'updatePricing']);
                     Route::post('settings/logo', [GuardianController::class , 'updateLogo']);
                     Route::post('settings/registration-page', [RegistrationPageController::class , 'generate']);
+                    Route::get('settings/registration-page', [RegistrationPageController::class , 'getCode']);
+                    Route::delete('settings/registration-page', [RegistrationPageController::class , 'deactivate']);
                 }
                 );
             }

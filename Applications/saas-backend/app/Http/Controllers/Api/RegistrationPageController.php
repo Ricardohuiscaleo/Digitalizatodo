@@ -42,6 +42,28 @@ class RegistrationPageController extends Controller
         return response()->json(['code' => $code]);
     }
 
+    public function getCode(Request $request)
+    {
+        $tenantId = $request->header('X-Tenant-Id');
+        $existing = DB::table('registration_pages')
+            ->where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->value('code');
+
+        return response()->json(['code' => $existing]);
+    }
+
+    public function deactivate(Request $request)
+    {
+        $tenantId = $request->header('X-Tenant-Id');
+        DB::table('registration_pages')
+            ->where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->update(['is_active' => false, 'updated_at' => now()]);
+
+        return response()->json(['message' => 'Link eliminado.']);
+    }
+
     public function show($code)
     {
         $page = DB::table('registration_pages')
