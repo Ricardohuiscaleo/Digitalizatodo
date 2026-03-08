@@ -598,7 +598,7 @@ export default function App() {
             </main>
 
             {/* NAV CON ESTILO PREMIUM */}
-            <nav className="fixed bottom-0 left-0 right-0 sm:max-w-lg sm:mx-auto bg-white/80 backdrop-blur-xl border-t border-zinc-100 pt-3 pb-8 px-10 flex justify-between items-center h-24 z-50">
+            <nav className="fixed bottom-0 left-0 right-0 sm:max-w-lg sm:mx-auto bg-white border-t border-zinc-100 pt-3 pb-8 px-10 flex justify-between items-center h-24 z-50">
                 <TabButton icon={LayoutDashboard} label="Inicio" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} />
                 <TabButton icon={Users} label="Tatami" active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} />
                 <TabButton icon={CreditCard} label="Pagos" active={activeTab === 'payments'} onClick={() => changeTab('payments')} />
