@@ -17,7 +17,7 @@ export default function TenantRegisterPage() {
     password: "", password_confirmation: "",
     is_self_register: true,
     students: [{ name: "", category: "kids" }],
-    plan_id: 1,
+    plan_id: null,
   });
 
   useEffect(() => {
