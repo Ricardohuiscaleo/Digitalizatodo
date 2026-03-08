@@ -14,7 +14,6 @@ import {
     ChevronUp,
     Camera,
     LogOut,
-    Zap,
     RefreshCw,
     ChevronRight,
     Plus
@@ -626,103 +625,74 @@ export default function App() {
     };
 
     const renderSettings = () => {
+        const registerLink = `https://app.digitalizatodo.cl?tenant=${branding?.id || ''}`;
+        const [copied, setCopied] = React.useState(false);
+        const copyLink = () => { navigator.clipboard.writeText(registerLink); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+
         return (
-            <div className="space-y-6 px-4 pb-24">
-                {/* BRANDING CARD — tira compacta */}
+            <div className="space-y-3 px-4 pb-24">
+                {/* BRANDING */}
                 <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-zinc-100 flex items-center gap-3">
                     <div className="relative shrink-0">
-                        <img src={branding?.logo || "/icon.webp"} className="w-12 h-12 rounded-xl object-contain bg-zinc-950 p-1.5 shadow-md" alt="Logo" />
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="absolute -bottom-1.5 -right-1.5 bg-white text-zinc-950 p-1 rounded-lg border-2 border-zinc-50 shadow-md hover:bg-zinc-950 hover:text-white transition-all active:scale-90"
-                        >
-                            <Camera size={12} />
+                        <img src={branding?.logo || "/icon.webp"} className="w-10 h-10 rounded-full object-cover border border-zinc-100" alt="Logo" />
+                        <button onClick={() => fileInputRef.current?.click()} className="absolute -bottom-1 -right-1 bg-white text-zinc-950 p-0.5 rounded-full border border-zinc-200 shadow active:scale-90">
+                            <Camera size={10} />
                         </button>
                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleLogoUpload} />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-black uppercase tracking-tighter text-zinc-950 truncate leading-none">{branding?.name || 'Academy'}</h3>
+                        <h3 className="text-xs font-black uppercase tracking-tighter text-zinc-950 truncate leading-none">{branding?.name || 'Academy'}</h3>
                         <div className="flex items-center gap-2 mt-0.5">
-                            <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Plataforma de Gestión v4.7</p>
-                            <button onClick={handleLoadDemo} className="text-[7px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-0.5 rounded-full active:scale-95 transition-all">
-                                Demo
-                            </button>
+                            <p className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Plataforma de Gestión v4.7</p>
+                            <button onClick={handleLoadDemo} className="text-[7px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-200 px-1.5 py-0.5 rounded-full active:scale-95 transition-all">Demo</button>
                         </div>
                     </div>
                 </div>
 
-                {/* PRICING VALUES */}
-                <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-zinc-100 space-y-6">
-                    <h3 className="text-sm font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
-                        <CreditCard size={16} /> Valores Mensualidad
-                    </h3>
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-4 bg-zinc-50 p-2 rounded-2xl border border-zinc-100">
-                            <div className="flex-1">
-                                <label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest ml-2">Categoría {vocab.cat1}</label>
-                                <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    className="w-full bg-transparent border-none text-zinc-950 font-black p-1 focus:ring-0 outline-none"
-                                    value={formatCLP(prices.kids)}
-                                    onChange={e => handlePriceInput('kids', e.target.value)}
-                                    placeholder="$ 0"
-                                />
+                {/* LINK DE REGISTRO */}
+                <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-zinc-100">
+                    <p className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-2">Link de Registro Titulares</p>
+                    <div className="flex items-center gap-2">
+                        <p className="flex-1 text-[9px] font-bold text-zinc-500 truncate bg-zinc-50 rounded-xl px-3 py-2 border border-zinc-100">{registerLink}</p>
+                        <button onClick={copyLink} className={`shrink-0 text-[8px] font-black uppercase px-3 py-2 rounded-xl border transition-all active:scale-95 ${copied ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-zinc-50 text-zinc-600 border-zinc-200'}`}>
+                            {copied ? '✓ Copiado' : 'Copiar'}
+                        </button>
+                    </div>
+                </div>
+
+                {/* PRECIOS + DESCUENTO en una sola tarjeta */}
+                <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden">
+                    <div className="px-4 py-2 border-b border-zinc-50 flex items-center gap-2">
+                        <CreditCard size={12} className="text-zinc-400" />
+                        <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Mensualidad</span>
+                    </div>
+                    <div className="divide-y divide-zinc-50">
+                        {[{label: vocab.cat1, field: 'kids' as const}, {label: vocab.cat2, field: 'adult' as const}].map(({label, field}) => (
+                            <div key={field} className="flex items-center px-4 py-2">
+                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest w-20 shrink-0">{label}</span>
+                                <input type="text" inputMode="numeric" className="flex-1 bg-transparent text-xs font-black text-zinc-950 focus:ring-0 outline-none text-right"
+                                    value={formatCLP(prices[field])} onChange={e => handlePriceInput(field, e.target.value)} placeholder="$ 0" />
                             </div>
+                        ))}
+                        <div className="flex items-center px-4 py-2">
+                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest w-20 shrink-0">Desc. desde</span>
+                            <input type="text" inputMode="numeric" className="flex-1 bg-transparent text-xs font-black text-zinc-950 focus:ring-0 outline-none text-right"
+                                value={prices.discountThreshold || ''} onChange={e => { const v = e.target.value.replace(/\D/g,''); setPrices(p => ({ ...p, discountThreshold: v === '' ? 0 : parseInt(v) })); }} placeholder="0 inscritos" />
                         </div>
-                        <div className="flex items-center gap-4 bg-zinc-50 p-2 rounded-2xl border border-zinc-100">
-                            <div className="flex-1">
-                                <label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest ml-2">Categoría {vocab.cat2}</label>
-                                <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    className="w-full bg-transparent border-none text-zinc-950 font-black p-1 focus:ring-0 outline-none"
-                                    value={formatCLP(prices.adult)}
-                                    onChange={e => handlePriceInput('adult', e.target.value)}
-                                    placeholder="$ 0"
-                                />
-                            </div>
+                        <div className="flex items-center px-4 py-2">
+                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest w-20 shrink-0">Descuento</span>
+                            <input type="text" inputMode="numeric" className="flex-1 bg-transparent text-xs font-black text-zinc-950 focus:ring-0 outline-none text-right"
+                                value={prices.discountPercentage ? `${prices.discountPercentage}%` : ''} onChange={e => { const v = e.target.value.replace(/\D/g,''); setPrices(p => ({ ...p, discountPercentage: v === '' ? 0 : Math.min(100, parseInt(v)) })); }} placeholder="0%" />
                         </div>
                     </div>
                 </div>
 
-                {/* DISCOUNT RULES */}
-                <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-zinc-100 space-y-6">
-                    <h3 className="text-sm font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
-                        <Zap size={16} /> Reglas de Descuento
-                    </h3>
-                    <div className="space-y-4">
-                        <div className="space-y-1">
-                            <label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest ml-4 leading-none">Aplicar si cuenta tiene más de X inscritos:</label>
-                            <input
-                                type="text"
-                                inputMode="numeric"
-                                className="w-full h-14 bg-zinc-50 border border-zinc-100 rounded-2xl px-6 font-black text-zinc-950 focus:ring-2 ring-zinc-950 transition-all outline-none"
-                                value={prices.discountThreshold || ''}
-                                onChange={e => { const v = e.target.value.replace(/\D/g,''); setPrices(p => ({ ...p, discountThreshold: v === '' ? 0 : parseInt(v) })); }}
-                                placeholder="0"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest ml-4 leading-none">Porcentaje a descontar del total:</label>
-                            <input
-                                type="text"
-                                inputMode="numeric"
-                                className="w-full h-14 bg-zinc-50 border border-zinc-100 rounded-2xl px-6 font-black text-zinc-950 focus:ring-2 ring-zinc-950 transition-all outline-none"
-                                value={prices.discountPercentage ? `${prices.discountPercentage}%` : ''}
-                                onChange={e => { const v = e.target.value.replace(/\D/g,''); setPrices(p => ({ ...p, discountPercentage: v === '' ? 0 : Math.min(100, parseInt(v)) })); }}
-                                placeholder="0%"
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                <button onClick={handleSavePrices} className="w-full bg-zinc-950 hover:bg-zinc-800 text-white font-black py-6 rounded-[2rem] shadow-2xl shadow-zinc-200 mt-4 active:scale-95 transition-all text-xs uppercase tracking-widest">
+                <button onClick={handleSavePrices} className="w-full bg-zinc-950 text-white font-black py-4 rounded-2xl active:scale-95 transition-all text-[10px] uppercase tracking-widest">
                     Guardar Configuración
                 </button>
 
-                <button className="w-full text-rose-500 font-black py-6 rounded-3xl hover:bg-rose-50 uppercase tracking-widest text-[9px] mt-8" onClick={() => { localStorage.clear(); window.location.href = "/"; }}>
-                    <LogOut className="inline-block mr-2" size={14} /> Cerrar Sesión Staff
+                <button className="w-full text-rose-400 font-black py-3 rounded-2xl hover:bg-rose-50 uppercase tracking-widest text-[8px] transition-all" onClick={() => { localStorage.clear(); window.location.href = "/"; }}>
+                    <LogOut className="inline-block mr-1.5" size={12} /> Cerrar Sesión Staff
                 </button>
             </div>
         );
