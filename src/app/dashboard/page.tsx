@@ -329,21 +329,26 @@ export default function App() {
                                 {presentToday} / {totalStudents}
                             </span>
                             <button onClick={() => changeTab('attendance')} className="flex items-center gap-1 text-indigo-500 text-[10px] font-black uppercase tracking-widest active:opacity-70 transition-all">
-                                Ir a {vocab.attendance} <ChevronRight size={13} />
+                                Ir a {vocab.memberLabel} <ChevronRight size={13} />
                             </button>
                         </div>
                     </div>
 
                     {presentToday > 0 ? (
-                        <div className="flex -space-x-2 overflow-x-auto pb-1">
-                            {allStudents.filter(s => attendance.has(s.id)).map(s => (
-                                <img
-                                    key={s.id}
-                                    className="inline-block h-10 w-10 rounded-xl border-2 border-white shadow-sm object-cover shrink-0"
-                                    src={s.photo}
-                                    alt={s.name}
-                                />
-                            ))}
+                        <div className="space-y-3">
+                            <div className="flex -space-x-2 overflow-x-auto pb-1">
+                                {allStudents.filter(s => attendance.has(s.id)).map(s => (
+                                    <img
+                                        key={s.id}
+                                        className="inline-block h-10 w-10 rounded-xl border-2 border-white shadow-sm object-cover shrink-0"
+                                        src={s.photo}
+                                        alt={s.name}
+                                    />
+                                ))}
+                            </div>
+                            <button onClick={() => changeTab('attendance')} className="w-full py-3 rounded-2xl bg-zinc-950 text-white text-xs font-black uppercase tracking-widest active:scale-95 transition-all">
+                                Registrar Asistencia 👇
+                            </button>
                         </div>
                     ) : (
                         <div className="flex items-center gap-3 py-3 px-4 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">
@@ -490,38 +495,11 @@ export default function App() {
                                     </p>
                                     <span className={`text-[7px] mt-0.5 uppercase tracking-widest font-bold ${isPresent ? 'text-zinc-400' : 'text-zinc-400'}`}>{student.category === 'kids' ? vocab.cat1 : student.category === 'adult' ? vocab.cat2 : student.category || ''}</span>
                                 </button>
-                                {isPresent && (
-                                    <div className="flex gap-1 mt-1">
-                                        <button
-                                            onClick={() => toggleAttendance(student.id)}
-                                            className="flex-1 py-1 rounded-xl bg-red-50 border border-red-100 text-red-400 text-[8px] font-black uppercase tracking-widest active:scale-95 transition-all"
-                                        >Borrar</button>
-                                        <button
-                                            onClick={async () => {
-                                                const token = localStorage.getItem('staff_token');
-                                                if (token && user?.tenant_id) await storeAttendance(user.tenant_id, token, { student_id: student.id, status: 'late' });
-                                            }}
-                                            className="flex-1 py-1 rounded-xl bg-amber-50 border border-amber-100 text-amber-500 text-[8px] font-black uppercase tracking-widest active:scale-95 transition-all"
-                                        >Tarde</button>
-                                    </div>
-                                )}
                             </div>
                         );
                     })}
                 </div>
 
-                {/* Botón flotante guardar */}
-                {presentCount > 0 && (
-                    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 sm:max-w-lg w-full px-4">
-                        <button
-                            onClick={() => changeTab('dashboard')}
-                            className="w-full bg-zinc-950 text-white py-4 rounded-2xl text-sm font-black uppercase tracking-widest shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-2"
-                        >
-                            <CheckCircle2 size={18} />
-                            Guardar · {presentCount} presentes
-                        </button>
-                    </div>
-                )}
             </div>
         );
     };
@@ -746,11 +724,11 @@ export default function App() {
             {/* HEADER DINÁMICO */}
             <header className="bg-white px-8 py-8 flex items-center justify-between sticky top-0 z-50 border-none shrink-0">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-zinc-950 rounded-2xl flex items-center justify-center shadow-xl overflow-hidden shrink-0">
+                    <div className="w-12 h-12 flex items-center justify-center shrink-0">
                         {branding?.logo ? (
-                            <img src={branding.logo} className="w-full h-full object-contain p-2" alt="L" />
+                            <img src={branding.logo} className="w-full h-full object-contain" alt="L" />
                         ) : (
-                            <span className="text-white font-black text-xl uppercase tracking-tighter">{branding?.name?.[0] || 'D'}</span>
+                            <span className="font-black text-2xl uppercase tracking-tighter text-zinc-950">{branding?.name?.[0] || 'D'}</span>
                         )}
                     </div>
                     <div className="flex flex-col">
@@ -766,8 +744,8 @@ export default function App() {
                         <span className="text-xs font-black text-zinc-950 leading-none">{user?.name || 'Admin'}</span>
                         <span className="text-[9px] font-bold text-indigo-500 uppercase tracking-widest">Admin</span>
                     </div>
-                    <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shrink-0">
-                        <span className="text-white font-black text-sm uppercase">{(user?.name || 'A')[0]}</span>
+                    <div className="w-12 h-12 flex items-center justify-center shrink-0">
+                        <img src="/DLogo-v2.webp" className="w-full h-full object-contain" alt="D" />
                     </div>
                 </div>
             </header>
