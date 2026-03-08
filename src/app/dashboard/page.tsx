@@ -642,7 +642,12 @@ export default function App() {
                     </div>
                     <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-black uppercase tracking-tighter text-zinc-950 truncate leading-none">{branding?.name || 'Academy'}</h3>
-                        <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">Plataforma de Gestión v4.7</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                            <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Plataforma de Gestión v4.7</p>
+                            <button onClick={handleLoadDemo} className="text-[7px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-0.5 rounded-full active:scale-95 transition-all">
+                                Demo
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -714,14 +719,6 @@ export default function App() {
 
                 <button onClick={handleSavePrices} className="w-full bg-zinc-950 hover:bg-zinc-800 text-white font-black py-6 rounded-[2rem] shadow-2xl shadow-zinc-200 mt-4 active:scale-95 transition-all text-xs uppercase tracking-widest">
                     Guardar Configuración
-                </button>
-
-                <button onClick={handleLoadDemo} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-5 rounded-[2rem] shadow-xl shadow-emerald-100 flex items-center justify-between px-8 text-xs group transition-all active:scale-95 mt-4">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-white/20 p-2 rounded-xl group-hover:rotate-12 transition-transform"><Zap size={20} fill="white" /></div>
-                        <span className="uppercase tracking-widest">Activar Datos Demo</span>
-                    </div>
-                    <ChevronRight size={20} />
                 </button>
 
                 <button className="w-full text-rose-500 font-black py-6 rounded-3xl hover:bg-rose-50 uppercase tracking-widest text-[9px] mt-8" onClick={() => { localStorage.clear(); window.location.href = "/"; }}>

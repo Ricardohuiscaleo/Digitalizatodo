@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import {
     Calendar,
     CreditCard,
@@ -139,11 +138,7 @@ export default function StudentDashboard() {
 
                 {/* Global Stats / Total Due */}
                 {data?.total_due > 0 && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-red-500/10 border border-red-500/20 rounded-3xl p-5 mb-8 flex items-center justify-between"
-                    >
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-3xl p-5 mb-8 flex items-center justify-between animate-in fade-in duration-200">
                         <div>
                             <p className="text-[10px] font-black uppercase tracking-widest text-red-500/80 mb-1">Deuda Pendiente</p>
                             <p className="text-2xl font-black text-white">${Number(data.total_due).toLocaleString('es-CL')}</p>
@@ -154,7 +149,7 @@ export default function StudentDashboard() {
                             Pagar Ahora
                             <ArrowUpRight className="w-4 h-4" />
                         </button>
-                    </motion.div>
+                    </div>
                 )}
 
                 {/* Students List */}
@@ -162,12 +157,9 @@ export default function StudentDashboard() {
                     <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-500 ml-1">Mis Alumnos</h2>
 
                     {students.map((student: any, idx: number) => (
-                        <motion.div
+                        <div
                             key={student.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: idx * 0.1 }}
-                            className="bg-white/[0.03] border border-white/[0.08] rounded-[2.5rem] p-6 backdrop-blur-sm relative overflow-hidden group hover:bg-white/[0.05] transition-all"
+                            className="bg-white/[0.03] border border-white/[0.08] rounded-[2.5rem] p-6 backdrop-blur-sm relative overflow-hidden group hover:bg-white/[0.05] transition-all animate-in fade-in duration-200"
                         >
                             <div className="flex items-start gap-4 relative z-10">
                                 <div className="w-16 h-16 rounded-3xl overflow-hidden bg-white/5 border border-white/10 shrink-0">
@@ -239,7 +231,7 @@ export default function StudentDashboard() {
                                 className="absolute top-0 right-0 w-32 h-32 opacity-10 blur-3xl pointer-events-none rounded-full"
                                 style={{ backgroundColor: primaryColor }}
                             />
-                        </motion.div>
+                        </div>
                     ))}
                 </div>
             </div>
