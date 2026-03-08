@@ -61,7 +61,7 @@ export default function App() {
         setToken(storedToken);
 
         const fetchData = async () => {
-            const [profile, payersData] = await Promise.all([
+            const [profile, payersData]: [any, any] = await Promise.all([
                 getProfile(tenantId, storedToken),
                 getPayers(tenantId, storedToken)
             ]);
