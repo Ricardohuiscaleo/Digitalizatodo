@@ -243,7 +243,14 @@ export default function CompactStaffDashboard() {
         setUploading(false);
 
         if (res.logo_url) {
-            setBranding({ ...branding, logo: res.logo_url });
+            const tenantId = branding?.id || user?.tenant_id || localStorage.getItem("tenant_id") || "";
+            setBranding({
+                id: tenantId,
+                name: branding?.name || user?.name || "Mi Academia",
+                logo: res.logo_url,
+                primaryColor: branding?.primaryColor || "#6366f1",
+                industry: branding?.industry
+            });
             alert("Logo actualizado con éxito");
         } else {
             alert("Error al subir el logo");
