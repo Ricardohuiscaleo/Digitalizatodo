@@ -64,7 +64,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-6 sm:p-12 bg-gradient-to-br from-background via-background to-slate-900/50">
+    <div className="flex min-h-screen flex-col items-center justify-center p-6 sm:p-12 bg-linear-to-br from-background via-background to-slate-900/50">
       <div className="w-full max-w-md space-y-8">
         {/* Branding Area */}
         <div className="flex flex-col items-center gap-4">
