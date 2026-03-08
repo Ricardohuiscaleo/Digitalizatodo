@@ -77,6 +77,7 @@ export default function App() {
     const [historyPage, setHistoryPage] = useState(0);
     const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
     const [now, setNow] = useState(new Date());
+    const [copied, setCopied] = useState(false);
 
     useEffect(() => {
         const t = setInterval(() => setNow(new Date()), 60000);
@@ -626,7 +627,6 @@ export default function App() {
 
     const renderSettings = () => {
         const registerLink = `https://app.digitalizatodo.cl/${branding?.id || ''}/register`;
-        const [copied, setCopied] = React.useState(false);
         const copyLink = () => { navigator.clipboard.writeText(registerLink); setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
         return (
