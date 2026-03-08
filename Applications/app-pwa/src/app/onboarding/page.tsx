@@ -65,7 +65,7 @@ export default function OnboardingPage() {
 
     if (success) {
         return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans">
+            <div className="min-h-screen bg-white flex items-center justify-center p-6 font-sans">
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
@@ -102,7 +102,7 @@ export default function OnboardingPage() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center p-6 lg:p-12 font-sans">
+        <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 lg:p-12 font-sans">
             <div className="w-full max-w-[1240px] grid lg:grid-cols-[0.7fr_1.3fr] gap-16 lg:gap-24 items-center">
 
                 {/* Visual Side - Premium Bento Style */}
