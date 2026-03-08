@@ -145,7 +145,7 @@ class GuardianController extends Controller
             ob_start(); imagewebp($dst, null, 80); $webp = ob_get_clean();
 
             $s3Path = 'digitalizatodo/' . $tenantId . '/logo/' . Str::uuid() . '.webp';
-            Storage::disk('s3')->put($s3Path, $webp, ['visibility' => 'public']);
+            Storage::disk('s3')->put($s3Path, $webp);
 
             $bucket = env('AWS_BUCKET', env('S3_BUCKET'));
             $region = env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1'));
