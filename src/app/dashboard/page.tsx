@@ -116,7 +116,7 @@ export default function App() {
                 if (profile.tenant?.data?.pricing) {
                     setPrices(profile.tenant.data.pricing);
                 }
-                if (profile.tenant && !branding?.name) {
+                if (profile.tenant && (!branding?.name || !branding?.industry)) {
                     setBranding({
                         id: String(profile.tenant.id),
                         name: profile.tenant.name,
