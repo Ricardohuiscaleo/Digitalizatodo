@@ -122,7 +122,7 @@ export default function LoginPage() {
         <p className="text-center text-xs text-zinc-400">
           ¿No tienes cuenta?{" "}
           <a href="/register" className="text-zinc-600 hover:text-zinc-900 font-medium transition-colors">
-            Registrar academia
+            Regístrate y obtén una demo ❤️
           </a>
         </p>
       </div>
