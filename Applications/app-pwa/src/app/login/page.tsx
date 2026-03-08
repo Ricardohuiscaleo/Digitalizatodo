@@ -1,124 +1,131 @@
 "use client";
 
-import React, { useState } from "react";
-import { LogIn, Mail, Lock, Loader2, AlertCircle, ArrowRight, RefreshCw } from "lucide-react";
+import { useState } from "react";
 import { useBranding } from "@/context/BrandingContext";
 import { identifyTenant, login } from "@/lib/api";
+import { Loader2, RefreshCw } from "lucide-react";
 
 export default function LoginPage() {
-    const { branding, setBranding } = useBranding();
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [isIdentifying, setIsIdentifying] = useState(false);
-    const [isLoggingIn, setIsLoggingIn] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+  const { branding, setBranding, isLoading } = useBranding();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isIdentifying, setIsIdentifying] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    const handleEmailBlur = async () => {
-        if (!email || !email.includes("@")) return;
-        setIsIdentifying(true);
-        const data = await identifyTenant(email);
-        setIsIdentifying(false);
-        if (data && data.found && data.tenants.length > 0) {
-            const tenant = data.tenants[0];
-            setBranding({
-                id: tenant.id,
-                name: tenant.name,
-                industry: tenant.industry,
-                logo: tenant.logo,
-                primaryColor: tenant.primary_color
-            });
-        }
-    };
+  const handleEmailBlur = async () => {
+    if (!email.includes("@")) return;
+    setIsIdentifying(true);
+    const data = await identifyTenant(email);
+    setIsIdentifying(false);
+    if (data?.found && data.tenants.length > 0) {
+      const t = data.tenants[0];
+      setBranding({ id: t.id, name: t.name, industry: t.industry, logo: t.logo, primaryColor: t.primary_color });
+    }
+  };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!branding) await handleEmailBlur();
-        if (!branding) { setError("Email no reconocido"); return; }
-        setIsLoggingIn(true); setError(null);
-        try {
-            const result: any = await login(branding.id, { email, password });
-            if (result.token) {
-                localStorage.setItem(result.user_type === 'staff' ? "staff_token" : "auth_token", result.token);
-                localStorage.setItem("tenant_id", branding.id);
-                window.location.href = result.user_type === 'staff' ? "/dashboard" : "/dashboard/student";
-            } else throw new Error("Credenciales inválidas");
-        } catch (err: any) { setError(err.message); } finally { setIsLoggingIn(false); }
-    };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!branding) { setError("Ingresa tu correo primero"); return; }
+    setError(null);
+    setIsLoggingIn(true);
+    const result: any = await login(branding.id, { email, password });
+    setIsLoggingIn(false);
+    if (result.token) {
+      localStorage.setItem("tenant_id", branding.id);
+      if (result.user_type === "staff") {
+        localStorage.setItem("staff_token", result.token);
+        window.location.href = "/dashboard";
+      } else {
+        localStorage.setItem("auth_token", result.token);
+        window.location.href = "/dashboard/student";
+      }
+    } else {
+      setError(result.message || "Credenciales inválidas");
+    }
+  };
 
-    return (
-        <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-zinc-950 font-sans">
-            <div className="w-full max-w-[380px] space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="text-center space-y-4">
-                    <div className="h-20 w-20 bg-black rounded-[2rem] mx-auto flex items-center justify-center shadow-2xl relative overflow-hidden group">
-                        {branding?.logo ? (
-                            <img src={branding.logo} className="h-10 w-10 invert object-contain z-10" />
-                        ) : (
-                            <LogIn className="text-white z-10" size={32} />
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                    <div>
-                        <h1 className="text-3xl font-black uppercase tracking-tighter text-zinc-900">{branding?.name || 'Digitaliza Todo'}</h1>
-                        <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.3em] mt-1">Acceso Profesional</p>
-                    </div>
-                </div>
+  if (isLoading) return (
+    <div className="flex min-h-screen items-center justify-center bg-white">
+      <Loader2 className="animate-spin text-zinc-300" size={24} />
+    </div>
+  );
 
-                <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-10 shadow-[0_20px_50px_rgba(0,0,0,0.04)] space-y-8 relative overflow-hidden">
-                    {error && (
-                        <div className="bg-rose-50 text-rose-600 text-[10px] font-black uppercase p-4 rounded-2xl border border-rose-100 flex items-center gap-3 animate-in fade-in zoom-in-95">
-                            <AlertCircle size={16} /> {error}
-                        </div>
-                    )}
+  return (
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
+      <div className="w-full max-w-[360px] space-y-8 animate-in fade-in duration-300">
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="space-y-2">
-                            <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-4">Tu Email</label>
-                            <div className="relative">
-                                <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-300" size={18} />
-                                <input
-                                    type="email"
-                                    required
-                                    value={email}
-                                    onChange={e => setEmail(e.target.value)}
-                                    onBlur={handleEmailBlur}
-                                    placeholder="nombre@academia.com"
-                                    className="w-full h-16 bg-zinc-50 border-none rounded-2xl pl-14 pr-6 font-bold text-zinc-950 placeholder:text-zinc-300 focus:ring-2 ring-black transition-all outline-none"
-                                />
-                                {isIdentifying && <RefreshCw className="absolute right-5 top-1/2 -translate-y-1/2 animate-spin text-zinc-400" size={16} />}
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-4">Contraseña</label>
-                            <div className="relative">
-                                <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-300" size={18} />
-                                <input
-                                    type="password"
-                                    required
-                                    value={password}
-                                    onChange={e => setPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    className="w-full h-16 bg-zinc-50 border-none rounded-2xl pl-14 pr-6 font-bold text-zinc-950 placeholder:text-zinc-300 focus:ring-2 ring-black transition-all outline-none"
-                                />
-                            </div>
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={isLoggingIn}
-                            className="w-full h-16 bg-zinc-950 hover:bg-zinc-800 text-white font-black rounded-2xl uppercase tracking-widest text-xs flex items-center justify-center gap-3 shadow-xl shadow-zinc-100 active:scale-95 transition-all mt-4"
-                        >
-                            {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : (
-                                <>Entrar al Staff <ArrowRight size={18} /></>
-                            )}
-                        </button>
-                    </form>
-                </div>
-
-                <p className="text-center">
-                    <a href="/register" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest hover:text-black transition-colors">¿No tienes cuenta? Registrar Academia</a>
-                </p>
-            </div>
+        {/* Logo / branding — neutro hasta que se detecte tenant */}
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-16 w-16 rounded-2xl bg-zinc-100 flex items-center justify-center overflow-hidden transition-all duration-500">
+            {branding?.logo
+              ? <img src={branding.logo} className="h-full w-full object-contain" />
+              : <span className="text-2xl font-black text-zinc-300">D</span>
+            }
+          </div>
+          <div className="text-center">
+            <h1 className="text-xl font-black text-zinc-900 transition-all duration-300">
+              {branding?.name || "Digitaliza Todo"}
+            </h1>
+            <p className="text-[10px] text-zinc-400 uppercase tracking-widest mt-0.5">
+              {branding ? "Portal de gestión" : "Ingresa tu correo para continuar"}
+            </p>
+          </div>
         </div>
-    );
+
+        {/* Form */}
+        <div className="border border-zinc-100 rounded-2xl p-7 space-y-5">
+          {error && (
+            <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</p>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-zinc-500">Correo electrónico</label>
+              <div className="relative">
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  onBlur={handleEmailBlur}
+                  placeholder="tu@correo.com"
+                  className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 focus:ring-2 ring-zinc-900 outline-none transition-all"
+                />
+                {isIdentifying && (
+                  <RefreshCw className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-zinc-400" size={13} />
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-zinc-500">Contraseña</label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 focus:ring-2 ring-zinc-900 outline-none transition-all"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoggingIn}
+              className="w-full h-11 bg-zinc-950 hover:bg-zinc-800 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-40 mt-1"
+            >
+              {isLoggingIn ? <Loader2 className="animate-spin" size={16} /> : "Iniciar sesión"}
+            </button>
+          </form>
+        </div>
+
+        <p className="text-center text-xs text-zinc-400">
+          ¿No tienes cuenta?{" "}
+          <a href="/register" className="text-zinc-600 hover:text-zinc-900 font-medium transition-colors">
+            Registrar academia
+          </a>
+        </p>
+      </div>
+    </div>
+  );
 }
