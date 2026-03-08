@@ -36,11 +36,15 @@ export default function OnboardingPage() {
             return;
         }
         try {
-            const data: any = await registerTenant(formData);
-            if (data.errors) throw new Error(Object.values(data.errors)[0][0] as string);
+            const data = await registerTenant(formData) as any;
+            if (data?.errors) {
+                const errorKey = Object.keys(data.errors)[0];
+                const errorMessage = data.errors[errorKey][0];
+                throw new Error(errorMessage);
+            }
             setSuccess(true);
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message || "Error al registrar");
         } finally {
             setIsLoading(false);
         }
