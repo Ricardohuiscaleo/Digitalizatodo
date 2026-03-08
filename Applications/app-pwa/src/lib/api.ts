@@ -48,7 +48,7 @@ export async function getTenantInfo(slug: string) {
             return null;
         }
 
-        return await response.json();
+        return await safeJson(response);
     } catch (error) {
         console.error('Error fetching tenant info:', error);
         return null;
@@ -65,7 +65,7 @@ export async function registerTenant(data: any) {
             body: JSON.stringify(data),
         });
 
-        return await response.json();
+        return await safeJson(response);
     } catch (error) {
         console.error('Error registering tenant:', error);
         return { message: 'Error de conexión' };
@@ -100,7 +100,7 @@ export async function getProfile(tenantId: string, token: string) {
             },
         });
 
-        return await response.json();
+        return await safeJson(response);
     } catch (error) {
         console.error('Error fetching profile:', error);
         return null;
@@ -117,7 +117,7 @@ export async function getPayments(tenantId: string, token: string) {
             },
         });
 
-        return await response.json();
+        return await safeJson(response);
     } catch (error) {
         console.error('Error fetching payments:', error);
         return null;
@@ -135,7 +135,7 @@ export async function initiatePayment(tenantId: string, paymentId: string, token
             body: JSON.stringify({ gateway: 'mercadopago' }),
         });
 
-        return await response.json();
+        return await safeJson(response);
     } catch (error) {
         console.error('Error initiating payment:', error);
         return null;
@@ -152,7 +152,7 @@ export async function registerStudent(tenantId: string, data: any) {
             body: JSON.stringify(data),
         });
 
-        return await response.json();
+        return await safeJson(response);
     } catch (error) {
         console.error('Error registering student:', error);
         return { message: 'Error de conexión' };
@@ -172,7 +172,7 @@ export async function getAttendanceHistory(tenantId: string, token: string, stud
             },
         });
 
-        return await response.json();
+        return await safeJson(response);
     } catch (error) {
         console.error('Error fetching attendance history:', error);
         return null;
@@ -189,7 +189,7 @@ export async function getStudents(tenantId: string, token: string) {
             },
         });
 
-        return await response.json();
+        return await safeJson(response);
     } catch (error) {
         console.error('Error fetching students:', error);
         return null;
@@ -208,7 +208,7 @@ export async function storeAttendance(tenantId: string, token: string, data: { s
             body: JSON.stringify(data),
         });
 
-        return await response.json();
+        return await safeJson(response);
     } catch (error) {
         console.error('Error storing attendance:', error);
         return { message: 'Error de conexión' };
@@ -225,7 +225,7 @@ export async function getAttendanceQR(tenantId: string, token: string) {
             },
         });
 
-        return await response.json();
+        return await safeJson(response);
     } catch (error) {
         console.error('Error fetching attendance QR:', error);
         return null;
@@ -261,7 +261,7 @@ export async function getPayers(tenantId: string, token: string) {
             },
         });
 
-        return await response.json();
+        return await safeJson(response);
     } catch (error) {
         console.error('Error fetching payers:', error);
         return null;
@@ -298,7 +298,7 @@ export async function updatePricing(tenantId: string, token: string, prices: any
             body: JSON.stringify({ prices }),
         });
 
-        return await response.json();
+        return await safeJson(response);
     } catch (error) {
         console.error('Error updating pricing:', error);
         return { message: 'Error de conexión' };
@@ -319,7 +319,7 @@ export async function updateLogo(tenantId: string, token: string, file: File) {
             body: formData,
         });
 
-        return await response.json();
+        return await safeJson(response);
     } catch (error) {
         console.error('Error updating logo:', error);
         return { message: 'Error de conexión' };
