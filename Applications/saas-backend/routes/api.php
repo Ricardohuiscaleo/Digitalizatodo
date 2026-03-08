@@ -73,6 +73,7 @@ Route::middleware([ResolveTenantFromPath::class])->prefix('{tenant}')->group(fun
                     Route::get('payers', [GuardianController::class , 'index']);
                     Route::post('payers/{id}/approve', [GuardianController::class , 'approvePayment']);
                     Route::post('settings/pricing', [GuardianController::class , 'updatePricing']);
+                    Route::post('settings/logo', [GuardianController::class , 'updateLogo']);
                 }
                 );
             }
