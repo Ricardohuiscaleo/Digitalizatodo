@@ -67,10 +67,20 @@ class AuthController extends Controller
         $user = $request->user();
 
         if ($user instanceof User) {
-            // Perfil de Staff
+            $tenant = app('currentTenant');
             return response()->json([
                 'user_type' => 'staff',
-                'user' => $user->only('id', 'name', 'email'),
+                'id'        => $user->id,
+                'name'      => $user->name,
+                'email'     => $user->email,
+                'tenant_id' => $tenant->id,
+                'tenant'    => [
+                    'id'            => $tenant->id,
+                    'name'          => $tenant->name,
+                    'logo'          => $tenant->logo,
+                    'primary_color' => $tenant->primary_color,
+                    'data'          => $tenant->data,
+                ],
             ]);
         }
 
