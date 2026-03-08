@@ -32,8 +32,11 @@ echo "==> Generando APP_KEY..."
 php artisan key:generate --force 2>/dev/null || true
 
 echo "==> Cacheando config..."
-php artisan config:cache || true
-php artisan view:cache  || true
+php artisan config:clear  || true
+php artisan config:cache  || true
+php artisan route:clear   || true
+php artisan route:cache   || true
+php artisan view:cache    || true
 
 echo "==> Publicando assets de Filament..."
 php artisan vendor:publish --tag=filament-assets --force 2>/dev/null || true
