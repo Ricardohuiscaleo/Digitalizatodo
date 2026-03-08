@@ -179,7 +179,7 @@ export default function OnboardingPage() {
                                     required
                                     value={formData.industry}
                                     onChange={(e: any) => handleChange(e)}
-                                    className="w-full h-14 bg-slate-50 border-none rounded-2xl px-5 font-black text-xs uppercase text-slate-900 focus:ring-2 ring-zinc-950 transition-all outline-none appearance-none"
+                                    className="w-full h-14 bg-white border border-zinc-200 rounded-2xl px-5 font-black text-xs uppercase text-zinc-950 focus:ring-2 ring-zinc-950 transition-all outline-none appearance-none"
                                 >
                                     <option value="" disabled>Seleccionar Rubro</option>
                                     <option value="academy">Artes Marciales / Deportes</option>
@@ -197,7 +197,7 @@ export default function OnboardingPage() {
                                     value={formData.user_name}
                                     onChange={handleChange}
                                     placeholder="Nombre Completo"
-                                    className="h-14 bg-slate-50 border-none rounded-2xl pl-5 font-bold text-sm focus-visible:ring-zinc-950 transition-all"
+                                    className="h-14 bg-white border border-zinc-200 rounded-2xl pl-5 font-bold text-sm text-zinc-950 focus-visible:ring-zinc-950 transition-all"
                                 />
                             </div>
 
