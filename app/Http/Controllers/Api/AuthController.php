@@ -79,6 +79,7 @@ class AuthController extends Controller
                     'name'          => $tenant->name,
                     'logo'          => $tenant->logo,
                     'primary_color' => $tenant->primary_color,
+                    'industry'      => $tenant->industry,
                     'data'          => $tenant->data,
                 ],
             ]);
