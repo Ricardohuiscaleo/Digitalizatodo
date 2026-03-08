@@ -45,7 +45,7 @@ class TenantDiscoveryController extends Controller
             return response()->json([
                 'found' => false,
                 'message' => 'No se encontraron academias asociadas a este correo.',
-            ], 404);
+            ], 200);
         }
 
         $tenants = $allTenants->map(fn($t) => [
