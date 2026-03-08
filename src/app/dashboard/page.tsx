@@ -34,6 +34,19 @@ export default function App() {
     const { branding, setBranding } = useBranding();
 
     // Vocabulario adaptado por industria
+    const beltColors: Record<string, string> = {
+        blanco: 'bg-white border border-zinc-200 text-zinc-600',
+        amarillo: 'bg-yellow-400 text-yellow-900',
+        naranja: 'bg-orange-400 text-white',
+        verde: 'bg-green-500 text-white',
+        azul: 'bg-blue-500 text-white',
+        rojo: 'bg-red-500 text-white',
+        negro: 'bg-zinc-950 text-white',
+        cafe: 'bg-amber-800 text-white',
+        marron: 'bg-amber-800 text-white',
+    };
+    const getBeltColor = (belt: string) => beltColors[belt?.toLowerCase()] ?? 'bg-zinc-100 text-zinc-500';
+
     const industryConfig: Record<string, { attendance: string; cat1: string; cat2: string; memberLabel: string; placeLabel: string }> = {
         martial_arts: { attendance: 'Tatami', cat1: 'Kids', cat2: 'Adultos', memberLabel: 'Alumno', placeLabel: 'Dojo' },
         fitness:      { attendance: 'Clase',  cat1: 'Mensual', cat2: 'Trimestral', memberLabel: 'Socio', placeLabel: 'Clientes' },
@@ -492,7 +505,11 @@ export default function App() {
                                     <p className={`font-black text-[9px] text-center leading-tight line-clamp-2 w-full uppercase mt-1 ${isPresent ? 'text-emerald-900' : 'text-zinc-800'}`}>
                                         {student.name.split(' ')[0]}
                                     </p>
-                                    <span className={`text-[7px] mt-0.5 uppercase tracking-widest font-bold ${isPresent ? 'text-zinc-400' : 'text-zinc-400'}`}>{student.category === 'kids' ? vocab.cat1 : student.category === 'adult' ? vocab.cat2 : student.category || ''}</span>
+                                    {student.label && branding?.industry === 'martial_arts' ? (
+                                        <span className={`text-[7px] mt-0.5 px-1.5 py-0.5 rounded font-black uppercase tracking-widest ${getBeltColor(student.label)}`}>{student.label}</span>
+                                    ) : (
+                                        <span className="text-[7px] mt-0.5 uppercase tracking-widest font-bold text-zinc-400">{student.category === 'kids' ? vocab.cat1 : student.category === 'adult' ? vocab.cat2 : student.category || ''}</span>
+                                    )}
                                 </button>
                             </div>
                         );
@@ -590,7 +607,11 @@ export default function App() {
                                                         <img src={s.photo} className="w-10 h-10 rounded-full object-cover" />
                                                         <span className="text-xs font-black uppercase text-zinc-800">{s.name}</span>
                                                     </div>
-                                                    <span className="text-[8px] font-black px-3 py-1.5 rounded-xl uppercase bg-zinc-50 text-zinc-400">{s.category || vocab.cat1}</span>
+                                                    {s.label && branding?.industry === 'martial_arts' ? (
+                                                        <span className={`text-[8px] font-black px-3 py-1.5 rounded-xl uppercase ${getBeltColor(s.label)}`}>{s.label}</span>
+                                                    ) : (
+                                                        <span className="text-[8px] font-black px-3 py-1.5 rounded-xl uppercase bg-zinc-50 text-zinc-400">{s.category || vocab.cat1}</span>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>
