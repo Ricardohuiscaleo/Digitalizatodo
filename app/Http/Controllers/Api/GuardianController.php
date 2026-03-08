@@ -88,11 +88,16 @@ class GuardianController extends Controller
         $tenant = Tenant::findOrFail($tenantId);
 
         $data = $tenant->data ?? [];
-        $data['pricing'] = $request->input('prices');
+        $data['pricing'] = $request->except('industry');
+        
+        $updatePayload = ['data' => $data];
+        if ($request->has('industry')) {
+            $updatePayload['industry'] = $request->input('industry');
+        }
 
-        $tenant->update(['data' => $data]);
+        $tenant->update($updatePayload);
 
-        return response()->json(['message' => 'Configuración actualizada', 'prices' => $data['pricing']]);
+        return response()->json(['message' => 'Configuración actualizada', 'prices' => $data['pricing'], 'industry' => $tenant->industry]);
     }
 
     /**
