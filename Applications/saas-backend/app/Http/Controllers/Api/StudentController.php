@@ -14,11 +14,16 @@ class StudentController extends Controller
     {
         $tenantId = $request->header('X-Tenant-Id');
         $students = \App\Models\Student::where('tenant_id', $tenantId)
-            ->with(['enrollments' => fn($q) => $q->where('status', 'active')])
+            ->with([
+            'enrollments' => fn($q) => $q->where('status', 'active'),
+            'attendances' => fn($q) => $q->where('date', now()->format('Y-m-d'))
+        ])
             ->get()
             ->map(function ($student) {
             // Calcular si tiene pagos pendientes
             $pendingPayments = $student->enrollments->sum(fn($e) => $e->payments()->where('status', 'pending')->count());
+            $todayAttendance = $student->attendances->first();
+
             return [
             'id' => $student->id,
             'name' => $student->name,
@@ -26,6 +31,7 @@ class StudentController extends Controller
             'photo' => $student->photo,
             'has_debt' => $pendingPayments > 0,
             'pending_count' => $pendingPayments,
+            'today_status' => $todayAttendance ? $todayAttendance->status : null,
             ];
         });
 
