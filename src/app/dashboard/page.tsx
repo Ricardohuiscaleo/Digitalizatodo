@@ -16,7 +16,8 @@ import {
     LogOut,
     RefreshCw,
     ChevronRight,
-    Plus
+    Plus,
+    Loader2
 } from 'lucide-react';
 import { useBranding } from "@/context/BrandingContext";
 import {
