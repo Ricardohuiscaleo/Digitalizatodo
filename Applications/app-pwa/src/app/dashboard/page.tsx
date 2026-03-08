@@ -35,12 +35,12 @@ export default function App() {
     const { branding, setBranding } = useBranding();
 
     // Vocabulario adaptado por industria
-    const industryConfig: Record<string, { attendance: string; cat1: string; cat2: string; memberLabel: string }> = {
-        martial_arts: { attendance: 'Tatami', cat1: 'Kids', cat2: 'Adultos', memberLabel: 'Alumno' },
-        fitness:      { attendance: 'Clase',  cat1: 'Mensual', cat2: 'Trimestral', memberLabel: 'Socio' },
-        dance:        { attendance: 'Sala',   cat1: 'Infantil', cat2: 'Adultos', memberLabel: 'Alumno' },
-        music:        { attendance: 'Sala',   cat1: 'Infantil', cat2: 'Adultos', memberLabel: 'Alumno' },
-        default:      { attendance: 'Clase',  cat1: 'Categoría 1', cat2: 'Categoría 2', memberLabel: 'Miembro' },
+    const industryConfig: Record<string, { attendance: string; cat1: string; cat2: string; memberLabel: string; placeLabel: string }> = {
+        martial_arts: { attendance: 'Tatami', cat1: 'Kids', cat2: 'Adultos', memberLabel: 'Alumno', placeLabel: 'Dojo' },
+        fitness:      { attendance: 'Clase',  cat1: 'Mensual', cat2: 'Trimestral', memberLabel: 'Socio', placeLabel: 'Clientes' },
+        dance:        { attendance: 'Sala',   cat1: 'Infantil', cat2: 'Adultos', memberLabel: 'Alumno', placeLabel: 'Clientes' },
+        music:        { attendance: 'Sala',   cat1: 'Infantil', cat2: 'Adultos', memberLabel: 'Alumno', placeLabel: 'Clientes' },
+        default:      { attendance: 'Clase',  cat1: 'Categoría 1', cat2: 'Categoría 2', memberLabel: 'Miembro', placeLabel: 'Clientes' },
     };
     const vocab = industryConfig[branding?.industry || 'default'] || industryConfig.default;
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -329,7 +329,7 @@ export default function App() {
                                 {presentToday} / {totalStudents}
                             </span>
                             <button onClick={() => changeTab('attendance')} className="flex items-center gap-1 text-indigo-500 text-[10px] font-black uppercase tracking-widest active:opacity-70 transition-all">
-                                Ir a {vocab.memberLabel} <ChevronRight size={13} />
+                                Ir al {vocab.placeLabel} <ChevronRight size={13} />
                             </button>
                         </div>
                     </div>
@@ -340,7 +340,7 @@ export default function App() {
                                 {allStudents.filter(s => attendance.has(s.id)).map(s => (
                                     <img
                                         key={s.id}
-                                        className="inline-block h-10 w-10 rounded-xl border-2 border-white shadow-sm object-cover shrink-0"
+                                        className="inline-block h-10 w-10 rounded-full border-2 border-white shadow-sm object-cover shrink-0"
                                         src={s.photo}
                                         alt={s.name}
                                     />
@@ -432,10 +432,10 @@ export default function App() {
                                         {students.length > 0 && (
                                             <div className="flex -space-x-2 overflow-x-auto">
                                                 {students.slice(0, 8).map((r: any) => (
-                                                    <img key={r.id} src={r.student?.photo} className="h-8 w-8 rounded-xl border-2 border-white object-cover shrink-0 shadow-sm" alt={r.student?.name} />
+                                                    <img key={r.id} src={r.student?.photo} className="h-8 w-8 rounded-full border-2 border-white object-cover shrink-0 shadow-sm" alt={r.student?.name} />
                                                 ))}
                                                 {students.length > 8 && (
-                                                    <div className="h-8 w-8 rounded-xl border-2 border-white bg-zinc-200 flex items-center justify-center shrink-0">
+                                                    <div className="h-8 w-8 rounded-full border-2 border-white bg-zinc-200 flex items-center justify-center shrink-0">
                                                         <span className="text-[8px] font-black text-zinc-500">+{students.length - 8}</span>
                                                     </div>
                                                 )}
@@ -475,22 +475,22 @@ export default function App() {
                             <div key={student.id} className="relative">
                                 <button
                                     onClick={() => toggleAttendance(student.id)}
-                                    className={`relative flex flex-col items-center p-3 rounded-2xl transition-all w-full ${isPresent ? 'bg-zinc-950 text-white shadow-lg scale-105 z-10' : 'bg-white shadow-sm border border-zinc-100 active:scale-95'
+                                    className={`relative flex flex-col items-center p-3 rounded-2xl transition-all w-full ${isPresent ? 'bg-emerald-50 text-emerald-900 border-2 border-emerald-400 shadow-lg scale-105 z-10' : 'bg-white shadow-sm border border-zinc-100 active:scale-95'
                                         }`}
                                 >
                                     <div className="relative mb-2">
                                         <img
                                             src={student.photo}
                                             alt={student.name}
-                                            className={`w-16 h-16 rounded-2xl object-cover transition-all ${isPresent ? 'ring-4 ring-white/20' : ''}`}
+                                            className={`w-16 h-16 rounded-full object-cover transition-all ${isPresent ? 'ring-4 ring-white/20' : ''}`}
                                         />
                                         {isPresent && (
-                                            <div className="absolute -bottom-2 -right-2 bg-emerald-500 rounded-full p-1 border-2 border-zinc-950">
+                                            <div className="absolute -bottom-2 -right-2 bg-emerald-500 rounded-full p-1 border-2 border-emerald-50">
                                                 <CheckCircle2 className="text-white" size={14} />
                                             </div>
                                         )}
                                     </div>
-                                    <p className={`font-black text-[9px] text-center leading-tight line-clamp-2 w-full uppercase mt-1 ${isPresent ? 'text-white' : 'text-zinc-800'}`}>
+                                    <p className={`font-black text-[9px] text-center leading-tight line-clamp-2 w-full uppercase mt-1 ${isPresent ? 'text-emerald-900' : 'text-zinc-800'}`}>
                                         {student.name.split(' ')[0]}
                                     </p>
                                     <span className={`text-[7px] mt-0.5 uppercase tracking-widest font-bold ${isPresent ? 'text-zinc-400' : 'text-zinc-400'}`}>{student.category === 'kids' ? vocab.cat1 : student.category === 'adult' ? vocab.cat2 : student.category || ''}</span>
@@ -540,7 +540,7 @@ export default function App() {
                             >
                                 <div className="p-5 flex items-center gap-4 cursor-pointer" onClick={() => setExpandedPayerId(isExpanded ? null : payer.id)}>
                                     <div className="relative">
-                                        <img src={payer.photo} className="w-16 h-16 rounded-2xl object-cover shadow-sm" />
+                                        <img src={payer.photo} className="w-16 h-16 rounded-full object-cover shadow-sm" />
                                         <div className="absolute -bottom-2 -right-2 bg-zinc-950 text-white text-[8px] font-black px-1.5 py-0.5 rounded border-2 border-white uppercase">Titular</div>
                                     </div>
 
@@ -588,7 +588,7 @@ export default function App() {
                                             {payer.enrolledStudents.map((s: any) => (
                                                 <div key={s.id} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-zinc-100 shadow-sm">
                                                     <div className="flex items-center gap-3">
-                                                        <img src={s.photo} className="w-10 h-10 rounded-xl object-cover" />
+                                                        <img src={s.photo} className="w-10 h-10 rounded-full object-cover" />
                                                         <span className="text-xs font-black uppercase text-zinc-800">{s.name}</span>
                                                     </div>
                                                     <span className="text-[8px] font-black px-3 py-1.5 rounded-xl uppercase bg-zinc-50 text-zinc-400">{s.category || vocab.cat1}</span>
@@ -724,9 +724,9 @@ export default function App() {
             {/* HEADER DINÁMICO */}
             <header className="bg-white px-8 py-8 flex items-center justify-between sticky top-0 z-50 border-none shrink-0">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 flex items-center justify-center shrink-0">
+                    <div className="w-12 h-12 flex items-center justify-center shrink-0 rounded-full overflow-hidden border-2 border-zinc-100">
                         {branding?.logo ? (
-                            <img src={branding.logo} className="w-full h-full object-contain" alt="L" />
+                            <img src={branding.logo} className="w-full h-full object-cover" alt="L" />
                         ) : (
                             <span className="font-black text-2xl uppercase tracking-tighter text-zinc-950">{branding?.name?.[0] || 'D'}</span>
                         )}
@@ -744,8 +744,8 @@ export default function App() {
                         <span className="text-xs font-black text-zinc-950 leading-none">{user?.name || 'Admin'}</span>
                         <span className="text-[9px] font-bold text-indigo-500 uppercase tracking-widest">Admin</span>
                     </div>
-                    <div className="w-12 h-12 flex items-center justify-center shrink-0">
-                        <img src="/DLogo-v2.webp" className="w-full h-full object-contain" alt="D" />
+                    <div className="w-12 h-12 flex items-center justify-center shrink-0 rounded-full overflow-hidden border-2 border-zinc-100">
+                        <img src="/DLogo-v2.webp" className="w-full h-full object-cover" alt="D" />
                     </div>
                 </div>
             </header>
