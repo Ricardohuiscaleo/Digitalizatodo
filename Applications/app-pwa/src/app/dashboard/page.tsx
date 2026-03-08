@@ -236,65 +236,68 @@ export default function CompactStaffDashboard() {
 
         return (
             <div className="space-y-4">
-                {/* Resumen Maestro (Siguiendo Prototype) */}
-                <Card className="border-none bg-indigo-600 rounded-[2.5rem] p-6 text-white shadow-xl shadow-indigo-100 relative overflow-hidden ring-1 ring-white/20">
+                {/* Resumen Maestro (Premium Shadcn Style) */}
+                <Card className="border-none bg-zinc-950 rounded-[2.5rem] p-7 text-white shadow-premium relative overflow-hidden ring-1 ring-white/10">
                     <div className="relative z-10">
-                        <h2 className="text-[10px] font-black uppercase tracking-widest text-indigo-100 mb-2">Total {getLabels.subject} en {getLabels.place}</h2>
-                        <div className="flex items-baseline gap-2 mb-6">
-                            <p className="text-5xl font-black">{totalStudents}</p>
-                            <span className="text-xs font-bold text-indigo-100 uppercase tracking-tighter">Registrados</span>
+                        <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 mb-2">Total {getLabels.subject} en {getLabels.place}</h2>
+                        <div className="flex items-baseline gap-2 mb-8">
+                            <p className="text-6xl font-black tracking-tighter">{totalStudents}</p>
+                            <span className="text-xs font-medium text-zinc-500 uppercase tracking-widest leading-none">Miembros</span>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2 bg-black/10 rounded-3xl p-4 backdrop-blur-sm border border-white/10">
-                            <div className="flex flex-col items-center gap-1">
-                                <div className="p-1 bg-white/20 rounded-lg"><CheckCircle2 size={14} className="text-white" /></div>
-                                <span className="text-lg font-black">{paidStudents}</span>
-                                <span className="text-[8px] font-black text-indigo-100 uppercase">AL DÍA</span>
+                        <div className="grid grid-cols-3 gap-3 bg-white/5 rounded-[2rem] p-5 backdrop-blur-sm border border-white/5 shadow-inner">
+                            <div className="flex flex-col items-center gap-2">
+                                <div className="p-2 bg-emerald-500/10 rounded-xl"><CheckCircle2 size={16} className="text-emerald-400" /></div>
+                                <span className="text-xl font-bold">{paidStudents}</span>
+                                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-tighter">AL DÍA</span>
                             </div>
-                            <div className="flex flex-col items-center gap-1 border-x border-white/10">
-                                <div className="p-1 bg-white/20 rounded-lg"><Clock size={14} className="text-white" /></div>
-                                <span className="text-lg font-black">{reviewStudents}</span>
-                                <span className="text-[8px] font-black text-indigo-100 uppercase">REVISIÓN</span>
+                            <div className="flex flex-col items-center gap-2 border-x border-white/5">
+                                <div className="p-2 bg-amber-500/10 rounded-xl"><Clock size={16} className="text-amber-400" /></div>
+                                <span className="text-xl font-bold">{reviewStudents}</span>
+                                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-tighter">VALIDAR</span>
                             </div>
-                            <div className="flex flex-col items-center gap-1">
-                                <div className="p-1 bg-white/20 rounded-lg"><XCircle size={14} className="text-white" /></div>
-                                <span className="text-lg font-black">{pendingStudents}</span>
-                                <span className="text-[8px] font-black text-indigo-100 uppercase">DEUDA</span>
+                            <div className="flex flex-col items-center gap-2">
+                                <div className="p-2 bg-rose-500/10 rounded-xl"><XCircle size={16} className="text-rose-400" /></div>
+                                <span className="text-xl font-bold">{pendingStudents}</span>
+                                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-tighter">DEUDA</span>
                             </div>
                         </div>
                     </div>
                 </Card>
 
                 {/* Asistencia de Hoy (Siguiendo Prototype) */}
-                <Card className="border-slate-100 bg-white rounded-[2rem] shadow-sm overflow-hidden">
-                    <CardHeader className="p-5 pb-2 flex flex-row items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
-                                <CalendarCheck size={18} className="text-indigo-600" />
+                <Card className="border-slate-100 bg-white rounded-[2rem] shadow-soft overflow-hidden">
+                    <CardHeader className="p-6 pb-2 flex flex-row items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100">
+                                <CalendarCheck size={20} className="text-slate-900" />
                             </div>
-                            <CardTitle className="text-sm font-black uppercase tracking-tight text-slate-800">Presentes Hoy</CardTitle>
+                            <div>
+                                <CardTitle className="text-sm font-black uppercase tracking-tight text-slate-900">Presentes Hoy</CardTitle>
+                                <CardDescription className="text-[10px] uppercase font-bold text-slate-400">{getLabels.place} en tiempo real</CardDescription>
+                            </div>
                         </div>
-                        <Badge className="bg-indigo-600 text-[10px] font-black rounded-full px-3">{attendanceCount} / {totalStudents}</Badge>
+                        <Badge className="bg-slate-900 text-[10px] font-black rounded-xl px-4 py-1">{attendanceCount} / {totalStudents}</Badge>
                     </CardHeader>
-                    <CardContent className="p-5">
+                    <CardContent className="p-6">
                         {attendanceCount > 0 ? (
-                            <div className="flex -space-x-3 overflow-x-auto pb-1 scrollbar-hide">
+                            <div className="flex -space-x-3 overflow-x-auto pb-2 scrollbar-hide">
                                 {allStudents.filter((s: any) => s.today_status === 'present').map((s: any) => (
-                                    <Avatar key={s.id} className="h-12 w-12 border-4 border-white shadow-sm ring-1 ring-slate-100">
+                                    <Avatar key={s.id} className="h-14 w-14 border-4 border-white shadow-soft ring-1 ring-slate-100/50">
                                         <AvatarImage src={s.photo} className="object-cover" />
-                                        <AvatarFallback className="text-xs bg-slate-50">{s.name[0]}</AvatarFallback>
+                                        <AvatarFallback className="text-xs bg-slate-50 font-black">{s.name[0]}</AvatarFallback>
                                     </Avatar>
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center py-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{getLabels.place} vacío aún</p>
+                            <div className="text-center py-10 bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-100">
+                                <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">{getLabels.place} VACÍO</p>
                                 <Button
                                     variant="link"
                                     onClick={() => setActiveTab('alumnos')}
-                                    className="text-indigo-600 text-xs font-black uppercase tracking-tight p-0 h-auto mt-2"
+                                    className="text-slate-900 text-xs font-black uppercase tracking-tight p-0 h-auto mt-3 hover:no-underline opacity-60 hover:opacity-100 transition-opacity"
                                 >
-                                    Pasar Asistencia
+                                    Abrir Pase de Lista
                                 </Button>
                             </div>
                         )}
@@ -375,17 +378,17 @@ export default function CompactStaffDashboard() {
 
         return (
             <div className="space-y-4">
-                <div className="flex gap-2 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100 overflow-x-auto scrollbar-hide">
+                <div className="flex gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100 overflow-x-auto scrollbar-hide shadow-inner">
                     {['all', 'review', 'pending', 'paid'].map((filter) => (
                         <button
                             key={filter}
                             onClick={() => setPaymentFilter(filter)}
-                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase whitespace-nowrap transition-all ${paymentFilter === filter
-                                ? 'bg-slate-900 text-white shadow-lg'
-                                : 'bg-transparent text-slate-500 hover:bg-slate-50'
+                            className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase whitespace-nowrap transition-all duration-300 ${paymentFilter === filter
+                                ? 'bg-white text-slate-900 shadow-soft ring-1 ring-slate-100'
+                                : 'bg-transparent text-slate-400 hover:text-slate-600'
                                 }`}
                         >
-                            {filter === 'all' ? 'Todas' : filter === 'pending' ? 'Deuda' : filter === 'review' ? 'Validar' : 'Al Día'}
+                            {filter === 'all' ? 'Ver Todas' : filter === 'pending' ? 'Por Pagar' : filter === 'review' ? 'Por Validar' : 'Al Día'}
                         </button>
                     ))}
                 </div>
@@ -643,26 +646,20 @@ export default function CompactStaffDashboard() {
         <div className="flex flex-col h-screen bg-slate-50 font-sans max-w-lg mx-auto overflow-hidden selection:bg-indigo-500 selection:text-white">
 
             {/* HEADER COMPACTO SUPREMO */}
-            <header className="px-5 h-14 flex items-center justify-between border-b border-slate-100 bg-white/80 backdrop-blur-md sticky top-0 z-50">
-                <div className="flex items-center gap-2.5">
-                    <div className="h-6 w-6 bg-slate-100 rounded-lg flex items-center justify-center">
-                        <img src={branding?.logo || "/icon.webp"} className="h-4 w-4 object-contain" alt="Logo" />
+            <header className="px-5 h-16 flex items-center justify-between border-b border-slate-100 bg-white/95 backdrop-blur-md sticky top-0 z-50 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 shadow-sm overflow-hidden">
+                        <img src={branding?.logo || "/icon.webp"} className="h-5 w-5 object-contain" alt="Logo" />
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 truncate max-w-[120px]">{branding?.name}</span>
-                </div>
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" size={14} />
-                    <Input
-                        placeholder={`BUSCAR...`}
-                        className="pl-9 h-11 bg-slate-50 border-none text-[10px] font-black tracking-widest uppercase placeholder:text-slate-400 focus-visible:ring-1 focus-visible:ring-indigo-600/40 rounded-xl"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-900 truncate max-w-[120px] leading-tight">{branding?.name}</span>
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Panel de Gestión</span>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
-                    <Trophy size={10} className="text-indigo-600" />
-                    <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">{activeTab === 'alumnos' ? getLabels.place : activeTab}</span>
+                <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+                    <Trophy size={12} className="text-slate-900" />
+                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{activeTab === 'alumnos' ? getLabels.place : activeTab}</span>
                 </div>
             </header>
 
@@ -685,7 +682,7 @@ export default function CompactStaffDashboard() {
             </main>
 
             {/* NAVBAR INFERIOR STANDARD COMPACT */}
-            <nav className="h-16 bg-white/90 backdrop-blur-xl border-t border-slate-100 px-3 flex items-center justify-around sticky bottom-0 z-50">
+            <nav className="h-18 bg-white/95 backdrop-blur-md border-t border-slate-100 px-4 flex items-center justify-around sticky bottom-0 z-50 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
                 <NavItem icon={LayoutDashboard} onClick={() => setActiveTab('inicio')} active={activeTab === 'inicio'} label="RESUMEN" />
                 <NavItem icon={Users} onClick={() => setActiveTab('alumnos')} active={activeTab === 'alumnos'} label={getLabels.place} />
                 <NavItem icon={CreditCard} onClick={() => setActiveTab('pagos')} active={activeTab === 'pagos'} label="CUENTAS" />
@@ -693,7 +690,7 @@ export default function CompactStaffDashboard() {
 
                 {/* Notificación de Validación */}
                 {payers.some(p => p.status === 'review') && (
-                    <div className="absolute right-[33%] top-4 w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse shadow-lg shadow-amber-500/50" />
+                    <div className="absolute right-[33%] top-5 w-2 h-2 bg-amber-500 rounded-full animate-pulse shadow-lg shadow-amber-500/30 ring-2 ring-white" />
                 )}
             </nav>
 
@@ -705,13 +702,13 @@ function NavItem({ icon: Icon, onClick, active, label }: { icon: any, onClick: (
     return (
         <button
             onClick={onClick}
-            className={`flex flex-col items-center justify-center flex-1 transition-all duration-300 relative py-2 ${active ? "text-indigo-600" : "text-slate-400"}`}
+            className={`flex flex-col items-center justify-center flex-1 transition-all duration-300 relative py-2 ${active ? "text-slate-900" : "text-slate-400 hover:text-slate-600"}`}
         >
-            <div className={`p-2 rounded-xl transition-all ${active ? 'bg-indigo-50' : 'bg-transparent'}`}>
-                <Icon size={22} strokeWidth={active ? 3 : 2} />
+            <div className={`p-2 rounded-2xl transition-all duration-300 ${active ? 'bg-slate-100 scale-110 shadow-sm' : 'bg-transparent'}`}>
+                <Icon size={20} strokeWidth={active ? 2.5 : 2} />
             </div>
-            <span className={`text-[8px] font-black mt-1 transition-all ${active ? "opacity-100 translate-y-0" : "opacity-60 translate-y-0.5"}`}>{label}</span>
-            {active && <motion.div layoutId="nav-pill" className="absolute -top-px left-1/4 right-1/4 h-1 bg-indigo-600 rounded-full" />}
+            <span className={`text-[9px] font-black mt-1.5 transition-all tracking-tighter ${active ? "opacity-100 translate-y-0" : "opacity-60 translate-y-0.5"}`}>{label}</span>
+            {active && <motion.div layoutId="nav-glow" className="absolute -bottom-1 w-1 h-1 bg-slate-900 rounded-full" />}
         </button>
     );
 }
