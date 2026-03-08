@@ -33,6 +33,16 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function App() {
     const { branding, setBranding } = useBranding();
+
+    // Vocabulario adaptado por industria
+    const industryConfig: Record<string, { attendance: string; cat1: string; cat2: string; memberLabel: string }> = {
+        martial_arts: { attendance: 'Tatami', cat1: 'Kids', cat2: 'Adultos', memberLabel: 'Alumno' },
+        fitness:      { attendance: 'Clase',  cat1: 'Mensual', cat2: 'Trimestral', memberLabel: 'Socio' },
+        dance:        { attendance: 'Sala',   cat1: 'Infantil', cat2: 'Adultos', memberLabel: 'Alumno' },
+        music:        { attendance: 'Sala',   cat1: 'Infantil', cat2: 'Adultos', memberLabel: 'Alumno' },
+        default:      { attendance: 'Clase',  cat1: 'Categoría 1', cat2: 'Categoría 2', memberLabel: 'Miembro' },
+    };
+    const vocab = industryConfig[branding?.industry || 'default'] || industryConfig.default;
     const [activeTab, setActiveTab] = useState('dashboard');
     const [tabDirection, setTabDirection] = useState(0);
     const [payers, setPayers] = useState<any[]>([]);
@@ -452,7 +462,7 @@ export default function App() {
                                 <p className={`font-black text-[9px] text-center leading-tight line-clamp-2 w-full uppercase mt-1 ${isPresent ? 'text-white' : 'text-zinc-800'}`}>
                                     {student.name.split(' ')[0]}
                                 </p>
-                                <span className={`text-[7px] mt-0.5 uppercase tracking-widest font-bold ${isPresent ? 'text-zinc-400' : 'text-zinc-400'}`}>{student.category || 'TATAMI'}</span>
+                                <span className={`text-[7px] mt-0.5 uppercase tracking-widest font-bold ${isPresent ? 'text-zinc-400' : 'text-zinc-400'}`}>{student.category || vocab.attendance}</span>
                             </button>
                         );
                     })}
@@ -548,7 +558,7 @@ export default function App() {
                                                         <img src={s.photo} className="w-10 h-10 rounded-xl object-cover" />
                                                         <span className="text-xs font-black uppercase text-zinc-800">{s.name}</span>
                                                     </div>
-                                                    <span className="text-[8px] font-black px-3 py-1.5 rounded-xl uppercase bg-zinc-50 text-zinc-400">{s.category || 'Kids'}</span>
+                                                    <span className="text-[8px] font-black px-3 py-1.5 rounded-xl uppercase bg-zinc-50 text-zinc-400">{s.category || vocab.cat1}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -591,7 +601,7 @@ export default function App() {
                     <div className="space-y-4">
                         <div className="flex items-center gap-4 bg-zinc-50 p-2 rounded-2xl border border-zinc-100">
                             <div className="flex-1">
-                                <label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest ml-2">Categoría Kids</label>
+                                <label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest ml-2">Categoría {vocab.cat1}</label>
                                 <input
                                     type="text"
                                     inputMode="numeric"
@@ -604,7 +614,7 @@ export default function App() {
                         </div>
                         <div className="flex items-center gap-4 bg-zinc-50 p-2 rounded-2xl border border-zinc-100">
                             <div className="flex-1">
-                                <label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest ml-2">Categoría Adultos</label>
+                                <label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest ml-2">Categoría {vocab.cat2}</label>
                                 <input
                                     type="text"
                                     inputMode="numeric"
@@ -691,7 +701,7 @@ export default function App() {
                     <div className="flex flex-col">
                         <h1 className="text-xl font-black uppercase tracking-tighter text-zinc-950 leading-none">{branding?.name || 'Academy'}</h1>
                         <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">{activeTab === 'dashboard' ? 'Resumen' : activeTab === 'attendance' ? 'Tatami' : activeTab === 'payments' ? 'Pagos' : 'Ajustes'}</span>
+                            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">{activeTab === 'dashboard' ? 'Resumen' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? 'Pagos' : 'Ajustes'}</span>
                             {isDemo && <span className="bg-emerald-500/10 text-emerald-600 text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest">DEMO</span>}
                         </div>
                     </div>
@@ -723,7 +733,7 @@ export default function App() {
             {/* NAV CON ESTILO PREMIUM */}
             <nav className="fixed bottom-0 left-0 right-0 sm:max-w-lg sm:mx-auto bg-white border-t border-zinc-100 pt-3 pb-8 px-10 flex justify-between items-center h-24 z-50">
                 <TabButton icon={LayoutDashboard} label="Inicio" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} />
-                <TabButton icon={Users} label="Tatami" active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} />
+                <TabButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} />
                 <TabButton icon={CreditCard} label="Pagos" active={activeTab === 'payments'} onClick={() => changeTab('payments')} />
                 <TabButton icon={Settings} label="Ajustes" active={activeTab === 'settings'} onClick={() => changeTab('settings')} />
             </nav>
