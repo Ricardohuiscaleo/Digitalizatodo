@@ -15,66 +15,68 @@ class TelegramBotController extends Controller
      */
     public function handleResendInbound(Request $request)
     {
-        $payload = $request->all();
-        Log::info('Resend Inbound Webhook Received', $payload);
+        try {
+            $payload = $request->all();
+            Log::info('Resend Inbound Webhook Received', $payload);
 
-        $data = $payload['data'] ?? $payload;
+            $data = $payload['data'] ?? $payload;
 
-        $from = $data['from'] ?? 'Desconocido';
-        $subject = $data['subject'] ?? 'Sin Asunto';
-        $text = $data['text'] ?? ($data['html'] ?? null);
-        $emailId = $data['email_id'] ?? null;
+            $from    = $data['from']    ?? 'Desconocido';
+            $subject = $data['subject'] ?? 'Sin Asunto';
+            $text    = $data['text']    ?? ($data['html'] ?? null);
+            $emailId = $data['email_id'] ?? null;
 
-        // Si no tenemos el texto pero tenemos un email_id, lo pedimos a Resend
-        if (!$text && $emailId) {
-            try {
-                $resend = \Resend::client(env('RESEND_API_KEY'));
-                // Para correos recibidos (inbound), se usa el método receiving
-                $email = $resend->emails->receiving->get($emailId);
-                $text = $email->text ?? ($email->html ?? 'Contenido no disponible');
-                $from = $email->from ?? $from;
-                $subject = $email->subject ?? $subject;
+            // Si no tenemos el texto pero tenemos un email_id, lo pedimos a Resend
+            if (!$text && $emailId) {
+                try {
+                    $resend = \Resend::client(env('RESEND_API_KEY'));
+                    $email  = $resend->emails->receiving->get($emailId);
+                    $text    = $email->text ?? ($email->html ?? null);
+                    $from    = $email->from ?? $from;
+                    $subject = $email->subject ?? $subject;
+                } catch (\Exception $e) {
+                    Log::error('Error recuperando email desde Resend API: ' . $e->getMessage());
+                }
             }
-            catch (\Exception $e) {
-                Log::error('Error recuperando email desde Resend API (Receiving): ' . $e->getMessage());
-                $text = 'Error al recuperar contenido: ' . $emailId;
+
+            $text = $text ? strip_tags($text) : "(sin cuerpo — email_id: {$emailId})";
+
+            $token  = env('TELEGRAM_BOT_TOKEN');
+            $chatId = env('TELEGRAM_ADMIN_ID');
+
+            if (!$token || !$chatId) {
+                Log::error('Telegram Token o Admin ID no configurado en .env');
+                return response()->json(['status' => 'config_error']);
             }
-        }
 
-        $text = $text ?? 'Sin contenido';
+            $message  = "*Nuevo Correo Recibido*\n\n";
+            $message .= "*De:* {$from}\n";
+            $message .= "*Asunto:* {$subject}\n\n";
+            $message .= "```\n" . substr($text, 0, 3000) . "\n```\n\n";
+            $message .= "_Responde a este mensaje para contestar el correo._";
 
-        $token = env('TELEGRAM_BOT_TOKEN');
-        $chatId = env('TELEGRAM_ADMIN_ID');
-
-        if (!$token || !$chatId) {
-            Log::error('Telegram Token o Admin ID no configurado en .env');
-            return response()->json(['status' => 'config_error'], 500);
-        }
-
-        $message = "*Nuevo Correo Recibido*\n\n";
-        $message .= "*De:* {$from}\n";
-        $message .= "*Asunto:* {$subject}\n\n";
-        $message .= "```\n" . substr(strip_tags($text), 0, 3000) . "\n```\n\n";
-        $message .= "_Responde a este mensaje para contestar el correo._";
-
-        $response = Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
-            'chat_id' => $chatId,
-            'text' => $message,
-            'parse_mode' => 'Markdown',
-        ]);
-
-        if ($response->successful()) {
-            $msgData = $response->json();
-            $tgMessageId = $msgData['result']['message_id'];
-
-            TelegramConversation::create([
-                'chat_id' => $chatId,
-                'message_id' => $tgMessageId,
-                'from_email' => $from,
-                'subject' => $subject,
+            $response = Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
+                'chat_id'    => $chatId,
+                'text'       => $message,
+                'parse_mode' => 'Markdown',
             ]);
+
+            Log::info('Telegram sendMessage response', ['status' => $response->status(), 'body' => $response->json()]);
+
+            if ($response->successful()) {
+                $tgMessageId = $response->json('result.message_id');
+                TelegramConversation::create([
+                    'chat_id'    => $chatId,
+                    'message_id' => $tgMessageId,
+                    'from_email' => $from,
+                    'subject'    => $subject,
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('handleResendInbound fatal: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
         }
 
+        // Siempre 200 para que Resend no reintente
         return response()->json(['status' => 'ok']);
     }
 

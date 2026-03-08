@@ -21,7 +21,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Digitaliza Todo | Academy Management",
+  title: "Digitaliza Todo | Software Management",
   description: "Panel de gestión rápida para profesores y dueños.",
   icons: {
     icon: "/icon.webp",
