@@ -31,7 +31,7 @@ class StudentRegistrationController extends Controller
             'students' => 'required_if:is_self_register,false|array',
             'students.*.name' => 'required_with:students|string|max:255',
             'students.*.category' => 'required_with:students|in:kids,adults,teen',
-            'plan_id' => 'required|exists:plans,id',
+            'plan_id' => 'nullable|exists:plans,id',
         ]);
 
         if ($validator->fails()) {
@@ -50,7 +50,13 @@ class StudentRegistrationController extends Controller
             ]
             );
 
-            $plan = Plan::findOrFail($request->plan_id);
+            $plan = $request->plan_id
+                ? Plan::findOrFail($request->plan_id)
+                : Plan::where('tenant_id', $tenant->id)->first();
+
+            if (!$plan) {
+                return response()->json(['message' => 'No hay planes disponibles para esta academia.'], 422);
+            }
             $studentsToCreate = [];
 
             if ($request->is_self_register) {
