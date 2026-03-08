@@ -299,8 +299,8 @@ export default function PremiumStaffDashboard() {
                 </Card>
 
                 {/* ACTIVITY TRACKER */}
-                <Card className="col-span-3 bg-white border border-slate-100 rounded-[2rem] p-6 shadow-bento h-[140px] flex flex-col justify-between group active:scale-95 transition-all">
-                    <div className="h-12 w-12 bg-zinc-50 rounded-2xl flex items-center justify-center border border-slate-100 shadow-sm group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                <Card className="col-span-3 bg-white border border-zinc-200 rounded-[2rem] p-6 shadow-sm h-[140px] flex flex-col justify-between group active:scale-95 transition-all">
+                    <div className="h-12 w-12 bg-zinc-100 rounded-2xl flex items-center justify-center border border-zinc-200 shadow-sm group-hover:bg-zinc-900 group-hover:text-white transition-colors">
                         <CalendarCheck size={22} />
                     </div>
                     <div>
@@ -351,7 +351,7 @@ export default function PremiumStaffDashboard() {
     );
 
     return (
-        <div className="flex flex-col h-screen bg-white font-sans max-w-lg mx-auto overflow-hidden">
+        <div className="flex flex-col h-screen bg-white font-sans max-w-lg mx-auto overflow-hidden text-zinc-950">
             {renderHeader()}
 
             <main className="flex-1 overflow-y-auto hide-scrollbar">
