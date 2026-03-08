@@ -299,8 +299,8 @@ export default function PremiumStaffDashboard() {
                 </Card>
 
                 {/* ACTIVITY TRACKER */}
-                <Card className="col-span-3 bg-white border-none rounded-[2rem] p-6 shadow-bento h-[140px] flex flex-col justify-between group active:scale-95 transition-all">
-                    <div className="h-12 w-12 bg-indigo-50 rounded-2xl flex items-center justify-center border border-indigo-100 shadow-sm group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                <Card className="col-span-3 bg-white border border-slate-100 rounded-[2rem] p-6 shadow-bento h-[140px] flex flex-col justify-between group active:scale-95 transition-all">
+                    <div className="h-12 w-12 bg-zinc-50 rounded-2xl flex items-center justify-center border border-slate-100 shadow-sm group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                         <CalendarCheck size={22} />
                     </div>
                     <div>
