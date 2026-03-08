@@ -66,7 +66,7 @@ export default function App() {
 
     useEffect(() => {
         const storedToken = localStorage.getItem("staff_token") || localStorage.getItem("auth_token");
-        const tenantId = localStorage.getItem("tenant_id");
+        const tenantId = localStorage.getItem("tenant_id")?.trim();
 
         if (!storedToken || !tenantId) {
             window.location.href = "/";
@@ -221,11 +221,11 @@ export default function App() {
         if (!file || !token || !user?.tenant_id) return;
 
         const result: any = await updateLogo(user.tenant_id, token, file);
-        if (result?.logo && branding) {
+        if (result?.logo_url && branding) {
             setBranding({
                 ...branding,
                 id: String(branding.id),
-                logo: String(result.logo)
+                logo: String(result.logo_url)
             });
             alert("Logo actualizado con éxito");
         }
@@ -580,14 +580,13 @@ export default function App() {
 
             {/* CONTENIDO CON ANIMACIÓN LATERAL */}
             <main className="flex-1 overflow-y-auto pb-32 hide-scrollbar relative">
-                <AnimatePresence initial={false} custom={tabDirection} mode="wait">
+                <AnimatePresence initial={false} mode="wait">
                     <motion.div
                         key={activeTab}
-                        custom={tabDirection}
-                        initial={{ x: tabDirection > 0 ? 100 : -100, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        exit={{ x: tabDirection > 0 ? -100 : 100, opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
                         className="w-full"
                     >
                         {activeTab === 'dashboard' && renderDashboard()}
