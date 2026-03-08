@@ -1,23 +1,34 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin.digitalizatodo.cl/api';
 
+const defaultHeaders = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+};
+
+async function safeJson(response: Response) {
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.indexOf("application/json") !== -1) {
+        return await response.json();
+    }
+    // Si no es JSON, devolvemos el error amigablemente
+    return {
+        message: `Error del servidor (${response.status})`,
+        status: response.status
+    };
+}
+
 export async function identifyTenant(email: string) {
     try {
         const response = await fetch(`${API_URL}/identify-tenant`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: defaultHeaders,
             body: JSON.stringify({ email }),
         });
 
-        if (!response.ok) {
-            return null;
-        }
-
-        return await response.json();
+        return await safeJson(response);
     } catch (error) {
         console.error('Error identifying tenant:', error);
-        return null;
+        return { found: false, message: 'Error de conexión' };
     }
 }
 
@@ -62,13 +73,11 @@ export async function login(tenantId: string, credentials: any) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/auth/login`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: defaultHeaders,
             body: JSON.stringify(credentials),
         });
 
-        const data = await response.json();
+        const data = await safeJson(response);
         if (!response.ok) {
             return { message: data.message || 'Error en el inicio de sesión' };
         }
