@@ -328,8 +328,8 @@ export default function App() {
                             <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black">
                                 {presentToday} / {totalStudents}
                             </span>
-                            <button onClick={() => changeTab('attendance')} className="bg-zinc-950 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all">
-                                Tomar
+                            <button onClick={() => changeTab('attendance')} className="flex items-center gap-1 text-indigo-500 text-[10px] font-black uppercase tracking-widest active:opacity-70 transition-all">
+                                Ir a {vocab.attendance} <ChevronRight size={13} />
                             </button>
                         </div>
                     </div>
@@ -395,9 +395,34 @@ export default function App() {
                                                 <p className="text-[11px] font-black text-zinc-800 capitalize">{dateStr}</p>
                                                 {timeStr && <p className="text-[9px] text-zinc-400 font-bold">{timeStr}</p>}
                                             </div>
-                                            <span className="bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full text-[10px] font-black">
-                                                {presentCount} presentes
-                                            </span>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full text-[10px] font-black">
+                                                    {presentCount} presentes
+                                                </span>
+                                                <button
+                                                    onClick={() => changeTab('attendance')}
+                                                    className="w-7 h-7 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center active:scale-95 transition-all"
+                                                    title="Editar"
+                                                >
+                                                    <span className="text-amber-500 text-[9px] font-black">✎</span>
+                                                </button>
+                                                <button
+                                                    onClick={async () => {
+                                                        if (!confirm('¿Borrar asistencia de este día?')) return;
+                                                        const token = localStorage.getItem('staff_token');
+                                                        if (token && user?.tenant_id) {
+                                                            for (const r of records) {
+                                                                await storeAttendance(user.tenant_id, token, { student_id: r.student_id || r.student?.id, status: 'absent' });
+                                                            }
+                                                            setAttendanceHistory(prev => prev.filter(r => (r.date || r.created_at?.split('T')[0]) !== date));
+                                                        }
+                                                    }}
+                                                    className="w-7 h-7 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center active:scale-95 transition-all"
+                                                    title="Borrar"
+                                                >
+                                                    <span className="text-red-400 text-[9px] font-black">✕</span>
+                                                </button>
+                                            </div>
                                         </div>
                                         {students.length > 0 && (
                                             <div className="flex -space-x-2 overflow-x-auto">
@@ -423,9 +448,10 @@ export default function App() {
 
     const renderAttendance = () => {
         const filteredStudents = allStudents.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
+        const presentCount = allStudents.filter(s => attendance.has(s.id)).length;
 
         return (
-            <div className="space-y-4 px-4">
+            <div className="space-y-4 px-4 pb-32">
                 <div className="relative">
                     <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-zinc-400" size={20} />
                     <input
@@ -441,32 +467,61 @@ export default function App() {
                     {filteredStudents.map(student => {
                         const isPresent = attendance.has(student.id);
                         return (
-                            <button
-                                key={student.id}
-                                onClick={() => toggleAttendance(student.id)}
-                                className={`relative flex flex-col items-center p-3 rounded-2xl transition-all ${isPresent ? 'bg-zinc-950 text-white shadow-lg scale-105 z-10' : 'bg-white shadow-sm border border-zinc-100 active:scale-95'
-                                    }`}
-                            >
-                                <div className="relative mb-2">
-                                    <img
-                                        src={student.photo}
-                                        alt={student.name}
-                                        className={`w-16 h-16 rounded-2xl object-cover transition-all ${isPresent ? 'ring-4 ring-white/20' : ''}`}
-                                    />
-                                    {isPresent && (
-                                        <div className="absolute -bottom-2 -right-2 bg-emerald-500 rounded-full p-1 border-2 border-zinc-950">
-                                            <CheckCircle2 className="text-white" size={14} />
-                                        </div>
-                                    )}
-                                </div>
-                                <p className={`font-black text-[9px] text-center leading-tight line-clamp-2 w-full uppercase mt-1 ${isPresent ? 'text-white' : 'text-zinc-800'}`}>
-                                    {student.name.split(' ')[0]}
-                                </p>
-                                <span className={`text-[7px] mt-0.5 uppercase tracking-widest font-bold ${isPresent ? 'text-zinc-400' : 'text-zinc-400'}`}>{student.category || vocab.attendance}</span>
-                            </button>
+                            <div key={student.id} className="relative">
+                                <button
+                                    onClick={() => toggleAttendance(student.id)}
+                                    className={`relative flex flex-col items-center p-3 rounded-2xl transition-all w-full ${isPresent ? 'bg-zinc-950 text-white shadow-lg scale-105 z-10' : 'bg-white shadow-sm border border-zinc-100 active:scale-95'
+                                        }`}
+                                >
+                                    <div className="relative mb-2">
+                                        <img
+                                            src={student.photo}
+                                            alt={student.name}
+                                            className={`w-16 h-16 rounded-2xl object-cover transition-all ${isPresent ? 'ring-4 ring-white/20' : ''}`}
+                                        />
+                                        {isPresent && (
+                                            <div className="absolute -bottom-2 -right-2 bg-emerald-500 rounded-full p-1 border-2 border-zinc-950">
+                                                <CheckCircle2 className="text-white" size={14} />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <p className={`font-black text-[9px] text-center leading-tight line-clamp-2 w-full uppercase mt-1 ${isPresent ? 'text-white' : 'text-zinc-800'}`}>
+                                        {student.name.split(' ')[0]}
+                                    </p>
+                                    <span className={`text-[7px] mt-0.5 uppercase tracking-widest font-bold ${isPresent ? 'text-zinc-400' : 'text-zinc-400'}`}>{student.category === 'kids' ? vocab.cat1 : student.category === 'adult' ? vocab.cat2 : student.category || ''}</span>
+                                </button>
+                                {isPresent && (
+                                    <div className="flex gap-1 mt-1">
+                                        <button
+                                            onClick={() => toggleAttendance(student.id)}
+                                            className="flex-1 py-1 rounded-xl bg-red-50 border border-red-100 text-red-400 text-[8px] font-black uppercase tracking-widest active:scale-95 transition-all"
+                                        >Borrar</button>
+                                        <button
+                                            onClick={async () => {
+                                                const token = localStorage.getItem('staff_token');
+                                                if (token && user?.tenant_id) await storeAttendance(user.tenant_id, token, { student_id: student.id, status: 'late' });
+                                            }}
+                                            className="flex-1 py-1 rounded-xl bg-amber-50 border border-amber-100 text-amber-500 text-[8px] font-black uppercase tracking-widest active:scale-95 transition-all"
+                                        >Tarde</button>
+                                    </div>
+                                )}
+                            </div>
                         );
                     })}
                 </div>
+
+                {/* Botón flotante guardar */}
+                {presentCount > 0 && (
+                    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 sm:max-w-lg w-full px-4">
+                        <button
+                            onClick={() => changeTab('dashboard')}
+                            className="w-full bg-zinc-950 text-white py-4 rounded-2xl text-sm font-black uppercase tracking-widest shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-2"
+                        >
+                            <CheckCircle2 size={18} />
+                            Guardar · {presentCount} presentes
+                        </button>
+                    </div>
+                )}
             </div>
         );
     };
@@ -706,8 +761,14 @@ export default function App() {
                         </div>
                     </div>
                 </div>
-                <div className="w-10 h-10 bg-zinc-100 rounded-2xl border-2 border-white shadow-xl ring-1 ring-zinc-50 overflow-hidden shrink-0">
-                    <img src="/prof.webp" alt="P" className="w-full h-full object-cover" />
+                <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex flex-col items-end">
+                        <span className="text-xs font-black text-zinc-950 leading-none">{user?.name || 'Admin'}</span>
+                        <span className="text-[9px] font-bold text-indigo-500 uppercase tracking-widest">Admin</span>
+                    </div>
+                    <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shrink-0">
+                        <span className="text-white font-black text-sm uppercase">{(user?.name || 'A')[0]}</span>
+                    </div>
                 </div>
             </header>
 
