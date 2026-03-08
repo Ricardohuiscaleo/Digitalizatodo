@@ -75,8 +75,8 @@ export default function OnboardingPage() {
         <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-zinc-950 font-sans">
             <div className="w-full max-w-md space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="text-center space-y-2">
-                    <h1 className="text-4xl font-black uppercase tracking-tighter text-zinc-900">Nueva Academia</h1>
-                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.4em] ml-1">Lanza tu plataforma profesional</p>
+                    <h1 className="text-4xl font-black uppercase tracking-tighter text-zinc-900">Prueba nuestro software de gestión</h1>
+                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.4em] ml-1">Agregamos funciones a tu medida</p>
                 </div>
 
                 <div className="bg-white border border-zinc-100 rounded-[3rem] p-10 shadow-[0_30px_70px_rgba(0,0,0,0.04)] space-y-8 relative overflow-hidden">
@@ -149,6 +149,9 @@ export default function OnboardingPage() {
 
                 <p className="text-center">
                     <a href="/login" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest hover:text-black transition-colors">Volver al Acceso</a>
+                </p>
+                <p className="text-center text-[9px] text-zinc-300 uppercase tracking-widest">
+                    Digitaliza Todo &copy; {new Date().getFullYear()} &mdash; The Software Factory
                 </p>
             </div>
         </div>
