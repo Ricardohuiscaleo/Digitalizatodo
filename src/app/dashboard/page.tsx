@@ -12,6 +12,7 @@ import {
     Search,
     ChevronDown,
     ChevronUp,
+    ChevronRight,
     Camera,
     LogOut,
     Zap,
