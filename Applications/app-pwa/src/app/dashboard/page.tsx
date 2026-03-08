@@ -107,6 +107,20 @@ export default function CompactStaffDashboard() {
         fetchData();
     }, []);
 
+    const getLabels = useMemo(() => {
+        const ind = branding?.industry || 'martial_arts';
+        switch (ind) {
+            case 'clinic':
+                return { place: 'MÓDULO', subject: 'PACIENTES', summary: 'ADMIN CLÍNICA', unit: 'Atenciones' };
+            case 'music_school':
+                return { place: 'AULA', subject: 'ALUMNOS', summary: 'ADMIN ESCUELA', unit: 'Lecciones' };
+            case 'generic_service':
+                return { place: 'SERVICIO', subject: 'CLIENTES', summary: 'ADMIN NEGOCIO', unit: 'Servicios' };
+            default:
+                return { place: 'TATAMI', subject: 'ALUMNOS', summary: 'ADMIN DOJO', unit: 'Entrenamientos' };
+        }
+    }, [branding?.industry]);
+
     const allStudents = useMemo(() => {
         return payers.flatMap(payer =>
             payer.enrolledStudents.map((student: any) => ({
@@ -160,7 +174,7 @@ export default function CompactStaffDashboard() {
     const handleApprovePaymentAction = async (e: React.MouseEvent, payerId: string) => {
         e.stopPropagation();
         if (!token || !user?.tenant_id) return;
-        if (window.confirm('¿Confirmas el pago del apoderado?')) {
+        if (window.confirm('¿Confirmas el pago del titular?')) {
             const res = await approvePayment(user.tenant_id, token, payerId);
             if (res.message) {
                 const payersData = await getPayers(user.tenant_id, token);
@@ -191,7 +205,7 @@ export default function CompactStaffDashboard() {
             const tenantId = branding?.id || user?.tenant_id || localStorage.getItem("tenant_id") || "";
             setBranding({
                 id: tenantId,
-                name: branding?.name || user?.name || "Mi Academia",
+                name: branding?.name || user?.name || "Mi Negocio",
                 logo: res.logo_url,
                 primaryColor: branding?.primaryColor || "#6366f1",
                 industry: branding?.industry
@@ -215,61 +229,80 @@ export default function CompactStaffDashboard() {
 
     const renderInicio = () => {
         const totalStudents = allStudents.length;
-        const paidCuentas = payers.filter(p => p.status === 'paid').length;
-        const reviewCuentas = payers.filter(p => p.status === 'review').length;
+        const paidStudents = allStudents.filter((s: any) => s.payerStatus === 'paid').length;
+        const reviewStudents = allStudents.filter((s: any) => s.payerStatus === 'review').length;
+        const pendingStudents = totalStudents - paidStudents - reviewStudents;
         const attendanceCount = allStudents.filter((s: any) => s.today_status === 'present').length;
 
         return (
-            <div className="space-y-3">
-                {/* Banner de Bienvenida Compacto */}
-                <Card className="border-none bg-gradient-to-br from-indigo-950 to-slate-950 shadow-xl">
-                    <CardContent className="p-4 flex items-center justify-between">
-                        <div className="space-y-1">
-                            <h2 className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Resumen del día</h2>
-                            <div className="flex items-baseline gap-1">
-                                <span className="text-3xl font-black text-white">{attendanceCount}</span>
-                                <span className="text-[10px] font-bold text-slate-500 uppercase">/ {totalStudents} Presentes</span>
+            <div className="space-y-4">
+                {/* Resumen Maestro (Siguiendo Prototype) */}
+                <Card className="border-none bg-slate-900 rounded-[2.5rem] p-6 text-white shadow-2xl relative overflow-hidden ring-1 ring-white/10">
+                    <div className="relative z-10">
+                        <h2 className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-2">Total {getLabels.subject} en {getLabels.place}</h2>
+                        <div className="flex items-baseline gap-2 mb-6">
+                            <p className="text-5xl font-black">{totalStudents}</p>
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">Registrados</span>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 bg-white/10 rounded-3xl p-4 backdrop-blur-md border border-white/10">
+                            <div className="flex flex-col items-center gap-1">
+                                <CheckCircle2 size={16} className="text-emerald-400" />
+                                <span className="text-lg font-black">{paidStudents}</span>
+                                <span className="text-[8px] font-black text-slate-300 uppercase">AL DÍA</span>
+                            </div>
+                            <div className="flex flex-col items-center gap-1 border-x border-white/10">
+                                <Clock size={16} className="text-amber-400" />
+                                <span className="text-lg font-black">{reviewStudents}</span>
+                                <span className="text-[8px] font-black text-slate-300 uppercase">REVISIÓN</span>
+                            </div>
+                            <div className="flex flex-col items-center gap-1">
+                                <XCircle size={16} className="text-rose-400" />
+                                <span className="text-lg font-black">{pendingStudents}</span>
+                                <span className="text-[8px] font-black text-slate-300 uppercase">DEUDA</span>
                             </div>
                         </div>
-                        <div className="flex -space-x-2">
-                            {allStudents.filter((s: any) => s.today_status === 'present').slice(0, 4).map((s: any) => (
-                                <Avatar key={s.id} className="h-8 w-8 border-2 border-slate-950">
-                                    <AvatarImage src={s.photo} className="object-cover" />
-                                    <AvatarFallback className="text-[10px]">{s.name[0]}</AvatarFallback>
-                                </Avatar>
-                            ))}
-                            {attendanceCount > 4 && (
-                                <div className="h-8 w-8 rounded-full bg-slate-800 border-2 border-slate-950 flex items-center justify-center text-[8px] font-black text-white">
-                                    +{attendanceCount - 4}
-                                </div>
-                            )}
+                    </div>
+                    <div className="absolute -right-10 -top-10 w-40 h-40 bg-indigo-600 opacity-20 rounded-full blur-3xl"></div>
+                </Card>
+
+                {/* Asistencia de Hoy (Siguiendo Prototype) */}
+                <Card className="border-slate-100 bg-white rounded-[2rem] shadow-sm overflow-hidden">
+                    <CardHeader className="p-5 pb-2 flex flex-row items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
+                                <CalendarCheck size={18} className="text-indigo-600" />
+                            </div>
+                            <CardTitle className="text-sm font-black uppercase tracking-tight text-slate-800">Presentes Hoy</CardTitle>
                         </div>
+                        <Badge className="bg-indigo-600 text-[10px] font-black rounded-full px-3">{attendanceCount} / {totalStudents}</Badge>
+                    </CardHeader>
+                    <CardContent className="p-5">
+                        {attendanceCount > 0 ? (
+                            <div className="flex -space-x-3 overflow-x-auto pb-1 scrollbar-hide">
+                                {allStudents.filter((s: any) => s.today_status === 'present').map((s: any) => (
+                                    <Avatar key={s.id} className="h-12 w-12 border-4 border-white shadow-sm ring-1 ring-slate-100">
+                                        <AvatarImage src={s.photo} className="object-cover" />
+                                        <AvatarFallback className="text-xs bg-slate-50">{s.name[0]}</AvatarFallback>
+                                    </Avatar>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{getLabels.place} vacío aún</p>
+                                <Button
+                                    variant="link"
+                                    onClick={() => setActiveTab('alumnos')}
+                                    className="text-indigo-600 text-xs font-black uppercase tracking-tight p-0 h-auto mt-2"
+                                >
+                                    Pasar Asistencia
+                                </Button>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
-                {/* Métricas en Grid */}
-                <div className="grid grid-cols-2 gap-2">
-                    <Card className="border-none bg-white/[0.03] shadow-sm">
-                        <CardContent className="p-3">
-                            <div className="flex items-center justify-between">
-                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">Cuentas al día</p>
-                                <CheckCircle2 size={12} className="text-emerald-500" />
-                            </div>
-                            <p className="text-xl font-black text-white mt-1">{paidCuentas}</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-none bg-white/[0.03] shadow-sm">
-                        <CardContent className="p-3">
-                            <div className="flex items-center justify-between">
-                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">Por Validar</p>
-                                <Clock size={12} className="text-amber-500" />
-                            </div>
-                            <p className="text-xl font-black text-white mt-1">{reviewCuentas}</p>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Generador QR Minimalista */}
+                {/* Control QR Lite */}
                 {token && user?.tenant_id && (
                     <QRGenerator tenantId={user.tenant_id} token={token} />
                 )}
@@ -281,53 +314,54 @@ export default function CompactStaffDashboard() {
         const filteredStudents = allStudents.filter((s: any) => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
         return (
-            <div className="space-y-3">
+            <div className="space-y-4">
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <Input
-                        placeholder="BUSCAR ALUMNO..."
-                        className="pl-9 h-11 bg-white/5 border-none text-[10px] font-black tracking-widest uppercase placeholder:text-slate-600 focus-visible:ring-1 focus-visible:ring-primary/40 rounded-xl"
+                        placeholder={`BUSCAR ${getLabels.subject}...`}
+                        className="pl-11 h-14 bg-white border-slate-200 text-sm font-black tracking-tight uppercase placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-indigo-600/20 rounded-2xl shadow-sm"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
 
-                <ScrollArea className="h-[calc(100vh-180px)] pr-2">
-                    <div className="grid grid-cols-3 gap-1.5 pb-24">
-                        {filteredStudents.map((student: any) => {
-                            const isPresent = student.today_status === 'present';
-                            const isMarking = markingId === student.id;
+                <div className="grid grid-cols-3 gap-3 pb-24">
+                    {filteredStudents.map((student: any) => {
+                        const isPresent = student.today_status === 'present';
+                        const isMarking = markingId === student.id;
 
-                            return (
-                                <Button
-                                    key={student.id}
-                                    variant="ghost"
-                                    className={`h-auto flex flex-col items-center p-1.5 rounded-xl transition-all relative group h-28 ${isPresent ? 'bg-indigo-500/15 ring-1 ring-indigo-500/30' : 'bg-white/[0.02] border border-white/[0.02]'
-                                        }`}
-                                    onClick={() => handleToggleAttendance(student.id, student.today_status)}
-                                    disabled={isMarking}
-                                >
-                                    <div className="relative w-full aspect-square rounded-lg overflow-hidden mb-1.5">
-                                        <img src={student.photo} className={`w-full h-full object-cover transition-all ${isPresent ? 'scale-105' : 'grayscale-[0.3] opacity-80'}`} />
-                                        {isMarking && (
-                                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                                <RefreshCw size={14} className="animate-spin text-white" />
-                                            </div>
-                                        )}
-                                        {isPresent && !isMarking && (
-                                            <div className="absolute top-0.5 right-0.5 bg-indigo-500 text-white rounded-md p-0.5 shadow-lg">
-                                                <Check size={8} strokeWidth={4} />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <span className={`text-[8px] font-black text-center truncate w-full uppercase tracking-tighter ${isPresent ? 'text-indigo-400' : 'text-slate-500'}`}>
-                                        {student.name.split(' ')[0]}
-                                    </span>
-                                </Button>
-                            );
-                        })}
-                    </div>
-                </ScrollArea>
+                        return (
+                            <button
+                                key={student.id}
+                                className={`relative flex flex-col items-center p-2 rounded-2xl transition-all ${isPresent ? 'bg-indigo-50 shadow-inner ring-2 ring-indigo-200' : 'bg-white shadow-sm border border-slate-100 active:scale-95'
+                                    }`}
+                                onClick={() => handleToggleAttendance(student.id, student.today_status)}
+                                disabled={isMarking}
+                            >
+                                <div className="relative mb-2">
+                                    <Avatar className={`h-16 w-16 border-2 transition-all ${isPresent ? 'border-indigo-500 ring-2 ring-indigo-400 ring-offset-2' : 'border-white'}`}>
+                                        <AvatarImage src={student.photo} className="object-cover" />
+                                        <AvatarFallback className="bg-slate-50">{student.name[0]}</AvatarFallback>
+                                    </Avatar>
+                                    {isMarking && (
+                                        <div className="absolute inset-0 bg-white/60 rounded-full flex items-center justify-center">
+                                            <RefreshCw size={16} className="animate-spin text-indigo-600" />
+                                        </div>
+                                    )}
+                                    {isPresent && !isMarking && (
+                                        <div className="absolute -bottom-1 -right-1 bg-indigo-600 text-white rounded-full p-1 border-2 border-white shadow-md">
+                                            <Check size={10} strokeWidth={4} />
+                                        </div>
+                                    )}
+                                </div>
+                                <p className={`text-[10px] font-black text-center leading-tight line-clamp-2 w-full uppercase ${isPresent ? 'text-indigo-700' : 'text-slate-800'}`}>
+                                    {student.name.split(' ')[0]}
+                                </p>
+                                <span className="text-[8px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">{student.label}</span>
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
         );
     };
@@ -341,232 +375,266 @@ export default function CompactStaffDashboard() {
         }).filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
         return (
-            <div className="space-y-3">
-                <Tabs value={paymentFilter} onValueChange={setPaymentFilter} className="w-full">
-                    <TabsList className="w-full h-9 bg-white/5 p-1 rounded-lg">
-                        <TabsTrigger value="all" className="flex-1 text-[8px] font-black uppercase rounded-md data-[state=active]:bg-primary data-[state=active]:text-white">Todo</TabsTrigger>
-                        <TabsTrigger value="review" className="flex-1 text-[8px] font-black uppercase rounded-md data-[state=active]:bg-amber-500 data-[state=active]:text-black">Validar</TabsTrigger>
-                        <TabsTrigger value="pending" className="flex-1 text-[8px] font-black uppercase rounded-md data-[state=active]:bg-rose-500 data-[state=active]:text-white">Deuda</TabsTrigger>
-                        <TabsTrigger value="paid" className="flex-1 text-[8px] font-black uppercase rounded-md data-[state=active]:bg-emerald-500 data-[state=active]:text-white">Al Día</TabsTrigger>
-                    </TabsList>
-                </Tabs>
+            <div className="space-y-4">
+                <div className="flex gap-2 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100 overflow-x-auto scrollbar-hide">
+                    {['all', 'review', 'pending', 'paid'].map((filter) => (
+                        <button
+                            key={filter}
+                            onClick={() => setPaymentFilter(filter)}
+                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase whitespace-nowrap transition-all ${paymentFilter === filter
+                                ? 'bg-slate-900 text-white shadow-lg'
+                                : 'bg-transparent text-slate-500 hover:bg-slate-50'
+                                }`}
+                        >
+                            {filter === 'all' ? 'Todas' : filter === 'pending' ? 'Deuda' : filter === 'review' ? 'Validar' : 'Al Día'}
+                        </button>
+                    ))}
+                </div>
 
-                <ScrollArea className="h-[calc(100vh-180px)] pr-2">
-                    <div className="space-y-1.5 pb-24">
-                        {filteredPayers.map((payer: any) => {
-                            const { amount } = calculatePrice(payer);
-                            const isExpanded = expandedPayerId === payer.id;
+                <div className="space-y-3 pb-24">
+                    {filteredPayers.map((payer: any) => {
+                        const { amount, hasDiscount, numEnrollments } = calculatePrice(payer);
+                        const isExpanded = expandedPayerId === payer.id;
 
-                            return (
-                                <Card key={payer.id} className="border-none bg-white/[0.03] overflow-hidden">
-                                    <div
-                                        className="p-3 flex items-center gap-3 cursor-pointer"
-                                        onClick={() => toggleExpandPayer(payer.id)}
-                                    >
-                                        <Avatar className="h-9 w-9 border border-white/5">
+                        return (
+                            <Card key={payer.id} className={`border-none transition-all duration-200 overflow-hidden ${isExpanded ? 'ring-2 ring-indigo-200' :
+                                payer.status === 'review' ? 'ring-2 ring-amber-200' : 'shadow-sm'
+                                }`}>
+                                <div
+                                    className="p-4 flex items-center gap-3 cursor-pointer bg-white"
+                                    onClick={() => toggleExpandPayer(payer.id)}
+                                >
+                                    <div className="relative">
+                                        <Avatar className="h-14 w-14 border border-slate-100 shadow-sm">
                                             <AvatarImage src={payer.photo} className="object-cover" />
-                                            <AvatarFallback>{payer.name[0]}</AvatarFallback>
+                                            <AvatarFallback className="bg-slate-50">{payer.name[0]}</AvatarFallback>
                                         </Avatar>
-
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-[10px] font-black text-white uppercase truncate tracking-tight">{payer.name}</p>
-                                            <p className="text-[9px] font-bold text-slate-500 uppercase">{formatMoney(amount)}</p>
-                                        </div>
-
-                                        <div className="flex items-center gap-2">
-                                            {payer.status === 'review' ? (
-                                                <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="h-7 w-7 p-0 bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-black transition-all rounded-lg"
-                                                    onClick={(e) => handleApprovePaymentAction(e, payer.id)}
-                                                >
-                                                    <Check size={14} strokeWidth={3} />
-                                                </Button>
-                                            ) : payer.status === 'paid' ? (
-                                                <Badge variant="outline" className="h-5 border-emerald-500/20 bg-emerald-500/10 text-emerald-500 text-[7px] font-black px-1.5">AL DÍA</Badge>
-                                            ) : (
-                                                <Badge variant="outline" className="h-5 border-rose-500/20 bg-rose-500/10 text-rose-500 text-[7px] font-black px-1.5">DEUDA</Badge>
-                                            )}
-                                            <ChevronDown size={14} className={`text-slate-600 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                        <div className="absolute -bottom-1.5 -right-1.5 bg-slate-800 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md border-2 border-white uppercase">
+                                            Titular
                                         </div>
                                     </div>
 
-                                    <AnimatePresence>
-                                        {isExpanded && (
-                                            <motion.div
-                                                initial={{ height: 0, opacity: 0 }}
-                                                animate={{ height: 'auto', opacity: 1 }}
-                                                exit={{ height: 0, opacity: 0 }}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-start">
+                                            <h4 className="text-sm font-black text-slate-800 uppercase truncate pr-2 tracking-tight">{payer.name}</h4>
+                                            {isExpanded ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <div className="flex -space-x-1.5">
+                                                {payer.enrolledStudents.slice(0, 3).map((s: any) => (
+                                                    <Avatar key={s.id} className="h-5 w-5 border-2 border-white ring-1 ring-slate-100">
+                                                        <AvatarImage src={s.photo} />
+                                                        <AvatarFallback />
+                                                    </Avatar>
+                                                ))}
+                                            </div>
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase">{numEnrollments} Insc.</span>
+                                        </div>
+                                        <div className="flex items-baseline gap-1 mt-1">
+                                            <span className="text-xs font-black text-slate-900">{formatMoney(amount)}</span>
+                                            {hasDiscount && <Badge className="bg-emerald-50 text-emerald-700 text-[8px] font-black px-1 leading-none h-4 border-emerald-100">DCTO</Badge>}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col items-end">
+                                        {payer.status === 'review' ? (
+                                            <Button
+                                                size="sm"
+                                                className="bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black px-3 h-8 rounded-xl shadow-md border-b-2 border-amber-700"
+                                                onClick={(e) => handleApprovePaymentAction(e, payer.id)}
                                             >
-                                                <CardContent className="px-3 pb-3 pt-1">
-                                                    <Separator className="bg-white/5 mb-2" />
-                                                    <div className="grid gap-1">
-                                                        {payer.enrolledStudents.map((s: any) => (
-                                                            <div key={s.id} className="flex items-center justify-between py-1 px-2 rounded-lg bg-white/[0.01]">
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="w-1 h-1 rounded-full bg-slate-700" />
-                                                                    <span className="text-[9px] font-bold text-slate-300 uppercase">{s.name}</span>
-                                                                </div>
-                                                                <span className="text-[7px] text-slate-600 font-black uppercase">
-                                                                    {(s.category === 'category_2' || s.category === 'adults') ? prices.cat2_name : prices.cat1_name} • {s.label}
-                                                                </span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </CardContent>
-                                            </motion.div>
+                                                APROBAR
+                                            </Button>
+                                        ) : payer.status === 'paid' ? (
+                                            <div className="flex items-center gap-1 text-emerald-600 font-black text-[10px] uppercase">
+                                                <CheckCircle2 size={12} />
+                                                <span>Al Día</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-1 text-rose-500 font-black text-[10px] uppercase">
+                                                <XCircle size={12} />
+                                                <span>Deuda</span>
+                                            </div>
                                         )}
-                                    </AnimatePresence>
-                                </Card>
-                            );
-                        })}
-                    </div>
-                </ScrollArea>
+                                    </div>
+                                </div>
+
+                                <AnimatePresence>
+                                    {isExpanded && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            className="bg-slate-50 border-t border-slate-100"
+                                        >
+                                            <CardContent className="p-4 pt-2">
+                                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2">Detalle de {getLabels.subject}:</p>
+                                                <div className="space-y-1.5">
+                                                    {payer.enrolledStudents.map((s: any) => (
+                                                        <div key={s.id} className="flex items-center justify-between bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+                                                            <div className="flex items-center gap-2">
+                                                                <Avatar className="h-7 w-7 border border-slate-100">
+                                                                    <AvatarImage src={s.photo} />
+                                                                    <AvatarFallback>{s.name[0]}</AvatarFallback>
+                                                                </Avatar>
+                                                                <div>
+                                                                    <span className="text-[10px] font-black text-slate-800 uppercase block leading-none">{s.name}</span>
+                                                                    <span className="text-[8px] text-slate-400 font-bold uppercase">{s.label}</span>
+                                                                </div>
+                                                            </div>
+                                                            <Badge variant="secondary" className="text-[8px] font-black uppercase">
+                                                                {(s.category === 'category_2' || s.category === 'adults') ? prices.cat2_name : prices.cat1_name}
+                                                            </Badge>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </CardContent>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </Card>
+                        );
+                    })}
+                </div>
             </div>
         );
     };
 
     const renderAjustes = () => {
         return (
-            <ScrollArea className="h-[calc(100vh-100px)] pr-2">
-                <div className="space-y-6 pb-24">
-                    {/* Perfil Academia */}
-                    <div className="flex flex-col items-center py-4 bg-gradient-to-b from-white/[0.04] to-transparent rounded-3xl border border-white/[0.02]">
-                        <div className="relative mb-4 group">
-                            <Avatar className="h-20 w-20 border-2 border-primary/20 p-1 bg-slate-900">
-                                {uploading ? (
-                                    <div className="w-full h-full flex items-center justify-center"><RefreshCw size={24} className="animate-spin text-primary" /></div>
-                                ) : (
-                                    <>
-                                        <AvatarImage src={branding?.logo} className="object-contain" />
-                                        <AvatarFallback className="bg-slate-800"><ImageIcon size={32} className="text-slate-600" /></AvatarFallback>
-                                    </>
-                                )}
-                            </Avatar>
-                            <Button
-                                size="icon"
-                                variant="secondary"
-                                className="absolute -bottom-1 -right-1 h-7 w-7 rounded-lg shadow-xl ring-2 ring-slate-950"
-                                onClick={() => fileInputRef.current?.click()}
-                            >
-                                <Camera size={12} />
-                            </Button>
-                            <input type="file" ref={fileInputRef} onChange={handleLogoUpload} className="hidden" accept="image/*" />
-                        </div>
-                        <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">{branding?.name}</h3>
-                        <div className="flex flex-col items-center gap-1.5 mt-2">
-                            <p className="text-[9px] font-bold text-slate-500 uppercase">Giro del Negocio</p>
-                            <select
-                                value={branding?.industry || 'martial_arts'}
-                                onChange={async (e) => {
-                                    const newIndustry = e.target.value;
-                                    if (!token || !user?.tenant_id) return;
-                                    // Simple local update for branding context
-                                    setBranding({ ...branding, industry: newIndustry } as any);
-                                    // Update via pricing endpoint which saves 'data' but we can use profile update if available
-                                    // For now, we'll sync it with Save Settings to keep it simple
-                                }}
-                                className="bg-white/5 border-none text-[10px] font-black text-indigo-400 uppercase tracking-widest px-3 py-1.5 rounded-lg outline-none appearance-none cursor-pointer text-center"
-                            >
-                                <option value="martial_arts" className="bg-slate-900">Artes Marciales</option>
-                                <option value="clinic" className="bg-slate-900">Centro Médico / Box</option>
-                                <option value="music_school" className="bg-slate-900">Escuela de Música</option>
-                                <option value="generic_service" className="bg-slate-900">Servicios Generales</option>
-                            </select>
+            <div className="space-y-6 pb-32">
+                {/* Perfil Academia */}
+                <div className="flex flex-col items-center py-6 bg-white rounded-[2.5rem] shadow-sm border border-slate-100 text-center">
+                    <div className="relative mb-4 group scale-110">
+                        <Avatar className="h-24 w-24 border-4 border-slate-50 shadow-inner p-1 bg-white">
+                            {uploading ? (
+                                <div className="w-full h-full flex items-center justify-center"><RefreshCw size={24} className="animate-spin text-indigo-600" /></div>
+                            ) : (
+                                <>
+                                    <AvatarImage src={branding?.logo} className="object-contain" />
+                                    <AvatarFallback className="bg-slate-50"><ImageIcon size={32} className="text-slate-200" /></AvatarFallback>
+                                </>
+                            )}
+                        </Avatar>
+                        <Button
+                            size="icon"
+                            variant="secondary"
+                            className="absolute -bottom-1 -right-1 h-9 w-9 rounded-2xl shadow-xl border-4 border-white bg-slate-900 text-white hover:bg-slate-800"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            <Camera size={14} />
+                        </Button>
+                        <input type="file" ref={fileInputRef} onChange={handleLogoUpload} className="hidden" accept="image/*" />
+                    </div>
+
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">{branding?.name}</h3>
+
+                    <div className="flex flex-col items-center gap-2 mt-4 px-6 w-full">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Giro del Negocio</label>
+                        <select
+                            value={branding?.industry || 'martial_arts'}
+                            onChange={(e) => setBranding({ ...branding, industry: e.target.value } as any)}
+                            className="w-full bg-slate-50 border border-slate-200 text-xs font-black text-slate-800 uppercase tracking-widest px-4 py-3 rounded-2xl outline-none text-center appearance-none shadow-inner"
+                        >
+                            <option value="martial_arts">Escuela de Artes Marciales</option>
+                            <option value="clinic">Centro Médico / Box</option>
+                            <option value="music_school">Escuela de Música</option>
+                            <option value="generic_service">Servicios Generales</option>
+                        </select>
+                    </div>
+                </div>
+
+                {/* Valores y Reglas */}
+                <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 space-y-6">
+                    <div className="space-y-4">
+                        <h4 className="text-xs font-black text-slate-900 uppercase border-b border-slate-100 pb-3">{getLabels.subject}: Valores</h4>
+                        <div className="grid grid-cols-1 gap-4">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <label className="text-[8px] font-black text-slate-500 uppercase px-1">Categoría 1</label>
+                                    <Input
+                                        value={prices.cat1_name}
+                                        onChange={(e) => setPrices({ ...prices, cat1_name: e.target.value })}
+                                        className="h-12 bg-slate-50 border-slate-100 text-xs font-black rounded-2xl focus-visible:bg-white shadow-inner"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[8px] font-black text-slate-500 uppercase px-1">Precio ($)</label>
+                                    <Input
+                                        type="number"
+                                        value={prices.cat1_price}
+                                        onChange={(e) => setPrices({ ...prices, cat1_price: Number(e.target.value) })}
+                                        className="h-12 bg-slate-50 border-slate-100 text-xs font-black rounded-2xl focus-visible:bg-white shadow-inner"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <label className="text-[8px] font-black text-slate-500 uppercase px-1">Categoría 2</label>
+                                    <Input
+                                        value={prices.cat2_name}
+                                        onChange={(e) => setPrices({ ...prices, cat2_name: e.target.value })}
+                                        className="h-12 bg-slate-50 border-slate-100 text-xs font-black rounded-2xl focus-visible:bg-white shadow-inner"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[8px] font-black text-slate-500 uppercase px-1">Precio ($)</label>
+                                    <Input
+                                        type="number"
+                                        value={prices.cat2_price}
+                                        onChange={(e) => setPrices({ ...prices, cat2_price: Number(e.target.value) })}
+                                        className="h-12 bg-slate-50 border-slate-100 text-xs font-black rounded-2xl focus-visible:bg-white shadow-inner"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Valores de Mensualidad */}
-                    <Card className="border-none bg-white/[0.02]">
-                        <CardHeader className="p-4 pb-2">
-                            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-400">Planes y Valores</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-4 space-y-4">
-                            <div className="grid grid-cols-1 gap-4">
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[8px] font-black text-slate-500 uppercase px-1">Categoría 1</label>
-                                        <Input
-                                            value={prices.cat1_name}
-                                            onChange={(e) => setPrices({ ...prices, cat1_name: e.target.value })}
-                                            className="h-9 bg-white/5 border-none text-[10px] font-black rounded-lg"
-                                            placeholder="Ej: Infantil"
-                                        />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[8px] font-black text-slate-500 uppercase px-1">Precio ($)</label>
-                                        <Input
-                                            type="number"
-                                            value={prices.cat1_price}
-                                            onChange={(e) => setPrices({ ...prices, cat1_price: Number(e.target.value) })}
-                                            className="h-9 bg-white/5 border-none text-[10px] font-black rounded-lg"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[8px] font-black text-slate-500 uppercase px-1">Categoría 2</label>
-                                        <Input
-                                            value={prices.cat2_name}
-                                            onChange={(e) => setPrices({ ...prices, cat2_name: e.target.value })}
-                                            className="h-9 bg-white/5 border-none text-[10px] font-black rounded-lg"
-                                            placeholder="Ej: Adulto"
-                                        />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[8px] font-black text-slate-500 uppercase px-1">Precio ($)</label>
-                                        <Input
-                                            type="number"
-                                            value={prices.cat2_price}
-                                            onChange={(e) => setPrices({ ...prices, cat2_price: Number(e.target.value) })}
-                                            className="h-9 bg-white/5 border-none text-[10px] font-black rounded-lg"
-                                        />
-                                    </div>
+                    <div className="space-y-4">
+                        <h4 className="text-xs font-black text-slate-900 uppercase border-b border-slate-100 pb-3">Reglas de Descuento</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <label className="text-[8px] font-black text-slate-500 uppercase px-1">Más de X inscritos</label>
+                                <Input
+                                    type="number"
+                                    value={prices.discountThreshold}
+                                    onChange={(e) => setPrices({ ...prices, discountThreshold: Number(e.target.value) })}
+                                    className="h-12 bg-slate-50 border-slate-100 text-xs font-black rounded-2xl shadow-inner"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[8px] font-black text-slate-500 uppercase px-1">Porcentaje (%)</label>
+                                <div className="relative">
+                                    <Input
+                                        type="number"
+                                        value={prices.discountPercentage}
+                                        onChange={(e) => setPrices({ ...prices, discountPercentage: Number(e.target.value) })}
+                                        className="h-12 bg-slate-50 border-slate-100 text-xs font-black rounded-2xl shadow-inner pr-8"
+                                    />
+                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</span>
                                 </div>
                             </div>
-
-                            <div className="pt-2 border-t border-white/5">
-                                <p className="text-[9px] font-black text-slate-500 uppercase mb-3">Reglas de Descuento</p>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[8px] font-black text-slate-500 uppercase px-1">Más de X inscritos</label>
-                                        <Input
-                                            type="number"
-                                            value={prices.discountThreshold}
-                                            onChange={(e) => setPrices({ ...prices, discountThreshold: Number(e.target.value) })}
-                                            className="h-9 bg-white/5 border-none text-[10px] font-black rounded-lg"
-                                        />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[8px] font-black text-slate-500 uppercase px-1">Porcentaje (%)</label>
-                                        <Input
-                                            type="number"
-                                            value={prices.discountPercentage}
-                                            onChange={(e) => setPrices({ ...prices, discountPercentage: Number(e.target.value) })}
-                                            className="h-9 bg-white/5 border-none text-[10px] font-black rounded-lg"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Button onClick={handleSaveSettings} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-[9px] font-black uppercase tracking-widest h-11 rounded-xl shadow-lg shadow-indigo-500/10">
-                                Guardar Cambios
-                            </Button>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
 
                     <Button
-                        variant="ghost"
-                        onClick={handleLogout}
-                        className="w-full h-12 text-rose-500/50 hover:text-rose-500 hover:bg-rose-500/5 text-[10px] font-black uppercase tracking-tighter rounded-xl"
+                        onClick={handleSaveSettings}
+                        className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black text-sm py-6 rounded-3xl shadow-xl shadow-slate-200 transition-all active:scale-95 border-b-4 border-slate-950"
                     >
-                        <LogOut size={16} className="mr-2" />
-                        Finalizar Sesión
+                        GUARDAR CONFIGURACIÓN
                     </Button>
                 </div>
-            </ScrollArea>
+
+                <Button
+                    variant="ghost"
+                    onClick={handleLogout}
+                    className="w-full h-14 text-rose-500 hover:text-rose-600 hover:bg-rose-50 text-[10px] font-black uppercase tracking-widest rounded-2xl"
+                >
+                    <LogOut size={16} className="mr-2" />
+                    Cerrar Sesión Profesional
+                </Button>
+            </div>
         );
     };
 
@@ -583,10 +651,19 @@ export default function CompactStaffDashboard() {
                     </div>
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 truncate max-w-[120px]">{branding?.name}</span>
                 </div>
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
+                    <Input
+                        placeholder={`BUSCAR ${getLabels.subject}...`}
+                        className="pl-9 h-11 bg-white/5 border-none text-[10px] font-black tracking-widest uppercase placeholder:text-slate-600 focus-visible:ring-1 focus-visible:ring-primary/40 rounded-xl"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
 
                 <div className="flex items-center gap-1.5 bg-indigo-500/20 px-2.5 py-1 rounded-lg border border-indigo-500/20">
                     <Trophy size={10} className="text-indigo-400" />
-                    <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">{activeTab}</span>
+                    <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">{activeTab === 'alumnos' ? getLabels.place : activeTab}</span>
                 </div>
             </header>
 
@@ -610,10 +687,10 @@ export default function CompactStaffDashboard() {
 
             {/* NAVBAR INFERIOR STANDARD COMPACT */}
             <nav className="h-16 bg-slate-950/90 backdrop-blur-xl border-t border-white/[0.03] px-3 flex items-center justify-around sticky bottom-0 z-50">
-                <NavItem icon={LayoutDashboard} onClick={() => setActiveTab('inicio')} active={activeTab === 'inicio'} label="INICIO" />
-                <NavItem icon={Users} onClick={() => setActiveTab('alumnos')} active={activeTab === 'alumnos'} label="TATAMI" />
-                <NavItem icon={CreditCard} onClick={() => setActiveTab('pagos')} active={activeTab === 'pagos'} label="PAGOS" />
-                <NavItem icon={Settings} onClick={() => setActiveTab('ajustes')} active={activeTab === 'ajustes'} label="ADMIN" />
+                <NavItem icon={LayoutDashboard} onClick={() => setActiveTab('inicio')} active={activeTab === 'inicio'} label="RESUMEN" />
+                <NavItem icon={Users} onClick={() => setActiveTab('alumnos')} active={activeTab === 'alumnos'} label={getLabels.place} />
+                <NavItem icon={CreditCard} onClick={() => setActiveTab('pagos')} active={activeTab === 'pagos'} label="CUENTAS" />
+                <NavItem icon={Settings} onClick={() => setActiveTab('ajustes')} active={activeTab === 'ajustes'} label="AJUSTES" />
 
                 {/* Notificación de Validación */}
                 {payers.some(p => p.status === 'review') && (
@@ -629,11 +706,13 @@ function NavItem({ icon: Icon, onClick, active, label }: { icon: any, onClick: (
     return (
         <button
             onClick={onClick}
-            className={`flex flex-col items-center justify-center flex-1 transition-all duration-300 relative py-2 ${active ? "text-indigo-400" : "text-slate-600"}`}
+            className={`flex flex-col items-center justify-center flex-1 transition-all duration-300 relative py-2 ${active ? "text-indigo-600" : "text-slate-400"}`}
         >
-            <Icon size={20} strokeWidth={active ? 3 : 2} />
-            <span className={`text-[8px] font-black mt-1 transition-all ${active ? "opacity-100 translate-y-0" : "opacity-40 translate-y-0.5"}`}>{label}</span>
-            {active && <motion.div layoutId="nav-pill" className="absolute -top-px left-1/4 right-1/4 h-0.5 bg-indigo-500 rounded-full" />}
+            <div className={`p-2 rounded-xl transition-all ${active ? 'bg-indigo-50' : 'bg-transparent'}`}>
+                <Icon size={22} strokeWidth={active ? 3 : 2} />
+            </div>
+            <span className={`text-[8px] font-black mt-1 transition-all ${active ? "opacity-100 translate-y-0" : "opacity-60 translate-y-0.5"}`}>{label}</span>
+            {active && <motion.div layoutId="nav-pill" className="absolute -top-px left-1/4 right-1/4 h-1 bg-indigo-600 rounded-full" />}
         </button>
     );
 }
