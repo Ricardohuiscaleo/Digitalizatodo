@@ -246,3 +246,58 @@ export async function markAttendanceViaQR(tenantId: string, token: string, qrTok
         return { message: 'Error de conexión' };
     }
 }
+
+export async function getPayers(tenantId: string, token: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/payers`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'X-Tenant-Id': tenantId,
+            },
+        });
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching payers:', error);
+        return null;
+    }
+}
+
+export async function approvePayment(tenantId: string, token: string, payerId: string | number) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/payers/${payerId}/approve`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'X-Tenant-Id': tenantId,
+            },
+        });
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error approving payment:', error);
+        return { message: 'Error de conexión' };
+    }
+}
+
+export async function updatePricing(tenantId: string, token: string, prices: any) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/settings/pricing`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'X-Tenant-Id': tenantId,
+            },
+            body: JSON.stringify({ prices }),
+        });
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating pricing:', error);
+        return { message: 'Error de conexión' };
+    }
+}
