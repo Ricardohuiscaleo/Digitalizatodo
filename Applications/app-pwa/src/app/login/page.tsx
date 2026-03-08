@@ -36,7 +36,7 @@ export default function LoginPage() {
         if (!branding) { setError("Email no reconocido"); return; }
         setIsLoggingIn(true); setError(null);
         try {
-            const result = await login(branding.id, { email, password });
+            const result: any = await login(branding.id, { email, password });
             if (result.token) {
                 localStorage.setItem(result.user_type === 'staff' ? "staff_token" : "auth_token", result.token);
                 localStorage.setItem("tenant_id", branding.id);
