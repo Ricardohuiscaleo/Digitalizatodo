@@ -26,6 +26,7 @@ import {
     approvePayment,
     updateLogo,
     updatePricing,
+    generateRegistrationPage,
     getAttendanceHistory,
     resumeSession
 } from "@/lib/api";
@@ -79,6 +80,8 @@ export default function App() {
     const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
     const [now, setNow] = useState(new Date());
     const [copied, setCopied] = useState(false);
+    const [regPageCode, setRegPageCode] = useState<string | null>(null);
+    const [generatingPage, setGeneratingPage] = useState(false);
 
     useEffect(() => {
         const t = setInterval(() => setNow(new Date()), 60000);
@@ -640,8 +643,6 @@ export default function App() {
     };
 
     const renderSettings = () => {
-        const registerLink = `https://app.digitalizatodo.cl/${branding?.id || ''}/register`;
-        const copyLink = () => { navigator.clipboard.writeText(registerLink); setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
         return (
             <div className="space-y-3 px-4 pb-24">
@@ -666,12 +667,23 @@ export default function App() {
                 {/* LINK DE REGISTRO */}
                 <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-zinc-100">
                     <p className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-2">Link de Registro Titulares</p>
-                    <div className="flex items-center gap-2">
-                        <p className="flex-1 text-[9px] font-bold text-zinc-500 truncate bg-zinc-50 rounded-xl px-3 py-2 border border-zinc-100">{registerLink}</p>
-                        <button onClick={copyLink} className={`shrink-0 text-[8px] font-black uppercase px-3 py-2 rounded-xl border transition-all active:scale-95 ${copied ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-zinc-50 text-zinc-600 border-zinc-200'}`}>
-                            {copied ? '✓ Copiado' : 'Copiar'}
+                    {regPageCode ? (
+                        <div className="flex items-center gap-2">
+                            <p className="flex-1 text-[9px] font-bold text-zinc-500 truncate bg-zinc-50 rounded-xl px-3 py-2 border border-zinc-100">
+                                {`https://app.digitalizatodo.cl/r/${regPageCode}`}
+                            </p>
+                            <button onClick={() => { navigator.clipboard.writeText(`https://app.digitalizatodo.cl/r/${regPageCode}`); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+                                className={`shrink-0 text-[8px] font-black uppercase px-3 py-2 rounded-xl border transition-all active:scale-95 ${copied ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-zinc-50 text-zinc-600 border-zinc-200'}`}>
+                                {copied ? '✓ Copiado' : 'Copiar'}
+                            </button>
+                        </div>
+                    ) : (
+                        <button onClick={async () => { setGeneratingPage(true); const r = await generateRegistrationPage(user.tenant_id, token); setGeneratingPage(false); if (r?.code) setRegPageCode(r.code); }}
+                            disabled={generatingPage}
+                            className="w-full h-9 bg-zinc-950 text-white text-[9px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-40">
+                            {generatingPage ? <Loader2 className="animate-spin" size={12} /> : '✦ Generar página de registro'}
                         </button>
-                    </div>
+                    )}
                 </div>
 
                 {/* PRECIOS + DESCUENTO en una sola tarjeta */}

@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\GuardianController;
+use App\Http\Controllers\Api\RegistrationPageController;
 use App\Http\Middleware\ResolveTenantFromPath;
 use App\Http\Controllers\TelegramBotController;
 
@@ -25,6 +26,7 @@ use App\Http\Controllers\TelegramBotController;
 // ── Rutas Globales (Sin Tenant) ────────────────────────────────────────
 Route::post('register-tenant', [RegisterTenantController::class , 'store']);
 Route::post('identify-tenant', [TenantDiscoveryController::class , 'identify']);
+Route::get('r/{code}', [RegistrationPageController::class , 'show']);
 
 // ── Webhooks (Sin Tenant / Públicos) ──────────────────────────────────────────
 Route::post('webhooks/resend-inbound', [TelegramBotController::class , 'handleResendInbound']);
@@ -74,6 +76,7 @@ Route::middleware([ResolveTenantFromPath::class])->prefix('{tenant}')->group(fun
                     Route::post('payers/{id}/approve', [GuardianController::class , 'approvePayment']);
                     Route::post('settings/pricing', [GuardianController::class , 'updatePricing']);
                     Route::post('settings/logo', [GuardianController::class , 'updateLogo']);
+                    Route::post('settings/registration-page', [RegistrationPageController::class , 'generate']);
                 }
                 );
             }
