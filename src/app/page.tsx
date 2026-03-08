@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useBranding } from "@/context/BrandingContext";
 import { identifyTenant, login } from "@/lib/api";
-import Image from "next/image";
+import { Loader2, RefreshCw } from "lucide-react";
 
 export default function LoginPage() {
   const { branding, setBranding, isLoading } = useBranding();
@@ -13,18 +13,27 @@ export default function LoginPage() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const handleEmailBlur = async () => {
+    if (!email.includes("@")) return;
+    setIsIdentifying(true);
+    const data = await identifyTenant(email);
+    setIsIdentifying(false);
+    if (data?.found && data.tenants.length > 0) {
+      const t = data.tenants[0];
+      setBranding({ id: t.id, name: t.name, industry: t.industry, logo: t.logo, primaryColor: t.primary_color });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!branding || !email || !password) return;
-
+    if (!branding) { setError("Ingresa tu correo primero"); return; }
     setError(null);
     setIsLoggingIn(true);
-    const result = await login(branding.id, { email, password });
+    const result: any = await login(branding.id, { email, password });
     setIsLoggingIn(false);
-
     if (result.token) {
       localStorage.setItem("tenant_id", branding.id);
-      if (result.user_type === 'staff') {
+      if (result.user_type === "staff") {
         localStorage.setItem("staff_token", result.token);
         window.location.href = "/dashboard";
       } else {
@@ -32,122 +41,89 @@ export default function LoginPage() {
         window.location.href = "/dashboard/student";
       }
     } else {
-      setError(result.message || "Error al iniciar sesión.");
+      setError(result.message || "Credenciales inválidas");
     }
   };
 
-  const handleEmailBlur = async () => {
-    if (!email || !email.includes("@")) return;
-
-    setIsIdentifying(true);
-    const data = await identifyTenant(email);
-    setIsIdentifying(false);
-
-    if (data && data.found && data.tenants.length > 0) {
-      const tenant = data.tenants[0];
-      setBranding({
-        id: tenant.id,
-        name: tenant.name,
-        industry: tenant.industry,
-        logo: tenant.logo,
-        primaryColor: tenant.primary_color
-      });
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    );
-  }
+  if (isLoading) return (
+    <div className="flex min-h-screen items-center justify-center bg-white">
+      <Loader2 className="animate-spin text-zinc-300" size={24} />
+    </div>
+  );
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-6 sm:p-12 bg-linear-to-br from-background via-background to-slate-900/50">
-      <div className="w-full max-w-md space-y-8">
-        {/* Branding Area */}
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative h-20 w-20 overflow-hidden">
-            {branding?.logo ? (
-              <Image
-                src={branding.logo}
-                alt={branding.name}
-                fill
-                className="object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-primary/10 text-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-              </div>
-            )}
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
+      <div className="w-full max-w-[360px] space-y-8 animate-in fade-in duration-300">
+
+        {/* Logo / branding — neutro hasta que se detecte tenant */}
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-16 w-16 rounded-2xl bg-zinc-100 flex items-center justify-center overflow-hidden transition-all duration-500">
+            {branding?.logo
+              ? <img src={branding.logo} className="h-full w-full object-contain" />
+              : <span className="text-2xl font-black text-zinc-300">D</span>
+            }
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            <h1 className="text-xl font-black text-zinc-900 transition-all duration-300">
               {branding?.name || "Digitaliza Todo"}
             </h1>
-            <div className="inline-block mt-1 px-3 py-1 rounded-full border border-white/5 bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-foreground/40">
-              Management
-            </div>
-            <p className="mt-4 text-xs text-foreground/60">
-              Ingresa al portal de gestión
+            <p className="text-[10px] text-zinc-400 uppercase tracking-widest mt-0.5">
+              {branding ? "Portal de gestión" : "Ingresa tu correo para continuar"}
             </p>
           </div>
         </div>
 
-        {/* Login Form */}
-        <div className="mt-8 rounded-3xl border border-white/5 bg-white/5 p-8 backdrop-blur-xl shadow-2xl">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="rounded-xl bg-red-500/10 p-3 text-center text-xs font-medium text-red-400 border border-red-500/20 animate-in fade-in zoom-in duration-300">
-                {error}
+        {/* Form */}
+        <div className="border border-zinc-100 rounded-2xl p-7 space-y-5">
+          {error && (
+            <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</p>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-zinc-500">Correo electrónico</label>
+              <div className="relative">
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  onBlur={handleEmailBlur}
+                  placeholder="tu@correo.com"
+                  className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 focus:ring-2 ring-zinc-900 outline-none transition-all"
+                />
+                {isIdentifying && (
+                  <RefreshCw className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-zinc-400" size={13} />
+                )}
               </div>
-            )}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground/80 ml-1">Correo Electrónico</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onBlur={handleEmailBlur}
-                placeholder="tu@correo.com"
-                className={`w-full rounded-2xl border bg-white/5 px-4 py-3 text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-1 transition-all ${isIdentifying ? "border-primary/50 animate-pulse" : "border-white/10 focus:border-primary/50 focus:ring-primary/50"
-                  }`}
-                required
-              />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground/80 ml-1">Contraseña</label>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-zinc-500">Contraseña</label>
               <input
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
                 required
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 focus:ring-2 ring-zinc-900 outline-none transition-all"
               />
             </div>
 
             <button
               type="submit"
-              disabled={isLoggingIn || isIdentifying || !branding}
-              className="w-full rounded-2xl bg-primary py-3.5 text-sm font-semibold text-background shadow-lg shadow-primary/20 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isLoggingIn}
+              className="w-full h-11 bg-zinc-950 hover:bg-zinc-800 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-40 mt-1"
             >
-              {isLoggingIn ? "Iniciando sesión..." : "Iniciar Sesión"}
+              {isLoggingIn ? <Loader2 className="animate-spin" size={16} /> : "Iniciar sesión"}
             </button>
           </form>
-
-          <div className="mt-6 text-center">
-            <a href="#" className="text-xs text-foreground/40 hover:text-primary transition-colors">
-              ¿Olvidaste tu contraseña?
-            </a>
-          </div>
         </div>
 
-        {/* Footer */}
-        <p className="mt-10 text-center text-xs text-foreground/30">
-          Digitaliza Todo &copy; 2026. Todos los derechos reservados.
+        <p className="text-center text-xs text-zinc-400">
+          ¿No tienes cuenta?{" "}
+          <a href="/register" className="text-zinc-600 hover:text-zinc-900 font-medium transition-colors">
+            Registrar academia
+          </a>
         </p>
       </div>
     </div>
