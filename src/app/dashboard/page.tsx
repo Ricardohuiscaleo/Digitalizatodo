@@ -29,7 +29,6 @@ import {
     updatePricing,
     getAttendanceHistory
 } from "@/lib/api";
-import { motion, AnimatePresence } from "framer-motion";
 
 export default function App() {
     const { branding, setBranding } = useBranding();
@@ -752,21 +751,12 @@ export default function App() {
 
             {/* CONTENIDO CON ANIMACIÓN LATERAL */}
             <main className="flex-1 overflow-y-auto pb-32 hide-scrollbar relative">
-                <AnimatePresence initial={false} mode="wait">
-                    <motion.div
-                        key={activeTab}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.1 }}
-                        className="w-full"
-                    >
-                        {activeTab === 'dashboard' && renderDashboard()}
-                        {activeTab === 'attendance' && renderAttendance()}
-                        {activeTab === 'payments' && renderPayments()}
-                        {activeTab === 'settings' && renderSettings()}
-                    </motion.div>
-                </AnimatePresence>
+                <div key={activeTab} className="w-full animate-in fade-in duration-150">
+                    {activeTab === 'dashboard' && renderDashboard()}
+                    {activeTab === 'attendance' && renderAttendance()}
+                    {activeTab === 'payments' && renderPayments()}
+                    {activeTab === 'settings' && renderSettings()}
+                </div>
             </main>
 
             {/* NAV CON ESTILO PREMIUM */}
@@ -793,7 +783,7 @@ function TabButton({ icon: Icon, label, active, onClick }: { icon: any, label: s
                 <Icon size={24} strokeWidth={active ? 3 : 2} />
             </div>
             <span className="text-[8px] font-black uppercase tracking-[0.2em]">{label}</span>
-            {active && <motion.div layoutId="nav-dot" className="absolute -bottom-2 w-1 h-1 bg-zinc-950 rounded-full" />}
+            {active && <div className="absolute -bottom-2 w-1 h-1 bg-zinc-950 rounded-full" />}
         </button>
     );
 }
