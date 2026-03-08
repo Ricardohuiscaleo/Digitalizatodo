@@ -86,9 +86,9 @@ export default function App() {
                 if (profile.tenant?.data?.pricing) {
                     setPrices(profile.tenant.data.pricing);
                 }
-                if (!branding.name && profile.tenant) {
+                if (profile.tenant && !branding?.name) {
                     setBranding({
-                        id: profile.tenant.id,
+                        id: String(profile.tenant.id),
                         name: profile.tenant.name,
                         industry: profile.tenant.industry,
                         logo: profile.tenant.logo,
@@ -220,12 +220,13 @@ export default function App() {
         const file = e.target.files?.[0];
         if (!file || !token || !user?.tenant_id) return;
 
-        const formData = new FormData();
-        formData.append('logo', file);
-
-        const result = await updateLogo(user.tenant_id, token, formData);
-        if (result?.logo) {
-            setBranding({ ...branding, logo: result.logo });
+        const result: any = await updateLogo(user.tenant_id, token, file);
+        if (result?.logo && branding) {
+            setBranding({
+                ...branding,
+                id: String(branding.id),
+                logo: String(result.logo)
+            });
             alert("Logo actualizado con éxito");
         }
     };
