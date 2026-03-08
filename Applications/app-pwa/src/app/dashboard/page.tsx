@@ -625,7 +625,7 @@ export default function App() {
     };
 
     const renderSettings = () => {
-        const registerLink = `https://app.digitalizatodo.cl?tenant=${branding?.id || ''}`;
+        const registerLink = `https://app.digitalizatodo.cl/${branding?.id || ''}/register`;
         const [copied, setCopied] = React.useState(false);
         const copyLink = () => { navigator.clipboard.writeText(registerLink); setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
