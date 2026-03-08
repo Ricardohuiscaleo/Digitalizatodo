@@ -90,6 +90,21 @@ export async function login(tenantId: string, credentials: any) {
         return { message: 'Error de conexión o datos inválidos' };
     }
 }
+
+export async function resumeSession(tenantId: string, rememberToken: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/auth/resume`, {
+            method: 'POST',
+            headers: defaultHeaders,
+            body: JSON.stringify({ remember_token: rememberToken }),
+        });
+        const data = await safeJson(response);
+        if (!response.ok) return null;
+        return data;
+    } catch {
+        return null;
+    }
+}
 export async function getProfile(tenantId: string, token: string) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/me`, {
