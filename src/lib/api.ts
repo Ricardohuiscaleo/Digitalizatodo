@@ -6,11 +6,14 @@ const defaultHeaders = {
 };
 
 async function safeJson(response: Response) {
-    const contentType = response.headers.get("content-type");
-    if (contentType && contentType.indexOf("application/json") !== -1) {
-        return await response.json();
+    try {
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+            return await response.json();
+        }
+    } catch (e) {
+        console.error("Error parsing JSON:", e);
     }
-    // Si no es JSON, devolvemos el error amigablemente
     return {
         message: `Error del servidor (${response.status})`,
         status: response.status
