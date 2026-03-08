@@ -21,12 +21,12 @@ export const metadata: Metadata = {
     shortcut: "/icon.webp",
   },
   manifest: "/manifest.json",
-  themeColor: "#0f172a",
+  themeColor: "#ffffff",
   viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0",
   appleWebApp: {
     capable: true,
     title: "Digitaliza Todo",
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
   },
 };
 
