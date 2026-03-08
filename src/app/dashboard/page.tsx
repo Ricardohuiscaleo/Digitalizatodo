@@ -97,13 +97,17 @@ export default function App() {
                 }
                 setPayers(payersData?.payers || []);
 
-                const currentAttendance = new Set<string>();
-                payersData?.payers?.forEach((p: any) => {
-                    p.enrolledStudents.forEach((s: any) => {
-                        if (s.today_status === 'present') currentAttendance.add(s.id);
+                if (payersData?.payers) {
+                    const currentAttendance = new Set<string>();
+                    payersData.payers.forEach((p: any) => {
+                        if (p.enrolledStudents) {
+                            p.enrolledStudents.forEach((s: any) => {
+                                if (s.today_status === 'present') currentAttendance.add(s.id);
+                            });
+                        }
                     });
-                });
-                setAttendance(currentAttendance);
+                    setAttendance(currentAttendance);
+                }
             } else {
                 localStorage.clear();
                 window.location.href = "/";
@@ -128,6 +132,19 @@ export default function App() {
 
     const formatMoney = (amount: number) => {
         return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
+    };
+
+    const formatCLP = (value: number) =>
+        value === 0 ? '' : `$ ${new Intl.NumberFormat('es-CL').format(value)}`;
+
+    const parseCLP = (str: string) => {
+        const digits = str.replace(/\D/g, '');
+        return digits === '' ? 0 : parseInt(digits, 10);
+    };
+
+    const handlePriceInput = (field: 'kids' | 'adult', raw: string) => {
+        const num = parseCLP(raw);
+        setPrices(p => ({ ...p, [field]: num }));
     };
 
     const calculatePrice = (payer: any) => {
@@ -470,26 +487,28 @@ export default function App() {
                     </h3>
                     <div className="space-y-4">
                         <div className="flex items-center gap-4 bg-zinc-50 p-2 rounded-2xl border border-zinc-100">
-                            <div className="h-12 w-12 bg-white rounded-xl flex items-center justify-center text-zinc-300 font-black">$</div>
                             <div className="flex-1">
                                 <label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest ml-2">Categoría Kids</label>
                                 <input
-                                    type="number"
+                                    type="text"
+                                    inputMode="numeric"
                                     className="w-full bg-transparent border-none text-zinc-950 font-black p-1 focus:ring-0 outline-none"
-                                    value={prices.kids}
-                                    onChange={e => setPrices({ ...prices, kids: Number(e.target.value) })}
+                                    value={formatCLP(prices.kids)}
+                                    onChange={e => handlePriceInput('kids', e.target.value)}
+                                    placeholder="$ 0"
                                 />
                             </div>
                         </div>
                         <div className="flex items-center gap-4 bg-zinc-50 p-2 rounded-2xl border border-zinc-100">
-                            <div className="h-12 w-12 bg-white rounded-xl flex items-center justify-center text-zinc-300 font-black">$</div>
                             <div className="flex-1">
                                 <label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest ml-2">Categoría Adultos</label>
                                 <input
-                                    type="number"
+                                    type="text"
+                                    inputMode="numeric"
                                     className="w-full bg-transparent border-none text-zinc-950 font-black p-1 focus:ring-0 outline-none"
-                                    value={prices.adult}
-                                    onChange={e => setPrices({ ...prices, adult: Number(e.target.value) })}
+                                    value={formatCLP(prices.adult)}
+                                    onChange={e => handlePriceInput('adult', e.target.value)}
+                                    placeholder="$ 0"
                                 />
                             </div>
                         </div>
