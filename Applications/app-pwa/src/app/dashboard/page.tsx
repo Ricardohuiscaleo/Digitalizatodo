@@ -109,7 +109,7 @@ export default function App() {
                     if (resumed?.token) {
                         storedToken = resumed.token;
                         const key = resumed.user_type === 'staff' ? 'staff_token' : 'auth_token';
-                        localStorage.setItem(key, storedToken);
+                        localStorage.setItem(key, storedToken!);
                     }
                 }
             }
