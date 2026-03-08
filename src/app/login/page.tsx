@@ -6,12 +6,13 @@ import { identifyTenant, login } from "@/lib/api";
 import { Loader2, RefreshCw } from "lucide-react";
 
 export default function LoginPage() {
-  const { branding, setBranding, isLoading } = useBranding();
+  const { setBranding, isLoading } = useBranding();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isIdentifying, setIsIdentifying] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [detectedTenant, setDetectedTenant] = useState<any>(null);
 
   const handleEmailBlur = async () => {
     if (!email.includes("@")) return;
@@ -20,19 +21,22 @@ export default function LoginPage() {
     setIsIdentifying(false);
     if (data?.found && data.tenants.length > 0) {
       const t = data.tenants[0];
+      setDetectedTenant(t);
       setBranding({ id: t.id, name: t.name, industry: t.industry, logo: t.logo, primaryColor: t.primary_color });
+    } else {
+      setDetectedTenant(null);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!branding) { setError("Ingresa tu correo primero"); return; }
+    if (!detectedTenant) { setError("Ingresa tu correo y espera que se detecte tu academia"); return; }
     setError(null);
     setIsLoggingIn(true);
-    const result: any = await login(branding.id, { email, password });
+    const result: any = await login(detectedTenant.id, { email, password });
     setIsLoggingIn(false);
     if (result.token) {
-      localStorage.setItem("tenant_id", branding.id);
+      localStorage.setItem("tenant_id", detectedTenant.id);
       if (result.user_type === "staff") {
         localStorage.setItem("staff_token", result.token);
         window.location.href = "/dashboard";
@@ -58,17 +62,17 @@ export default function LoginPage() {
         {/* Logo / branding — neutro hasta que se detecte tenant */}
         <div className="flex flex-col items-center gap-3">
           <div className="h-16 w-16 rounded-2xl bg-zinc-100 flex items-center justify-center overflow-hidden transition-all duration-500">
-            {branding?.logo
-              ? <img src={branding.logo} className="h-full w-full object-contain" />
+            {detectedTenant?.logo
+              ? <img src={detectedTenant.logo} className="h-full w-full object-contain" />
               : <span className="text-2xl font-black text-zinc-300">D</span>
             }
           </div>
           <div className="text-center">
             <h1 className="text-xl font-black text-zinc-900 transition-all duration-300">
-              {branding?.name || "Digitaliza Todo"}
+              {detectedTenant?.name || "Digitaliza Todo"}
             </h1>
             <p className="text-[10px] text-zinc-400 uppercase tracking-widest mt-0.5">
-              {branding ? "Portal de gestión" : "Ingresa tu correo para continuar"}
+              {detectedTenant ? "Portal de gestión" : "Ingresa tu correo para continuar"}
             </p>
           </div>
         </div>
