@@ -52,7 +52,7 @@ class TenantDiscoveryController extends Controller
         'id' => $t->id,
         'name' => $t->name,
         'industry' => $t->industry,
-        'logo' => $t->logo ?\Illuminate\Support\Facades\Storage::disk('public')->url($t->logo) : '/icon.webp',
+        'logo' => $t->logo ? (str_starts_with($t->logo, 'http') ? $t->logo : \Illuminate\Support\Facades\Storage::disk('public')->url($t->logo)) : '/icon.webp',
         'primary_color' => $t->primary_color ?? '#f59e0b',
         ]);
 
@@ -79,7 +79,7 @@ class TenantDiscoveryController extends Controller
             'id' => $tenant->id,
             'name' => $tenant->name,
             'industry' => $tenant->industry,
-            'logo' => $tenant->logo ?\Illuminate\Support\Facades\Storage::disk('public')->url($tenant->logo) : '/icon.webp',
+            'logo' => $tenant->logo ? (str_starts_with($tenant->logo, 'http') ? $tenant->logo : \Illuminate\Support\Facades\Storage::disk('public')->url($tenant->logo)) : '/icon.webp',
             'primary_color' => $tenant->primary_color ?? '#f59e0b',
         ]);
     }
