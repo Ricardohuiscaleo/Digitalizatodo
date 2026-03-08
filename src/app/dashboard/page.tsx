@@ -171,8 +171,12 @@ export default function CompactStaffDashboard() {
 
     const handleSaveSettings = async () => {
         if (!token || !user?.tenant_id) return;
-        const res = await updatePricing(user.tenant_id, token, prices);
-        if (res.message) alert("Precios actualizados");
+        // Sync industry along with pricing data
+        const res = await updatePricing(user.tenant_id, token, {
+            ...prices,
+            industry: branding?.industry || 'martial_arts'
+        });
+        if (res.message) alert("Configuración guardada correctamente");
     };
 
     const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -451,7 +455,26 @@ export default function CompactStaffDashboard() {
                             <input type="file" ref={fileInputRef} onChange={handleLogoUpload} className="hidden" accept="image/*" />
                         </div>
                         <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">{branding?.name}</h3>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase mt-1">Configuración del Negocio</p>
+                        <div className="flex flex-col items-center gap-1.5 mt-2">
+                            <p className="text-[9px] font-bold text-slate-500 uppercase">Giro del Negocio</p>
+                            <select
+                                value={branding?.industry || 'martial_arts'}
+                                onChange={async (e) => {
+                                    const newIndustry = e.target.value;
+                                    if (!token || !user?.tenant_id) return;
+                                    // Simple local update for branding context
+                                    setBranding({ ...branding, industry: newIndustry } as any);
+                                    // Update via pricing endpoint which saves 'data' but we can use profile update if available
+                                    // For now, we'll sync it with Save Settings to keep it simple
+                                }}
+                                className="bg-white/5 border-none text-[10px] font-black text-indigo-400 uppercase tracking-widest px-3 py-1.5 rounded-lg outline-none appearance-none cursor-pointer text-center"
+                            >
+                                <option value="martial_arts" className="bg-slate-900">Artes Marciales</option>
+                                <option value="clinic" className="bg-slate-900">Centro Médico / Box</option>
+                                <option value="music_school" className="bg-slate-900">Escuela de Música</option>
+                                <option value="generic_service" className="bg-slate-900">Servicios Generales</option>
+                            </select>
+                        </div>
                     </div>
 
                     {/* Valores de Mensualidad */}
