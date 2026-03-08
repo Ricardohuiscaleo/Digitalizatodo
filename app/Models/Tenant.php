@@ -19,12 +19,13 @@ class Tenant extends Model implements HasAvatar
         'id', 'name', 'industry', 'email', 'phone', 'logo', 'primary_color',
         'address', 'city', 'saas_plan', 'saas_trial_ends_at', 'active',
         'bank_name', 'bank_account_type', 'bank_account_number',
-        'bank_account_holder', 'bank_rut', 'bank_email',
+        'bank_account_holder', 'bank_rut', 'bank_email', 'data',
     ];
 
     protected $casts = [
         'active' => 'boolean',
         'saas_trial_ends_at' => 'date',
+        'data' => 'array',
     ];
 
     // Relaciones

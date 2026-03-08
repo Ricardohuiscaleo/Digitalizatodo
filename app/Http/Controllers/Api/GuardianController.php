@@ -26,6 +26,15 @@ class GuardianController extends Controller
             // Simplified logic: checking if any student has pending/review payments
             $students = $guardian->students;
             $status = 'paid';
+            $tenant = Tenant::find($tenantId);
+            $pricing = $tenant->data['pricing'] ?? [
+                'cat1_name' => 'Infantil',
+                'cat1_price' => 25000,
+                'cat2_name' => 'Adulto',
+                'cat2_price' => 35000,
+                'discount_threshold' => 2,
+                'discount_percentage' => 15
+            ];
 
             foreach ($students as $student) {
                 $hasReview = \App\Models\Payment::where('tenant_id', $student->tenant_id)
@@ -53,13 +62,14 @@ class GuardianController extends Controller
             'name' => $guardian->name,
             'photo' => $guardian->photo ?\Storage::disk('public')->url($guardian->photo) : "https://i.pravatar.cc/150?u=" . $guardian->id,
             'status' => $status,
+            'pricing' => $pricing,
             'enrolledStudents' => $students->map(function ($s) {
                     return [
                     'id' => $s->id,
                     'name' => $s->name,
-                    'type' => $s->category === 'adults' ? 'adult' : 'kids',
+                    'category' => $s->category, // Use raw category
                     'photo' => $s->photo ?\Storage::disk('public')->url($s->photo) : "https://i.pravatar.cc/150?img=" . $s->id,
-                    'belt' => $s->belt_rank ?? 'Blanco',
+                    'label' => $s->belt_rank ?? '', // Generic label
                     ];
                 }
                 ),
@@ -103,5 +113,30 @@ class GuardianController extends Controller
         }
 
         return response()->json(['message' => 'Pagos aprobados correctamente']);
+    }
+
+    /**
+     * Update tenant logo.
+     */
+    public function updateLogo(Request $request)
+    {
+        $tenantId = $request->header('X-Tenant-Id');
+        $tenant = Tenant::findOrFail($tenantId);
+
+        $request->validate([
+            'logo' => 'required|image|max:2048',
+        ]);
+
+        if ($request->hasFile('logo')) {
+            $path = $request->file('logo')->store('logos', 'public');
+            $tenant->update(['logo' => $path]);
+
+            return response()->json([
+                'message' => 'Logo actualizado',
+                'logo_url' => \Storage::disk('public')->url($path)
+            ]);
+        }
+
+        return response()->json(['message' => 'No se subió ningún archivo'], 400);
     }
 }
