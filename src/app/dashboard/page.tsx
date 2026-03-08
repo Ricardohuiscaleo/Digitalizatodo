@@ -26,7 +26,8 @@ import {
     approvePayment,
     updateLogo,
     updatePricing,
-    getAttendanceHistory
+    getAttendanceHistory,
+    resumeSession
 } from "@/lib/api";
 
 export default function App() {
@@ -96,17 +97,30 @@ export default function App() {
     // --- PERSISTENCE & DATA FETCHING ---
 
     useEffect(() => {
-        const storedToken = localStorage.getItem("staff_token") || localStorage.getItem("auth_token");
-        const tenantId = localStorage.getItem("tenant_id")?.trim();
+        const init = async () => {
+            let storedToken = localStorage.getItem("staff_token") || localStorage.getItem("auth_token");
+            let tenantId = localStorage.getItem("tenant_id")?.trim();
 
-        if (!storedToken || !tenantId) {
-            window.location.href = "/";
-            return;
-        }
+            // Intentar renovar sesión con remember_token si no hay token activo
+            if (!storedToken && tenantId) {
+                const rememberToken = localStorage.getItem("remember_token");
+                if (rememberToken) {
+                    const resumed = await resumeSession(tenantId, rememberToken);
+                    if (resumed?.token) {
+                        storedToken = resumed.token;
+                        const key = resumed.user_type === 'staff' ? 'staff_token' : 'auth_token';
+                        localStorage.setItem(key, storedToken);
+                    }
+                }
+            }
 
-        setToken(storedToken);
+            if (!storedToken || !tenantId) {
+                window.location.href = "/";
+                return;
+            }
 
-        const fetchData = async () => {
+            setToken(storedToken);
+
             const [profile, payersData]: [any, any] = await Promise.all([
                 getProfile(tenantId, storedToken),
                 getPayers(tenantId, storedToken)
@@ -151,7 +165,7 @@ export default function App() {
             setLoading(false);
         };
 
-        fetchData();
+        init();
     }, [setBranding]);
 
     // --- LÓGICA DE DATOS ---

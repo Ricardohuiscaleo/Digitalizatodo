@@ -3,40 +3,47 @@
 import { useState } from "react";
 import { useBranding } from "@/context/BrandingContext";
 import { identifyTenant, login } from "@/lib/api";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
   const { setBranding, isLoading } = useBranding();
+  const [step, setStep] = useState<"email" | "password">("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(false);
   const [isIdentifying, setIsIdentifying] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [detectedTenant, setDetectedTenant] = useState<any>(null);
+  const [tenant, setTenant] = useState<any>(null);
 
-  const handleEmailBlur = async () => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!email.includes("@")) return;
+    setError(null);
     setIsIdentifying(true);
     const data = await identifyTenant(email);
     setIsIdentifying(false);
     if (data?.found && data.tenants.length > 0) {
       const t = data.tenants[0];
-      setDetectedTenant(t);
+      setTenant(t);
       setBranding({ id: t.id, name: t.name, industry: t.industry, logo: t.logo, primaryColor: t.primary_color });
+      setStep("password");
     } else {
-      setDetectedTenant(null);
+      setError("No encontramos una academia asociada a este correo.");
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!detectedTenant) { setError("Ingresa tu correo y espera que se detecte tu academia"); return; }
     setError(null);
     setIsLoggingIn(true);
-    const result: any = await login(detectedTenant.id, { email, password });
+    const result: any = await login(tenant.id, { email, password, remember });
     setIsLoggingIn(false);
     if (result.token) {
-      localStorage.setItem("tenant_id", detectedTenant.id);
+      localStorage.setItem("tenant_id", tenant.id);
+      if (remember && result.remember_token) {
+        localStorage.setItem("remember_token", result.remember_token);
+      }
       if (result.user_type === "staff") {
         localStorage.setItem("staff_token", result.token);
         window.location.href = "/dashboard";
@@ -45,7 +52,7 @@ export default function LoginPage() {
         window.location.href = "/dashboard/student";
       }
     } else {
-      setError(result.message || "Credenciales inválidas");
+      setError(result.message || "Contraseña incorrecta");
     }
   };
 
@@ -59,69 +66,95 @@ export default function LoginPage() {
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-[360px] space-y-8 animate-in fade-in duration-300">
 
-        {/* Logo / branding — neutro hasta que se detecte tenant */}
+        {/* Branding */}
         <div className="flex flex-col items-center gap-3">
           <div className="h-16 w-16 rounded-2xl bg-zinc-100 flex items-center justify-center overflow-hidden transition-all duration-500">
-            {detectedTenant?.logo
-              ? <img src={detectedTenant.logo} className="h-full w-full object-contain" />
+            {tenant?.logo
+              ? <img src={tenant.logo} className="h-full w-full object-contain" />
               : <span className="text-2xl font-black text-zinc-300">D</span>
             }
           </div>
           <div className="text-center">
-            <h1 className="text-xl font-black text-zinc-900 transition-all duration-300">
-              {detectedTenant?.name || "Digitaliza Todo"}
-            </h1>
+            <h1 className="text-xl font-black text-zinc-900">{tenant?.name || "Digitaliza Todo"}</h1>
             <p className="text-[10px] text-zinc-400 uppercase tracking-widest mt-0.5">
-              {detectedTenant ? "Portal de gestión" : "Ingresa tu correo para continuar"}
+              {step === "email" ? "Ingresa tu correo para continuar" : "Portal de gestión"}
             </p>
           </div>
         </div>
 
-        {/* Form */}
-        <div className="border border-zinc-100 rounded-2xl p-7 space-y-5">
-          {error && (
-            <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</p>
-          )}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-zinc-500">Correo electrónico</label>
-              <div className="relative">
+        {/* Paso 1: Email */}
+        {step === "email" && (
+          <div className="border border-zinc-100 rounded-2xl p-7 space-y-5 animate-in fade-in duration-200">
+            {error && <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</p>}
+            <form onSubmit={handleEmailSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-zinc-500">Correo electrónico</label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    required
+                    autoFocus
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="tu@correo.com"
+                    className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 focus:ring-2 ring-zinc-900 outline-none transition-all"
+                  />
+                  {isIdentifying && <RefreshCw className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-zinc-400" size={13} />}
+                </div>
+              </div>
+              <button
+                type="submit"
+                disabled={isIdentifying}
+                className="w-full h-11 bg-zinc-950 hover:bg-zinc-800 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-40"
+              >
+                {isIdentifying ? <Loader2 className="animate-spin" size={16} /> : "Continuar"}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* Paso 2: Contraseña */}
+        {step === "password" && (
+          <div className="border border-zinc-100 rounded-2xl p-7 space-y-5 animate-in fade-in duration-200">
+            {error && <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</p>}
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-zinc-500">Contraseña</label>
                 <input
-                  type="email"
+                  type="password"
                   required
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  onBlur={handleEmailBlur}
-                  placeholder="tu@correo.com"
+                  autoFocus
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
                   className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 focus:ring-2 ring-zinc-900 outline-none transition-all"
                 />
-                {isIdentifying && (
-                  <RefreshCw className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-zinc-400" size={13} />
-                )}
               </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-zinc-500">Contraseña</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 focus:ring-2 ring-zinc-900 outline-none transition-all"
-              />
-            </div>
-
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={e => setRemember(e.target.checked)}
+                  className="w-4 h-4 rounded accent-zinc-900"
+                />
+                <span className="text-xs text-zinc-500">Recordar sesión</span>
+              </label>
+              <button
+                type="submit"
+                disabled={isLoggingIn}
+                className="w-full h-11 bg-zinc-950 hover:bg-zinc-800 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-40"
+              >
+                {isLoggingIn ? <Loader2 className="animate-spin" size={16} /> : "Iniciar sesión"}
+              </button>
+            </form>
             <button
-              type="submit"
-              disabled={isLoggingIn}
-              className="w-full h-11 bg-zinc-950 hover:bg-zinc-800 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-40 mt-1"
+              onClick={() => { setStep("email"); setError(null); setPassword(""); }}
+              className="flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-700 transition-colors"
             >
-              {isLoggingIn ? <Loader2 className="animate-spin" size={16} /> : "Iniciar sesión"}
+              <ArrowLeft size={12} /> Cambiar correo
             </button>
-          </form>
-        </div>
+          </div>
+        )}
 
         <p className="text-center text-xs text-zinc-400">
           ¿No tienes cuenta?{" "}
