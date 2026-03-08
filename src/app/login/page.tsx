@@ -135,7 +135,7 @@ export default function LoginPage() {
                                     onBlur={handleEmailBlur}
                                     placeholder="hola@academia.com"
                                     className={cn(
-                                        "h-14 bg-slate-50 border-none rounded-[1.2rem] pl-12 font-bold text-sm placeholder:text-slate-300 focus-visible:ring-zinc-950 transition-all",
+                                        "h-14 bg-white border border-slate-100 rounded-[1.2rem] pl-12 font-bold text-sm placeholder:text-slate-300 focus-visible:ring-zinc-950 transition-all",
                                         isIdentifying && "animate-pulse"
                                     )}
                                 />
@@ -156,7 +156,7 @@ export default function LoginPage() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
-                                    className="h-14 bg-slate-50 border-none rounded-[1.2rem] pl-12 font-bold text-sm placeholder:text-slate-300 focus-visible:ring-zinc-950 transition-all"
+                                    className="h-14 bg-white border border-slate-100 rounded-[1.2rem] pl-12 font-bold text-sm placeholder:text-slate-300 focus-visible:ring-zinc-950 transition-all"
                                 />
                             </div>
                         </div>

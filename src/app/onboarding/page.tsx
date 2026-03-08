@@ -122,7 +122,7 @@ export default function OnboardingPage() {
                             { title: "ASISTENCIA", desc: "Control en tiempo real" },
                             { title: "7 DÍAS GRATIS", desc: "Sin tarjetas de crédito" }
                         ].map((item, i) => (
-                            <Card key={i} className="bg-white/60 backdrop-blur-md border-none p-6 rounded-[2rem] shadow-sm">
+                            <Card key={i} className="bg-white border border-slate-100 p-6 rounded-[2rem] shadow-sm">
                                 <CheckCircle2 className="w-6 h-6 text-emerald-500 mb-3" />
                                 <h3 className="text-[10px] font-black uppercase text-slate-900 tracking-widest">{item.title}</h3>
                                 <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">{item.desc}</p>
@@ -156,7 +156,7 @@ export default function OnboardingPage() {
                                         value={formData.tenant_name}
                                         onChange={handleChange}
                                         placeholder="Nombre"
-                                        className="h-14 bg-slate-50 border-none rounded-2xl pl-5 font-bold text-sm focus-visible:ring-zinc-950 transition-all"
+                                        className="h-14 bg-white border border-slate-100 rounded-2xl pl-5 font-bold text-sm focus-visible:ring-zinc-950 transition-all"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -224,7 +224,7 @@ export default function OnboardingPage() {
                                         value={formData.password}
                                         onChange={handleChange}
                                         placeholder="••••••••"
-                                        className="h-14 bg-slate-50 border-none rounded-2xl pl-5 font-bold text-sm focus-visible:ring-zinc-950 transition-all"
+                                        className="h-14 bg-white border border-slate-100 rounded-2xl pl-5 font-bold text-sm focus-visible:ring-zinc-950 transition-all"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -236,7 +236,7 @@ export default function OnboardingPage() {
                                         value={formData.password_confirmation}
                                         onChange={handleChange}
                                         placeholder="••••••••"
-                                        className="h-14 bg-slate-50 border-none rounded-2xl pl-5 font-bold text-sm focus-visible:ring-zinc-950 transition-all"
+                                        className="h-14 bg-white border border-slate-100 rounded-2xl pl-5 font-bold text-sm focus-visible:ring-zinc-950 transition-all"
                                     />
                                 </div>
                             </div>
