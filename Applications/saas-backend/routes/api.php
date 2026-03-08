@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PlanController;
+use App\Http\Controllers\Api\GuardianController;
 use App\Http\Middleware\ResolveTenantFromPath;
 use App\Http\Controllers\TelegramBotController;
 
@@ -67,6 +68,11 @@ Route::middleware([ResolveTenantFromPath::class])->prefix('{tenant}')->group(fun
             Route::middleware('role:teacher,admin,owner')->group(function () {
                     Route::post('attendance', [AttendanceController::class , 'store']);
                     Route::get('attendance/generate-qr', [AttendanceQRController::class , 'generate']);
+
+                    // Gestión de Cuentas (Payers)
+                    Route::get('payers', [GuardianController::class , 'index']);
+                    Route::post('payers/{id}/approve', [GuardianController::class , 'approvePayment']);
+                    Route::post('settings/pricing', [GuardianController::class , 'updatePricing']);
                 }
                 );
             }
