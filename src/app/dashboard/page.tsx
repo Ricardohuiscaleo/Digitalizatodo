@@ -24,7 +24,9 @@ import {
     ArrowRight,
     TrendingUp,
     ChevronRight,
-    Bell
+    Bell,
+    Plus,
+    Zap
 } from 'lucide-react';
 import { useBranding } from "@/context/BrandingContext";
 import {
@@ -48,6 +50,40 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
+// --- DATOS DE PRUEBA ACTUALIZADOS (Reference Style) ---
+const demoData = [
+    {
+        id: 'p1',
+        name: 'Javier Muñoz',
+        photo: 'https://i.pravatar.cc/150?u=7',
+        status: 'paid',
+        enrolledStudents: [
+            { id: 's1', name: 'Ana Muñoz', category: 'kids', photo: 'https://i.pravatar.cc/150?img=1', today_status: 'present' },
+            { id: 's2', name: 'Luis Muñoz', category: 'kids', photo: 'https://i.pravatar.cc/150?img=2', today_status: 'absent' },
+            { id: 's3', name: 'Mía Muñoz', category: 'kids', photo: 'https://i.pravatar.cc/150?img=3', today_status: 'present' }
+        ]
+    },
+    {
+        id: 'p2',
+        name: 'Valentina Rojas',
+        photo: 'https://i.pravatar.cc/150?u=4',
+        status: 'pending',
+        enrolledStudents: [
+            { id: 's4', name: 'Valentina Rojas', category: 'adults', photo: 'https://i.pravatar.cc/150?u=4', today_status: 'present' },
+            { id: 's5', name: 'Pedro Rojas', category: 'kids', photo: 'https://i.pravatar.cc/150?img=5', today_status: 'present' }
+        ]
+    },
+    {
+        id: 'p3',
+        name: 'Carlos Soto',
+        photo: 'https://i.pravatar.cc/150?u=3',
+        status: 'paid',
+        enrolledStudents: [
+            { id: 's6', name: 'Carlos Soto', category: 'adults', photo: 'https://i.pravatar.cc/150?u=3', today_status: 'absent' }
+        ]
+    }
+];
+
 export default function PremiumStaffDashboard() {
     const { branding, setBranding } = useBranding();
     const [activeTab, setActiveTab] = useState('inicio');
@@ -57,13 +93,11 @@ export default function PremiumStaffDashboard() {
     const [markingId, setMarkingId] = useState<string | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [uploading, setUploading] = useState(false);
+    const [isDemo, setIsDemo] = useState(false);
 
     const [prices, setPrices] = useState({
-        cat1_name: 'Infantil',
-        cat1_price: 25000,
-        cat2_name: 'Adulto',
-        cat2_price: 35000,
+        kids: 25000,
+        adult: 35000,
         discountThreshold: 2,
         discountPercentage: 15
     });
@@ -134,11 +168,7 @@ export default function PremiumStaffDashboard() {
     const calculatePrice = (payer: any) => {
         let total = 0;
         payer.enrolledStudents.forEach((student: any) => {
-            if (student.category === 'category_2' || student.category === 'adults') {
-                total += prices.cat2_price;
-            } else {
-                total += prices.cat1_price;
-            }
+            total += student.category === 'adults' ? prices.adult : prices.kids;
         });
 
         if (payer.enrolledStudents.length > prices.discountThreshold) {
@@ -150,7 +180,28 @@ export default function PremiumStaffDashboard() {
 
     // --- ACTIONS ---
 
+    const handleLoadDemo = () => {
+        setIsDemo(true);
+        setPayers(demoData);
+        setUser({ name: 'Admin Demo', tenant_id: 'DEMO-123' });
+    };
+
     const handleToggleAttendance = async (studentId: string, currentStatus: string | null) => {
+        if (isDemo) {
+            setMarkingId(studentId);
+            setTimeout(() => {
+                const newPayers = payers.map(p => ({
+                    ...p,
+                    enrolledStudents: p.enrolledStudents.map((s: any) =>
+                        s.id === studentId ? { ...s, today_status: currentStatus === 'present' ? 'absent' : 'present' } : s
+                    )
+                }));
+                setPayers(newPayers);
+                setMarkingId(null);
+            }, 500);
+            return;
+        }
+
         if (!token || !user?.tenant_id) return;
         const newStatus = currentStatus === 'present' ? 'absent' : 'present';
         setMarkingId(studentId);
@@ -161,6 +212,11 @@ export default function PremiumStaffDashboard() {
     };
 
     const handleApprovePayment = async (payerId: string) => {
+        if (isDemo) {
+            setPayers(payers.map(p => p.id === payerId ? { ...p, status: 'paid' } : p));
+            return;
+        }
+
         if (!token || !user?.tenant_id) return;
         if (confirm('¿Confirmas el pago del titular?')) {
             await approvePayment(user.tenant_id, token, payerId);
@@ -179,19 +235,17 @@ export default function PremiumStaffDashboard() {
     const renderHeader = () => (
         <header className="h-16 flex items-center justify-between px-6 bg-white border-b border-slate-100 z-50 sticky top-0">
             <div className="flex items-center gap-3">
-                <div className="h-9 w-9 bg-slate-50 flex items-center justify-center rounded-xl p-1.5 border border-slate-100 shadow-sm overflow-hidden">
-                    <img src={branding?.logo || "/icon.webp"} className="h-full w-full object-contain" alt="Logo" />
+                <div className="h-9 w-9 bg-zinc-950 flex items-center justify-center rounded-xl shadow-sm overflow-hidden">
+                    <img src={branding?.logo || "/icon.webp"} className="h-2/3 w-2/3 object-contain invert" alt="Logo" />
                 </div>
                 <div className="flex flex-col">
                     <span className="text-xs font-black uppercase tracking-tight text-slate-900 leading-none">{branding?.name}</span>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">Gestión de Staff</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">{isDemo ? 'MODO DEMO' : 'Staff Dashboard'}</span>
                 </div>
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 text-slate-400 hover:text-slate-900 border border-transparent hover:border-slate-100 transition-all">
-                    <Bell size={18} />
-                </Button>
-                <Avatar className="h-10 w-10 border-2 border-slate-100 shadow-sm ring-1 ring-white">
+                {isDemo && <Badge className="bg-emerald-100 text-emerald-700 text-[8px] font-black border-none px-2 h-5">DEMO</Badge>}
+                <Avatar className="h-9 w-9 border-2 border-slate-100 shadow-sm ring-1 ring-white">
                     <AvatarImage src="/prof.webp" className="object-cover" />
                     <AvatarFallback className="text-[10px] font-black bg-slate-50">ST</AvatarFallback>
                 </Avatar>
@@ -207,59 +261,70 @@ export default function PremiumStaffDashboard() {
 
         return (
             <div className="grid grid-cols-6 gap-3 pt-6 px-6">
-                {/* BIG CARD */}
-                <Card className="col-span-4 bg-zinc-950 border-none text-white rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden flex flex-col justify-between h-[200px]">
+                {/* HERO CARD - Reference Style Gradient */}
+                <Card className="col-span-6 bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 border-none text-white rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden flex flex-col justify-between h-[220px]">
                     <div className="relative z-10">
-                        <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-500">Total Comunidad</span>
+                        <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-indigo-200">Total Participantes</span>
                         <div className="flex items-baseline gap-2 mt-1">
-                            <h2 className="text-6xl font-black tracking-tighter">{totalNum}</h2>
-                            <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest leading-none">Activos</span>
+                            <h2 className="text-7xl font-black tracking-tighter">{totalNum}</h2>
+                            <span className="text-[10px] font-medium text-indigo-300 uppercase tracking-widest leading-none">Alumnos</span>
                         </div>
                     </div>
-                    <div className="relative z-10 flex items-center gap-2">
-                        <TrendingUp size={14} className="text-emerald-400" />
-                        <span className="text-[10px] font-bold text-zinc-400">+5 esta semana</span>
+
+                    <div className="relative z-10 flex items-center justify-between bg-white/10 backdrop-blur-md rounded-[1.5rem] p-4 border border-white/20">
+                        <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 bg-emerald-400/20 rounded-xl flex items-center justify-center">
+                                <CheckCircle2 size={18} className="text-emerald-300" />
+                            </div>
+                            <div>
+                                <span className="text-[10px] font-black block text-white leading-none">{paidNum}</span>
+                                <span className="text-[8px] font-bold text-indigo-200 uppercase">Al Día</span>
+                            </div>
+                        </div>
+                        <Separator orientation="vertical" className="h-8 bg-white/20" />
+                        <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 bg-rose-400/20 rounded-xl flex items-center justify-center">
+                                <XCircle size={18} className="text-rose-300" />
+                            </div>
+                            <div>
+                                <span className="text-[10px] font-black block text-white leading-none">{debtNum}</span>
+                                <span className="text-[8px] font-bold text-indigo-200 uppercase">Pendientes</span>
+                            </div>
+                        </div>
                     </div>
-                    {/* Visual decoration */}
+
                     <div className="absolute top-[-20%] right-[-10%] opacity-10">
-                        <Users size={180} strokeWidth={3} />
+                        <Users size={220} strokeWidth={3} />
                     </div>
                 </Card>
 
-                {/* SMALL CARDS */}
-                <Card className="col-span-2 bg-emerald-50 border-none rounded-[2rem] p-6 flex flex-col items-center justify-center text-center h-[200px] shadow-sm">
-                    <div className="h-10 w-10 bg-white rounded-2xl flex items-center justify-center shadow-sm mb-3">
-                        <CheckCircle2 size={20} className="text-emerald-500" />
-                    </div>
-                    <span className="text-3xl font-black text-emerald-600 leading-none">{paidNum}</span>
-                    <span className="text-[9px] font-black text-emerald-500/60 uppercase tracking-widest mt-2">Al Día</span>
-                </Card>
-
-                <Card className="col-span-3 bg-white border-slate-100 rounded-[2rem] p-6 shadow-bento h-[120px] flex items-center gap-5">
-                    <div className="h-12 w-12 bg-rose-50 rounded-2xl flex items-center justify-center border border-rose-100 shadow-sm">
-                        <XCircle size={22} className="text-rose-500" />
+                {/* ACTIVITY TRACKER */}
+                <Card className="col-span-3 bg-white border-none rounded-[2rem] p-6 shadow-bento h-[140px] flex flex-col justify-between group active:scale-95 transition-all">
+                    <div className="h-12 w-12 bg-indigo-50 rounded-2xl flex items-center justify-center border border-indigo-100 shadow-sm group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                        <CalendarCheck size={22} />
                     </div>
                     <div>
-                        <span className="text-2xl font-black text-slate-900 block leading-tight">{debtNum}</span>
-                        <span className="text-[9px] font-black text-rose-500/60 uppercase tracking-widest">En Mora</span>
+                        <span className="text-3xl font-black text-zinc-950 block leading-tight">{attendanceNow}</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">En {getLabels.place}</span>
                     </div>
                 </Card>
 
-                <Card className="col-span-3 bg-zinc-50 border-zinc-100 rounded-[2rem] p-6 shadow-bento h-[120px] flex items-center gap-5">
-                    <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center border border-zinc-200 shadow-sm">
-                        <CalendarCheck size={22} className="text-zinc-950" />
+                <Card className="col-span-3 bg-zinc-950 border-none rounded-[2rem] p-6 shadow-bento h-[140px] flex flex-col justify-between text-white relative overflow-hidden">
+                    <div className="h-12 w-12 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                        <TrendingUp size={22} className="text-emerald-400" />
                     </div>
-                    <div>
-                        <span className="text-2xl font-black text-zinc-950 block leading-tight">{attendanceNow}</span>
-                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">En {getLabels.place}</span>
+                    <div className="z-10">
+                        <span className="text-3xl font-black block leading-tight">100%</span>
+                        <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Eficiencia</span>
                     </div>
+                    <div className="absolute -bottom-4 -right-4 bg-emerald-500/10 w-24 h-24 rounded-full blur-2xl"></div>
                 </Card>
             </div>
         );
     };
 
     const renderFooterNav = () => (
-        <nav className="h-20 bg-white border-t border-slate-100 flex items-center justify-around px-4 pb-4 sticky bottom-0 z-50">
+        <nav className="h-20 bg-white/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-around px-4 pb-4 sticky bottom-0 z-50">
             <NavItem icon={LayoutDashboard} label="Admin" active={activeTab === 'inicio'} onClick={() => setActiveTab('inicio')} />
             <NavItem icon={Users} label={getLabels.place} active={activeTab === 'alumnos'} onClick={() => setActiveTab('alumnos')} />
             <NavItem icon={CreditCard} label="Pagos" active={activeTab === 'pagos'} onClick={() => setActiveTab('pagos')} />
@@ -270,7 +335,7 @@ export default function PremiumStaffDashboard() {
     function NavItem({ icon: Icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) {
         return (
             <button onClick={onClick} className={`flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all ${active ? 'text-zinc-950 scale-110' : 'text-slate-300'}`}>
-                <div className={`p-2 rounded-2xl transition-all ${active ? 'bg-slate-50' : ''}`}>
+                <div className={`p-2.5 rounded-[1.2rem] transition-all ${active ? 'bg-zinc-100 shadow-sm' : ''}`}>
                     <Icon size={22} strokeWidth={active ? 3 : 2} />
                 </div>
                 <span className={`text-[8px] font-black uppercase tracking-widest transition-opacity ${active ? 'opacity-100' : 'opacity-40'}`}>{label}</span>
@@ -281,45 +346,45 @@ export default function PremiumStaffDashboard() {
     if (loading) return (
         <div className="h-screen flex flex-col items-center justify-center p-12 bg-white">
             <RefreshCw className="animate-spin text-zinc-950 mb-6" size={32} />
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Iniciando Núcleo</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Sincronizando</p>
         </div>
     );
 
     return (
-        <div className="flex flex-col h-screen bg-white font-sans max-w-lg mx-auto overflow-hidden selection:bg-zinc-950 selection:text-white">
+        <div className="flex flex-col h-screen bg-slate-50/50 font-sans max-w-lg mx-auto overflow-hidden">
             {renderHeader()}
 
-            <main className="flex-1 overflow-y-auto hide-scrollbar bg-slate-50/50">
+            <main className="flex-1 overflow-y-auto hide-scrollbar">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={activeTab}
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 1.02 }}
-                        transition={{ duration: 0.25, ease: "circOut" }}
+                        transition={{ duration: 0.2 }}
                     >
                         {activeTab === 'inicio' && renderBentoSummary()}
 
                         {activeTab === 'alumnos' && (
-                            <div className="p-6 space-y-6">
+                            <div className="p-6 space-y-6 pb-20">
                                 <div className="relative group">
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-zinc-950 transition-colors" size={18} />
                                     <Input
                                         placeholder={`Buscar ${getLabels.subject}...`}
-                                        className="h-14 bg-white border-2 border-slate-100 rounded-[1.2rem] shadow-sm pl-12 text-sm font-bold placeholder:text-slate-400 focus-visible:ring-zinc-950"
+                                        className="h-14 bg-white border-none rounded-[1.2rem] shadow-bento pl-12 text-sm font-bold placeholder:text-slate-400 focus-visible:ring-zinc-950"
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />
                                 </div>
-                                <div className="grid grid-cols-3 gap-3 pb-20">
+                                <div className="grid grid-cols-3 gap-3">
                                     {allStudents.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase())).map(student => (
                                         <button
                                             key={student.id}
                                             onClick={() => handleToggleAttendance(student.id, student.today_status)}
-                                            className={`flex flex-col items-center gap-3 p-4 rounded-[2rem] border-2 transition-all ${student.today_status === 'present' ? 'bg-zinc-950 border-zinc-950 shadow-xl scale-105' : 'bg-white border-slate-50 shadow-sm'}`}
+                                            className={`flex flex-col items-center gap-3 p-4 rounded-[2.5rem] transition-all border-none ${student.today_status === 'present' ? 'bg-zinc-950 text-white shadow-2xl scale-105 z-10' : 'bg-white text-slate-900 shadow-sm active:scale-95'}`}
                                         >
                                             <div className="relative">
-                                                <Avatar className={`h-16 w-16 border-2 ${student.today_status === 'present' ? 'border-zinc-700' : 'border-slate-50'}`}>
+                                                <Avatar className={`h-16 w-16 border-2 transform transition-transform ${student.today_status === 'present' ? 'border-emerald-500 scale-110' : 'border-slate-100'}`}>
                                                     <AvatarImage src={student.photo} className="object-cover" />
                                                     <AvatarFallback className="font-black text-xs">{student.name[0]}</AvatarFallback>
                                                 </Avatar>
@@ -327,10 +392,10 @@ export default function PremiumStaffDashboard() {
                                                     <div className="absolute inset-0 bg-white/80 rounded-full flex items-center justify-center animate-spin"><RefreshCw size={14} /></div>
                                                 )}
                                                 {student.today_status === 'present' && !markingId && (
-                                                    <div className="absolute -bottom-1 -right-1 bg-emerald-500 p-1 rounded-full border-2 border-zinc-950 text-white shadow-lg"><Check size={8} strokeWidth={5} /></div>
+                                                    <div className="absolute -bottom-1 -right-1 bg-emerald-500 p-1.5 rounded-full border-2 border-zinc-950 text-white shadow-xl"><Check size={8} strokeWidth={6} /></div>
                                                 )}
                                             </div>
-                                            <span className={`text-[10px] font-black uppercase text-center truncate w-full ${student.today_status === 'present' ? 'text-white' : 'text-slate-900'}`}>{student.name.split(' ')[0]}</span>
+                                            <span className="text-[10px] font-black uppercase text-center truncate w-full tracking-tighter">{student.name.split(' ')[0]}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -339,39 +404,71 @@ export default function PremiumStaffDashboard() {
 
                         {activeTab === 'pagos' && (
                             <div className="p-6 space-y-4 pb-24">
-                                <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl mb-4 overflow-x-auto scrollbar-hide">
-                                    {['all', 'review', 'pending', 'paid'].map((f) => (
-                                        <button key={f} onClick={() => setPaymentFilter(f)} className={`flex-1 py-2.5 rounded-xl text-[9px] font-black uppercase transition-all whitespace-nowrap ${paymentFilter === f ? 'bg-zinc-950 text-white shadow-lg' : 'text-slate-400'}`}>
-                                            {f === 'all' ? 'Ver Todos' : f === 'review' ? 'Validar' : f === 'pending' ? 'Deuda' : 'Al Día'}
+                                <div className="flex gap-2 bg-white/60 backdrop-blur-md p-1.5 rounded-[1.5rem] mb-4 shadow-sm border border-slate-100">
+                                    {['all', 'pending', 'paid'].map((f) => (
+                                        <button key={f} onClick={() => setPaymentFilter(f)} className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase transition-all whitespace-nowrap ${paymentFilter === f ? 'bg-zinc-950 text-white shadow-lg' : 'text-slate-400'}`}>
+                                            {f === 'all' ? 'Ver Todos' : f === 'pending' ? 'Deuda' : 'Al Día'}
                                         </button>
                                     ))}
                                 </div>
-                                {payers.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).map(payer => {
+                                {payers.filter(p => {
+                                    if (paymentFilter === 'paid') return p.status === 'paid';
+                                    if (paymentFilter === 'pending') return p.status === 'pending';
+                                    return true;
+                                }).filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).map(payer => {
                                     const { amount } = calculatePrice(payer);
+                                    const isExpanded = expandedPayerId === payer.id;
                                     return (
-                                        <Card key={payer.id} className="border-none shadow-bento rounded-[2.5rem] overflow-hidden bg-white">
-                                            <div className="p-6 flex items-center justify-between">
+                                        <Card key={payer.id} className={`border-none shadow-bento rounded-[2.5rem] overflow-hidden transition-all duration-300 ${isExpanded ? 'ring-2 ring-zinc-950/5 mb-6' : 'mb-3'}`}>
+                                            <div className="p-5 flex items-center justify-between cursor-pointer bg-white" onClick={() => setExpandedPayerId(isExpanded ? null : payer.id)}>
                                                 <div className="flex items-center gap-4">
-                                                    <Avatar className="h-14 w-14 rounded-2xl border-2 border-slate-50 shadow-sm">
-                                                        <AvatarImage src={payer.photo} className="object-cover" />
-                                                        <AvatarFallback className="font-black text-xs">{payer.name[0]}</AvatarFallback>
-                                                    </Avatar>
+                                                    <div className="relative">
+                                                        <Avatar className="h-14 w-14 rounded-2xl border-2 border-slate-50 shadow-sm">
+                                                            <AvatarImage src={payer.photo} className="object-cover" />
+                                                            <AvatarFallback className="font-black text-xs">{payer.name[0]}</AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="absolute -bottom-2 -right-2 bg-zinc-950 text-white text-[7px] font-black px-1.5 py-0.5 rounded-lg border-2 border-white uppercase lg:hidden">ADMIN</div>
+                                                    </div>
                                                     <div>
-                                                        <h4 className="text-sm font-black uppercase text-slate-900 leading-none mb-1.5">{payer.name}</h4>
+                                                        <div className="flex items-center gap-1.5 mb-1.5">
+                                                            <h4 className="text-sm font-black uppercase text-slate-900 leading-none">{payer.name}</h4>
+                                                            {isExpanded ? <ChevronUp size={14} className="text-slate-300" /> : <ChevronDown size={14} className="text-slate-300" />}
+                                                        </div>
                                                         <div className="flex items-center gap-2">
-                                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{payer.enrolledStudents.length} Inscritos</span>
+                                                            <div className="flex -space-x-1.5">
+                                                                {payer.enrolledStudents.slice(0, 3).map((s: any) => (
+                                                                    <Avatar key={s.id} className="h-4 w-4 border-2 border-white">
+                                                                        <AvatarImage src={s.photo} />
+                                                                    </Avatar>
+                                                                ))}
+                                                            </div>
+                                                            <span className="text-[9px] font-bold text-slate-400 uppercase">{payer.enrolledStudents.length} Insc.</span>
                                                             <span className="text-xs font-black text-emerald-600">{formatMoney(amount)}</span>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                {payer.status === 'review' ? (
-                                                    <Button onClick={() => handleApprovePayment(payer.id)} className="rounded-2xl bg-amber-500 hover:bg-amber-600 font-black text-[10px] uppercase px-5 shadow-lg shadow-amber-100">Validar</Button>
-                                                ) : payer.status === 'paid' ? (
+                                                {payer.status === 'paid' ? (
                                                     <CheckCircle2 size={24} className="text-emerald-500" />
                                                 ) : (
-                                                    <XCircle size={24} className="text-rose-300" />
+                                                    <Button onClick={(e) => { e.stopPropagation(); handleApprovePayment(payer.id); }} className="rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-500 font-black text-[10px] uppercase px-5 shadow-none border border-rose-100">Pagar</Button>
                                                 )}
                                             </div>
+                                            {isExpanded && (
+                                                <div className="p-5 bg-slate-50/50 border-t border-slate-100 space-y-2 animate-in slide-in-from-top-2">
+                                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-3">Participantes en esta cuenta:</p>
+                                                    {payer.enrolledStudents.map((s: any) => (
+                                                        <div key={s.id} className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm">
+                                                            <div className="flex items-center gap-3">
+                                                                <Avatar className="h-8 w-8 rounded-lg overflow-hidden">
+                                                                    <AvatarImage src={s.photo} className="object-cover" />
+                                                                </Avatar>
+                                                                <span className="text-[10px] font-black uppercase text-slate-700">{s.name}</span>
+                                                            </div>
+                                                            <Badge variant="secondary" className="text-[8px] font-black uppercase bg-slate-100">{s.category || 'Regular'}</Badge>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </Card>
                                     )
                                 })}
@@ -380,21 +477,62 @@ export default function PremiumStaffDashboard() {
 
                         {activeTab === 'ajustes' && (
                             <div className="p-6 space-y-6 pb-24">
-                                <Card className="border-none shadow-bento rounded-[3rem] p-10 flex flex-col items-center bg-white">
-                                    <div className="relative mb-6">
-                                        <Avatar className="h-28 w-28 border-4 border-slate-50 shadow-inner">
+                                <Card className="border-none shadow-bento rounded-[3rem] p-10 flex flex-col items-center bg-white relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-6">
+                                        <Badge className="bg-zinc-100 text-zinc-400 text-[8px] font-black uppercase tracking-[0.3em] px-3 py-1 border-none">Versión 4.2</Badge>
+                                    </div>
+                                    <div className="relative mb-6 group">
+                                        <Avatar className="h-28 w-28 border-4 border-slate-50 shadow-inner group-hover:scale-110 transition-transform">
                                             <AvatarImage src={branding?.logo} className="object-contain" />
                                             <AvatarFallback><ImageIcon className="text-slate-200" size={32} /></AvatarFallback>
                                         </Avatar>
-                                        <Button size="icon" onClick={() => fileInputRef.current?.click()} className="absolute bottom-0 right-0 rounded-2xl h-11 w-11 bg-zinc-950 text-white shadow-xl border-4 border-white"><Camera size={18} /></Button>
+                                        <Button size="icon" onClick={() => fileInputRef.current?.click()} className="absolute bottom-0 right-0 rounded-2xl h-11 w-11 bg-zinc-950 text-white shadow-xl border-4 border-white active:scale-90 transition-all"><Camera size={18} /></Button>
                                     </div>
-                                    <h3 className="text-xl font-black uppercase text-slate-900 tracking-tight">{branding?.name}</h3>
-                                    <Badge variant="secondary" className="mt-2 text-[9px] font-black uppercase tracking-[0.2em] px-4">{getLabels.summary}</Badge>
+                                    <h3 className="text-2xl font-black uppercase text-slate-900 tracking-tighter leading-none">{branding?.name}</h3>
+                                    <Badge variant="secondary" className="mt-3 text-[9px] font-black uppercase tracking-[0.2em] px-4 h-6 border-none">{getLabels.summary}</Badge>
                                 </Card>
 
-                                <Button variant="ghost" className="w-full py-8 text-rose-500 font-black uppercase tracking-widest hover:bg-rose-50 rounded-[2rem]" onClick={handleLogout}>
-                                    <LogOut className="mr-2" size={18} />
-                                    Cerrar Sesión Principal
+                                <div className="space-y-4">
+                                    <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-3">Entorno Profesional</h5>
+
+                                    {/* MODO DEMO BUTTON - Reference Style */}
+                                    <Card className="border-none shadow-bento rounded-[2.5rem] p-4 bg-white hover:ring-2 ring-emerald-500/20 transition-all">
+                                        <Button
+                                            onClick={handleLoadDemo}
+                                            className="w-full h-18 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-black rounded-[1.8rem] flex items-center justify-between px-6 transition-all group"
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className="h-11 w-11 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-emerald-100 group-hover:rotate-12 transition-transform">
+                                                    <Zap size={22} className="fill-emerald-500 text-emerald-500" />
+                                                </div>
+                                                <div className="text-left">
+                                                    <span className="block text-[13px] uppercase leading-none tracking-tight">Cargar Datos de Prueba</span>
+                                                    <span className="text-[9px] font-bold opacity-50 uppercase tracking-widest mt-1 block">Modo Demo Activado</span>
+                                                </div>
+                                            </div>
+                                            <ChevronRight size={20} className="opacity-40" />
+                                        </Button>
+                                    </Card>
+
+                                    <Card className="border-none shadow-bento rounded-[2.5rem] p-10 bg-white space-y-6">
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[10px] font-black uppercase text-slate-400">Precios Kids</span>
+                                                <span className="text-sm font-black text-zinc-950">{formatMoney(prices.kids)}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[10px] font-black uppercase text-slate-400">Precios Adultos</span>
+                                                <span className="text-sm font-black text-zinc-950">{formatMoney(prices.adult)}</span>
+                                            </div>
+                                        </div>
+                                        <Separator className="bg-slate-50" />
+                                        <Button className="w-full h-14 bg-zinc-950 text-white font-black rounded-2xl shadow-xl shadow-zinc-100 uppercase tracking-wider text-[10px]">Guardar Cambios</Button>
+                                    </Card>
+                                </div>
+
+                                <Button variant="ghost" className="w-full py-12 text-rose-500 font-black uppercase tracking-[0.4em] hover:bg-rose-50 rounded-[2.5rem] transition-all" onClick={handleLogout}>
+                                    <LogOut className="mr-3" size={18} />
+                                    Cerrar Sesión Staff
                                 </Button>
                             </div>
                         )}
