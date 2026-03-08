@@ -89,7 +89,7 @@ class GuardianController extends Controller
 
         $data = $tenant->data ?? [];
         $data['pricing'] = $request->except('industry');
-        
+
         $updatePayload = ['data' => $data];
         if ($request->has('industry')) {
             $updatePayload['industry'] = $request->input('industry');
@@ -133,12 +133,12 @@ class GuardianController extends Controller
         ]);
 
         if ($request->hasFile('logo')) {
-            $path = $request->file('logo')->store('logos', 'public');
+            $path = $request->file('logo')->store('logos');
             $tenant->update(['logo' => $path]);
 
             return response()->json([
                 'message' => 'Logo actualizado',
-                'logo_url' => \Storage::disk('public')->url($path)
+                'logo_url' => \Storage::url($path)
             ]);
         }
 
