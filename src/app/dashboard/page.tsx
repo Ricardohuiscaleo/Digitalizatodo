@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
     Users,
     CreditCard,
@@ -26,7 +26,8 @@ import {
     storeAttendance,
     approvePayment,
     updateLogo,
-    updatePricing
+    updatePricing,
+    getAttendanceHistory
 } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -52,6 +53,14 @@ export default function App() {
     const [searchTerm, setSearchTerm] = useState('');
     const [paymentFilter, setPaymentFilter] = useState('all');
     const [expandedPayerId, setExpandedPayerId] = useState<string | null>(null);
+    const [historyPage, setHistoryPage] = useState(0);
+    const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
+    const [now, setNow] = useState(new Date());
+
+    useEffect(() => {
+        const t = setInterval(() => setNow(new Date()), 60000);
+        return () => clearInterval(t);
+    }, []);
 
     const tabs = ['dashboard', 'attendance', 'payments', 'settings'];
 
@@ -82,7 +91,7 @@ export default function App() {
             ]);
 
             if (profile) {
-                setUser(profile);
+                setUser({ ...profile, tenant_id: profile.tenant_id || tenantId });
                 if (profile.tenant?.data?.pricing) {
                     setPrices(profile.tenant.data.pricing);
                 }
@@ -96,6 +105,11 @@ export default function App() {
                     });
                 }
                 setPayers(payersData?.payers || []);
+
+                const historyData = await getAttendanceHistory(tenantId, storedToken);
+                if (historyData?.attendance) {
+                    setAttendanceHistory(historyData.attendance);
+                }
 
                 if (payersData?.payers) {
                     const currentAttendance = new Set<string>();
@@ -256,6 +270,18 @@ export default function App() {
         const pendingStudents = totalStudents - paidStudents;
         const presentToday = attendance.size;
 
+        // Agrupar historial por fecha
+        const historyByDate: Record<string, any[]> = {};
+        attendanceHistory.forEach((r: any) => {
+            const d = r.date || r.created_at?.split('T')[0] || 'Sin fecha';
+            if (!historyByDate[d]) historyByDate[d] = [];
+            historyByDate[d].push(r);
+        });
+        const historyDates = Object.keys(historyByDate).sort((a, b) => b.localeCompare(a));
+        const PAGE_SIZE = 5;
+        const totalPages = Math.ceil(historyDates.length / PAGE_SIZE);
+        const pagedDates = historyDates.slice(historyPage * PAGE_SIZE, (historyPage + 1) * PAGE_SIZE);
+
         return (
             <div className="space-y-4 px-4">
                 <div className="bg-gradient-to-r from-indigo-600 to-violet-600 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
@@ -277,32 +303,107 @@ export default function App() {
                     <div className="absolute -right-6 -top-6 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl"></div>
                 </div>
 
-                <div className="bg-white rounded-3xl p-5 shadow-sm border border-zinc-100">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-black text-zinc-800 flex items-center gap-2 uppercase tracking-tighter">
-                            <CalendarCheck className="text-indigo-500" size={22} />
-                            Asistencia Hoy
-                        </h3>
-                        <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black">
-                            {presentToday} / {totalStudents}
-                        </span>
+                <div className="bg-white rounded-3xl p-4 shadow-sm border border-zinc-100">
+                    <div className="flex justify-between items-center mb-3">
+                        <div>
+                            <h3 className="text-sm font-black text-zinc-800 flex items-center gap-1.5 uppercase tracking-tighter">
+                                <CalendarCheck className="text-indigo-500" size={16} />
+                                Asistencia Hoy
+                            </h3>
+                            <p className="text-[10px] text-zinc-400 font-bold mt-0.5 capitalize">
+                                {now.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'short' })} · {now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black">
+                                {presentToday} / {totalStudents}
+                            </span>
+                            <button onClick={() => changeTab('attendance')} className="bg-zinc-950 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all">
+                                Tomar
+                            </button>
+                        </div>
                     </div>
 
                     {presentToday > 0 ? (
-                        <div className="flex -space-x-3 overflow-x-auto pb-2">
+                        <div className="flex -space-x-2 overflow-x-auto pb-1">
                             {allStudents.filter(s => attendance.has(s.id)).map(s => (
                                 <img
                                     key={s.id}
-                                    className="inline-block h-14 w-14 rounded-2xl border-4 border-white shadow-sm object-cover"
+                                    className="inline-block h-10 w-10 rounded-xl border-2 border-white shadow-sm object-cover shrink-0"
                                     src={s.photo}
                                     alt={s.name}
                                 />
                             ))}
                         </div>
                     ) : (
-                        <div className="text-center py-8 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">
-                            <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest">Sin registros de asistencia</p>
-                            <button onClick={() => changeTab('attendance')} className="mt-3 text-indigo-600 font-black text-xs uppercase underline">Tomar asistencia</button>
+                        <div className="flex items-center gap-3 py-3 px-4 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">
+                            <CalendarCheck size={16} className="text-zinc-300 shrink-0" />
+                            <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest">Sin registros aún</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* HISTORIAL DE ASISTENCIA */}
+                <div className="bg-white rounded-3xl p-4 shadow-sm border border-zinc-100">
+                    <div className="flex justify-between items-center mb-3">
+                        <h3 className="text-sm font-black text-zinc-800 flex items-center gap-1.5 uppercase tracking-tighter">
+                            <CalendarCheck className="text-zinc-400" size={16} />
+                            Historial
+                        </h3>
+                        {totalPages > 1 && (
+                            <div className="flex items-center gap-2">
+                                <button disabled={historyPage === 0} onClick={() => setHistoryPage(p => p - 1)} className="w-7 h-7 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center disabled:opacity-30 active:scale-95 transition-all">
+                                    <ChevronUp size={14} className="text-zinc-500" />
+                                </button>
+                                <span className="text-[10px] font-black text-zinc-400">{historyPage + 1}/{totalPages}</span>
+                                <button disabled={historyPage >= totalPages - 1} onClick={() => setHistoryPage(p => p + 1)} className="w-7 h-7 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center disabled:opacity-30 active:scale-95 transition-all">
+                                    <ChevronDown size={14} className="text-zinc-500" />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    {pagedDates.length === 0 ? (
+                        <div className="flex items-center gap-3 py-3 px-4 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">
+                            <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest">Sin historial disponible</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {pagedDates.map(date => {
+                                const records: any[] = historyByDate[date];
+                                const presentCount = records.filter(r => r.status === 'present').length;
+                                const sampleTime = records[0]?.created_at;
+                                const timeStr = sampleTime ? new Date(sampleTime).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : '';
+                                const dateObj = new Date(date + 'T12:00:00');
+                                const dateStr = dateObj.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' });
+                                const students = records.filter(r => r.status === 'present' && r.student);
+
+                                return (
+                                    <div key={date} className="bg-zinc-50 rounded-2xl p-3 border border-zinc-100">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <div>
+                                                <p className="text-[11px] font-black text-zinc-800 capitalize">{dateStr}</p>
+                                                {timeStr && <p className="text-[9px] text-zinc-400 font-bold">{timeStr}</p>}
+                                            </div>
+                                            <span className="bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full text-[10px] font-black">
+                                                {presentCount} presentes
+                                            </span>
+                                        </div>
+                                        {students.length > 0 && (
+                                            <div className="flex -space-x-2 overflow-x-auto">
+                                                {students.slice(0, 8).map((r: any) => (
+                                                    <img key={r.id} src={r.student?.photo} className="h-8 w-8 rounded-xl border-2 border-white object-cover shrink-0 shadow-sm" alt={r.student?.name} />
+                                                ))}
+                                                {students.length > 8 && (
+                                                    <div className="h-8 w-8 rounded-xl border-2 border-white bg-zinc-200 flex items-center justify-center shrink-0">
+                                                        <span className="text-[8px] font-black text-zinc-500">+{students.length - 8}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
                 </div>
@@ -464,20 +565,22 @@ export default function App() {
     const renderSettings = () => {
         return (
             <div className="space-y-6 px-4 pb-24">
-                {/* BRANDING CARD */}
-                <div className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-zinc-100 text-center relative group">
-                    <div className="relative inline-block mb-6">
-                        <img src={branding?.logo || "/icon.webp"} className="w-32 h-32 rounded-[2rem] object-contain bg-zinc-950 p-6 mx-auto shadow-2xl transition-transform group-hover:scale-105 duration-500" alt="Logo" />
+                {/* BRANDING CARD — tira compacta */}
+                <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-zinc-100 flex items-center gap-3">
+                    <div className="relative shrink-0">
+                        <img src={branding?.logo || "/icon.webp"} className="w-12 h-12 rounded-xl object-contain bg-zinc-950 p-1.5 shadow-md" alt="Logo" />
                         <button
                             onClick={() => fileInputRef.current?.click()}
-                            className="absolute -bottom-3 -right-3 bg-white text-zinc-950 p-3 rounded-2xl border-4 border-zinc-50 shadow-xl hover:bg-zinc-950 hover:text-white transition-all transform active:scale-90"
+                            className="absolute -bottom-1.5 -right-1.5 bg-white text-zinc-950 p-1 rounded-lg border-2 border-zinc-50 shadow-md hover:bg-zinc-950 hover:text-white transition-all active:scale-90"
                         >
-                            <Camera size={20} />
+                            <Camera size={12} />
                         </button>
                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleLogoUpload} />
                     </div>
-                    <h3 className="text-2xl font-black uppercase tracking-tighter text-zinc-950 leading-none">{branding?.name || 'Academy'}</h3>
-                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mt-3">Plataforma de Gestión v4.7</p>
+                    <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-black uppercase tracking-tighter text-zinc-950 truncate leading-none">{branding?.name || 'Academy'}</h3>
+                        <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">Plataforma de Gestión v4.7</p>
+                    </div>
                 </div>
 
                 {/* PRICING VALUES */}
@@ -524,23 +627,24 @@ export default function App() {
                         <div className="space-y-1">
                             <label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest ml-4 leading-none">Aplicar si cuenta tiene más de X inscritos:</label>
                             <input
-                                type="number"
+                                type="text"
+                                inputMode="numeric"
                                 className="w-full h-14 bg-zinc-50 border border-zinc-100 rounded-2xl px-6 font-black text-zinc-950 focus:ring-2 ring-zinc-950 transition-all outline-none"
-                                value={prices.discountThreshold}
-                                onChange={e => setPrices({ ...prices, discountThreshold: Number(e.target.value) })}
+                                value={prices.discountThreshold || ''}
+                                onChange={e => { const v = e.target.value.replace(/\D/g,''); setPrices(p => ({ ...p, discountThreshold: v === '' ? 0 : parseInt(v) })); }}
+                                placeholder="0"
                             />
                         </div>
                         <div className="space-y-1">
-                            <label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest ml-4 leading-none">Porcentaje a descontar (%) del total:</label>
-                            <div className="relative">
-                                <input
-                                    type="number"
-                                    className="w-full h-14 bg-zinc-50 border border-zinc-100 rounded-2xl px-6 font-black text-zinc-950 focus:ring-2 ring-zinc-950 transition-all outline-none"
-                                    value={prices.discountPercentage}
-                                    onChange={e => setPrices({ ...prices, discountPercentage: Number(e.target.value) })}
-                                />
-                                <span className="absolute right-6 top-1/2 -translate-y-1/2 text-zinc-300 font-black">%</span>
-                            </div>
+                            <label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest ml-4 leading-none">Porcentaje a descontar del total:</label>
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                className="w-full h-14 bg-zinc-50 border border-zinc-100 rounded-2xl px-6 font-black text-zinc-950 focus:ring-2 ring-zinc-950 transition-all outline-none"
+                                value={prices.discountPercentage ? `${prices.discountPercentage}%` : ''}
+                                onChange={e => { const v = e.target.value.replace(/\D/g,''); setPrices(p => ({ ...p, discountPercentage: v === '' ? 0 : Math.min(100, parseInt(v)) })); }}
+                                placeholder="0%"
+                            />
                         </div>
                     </div>
                 </div>
