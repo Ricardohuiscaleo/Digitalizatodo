@@ -353,6 +353,29 @@ export async function generateRegistrationPage(tenantId: string, token: string) 
     }
 }
 
+export async function getRegistrationPageCode(tenantId: string, token: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/settings/registration-page`, {
+            headers: { 'Authorization': `Bearer ${token}`, 'X-Tenant-Id': tenantId },
+        });
+        return await safeJson(response);
+    } catch {
+        return { code: null };
+    }
+}
+
+export async function deleteRegistrationPage(tenantId: string, token: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/settings/registration-page`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}`, 'X-Tenant-Id': tenantId },
+        });
+        return await safeJson(response);
+    } catch {
+        return { message: 'Error de conexión' };
+    }
+}
+
 export async function getRegistrationPage(code: string) {
     try {
         const response = await fetch(`${API_URL}/r/${code}`);

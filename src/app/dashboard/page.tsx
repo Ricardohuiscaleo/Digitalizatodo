@@ -27,6 +27,8 @@ import {
     updateLogo,
     updatePricing,
     generateRegistrationPage,
+    getRegistrationPageCode,
+    deleteRegistrationPage,
     getAttendanceHistory,
     resumeSession
 } from "@/lib/api";
@@ -95,6 +97,9 @@ export default function App() {
         const newIndex = tabs.indexOf(newTab);
         setTabDirection(newIndex > currentIndex ? 1 : -1);
         setActiveTab(newTab);
+        if (newTab === 'settings' && !regPageCode) {
+            getRegistrationPageCode(user?.tenant_id, token).then(r => { if (r?.code) setRegPageCode(r.code); });
+        }
     };
 
     // --- PERSISTENCE & DATA FETCHING ---
@@ -668,14 +673,27 @@ export default function App() {
                 <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-zinc-100">
                     <p className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-2">Link de Registro Titulares</p>
                     {regPageCode ? (
-                        <div className="flex items-center gap-2">
-                            <p className="flex-1 text-[9px] font-bold text-zinc-500 truncate bg-zinc-50 rounded-xl px-3 py-2 border border-zinc-100">
-                                {`https://app.digitalizatodo.cl/r/${regPageCode}`}
-                            </p>
-                            <button onClick={() => { navigator.clipboard.writeText(`https://app.digitalizatodo.cl/r/${regPageCode}`); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-                                className={`shrink-0 text-[8px] font-black uppercase px-3 py-2 rounded-xl border transition-all active:scale-95 ${copied ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-zinc-50 text-zinc-600 border-zinc-200'}`}>
-                                {copied ? '✓ Copiado' : 'Copiar'}
-                            </button>
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                                <p className="flex-1 text-[9px] font-bold text-zinc-500 truncate bg-zinc-50 rounded-xl px-3 py-2 border border-zinc-100">
+                                    {`https://app.digitalizatodo.cl/r/${regPageCode}`}
+                                </p>
+                                <button onClick={() => { navigator.clipboard.writeText(`https://app.digitalizatodo.cl/r/${regPageCode}`); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+                                    className={`shrink-0 text-[8px] font-black uppercase px-3 py-2 rounded-xl border transition-all active:scale-95 ${copied ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-zinc-50 text-zinc-600 border-zinc-200'}`}>
+                                    {copied ? '✓ Copiado' : 'Copiar'}
+                                </button>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={async () => { setGeneratingPage(true); await deleteRegistrationPage(user.tenant_id, token); const r = await generateRegistrationPage(user.tenant_id, token); setGeneratingPage(false); if (r?.code) setRegPageCode(r.code); }}
+                                    disabled={generatingPage}
+                                    className="flex-1 h-8 bg-zinc-100 text-zinc-600 text-[8px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-1 active:scale-95 transition-all disabled:opacity-40">
+                                    {generatingPage ? <Loader2 className="animate-spin" size={10} /> : '↺ Nuevo link'}
+                                </button>
+                                <button onClick={async () => { await deleteRegistrationPage(user.tenant_id, token); setRegPageCode(null); }}
+                                    className="flex-1 h-8 bg-red-50 text-red-400 text-[8px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-1 active:scale-95 transition-all border border-red-100">
+                                    Eliminar link
+                                </button>
+                            </div>
                         </div>
                     ) : (
                         <button onClick={async () => { setGeneratingPage(true); const r = await generateRegistrationPage(user.tenant_id, token); setGeneratingPage(false); if (r?.code) setRegPageCode(r.code); }}
