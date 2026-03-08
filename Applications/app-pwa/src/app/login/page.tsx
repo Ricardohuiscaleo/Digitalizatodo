@@ -2,11 +2,15 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { LogIn, Mail, Lock, Loader2, AlertCircle, ChevronRight } from "lucide-react";
+import { LogIn, Mail, Lock, Loader2, AlertCircle, ChevronRight, ArrowRight } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useBranding } from "@/context/BrandingContext";
 import { identifyTenant, login } from "@/lib/api";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -75,105 +79,117 @@ export default function LoginPage() {
         }
     };
 
-    const currentBranding = branding || { name: "Academy", logo: null, primaryColor: "#a855f7" };
+    const currentBranding = branding || { name: "Digitaliza Todo", logo: null, primaryColor: "#09090b" };
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6">
-            <div className="w-full max-w-[400px] relative">
-                <div className="bg-[#111] border border-white/5 rounded-2xl p-8 shadow-xl relative">
-                    {/* Header */}
-                    <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-auto h-12 mb-4 overflow-hidden">
-                            {currentBranding.logo ? (
-                                <img src={currentBranding.logo} alt={currentBranding.name} className="h-full object-contain" />
-                            ) : (
-                                <LogIn className="w-8 h-8" style={{ color: currentBranding.primaryColor }} />
-                            )}
-                        </div>
-                        <h1 className="text-2xl font-bold text-white tracking-tight mb-1">
+        <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center p-6 font-sans">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full max-w-[420px] space-y-8"
+            >
+                {/* Branding / Header */}
+                <div className="flex flex-col items-center text-center space-y-4">
+                    <div className="h-20 w-20 bg-zinc-950 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-zinc-200 p-4 transition-transform hover:scale-105">
+                        {currentBranding.logo ? (
+                            <img src={currentBranding.logo} alt={currentBranding.name} className="h-full object-contain invert" />
+                        ) : (
+                            <LogIn className="w-10 h-10 text-white" />
+                        )}
+                    </div>
+                    <div className="space-y-1">
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase leading-none">
                             {currentBranding.name}
                         </h1>
-                        <p className="text-gray-500 text-sm">Identifícate para continuar</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Acceso Seguro</p>
                     </div>
+                </div>
 
-                    {/* Error Message */}
+                <Card className="border-none shadow-bento rounded-[2.5rem] p-8 lg:p-10 bg-white relative overflow-hidden">
+                    {/* Background decoration */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-16 -mt-16 opacity-50"></div>
+
                     {error && (
-                        <div className="mb-6 bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-3 text-red-500 text-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="mb-8 bg-rose-50 border border-rose-100 rounded-2xl p-4 flex items-center gap-3 text-rose-500 text-[10px] font-black uppercase tracking-wider"
+                        >
                             <AlertCircle className="w-5 h-5 flex-shrink-0" />
                             <p>{error}</p>
-                        </div>
+                        </motion.div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">
-                                Email
+                    <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+                        <div className="space-y-2">
+                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3">
+                                Correo del Staff
                             </label>
                             <div className="relative group">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-                                <input
+                                <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-zinc-950 transition-colors" />
+                                <Input
                                     type="email"
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     onBlur={handleEmailBlur}
-                                    placeholder="correo@ejemplo.com"
+                                    placeholder="hola@academia.com"
                                     className={cn(
-                                        "w-full bg-white/[0.03] border border-white/[0.05] rounded-xl py-3.5 pl-11 pr-4 text-white placeholder:text-gray-700 focus:outline-none focus:border-white/20 transition-all",
-                                        isIdentifying && "animate-pulse border-indigo-500/50"
+                                        "h-14 bg-slate-50 border-none rounded-[1.2rem] pl-12 font-bold text-sm placeholder:text-slate-300 focus-visible:ring-zinc-950 transition-all",
+                                        isIdentifying && "animate-pulse"
                                     )}
                                 />
                             </div>
                         </div>
 
-                        <div className="space-y-1.5">
-                            <div className="flex items-center justify-between ml-1 text-[10px] font-bold uppercase tracking-widest">
-                                <label className="text-gray-500">
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between ml-3">
+                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
                                     Contraseña
                                 </label>
-                                {branding && branding.id !== 'digitalizatodo' && (
-                                    <span className="text-gray-700 font-medium normal-case flex items-center gap-1">
-                                        para <span className="text-white italic">"{branding.name}"</span>
-                                    </span>
-                                )}
                             </div>
                             <div className="relative group">
-                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-                                <input
+                                <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-zinc-950 transition-colors" />
+                                <Input
                                     type="password"
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
-                                    className="w-full bg-white/[0.03] border border-white/[0.05] rounded-xl py-3.5 pl-11 pr-4 text-white placeholder:text-gray-700 focus:outline-none focus:border-white/20 transition-all"
+                                    className="h-14 bg-slate-50 border-none rounded-[1.2rem] pl-12 font-bold text-sm placeholder:text-slate-300 focus-visible:ring-zinc-950 transition-all"
                                 />
                             </div>
                         </div>
 
-                        <button
+                        <Button
                             type="submit"
                             disabled={isLoggingIn || isIdentifying}
-                            className="w-full text-black font-bold h-14 rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 mt-6"
-                            style={{ backgroundColor: currentBranding.primaryColor }}
+                            className="w-full h-16 bg-zinc-950 hover:bg-zinc-800 text-white font-black rounded-[1.5rem] flex items-center justify-center gap-3 shadow-2xl shadow-zinc-200 transition-all active:scale-95 disabled:opacity-50 mt-10"
                         >
                             {isLoggingIn ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />
                             ) : (
                                 <>
-                                    Entrar
-                                    <ChevronRight className="w-4 h-4" />
+                                    <span className="uppercase tracking-[0.2em] text-[11px]">Iniciar Sesión</span>
+                                    <ArrowRight className="w-4 h-4" />
                                 </>
                             )}
-                        </button>
+                        </Button>
                     </form>
-                </div>
+                </Card>
 
-                <p className="mt-6 text-center text-gray-600 text-xs">
-                    <a href="/register" className="hover:text-white transition-all underline underline-offset-4 decoration-gray-800 hover:decoration-white">
-                        ¿No tienes cuenta? Regístrate
+                <div className="text-center space-y-4">
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                        ¿No tienes una cuenta?
+                    </p>
+                    <a
+                        href="/register"
+                        className="inline-block bg-white border border-slate-100 px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 hover:border-slate-200 transition-all shadow-sm"
+                    >
+                        Registrar mi Academia
                     </a>
-                </p>
-            </div >
-        </div >
+                </div>
+            </motion.div>
+        </div>
     );
 }

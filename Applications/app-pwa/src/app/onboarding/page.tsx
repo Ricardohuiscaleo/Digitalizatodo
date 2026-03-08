@@ -1,8 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { Building2, User, Mail, Lock, Globe, Loader2, AlertCircle, CheckCircle2, ChevronRight, Briefcase } from "lucide-react";
+import { Building2, User, Mail, Lock, Globe, Loader2, AlertCircle, CheckCircle2, ChevronRight, Briefcase, Zap, Check, ArrowRight } from "lucide-react";
 import { registerTenant } from "@/lib/api";
+import { motion, AnimatePresence } from "framer-motion";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 export default function OnboardingPage() {
     const [isLoading, setIsLoading] = useState(false);
@@ -21,7 +26,6 @@ export default function OnboardingPage() {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         if (name === 'tenant_slug') {
-            // Auto-format slug: lowercase, alphanumeric and hyphens only
             const formatted = value.toLowerCase().replace(/[^a-z0-9-]/g, '');
             setFormData(prev => ({ ...prev, [name]: formatted }));
         } else {
@@ -61,202 +65,196 @@ export default function OnboardingPage() {
 
     if (success) {
         return (
-            <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6">
-                <div className="w-full max-w-[480px] text-center space-y-8">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500/10 text-green-500 mb-4 shadow-2xl shadow-green-500/20">
-                        <CheckCircle2 className="w-10 h-10" />
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans">
+                <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="w-full max-w-[480px] text-center space-y-10"
+                >
+                    <div className="inline-flex items-center justify-center w-24 h-24 rounded-[3rem] bg-zinc-950 text-emerald-400 mb-4 shadow-2xl shadow-zinc-200 p-6">
+                        <CheckCircle2 className="w-full h-full" strokeWidth={3} />
                     </div>
-                    <div className="space-y-2">
-                        <h1 className="text-4xl font-black text-white tracking-tight">¡Misión Cumplida!</h1>
-                        <p className="text-gray-400 text-lg">Tu empresa <span className="text-white font-bold">{formData.tenant_name}</span> ha sido creada.</p>
+                    <div className="space-y-3">
+                        <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">¡Configurado!</h1>
+                        <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Tu academia <span className="text-zinc-950">{formData.tenant_name}</span> está lista.</p>
                     </div>
-                    <div className="bg-[#111] border border-white/5 rounded-3xl p-8 text-left space-y-6">
-                        <p className="text-gray-400 text-sm leading-relaxed">
-                            Te hemos enviado un correo con los pasos a seguir. Ya puedes acceder a tu panel de administración privado:
-                        </p>
-                        <div className="p-4 bg-white/5 rounded-xl border border-white/10 font-mono text-indigo-400 break-all text-center select-all cursor-pointer hover:bg-white/10 transition-colors">
-                            https://app.digitalizatodo.cl/{formData.tenant_slug}
+                    <Card className="bg-white border-none rounded-[3rem] p-10 shadow-bento text-left space-y-8 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-6 opacity-10">
+                            <Zap size={100} className="fill-zinc-950 text-zinc-950" />
                         </div>
-                        <button
-                            onClick={() => window.location.href = `https://app.digitalizatodo.cl/${formData.tenant_slug}`}
-                            className="w-full h-14 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-indigo-600/20 active:scale-95"
+                        <p className="text-slate-500 text-xs font-bold leading-relaxed relative z-10">
+                            Te hemos enviado un correo de bienvenida. Tu panel de gestión profesional ya está activo en:
+                        </p>
+                        <div className="p-5 bg-slate-50 rounded-[1.5rem] border-none font-black text-zinc-950 break-all text-center select-all cursor-pointer hover:bg-slate-100 transition-all text-sm relative z-10">
+                            app.digitalizatodo.cl/{formData.tenant_slug}
+                        </div>
+                        <Button
+                            onClick={() => window.location.href = `/${formData.tenant_slug}`}
+                            className="w-full h-16 bg-zinc-950 hover:bg-zinc-800 text-white font-black rounded-[1.8rem] flex items-center justify-center gap-3 transition-all shadow-xl shadow-zinc-200 active:scale-95 relative z-10"
                         >
-                            Ir a mi App de Gestión <ChevronRight className="w-5 h-5" />
-                        </button>
-                    </div>
-                </div>
+                            <span className="uppercase tracking-[0.2em] text-[11px]">Entrar a mi Academia</span>
+                            <ArrowRight className="w-5 h-5" />
+                        </Button>
+                    </Card>
+                </motion.div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6 lg:p-12">
-            <div className="w-full max-w-[1100px] grid lg:grid-cols-[0.8fr_1.2fr] gap-12 lg:gap-20 items-center">
-                {/* Visual Side */}
-                <div className="hidden lg:flex flex-col space-y-6">
-                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/20 text-indigo-400 font-bold text-2xl">D</div>
-                    <h2 className="text-5xl font-black text-white leading-[1.1] tracking-tight">
-                        Transforma tu negocio en <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Software Inteligente</span>
-                    </h2>
-                    <ul className="space-y-4 pt-4">
+        <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center p-6 lg:p-12 font-sans">
+            <div className="w-full max-w-[1240px] grid lg:grid-cols-[0.7fr_1.3fr] gap-16 lg:gap-24 items-center">
+
+                {/* Visual Side - Premium Bento Style */}
+                <div className="hidden lg:flex flex-col space-y-12">
+                    <div className="flex flex-col space-y-4">
+                        <div className="inline-flex h-16 w-16 items-center justify-center rounded-[1.8rem] bg-zinc-950 text-white font-black text-3xl shadow-2xl shadow-zinc-200">D</div>
+                        <h2 className="text-6xl font-black text-slate-900 leading-[1] tracking-tighter uppercase">
+                            Gestiona tu <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">Academia Pro</span>
+                        </h2>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
                         {[
-                            "PWA personalizada para tus clientes",
-                            "Control total de asistencias y pagos",
-                            "Notificaciones automáticas vía Telegram",
-                            "Prueba gratuita de 7 días sin tarjetas"
+                            { title: "PWA NATIVA", desc: "Instalable en iOS/Android" },
+                            { title: "PAGOS", desc: "Cuentas al día siempre" },
+                            { title: "ASISTENCIA", desc: "Control en tiempo real" },
+                            { title: "7 DÍAS GRATIS", desc: "Sin tarjetas de crédito" }
                         ].map((item, i) => (
-                            <li key={i} className="flex items-center gap-3 text-gray-400">
-                                <CheckCircle2 className="w-5 h-5 text-indigo-500" />
-                                <span>{item}</span>
-                            </li>
+                            <Card key={i} className="bg-white/60 backdrop-blur-md border-none p-6 rounded-[2rem] shadow-sm">
+                                <CheckCircle2 className="w-6 h-6 text-emerald-500 mb-3" />
+                                <h3 className="text-[10px] font-black uppercase text-slate-900 tracking-widest">{item.title}</h3>
+                                <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">{item.desc}</p>
+                            </Card>
                         ))}
-                    </ul>
+                    </div>
                 </div>
 
                 {/* Form Side */}
-                <div className="w-full">
-                    <div className="bg-[#111] border border-white/5 rounded-[2rem] p-8 lg:p-10 shadow-2xl relative overflow-hidden">
-                        <div className="mb-8">
-                            <h1 className="text-3xl font-black text-white mb-2">Empieza Ahora</h1>
-                            <p className="text-gray-500 text-sm">Prueba tu software de gestión en menos de 1 minuto.</p>
+                <div className="w-full flex justify-center">
+                    <Card className="w-full max-w-[580px] bg-white border-none rounded-[3rem] p-10 lg:p-14 shadow-bento relative overflow-hidden">
+                        <div className="mb-10 text-center lg:text-left">
+                            <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase leading-none mb-3">Únete hoy</h1>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Crea tu cuenta profesional</p>
                         </div>
 
                         {error && (
-                            <div className="mb-6 bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-3 text-red-500 text-sm">
+                            <div className="mb-8 bg-rose-50 border border-rose-100 rounded-2xl p-4 flex items-center gap-3 text-rose-500 text-[10px] font-black uppercase tracking-wider">
                                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                                 <p>{error}</p>
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit} className="space-y-5">
+                        <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Empresa</label>
-                                    <div className="relative">
-                                        <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-                                        <input
-                                            name="tenant_name"
-                                            required
-                                            value={formData.tenant_name}
-                                            onChange={handleChange}
-                                            placeholder="Nombre"
-                                            className="w-full h-12 bg-white/[0.03] border border-white/[0.05] rounded-xl py-2 pl-11 pr-4 text-white placeholder:text-gray-700 focus:outline-none focus:border-indigo-500/50 transition-all text-sm"
-                                        />
-                                    </div>
+                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3">Institución</label>
+                                    <Input
+                                        name="tenant_name"
+                                        required
+                                        value={formData.tenant_name}
+                                        onChange={handleChange}
+                                        placeholder="Nombre"
+                                        className="h-14 bg-slate-50 border-none rounded-2xl pl-5 font-bold text-sm focus-visible:ring-zinc-950 transition-all"
+                                    />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Subdominio</label>
-                                    <div className="relative">
-                                        <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-                                        <input
-                                            name="tenant_slug"
-                                            required
-                                            value={formData.tenant_slug}
-                                            onChange={handleChange}
-                                            placeholder="mi-negocio"
-                                            className="w-full h-12 bg-white/[0.03] border border-white/[0.05] rounded-xl py-2 pl-11 pr-4 text-white placeholder:text-gray-700 focus:outline-none focus:border-indigo-500/50 transition-all text-sm font-mono"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Nicho de Negocio</label>
-                                <div className="relative">
-                                    <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-                                    <select
-                                        name="industry"
+                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3">Link / Slug</label>
+                                    <Input
+                                        name="tenant_slug"
                                         required
-                                        value={formData.industry}
-                                        onChange={(e: any) => handleChange(e)}
-                                        className="w-full h-12 bg-white/[0.03] border border-white/[0.05] rounded-xl py-2 pl-11 pr-4 text-white appearance-none focus:outline-none focus:border-indigo-500/50 transition-all text-sm"
-                                    >
-                                        <option value="" disabled className="bg-[#111]">Seleccionar Nicho</option>
-                                        <option value="academy" className="bg-[#111]">Dojo / Academia de Artes Marciales</option>
-                                        <option value="clinic" className="bg-[#111]">Clínica / Estética / Salud</option>
-                                        <option value="law" className="bg-[#111]">Estudio de Abogados / Consultoría</option>
-                                        <option value="gym" className="bg-[#111]">Gimnasio / Centro Deportivo</option>
-                                        <option value="other" className="bg-[#111]">Otro tipo de negocio</option>
-                                    </select>
-                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-600">
-                                        <ChevronRight className="w-4 h-4 rotate-90" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Tu Nombre Completo</label>
-                                <div className="relative">
-                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-                                    <input
-                                        name="user_name"
-                                        required
-                                        value={formData.user_name}
+                                        value={formData.tenant_slug}
                                         onChange={handleChange}
-                                        placeholder="Juan Pérez"
-                                        className="w-full h-12 bg-white/[0.03] border border-white/[0.05] rounded-xl py-2 pl-11 pr-4 text-white placeholder:text-gray-700 focus:outline-none focus:border-indigo-500/50 transition-all text-sm"
+                                        placeholder="mi-academia"
+                                        className="h-14 bg-slate-50 border-none rounded-2xl pl-5 font-black text-sm focus-visible:ring-zinc-950 transition-all lowercase"
                                     />
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Email Profesional</label>
-                                <div className="relative">
-                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-                                    <input
-                                        name="email"
-                                        type="email"
-                                        required
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        placeholder="juan@ejemplo.com"
-                                        className="w-full h-12 bg-white/[0.03] border border-white/[0.05] rounded-xl py-2 pl-11 pr-4 text-white placeholder:text-gray-700 focus:outline-none focus:border-indigo-500/50 transition-all text-sm"
-                                    />
-                                </div>
+                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3">Especialización</label>
+                                <select
+                                    name="industry"
+                                    required
+                                    value={formData.industry}
+                                    onChange={(e: any) => handleChange(e)}
+                                    className="w-full h-14 bg-slate-50 border-none rounded-2xl px-5 font-black text-xs uppercase text-slate-900 focus:ring-2 ring-zinc-950 transition-all outline-none appearance-none"
+                                >
+                                    <option value="" disabled>Seleccionar Rubro</option>
+                                    <option value="academy">Artes Marciales / Deportes</option>
+                                    <option value="clinic">Clínica / Salud / Estética</option>
+                                    <option value="music_school">Escuela de Música / Arte</option>
+                                    <option value="other">Otro Negocio</option>
+                                </select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3">Nombre del Director</label>
+                                <Input
+                                    name="user_name"
+                                    required
+                                    value={formData.user_name}
+                                    onChange={handleChange}
+                                    placeholder="Nombre Completo"
+                                    className="h-14 bg-slate-50 border-none rounded-2xl pl-5 font-bold text-sm focus-visible:ring-zinc-950 transition-all"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3">Email de Acceso</label>
+                                <Input
+                                    name="email"
+                                    type="email"
+                                    required
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    placeholder="hola@academia.com"
+                                    className="h-14 bg-slate-50 border-none rounded-2xl pl-5 font-bold text-sm focus-visible:ring-zinc-950 transition-all"
+                                />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Contraseña</label>
-                                    <div className="relative">
-                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-                                        <input
-                                            name="password"
-                                            type="password"
-                                            required
-                                            value={formData.password}
-                                            onChange={handleChange}
-                                            placeholder="••••••••"
-                                            className="w-full h-12 bg-white/[0.03] border border-white/[0.05] rounded-xl py-2 pl-11 pr-4 text-white placeholder:text-gray-700 focus:outline-none focus:border-indigo-500/50 transition-all text-sm"
-                                        />
-                                    </div>
+                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3">Contraseña</label>
+                                    <Input
+                                        name="password"
+                                        type="password"
+                                        required
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                        placeholder="••••••••"
+                                        className="h-14 bg-slate-50 border-none rounded-2xl pl-5 font-bold text-sm focus-visible:ring-zinc-950 transition-all"
+                                    />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Confirmar</label>
-                                    <div className="relative">
-                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-                                        <input
-                                            name="password_confirmation"
-                                            type="password"
-                                            required
-                                            value={formData.password_confirmation}
-                                            onChange={handleChange}
-                                            placeholder="••••••••"
-                                            className="w-full h-12 bg-white/[0.03] border border-white/[0.05] rounded-xl py-2 pl-11 pr-4 text-white placeholder:text-gray-700 focus:outline-none focus:border-indigo-500/50 transition-all text-sm"
-                                        />
-                                    </div>
+                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-3">Repetir</label>
+                                    <Input
+                                        name="password_confirmation"
+                                        type="password"
+                                        required
+                                        value={formData.password_confirmation}
+                                        onChange={handleChange}
+                                        placeholder="••••••••"
+                                        className="h-14 bg-slate-50 border-none rounded-2xl pl-5 font-bold text-sm focus-visible:ring-zinc-950 transition-all"
+                                    />
                                 </div>
                             </div>
 
-                            <button
+                            <Button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full h-14 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all mt-6 shadow-xl shadow-indigo-600/10 active:scale-95 disabled:opacity-50"
+                                className="w-full h-18 bg-zinc-950 hover:bg-zinc-800 text-white font-black rounded-2xl flex items-center justify-center gap-3 transition-all mt-8 shadow-2xl shadow-zinc-200 active:scale-95 disabled:opacity-50"
                             >
-                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Crear mi Cuenta Gratis"}
-                            </button>
+                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                                    <>
+                                        <span className="uppercase tracking-[0.2em] text-[11px]">Crear Academia Pro</span>
+                                        <ArrowRight size={20} />
+                                    </>
+                                )}
+                            </Button>
                         </form>
-                    </div>
+                    </Card>
                 </div>
             </div>
         </div>
