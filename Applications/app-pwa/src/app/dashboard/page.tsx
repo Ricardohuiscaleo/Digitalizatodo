@@ -404,7 +404,7 @@ export default function PremiumStaffDashboard() {
 
                         {activeTab === 'pagos' && (
                             <div className="p-6 space-y-4 pb-24">
-                                <div className="flex gap-2 bg-white/60 backdrop-blur-md p-1.5 rounded-[1.5rem] mb-4 shadow-sm border border-slate-100">
+                                <div className="flex gap-2 bg-white p-1.5 rounded-[1.5rem] mb-4 shadow-sm border border-slate-100">
                                     {['all', 'pending', 'paid'].map((f) => (
                                         <button key={f} onClick={() => setPaymentFilter(f)} className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase transition-all whitespace-nowrap ${paymentFilter === f ? 'bg-zinc-950 text-white shadow-lg' : 'text-slate-400'}`}>
                                             {f === 'all' ? 'Ver Todos' : f === 'pending' ? 'Deuda' : 'Al Día'}
@@ -454,7 +454,7 @@ export default function PremiumStaffDashboard() {
                                                 )}
                                             </div>
                                             {isExpanded && (
-                                                <div className="p-5 bg-slate-50/50 border-t border-slate-100 space-y-2 animate-in slide-in-from-top-2">
+                                                <div className="p-5 bg-white border-t border-slate-100 space-y-2 animate-in slide-in-from-top-2">
                                                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-3">Participantes en esta cuenta:</p>
                                                     {payer.enrolledStudents.map((s: any) => (
                                                         <div key={s.id} className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm">
