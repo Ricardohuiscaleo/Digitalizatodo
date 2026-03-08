@@ -36,7 +36,7 @@ export default function OnboardingPage() {
             return;
         }
         try {
-            const data = await registerTenant(formData);
+            const data: any = await registerTenant(formData);
             if (data.errors) throw new Error(Object.values(data.errors)[0][0] as string);
             setSuccess(true);
         } catch (err: any) {
