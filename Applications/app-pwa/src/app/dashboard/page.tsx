@@ -98,7 +98,7 @@ export default function App() {
         setTabDirection(newIndex > currentIndex ? 1 : -1);
         setActiveTab(newTab);
         if (newTab === 'settings' && !regPageCode) {
-            getRegistrationPageCode(user?.tenant_id, token).then(r => { if (r?.code) setRegPageCode(r.code); });
+            getRegistrationPageCode(user?.tenant_id ?? '', token).then(r => { if (r?.code) setRegPageCode(r.code); });
         }
     };
 
