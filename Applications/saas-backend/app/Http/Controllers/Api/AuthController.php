@@ -91,17 +91,19 @@ class AuthController extends Controller
                 'students.enrollments.plan',
                 'students.enrollments.payments' => fn($q) => $q->where('status', 'pending')->orderBy('due_date'),
                 'students.attendances' => fn($q) => $q->orderBy('date', 'desc')->limit(5),
+                'students.attendances as all_attendances' => fn($q) => $q->where('status', 'present'),
             ]);
 
             return response()->json([
                 'user_type' => 'guardian',
-                'guardian' => $guardian->only('id', 'name', 'email', 'phone'),
+                'guardian' => $guardian->only('id', 'name', 'email', 'phone', 'photo'),
                 'students' => $guardian->students->map(fn($s) => [
             'id' => $s->id,
             'name' => $s->name,
-            'photo' => $s->photo,
+            'photo' => $s->photo ? (str_starts_with($s->photo, 'http') ? $s->photo : 'https://' . env('AWS_BUCKET', env('S3_BUCKET')) . '.s3.' . env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1')) . '.amazonaws.com/' . $s->photo) : null,
             'category' => $s->category,
-            'is_updated' => $s->is_updated,
+            'belt_rank' => $s->belt_rank,
+            'attendance_count' => $s->all_attendances->count(),
             'pending_payments' => $s->enrollments->flatMap->payments->count(),
             'recent_attendance' => $s->attendances->map(fn($a) => [
             'date' => $a->date->format('Y-m-d'),
@@ -109,6 +111,16 @@ class AuthController extends Controller
             ]),
             ]),
                 'total_due' => $guardian->total_due,
+                'payment_history' => \App\Models\Payment::whereIn(
+                    'enrollment_id',
+                    $guardian->students->flatMap->enrollments->pluck('id')
+                )->where('status', 'approved')->orderByDesc('paid_at')->limit(6)->get()->map(fn($p) => [
+                    'id' => $p->id,
+                    'amount' => $p->amount,
+                    'status' => $p->status,
+                    'paid_at' => $p->paid_at?->format('d M, Y'),
+                    'due_date' => $p->due_date?->format('d M, Y'),
+                ]),
             ]);
         }
 
