@@ -301,3 +301,24 @@ export async function updatePricing(tenantId: string, token: string, prices: any
         return { message: 'Error de conexión' };
     }
 }
+
+export async function updateLogo(tenantId: string, token: string, file: File) {
+    try {
+        const formData = new FormData();
+        formData.append('logo', file);
+
+        const response = await fetch(`${API_URL}/${tenantId}/settings/logo`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'X-Tenant-Id': tenantId,
+            },
+            body: formData,
+        });
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating logo:', error);
+        return { message: 'Error de conexión' };
+    }
+}
