@@ -237,33 +237,32 @@ export default function CompactStaffDashboard() {
         return (
             <div className="space-y-4">
                 {/* Resumen Maestro (Siguiendo Prototype) */}
-                <Card className="border-none bg-slate-900 rounded-[2.5rem] p-6 text-white shadow-2xl relative overflow-hidden ring-1 ring-white/10">
+                <Card className="border-none bg-indigo-600 rounded-[2.5rem] p-6 text-white shadow-xl shadow-indigo-100 relative overflow-hidden ring-1 ring-white/20">
                     <div className="relative z-10">
-                        <h2 className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-2">Total {getLabels.subject} en {getLabels.place}</h2>
+                        <h2 className="text-[10px] font-black uppercase tracking-widest text-indigo-100 mb-2">Total {getLabels.subject} en {getLabels.place}</h2>
                         <div className="flex items-baseline gap-2 mb-6">
                             <p className="text-5xl font-black">{totalStudents}</p>
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">Registrados</span>
+                            <span className="text-xs font-bold text-indigo-100 uppercase tracking-tighter">Registrados</span>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2 bg-white/10 rounded-3xl p-4 backdrop-blur-md border border-white/10">
+                        <div className="grid grid-cols-3 gap-2 bg-black/10 rounded-3xl p-4 backdrop-blur-sm border border-white/10">
                             <div className="flex flex-col items-center gap-1">
-                                <CheckCircle2 size={16} className="text-emerald-400" />
+                                <div className="p-1 bg-white/20 rounded-lg"><CheckCircle2 size={14} className="text-white" /></div>
                                 <span className="text-lg font-black">{paidStudents}</span>
-                                <span className="text-[8px] font-black text-slate-300 uppercase">AL DÍA</span>
+                                <span className="text-[8px] font-black text-indigo-100 uppercase">AL DÍA</span>
                             </div>
                             <div className="flex flex-col items-center gap-1 border-x border-white/10">
-                                <Clock size={16} className="text-amber-400" />
+                                <div className="p-1 bg-white/20 rounded-lg"><Clock size={14} className="text-white" /></div>
                                 <span className="text-lg font-black">{reviewStudents}</span>
-                                <span className="text-[8px] font-black text-slate-300 uppercase">REVISIÓN</span>
+                                <span className="text-[8px] font-black text-indigo-100 uppercase">REVISIÓN</span>
                             </div>
                             <div className="flex flex-col items-center gap-1">
-                                <XCircle size={16} className="text-rose-400" />
+                                <div className="p-1 bg-white/20 rounded-lg"><XCircle size={14} className="text-white" /></div>
                                 <span className="text-lg font-black">{pendingStudents}</span>
-                                <span className="text-[8px] font-black text-slate-300 uppercase">DEUDA</span>
+                                <span className="text-[8px] font-black text-indigo-100 uppercase">DEUDA</span>
                             </div>
                         </div>
                     </div>
-                    <div className="absolute -right-10 -top-10 w-40 h-40 bg-indigo-600 opacity-20 rounded-full blur-3xl"></div>
                 </Card>
 
                 {/* Asistencia de Hoy (Siguiendo Prototype) */}
@@ -638,32 +637,32 @@ export default function CompactStaffDashboard() {
         );
     };
 
-    if (loading) return <div className="h-screen flex flex-col items-center justify-center bg-slate-950 gap-4"><RefreshCw className="animate-spin text-primary" size={32} /><p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Cargando Dojo...</p></div>;
+    if (loading) return <div className="h-screen flex flex-col items-center justify-center bg-white gap-4"><RefreshCw className="animate-spin text-indigo-600" size={32} /><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cargando {getLabels.summary}...</p></div>;
 
     return (
-        <div className="flex flex-col h-screen bg-slate-950 font-sans max-w-lg mx-auto overflow-hidden selection:bg-indigo-500 selection:text-white">
+        <div className="flex flex-col h-screen bg-slate-50 font-sans max-w-lg mx-auto overflow-hidden selection:bg-indigo-500 selection:text-white">
 
             {/* HEADER COMPACTO SUPREMO */}
-            <header className="px-5 h-14 flex items-center justify-between border-b border-white/[0.02] bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+            <header className="px-5 h-14 flex items-center justify-between border-b border-slate-100 bg-white/80 backdrop-blur-md sticky top-0 z-50">
                 <div className="flex items-center gap-2.5">
-                    <div className="h-6 w-6 bg-indigo-500/10 rounded-lg flex items-center justify-center border border-indigo-500/20">
+                    <div className="h-6 w-6 bg-slate-100 rounded-lg flex items-center justify-center">
                         <img src={branding?.logo || "/icon.webp"} className="h-4 w-4 object-contain" alt="Logo" />
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 truncate max-w-[120px]">{branding?.name}</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 truncate max-w-[120px]">{branding?.name}</span>
                 </div>
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" size={14} />
                     <Input
-                        placeholder={`BUSCAR ${getLabels.subject}...`}
-                        className="pl-9 h-11 bg-white/5 border-none text-[10px] font-black tracking-widest uppercase placeholder:text-slate-600 focus-visible:ring-1 focus-visible:ring-primary/40 rounded-xl"
+                        placeholder={`BUSCAR...`}
+                        className="pl-9 h-11 bg-slate-50 border-none text-[10px] font-black tracking-widest uppercase placeholder:text-slate-400 focus-visible:ring-1 focus-visible:ring-indigo-600/40 rounded-xl"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
 
-                <div className="flex items-center gap-1.5 bg-indigo-500/20 px-2.5 py-1 rounded-lg border border-indigo-500/20">
-                    <Trophy size={10} className="text-indigo-400" />
-                    <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">{activeTab === 'alumnos' ? getLabels.place : activeTab}</span>
+                <div className="flex items-center gap-1.5 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
+                    <Trophy size={10} className="text-indigo-600" />
+                    <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">{activeTab === 'alumnos' ? getLabels.place : activeTab}</span>
                 </div>
             </header>
 
@@ -686,7 +685,7 @@ export default function CompactStaffDashboard() {
             </main>
 
             {/* NAVBAR INFERIOR STANDARD COMPACT */}
-            <nav className="h-16 bg-slate-950/90 backdrop-blur-xl border-t border-white/[0.03] px-3 flex items-center justify-around sticky bottom-0 z-50">
+            <nav className="h-16 bg-white/90 backdrop-blur-xl border-t border-slate-100 px-3 flex items-center justify-around sticky bottom-0 z-50">
                 <NavItem icon={LayoutDashboard} onClick={() => setActiveTab('inicio')} active={activeTab === 'inicio'} label="RESUMEN" />
                 <NavItem icon={Users} onClick={() => setActiveTab('alumnos')} active={activeTab === 'alumnos'} label={getLabels.place} />
                 <NavItem icon={CreditCard} onClick={() => setActiveTab('pagos')} active={activeTab === 'pagos'} label="CUENTAS" />
@@ -746,7 +745,7 @@ function QRGenerator({ tenantId, token }: { tenantId: string, token: string }) {
     }, [expires, qrData]);
 
     return (
-        <Card className="border-none bg-white/[0.03] overflow-hidden">
+        <Card className="border-none bg-indigo-50/30 overflow-hidden">
             <CardHeader className="p-3 pb-0 flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-1.5">
                     <QrCode size={12} /> Acceso QR
@@ -768,7 +767,7 @@ function QRGenerator({ tenantId, token }: { tenantId: string, token: string }) {
                     ) : (
                         <Button
                             onClick={generateQR}
-                            className="w-full h-12 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-widest border border-white/5 rounded-xl"
+                            className="w-full h-12 bg-slate-50 hover:bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest border border-slate-200 rounded-xl"
                         >
                             Activar Control de Ingreso
                         </Button>
