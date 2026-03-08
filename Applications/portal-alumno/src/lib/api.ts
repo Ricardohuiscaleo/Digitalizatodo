@@ -128,6 +128,21 @@ export async function registerStudent(tenantId: string, data: any) {
     }
 }
 
+export async function uploadProof(tenantId: string, paymentId: string, token: string, file: File) {
+    try {
+        const form = new FormData();
+        form.append('proof', file);
+        const response = await fetch(`${API_URL}/${tenantId}/payments/${paymentId}/upload-proof`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: form,
+        });
+        return await response.json();
+    } catch (error) {
+        return null;
+    }
+}
+
 export async function getAttendanceHistory(tenantId: string, token: string, studentId?: string) {
     try {
         const url = new URL(`${API_URL}/${tenantId}/attendance`);
