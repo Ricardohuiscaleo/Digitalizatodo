@@ -7,7 +7,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { getAttendanceQR } from "@/lib/api";
 import { QRCodeSVG } from "qrcode.react";
-import { QrCode, RefreshCw } from "lucide-react";
+import { QrCode, RefreshCw, UserCheck, Users, Info } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(inputs));
+}
 
 function QRGenerator({ tenantId, token, primaryColor }: { tenantId: string, token: string, primaryColor?: string }) {
     const [qrData, setQrData] = useState<string | null>(null);
@@ -92,6 +99,8 @@ export default function AcademyDashboardPage() {
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(true);
     const [markingId, setMarkingId] = useState<string | null>(null);
+    const [showAll, setShowAll] = useState(false);
+    const [activeTab, setActiveTab] = useState('attendance');
 
     useEffect(() => {
         const token = localStorage.getItem("staff_token") || localStorage.getItem("student_token");
@@ -231,55 +240,155 @@ export default function AcademyDashboardPage() {
                 <QRGenerator tenantId={user?.tenant_id} token={localStorage.getItem("staff_token") || ""} primaryColor={branding?.primaryColor} />
 
                 {/* Students List */}
-                <div className="space-y-3">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-foreground/40 ml-1">Lista de Alumnos</h3>
-                    <div className="grid gap-3">
-                        {filteredStudents.map((student) => (
-                            <div key={student.id} className={`relative flex items-center gap-4 rounded-3xl border p-3 transition-all ${student.has_debt ? 'border-red-500/20 bg-red-500/5' : 'border-white/5 bg-white/5'}`}>
-                                <div className="relative h-12 w-12 overflow-hidden rounded-xl bg-white/5">
-                                    {student.photo ? (
-                                        <Image src={student.photo} alt={student.name} fill className="object-cover" />
-                                    ) : (
-                                        <div className="flex h-full w-full items-center justify-center text-lg font-bold text-foreground/20">
-                                            {student.name.charAt(0)}
-                                        </div>
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between px-1">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-foreground/40">Pase de Lista</h3>
+                        <div className="flex bg-white/5 p-1 rounded-xl border border-white/5">
+                            <button
+                                onClick={() => setShowAll(false)}
+                                className={cn(
+                                    "px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all",
+                                    !showAll ? "bg-white/10 text-white shadow-sm" : "text-gray-500"
+                                )}
+                            >
+                                Pendientes
+                            </button>
+                            <button
+                                onClick={() => setShowAll(true)}
+                                className={cn(
+                                    "px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all",
+                                    showAll ? "bg-white/10 text-white shadow-sm" : "text-gray-500"
+                                )}
+                            >
+                                Todos
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                        {filteredStudents
+                            .filter(s => showAll || !s.today_status)
+                            .map((student) => (
+                                <motion.div
+                                    layout
+                                    key={student.id}
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className={cn(
+                                        "relative flex flex-col items-center p-2 rounded-3xl border transition-all duration-300",
+                                        student.today_status === 'present' ? 'bg-emerald-500/10 border-emerald-500/20' :
+                                            student.today_status === 'absent' ? 'bg-red-500/10 border-red-500/20' :
+                                                'bg-white/[0.03] border-white/5'
                                     )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <h4 className="truncate text-sm font-bold text-foreground">{student.name}</h4>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[10px] font-medium text-foreground/40 uppercase">{student.category}</span>
+                                >
+                                    {/* Photo */}
+                                    <div className="relative h-16 w-16 mb-2 overflow-hidden rounded-2xl bg-white/5 shadow-lg group">
+                                        {student.photo ? (
+                                            <Image src={student.photo} alt={student.name} fill className="object-cover" />
+                                        ) : (
+                                            <div className="flex h-full w-full items-center justify-center text-xl font-black text-foreground/10 bg-gradient-to-br from-white/5 to-transparent">
+                                                {student.name.charAt(0)}
+                                            </div>
+                                        )}
                                         {student.has_debt && (
-                                            <span className="text-[10px] font-black text-red-500 uppercase tracking-tighter bg-red-500/10 px-1 rounded animate-pulse">Deuda</span>
+                                            <div className="absolute top-0 right-0 p-1">
+                                                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50" />
+                                            </div>
                                         )}
                                     </div>
-                                </div>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => handleMarkAttendance(student.id, 'present')}
-                                        disabled={markingId === student.id}
-                                        className="h-10 w-10 flex items-center justify-center rounded-xl bg-emerald-500 text-background shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
+
+                                    {/* Name */}
+                                    <h4 className="w-full truncate text-[10px] font-black text-center text-white/90 mb-3 px-1">
+                                        {student.name.split(' ')[0]}
+                                    </h4>
+
+                                    {/* Actions */}
+                                    <div className="grid grid-cols-2 gap-1.5 w-full">
+                                        <button
+                                            onClick={() => handleMarkAttendance(student.id, 'present')}
+                                            disabled={markingId === student.id || student.today_status === 'present'}
+                                            className={cn(
+                                                "h-8 rounded-xl flex items-center justify-center text-[10px] font-black uppercase transition-all active:scale-90",
+                                                student.today_status === 'present'
+                                                    ? "bg-emerald-500 text-black opacity-100"
+                                                    : "bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500 hover:text-black"
+                                            )}
+                                        >
+                                            {markingId === student.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : "SÍ"}
+                                        </button>
+                                        <button
+                                            onClick={() => handleMarkAttendance(student.id, 'absent')}
+                                            disabled={markingId === student.id || student.today_status === 'absent'}
+                                            className={cn(
+                                                "h-8 rounded-xl flex items-center justify-center text-[10px] font-black uppercase transition-all active:scale-90",
+                                                student.today_status === 'absent'
+                                                    ? "bg-red-500 text-white opacity-100"
+                                                    : "bg-white/5 text-gray-500 hover:bg-red-500/20 hover:text-red-500"
+                                            )}
+                                        >
+                                            NO
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            ))}
                     </div>
+                    {filteredStudents.length === 0 && (
+                        <div className="py-12 text-center space-y-2">
+                            <p className="text-sm text-gray-600 font-medium">No se encontraron alumnos</p>
+                            <p className="text-[10px] text-gray-700 uppercase tracking-widest font-bold">Verifica tu búsqueda</p>
+                        </div>
+                    )}
                 </div>
             </main>
 
-            {/* Floating Action Menu (Simulated Mobile Nav) */}
-            <nav className="fixed bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-10 rounded-full border border-white/10 bg-background/60 px-10 py-4 backdrop-blur-2xl shadow-2xl">
-                <button className="text-primary" style={{ color: branding?.primaryColor }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" ry="1" /></svg>
-                </button>
-                <button className="text-foreground/30">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                </button>
-                <button className="text-foreground/30">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
-                </button>
+            {/* Bottom Navigation */}
+            <nav className="fixed bottom-0 left-0 right-0 z-50 px-6 pb-8 pt-4 bg-background/80 backdrop-blur-2xl border-t border-white/5 shadow-[0_-20px_40px_-15px_rgba(0,0,0,0.5)]">
+                <div className="mx-auto max-w-lg flex items-center justify-around translate-y-1">
+                    <button
+                        onClick={() => setActiveTab('attendance')}
+                        className={cn(
+                            "relative flex flex-col items-center gap-1 transition-all duration-300",
+                            activeTab === 'attendance' ? "text-primary scale-110" : "text-foreground/30 hover:text-foreground/50"
+                        )}
+                        style={{ color: activeTab === 'attendance' ? branding?.primaryColor : undefined }}
+                    >
+                        <UserCheck className="w-6 h-6" />
+                        <span className="text-[10px] font-black uppercase tracking-tighter">Asist</span>
+                        {activeTab === 'attendance' && (
+                            <motion.div layoutId="nav-indicator" className="absolute -top-1 w-1 h-1 rounded-full bg-current" />
+                        )}
+                    </button>
+
+                    <button
+                        onClick={() => setActiveTab('students')}
+                        className={cn(
+                            "relative flex flex-col items-center gap-1 transition-all duration-300",
+                            activeTab === 'students' ? "text-primary scale-110" : "text-foreground/30 hover:text-foreground/50"
+                        )}
+                        style={{ color: activeTab === 'students' ? branding?.primaryColor : undefined }}
+                    >
+                        <Users className="w-6 h-6" />
+                        <span className="text-[10px] font-black uppercase tracking-tighter">Alumnos</span>
+                        {activeTab === 'students' && (
+                            <motion.div layoutId="nav-indicator" className="absolute -top-1 w-1 h-1 rounded-full bg-current" />
+                        )}
+                    </button>
+
+                    <button
+                        onClick={() => setActiveTab('info')}
+                        className={cn(
+                            "relative flex flex-col items-center gap-1 transition-all duration-300",
+                            activeTab === 'info' ? "text-primary scale-110" : "text-foreground/30 hover:text-foreground/50"
+                        )}
+                        style={{ color: activeTab === 'info' ? branding?.primaryColor : undefined }}
+                    >
+                        <Info className="w-6 h-6" />
+                        <span className="text-[10px] font-black uppercase tracking-tighter">Ayuda</span>
+                        {activeTab === 'info' && (
+                            <motion.div layoutId="nav-indicator" className="absolute -top-1 w-1 h-1 rounded-full bg-current" />
+                        )}
+                    </button>
+                </div>
             </nav>
         </div>
     );
