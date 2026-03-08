@@ -68,10 +68,10 @@ export default function LoginPage() {
 
         {/* Branding */}
         <div className="flex flex-col items-center gap-3">
-          <div className="h-16 w-16 rounded-2xl bg-zinc-100 flex items-center justify-center overflow-hidden transition-all duration-500">
+          <div className="h-16 w-16 rounded-2xl overflow-hidden flex items-center justify-center transition-all duration-500">
             {tenant?.logo
               ? <img src={tenant.logo} className="h-full w-full object-contain" />
-              : <span className="text-2xl font-black text-zinc-300">D</span>
+              : <img src="/DLogo-v2.webp" className="h-full w-full object-contain" />
             }
           </div>
           <div className="text-center">
