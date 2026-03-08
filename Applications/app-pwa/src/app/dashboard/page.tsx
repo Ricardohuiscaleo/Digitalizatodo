@@ -494,7 +494,7 @@ export default function App() {
                                         <img
                                             src={student.photo}
                                             alt={student.name}
-                                            className={`w-16 h-16 rounded-full object-cover transition-all ${isPresent ? 'ring-4 ring-white/20' : ''}`}
+                                            className={`w-16 h-16 rounded-full object-cover transition-all ${isPresent ? 'ring-4 ring-emerald-400' : ''}`}
                                         />
                                         {isPresent && (
                                             <div className="absolute -bottom-2 -right-2 bg-emerald-500 rounded-full p-1 border-2 border-emerald-50">
