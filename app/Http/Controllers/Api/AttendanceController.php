@@ -15,12 +15,20 @@ class AttendanceController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $guardian = $request->user();
+        $user = $request->user();
+        $tenantId = $request->header('X-Tenant-Id') ?? app('currentTenant')->id;
         $studentId = $request->query('student_id');
 
-        $query = Attendance::whereIn('student_id', $guardian->students->pluck('id'))
-            ->with('student')
-            ->orderBy('date', 'desc');
+        // Staff ve toda la asistencia del tenant; Guardian solo la de sus alumnos
+        if ($user instanceof \App\Models\User) {
+            $query = Attendance::where('tenant_id', $tenantId)
+                ->with('student')
+                ->orderBy('date', 'desc');
+        } else {
+            $query = Attendance::whereIn('student_id', $user->students->pluck('id'))
+                ->with('student')
+                ->orderBy('date', 'desc');
+        }
 
         if ($studentId) {
             $query->where('student_id', $studentId);
@@ -29,13 +37,15 @@ class AttendanceController extends Controller
         $attendances = $query->get();
 
         return response()->json([
-            'attendances' => $attendances->map(fn($a) => [
-        'id' => $a->id,
-        'student_name' => $a->student->name,
-        'date' => $a->date->format('Y-m-d'),
-        'status' => $a->status,
-        'notes' => $a->notes,
-        ]),
+            'attendance' => $attendances->map(fn($a) => [
+                'id'           => $a->id,
+                'student_id'   => $a->student_id,
+                'student'      => $a->student ? ['id' => $a->student->id, 'name' => $a->student->name, 'photo' => $a->student->photo] : null,
+                'date'         => $a->date instanceof \Carbon\Carbon ? $a->date->format('Y-m-d') : $a->date,
+                'status'       => $a->status,
+                'created_at'   => $a->created_at,
+                'notes'        => $a->notes,
+            ]),
         ]);
     }
 
