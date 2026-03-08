@@ -98,7 +98,7 @@ export default function App() {
         setTabDirection(newIndex > currentIndex ? 1 : -1);
         setActiveTab(newTab);
         if (newTab === 'settings' && !regPageCode) {
-            getRegistrationPageCode(user?.tenant_id ?? '', token).then(r => { if (r?.code) setRegPageCode(r.code); });
+            getRegistrationPageCode(user?.tenant_id ?? '', token ?? '').then(r => { if (r?.code) setRegPageCode(r.code); });
         }
     };
 
@@ -684,19 +684,19 @@ export default function App() {
                                 </button>
                             </div>
                             <div className="flex gap-2">
-                                <button onClick={async () => { setGeneratingPage(true); await deleteRegistrationPage(user.tenant_id, token); const r = await generateRegistrationPage(user.tenant_id, token); setGeneratingPage(false); if (r?.code) setRegPageCode(r.code); }}
+                                <button onClick={async () => { setGeneratingPage(true); await deleteRegistrationPage(user.tenant_id, token ?? ''); const r = await generateRegistrationPage(user.tenant_id, token ?? ''); setGeneratingPage(false); if (r?.code) setRegPageCode(r.code); }}
                                     disabled={generatingPage}
                                     className="flex-1 h-8 bg-zinc-100 text-zinc-600 text-[8px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-1 active:scale-95 transition-all disabled:opacity-40">
                                     {generatingPage ? <Loader2 className="animate-spin" size={10} /> : '↺ Nuevo link'}
                                 </button>
-                                <button onClick={async () => { await deleteRegistrationPage(user.tenant_id, token); setRegPageCode(null); }}
+                                <button onClick={async () => { await deleteRegistrationPage(user.tenant_id, token ?? ''); setRegPageCode(null); }}
                                     className="flex-1 h-8 bg-red-50 text-red-400 text-[8px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-1 active:scale-95 transition-all border border-red-100">
                                     Eliminar link
                                 </button>
                             </div>
                         </div>
                     ) : (
-                        <button onClick={async () => { setGeneratingPage(true); const r = await generateRegistrationPage(user.tenant_id, token); setGeneratingPage(false); if (r?.code) setRegPageCode(r.code); }}
+                        <button onClick={async () => { setGeneratingPage(true); const r = await generateRegistrationPage(user.tenant_id, token ?? ''); setGeneratingPage(false); if (r?.code) setRegPageCode(r.code); }}
                             disabled={generatingPage}
                             className="w-full h-9 bg-zinc-950 text-white text-[9px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-40">
                             {generatingPage ? <Loader2 className="animate-spin" size={12} /> : '✦ Generar página de registro'}
