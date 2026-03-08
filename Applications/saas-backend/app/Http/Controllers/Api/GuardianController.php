@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Guardian;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class GuardianController extends Controller
 {
@@ -21,7 +23,7 @@ class GuardianController extends Controller
             $query->where('tenant_id', $tenantId);
         }])
             ->get()
-            ->map(function ($guardian) {
+            ->map(function ($guardian) use ($tenantId) {
             // Calculate status based on payments of their students
             // Simplified logic: checking if any student has pending/review payments
             $students = $guardian->students;
@@ -60,7 +62,7 @@ class GuardianController extends Controller
             return [
             'id' => $guardian->id,
             'name' => $guardian->name,
-            'photo' => $guardian->photo ?\Storage::disk('public')->url($guardian->photo) : "https://i.pravatar.cc/150?u=" . $guardian->id,
+            'photo' => $guardian->photo ? (str_starts_with($guardian->photo, 'http') ? $guardian->photo : 'https://' . env('AWS_BUCKET', env('S3_BUCKET')) . '.s3.' . env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1')) . '.amazonaws.com/' . $guardian->photo) : "https://i.pravatar.cc/150?u=" . $guardian->id,
             'status' => $status,
             'pricing' => $pricing,
             'enrolledStudents' => $students->map(function ($s) {
@@ -68,7 +70,7 @@ class GuardianController extends Controller
                     'id' => $s->id,
                     'name' => $s->name,
                     'category' => $s->category, // Use raw category
-                    'photo' => $s->photo ?\Storage::disk('public')->url($s->photo) : "https://i.pravatar.cc/150?img=" . $s->id,
+                    'photo' => $s->photo ? (str_starts_with($s->photo, 'http') ? $s->photo : 'https://' . env('AWS_BUCKET', env('S3_BUCKET')) . '.s3.' . env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1')) . '.amazonaws.com/' . $s->photo) : "https://i.pravatar.cc/150?img=" . $s->id,
                     'label' => $s->belt_rank ?? '', // Generic label
                     ];
                 }
@@ -133,13 +135,24 @@ class GuardianController extends Controller
         ]);
 
         if ($request->hasFile('logo')) {
-            $path = $request->file('logo')->store('logos');
-            $tenant->update(['logo' => $path]);
+            $file = $request->file('logo');
+            $src = imagecreatefromstring(file_get_contents($file->getRealPath()));
+            $w = imagesx($src); $h = imagesy($src);
+            $scale = min(1, 400 / max($w, $h));
+            $nw = (int)($w * $scale); $nh = (int)($h * $scale);
+            $dst = imagecreatetruecolor($nw, $nh);
+            imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
+            ob_start(); imagewebp($dst, null, 80); $webp = ob_get_clean();
 
-            return response()->json([
-                'message' => 'Logo actualizado',
-                'logo_url' => \Storage::url($path)
-            ]);
+            $s3Path = 'digitalizatodo/' . $tenantId . '/logo/' . Str::uuid() . '.webp';
+            Storage::disk('s3')->put($s3Path, $webp, 'public');
+
+            $bucket = env('AWS_BUCKET', env('S3_BUCKET'));
+            $region = env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1'));
+            $url = "https://{$bucket}.s3.{$region}.amazonaws.com/{$s3Path}";
+            $tenant->update(['logo' => $url]);
+
+            return response()->json(['message' => 'Logo actualizado', 'logo_url' => $url]);
         }
 
         return response()->json(['message' => 'No se subió ningún archivo'], 400);
