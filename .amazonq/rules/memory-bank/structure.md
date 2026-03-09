@@ -120,9 +120,10 @@ api/                        # PHP backend for contact forms
 
 ## Architectural Patterns
 
-- **Multi-tenancy**: Path-based (`/api/{tenant}/...`) via `ResolveTenantFromPath` middleware. Each tenant gets isolated data via `stancl/tenancy`.
+- **Standardized IDs**: All primary entities (Tenants, Users, Guardians, Students) use numeric auto-incrementing IDs for internal logic and database foreign keys.
+- **Multi-tenancy (Slug-based)**: Path-based resolution (`/api/{tenant}/...`) where `{tenant}` is a unique string `slug`. The `ResolveTenantFromPath` middleware translates this slug into a numeric `id` for internal use.
 - **Auth flow**: Sanctum Bearer tokens stored in localStorage/cookies on frontend; sent as `Authorization: Bearer {token}` header.
 - **Tenant context on frontend**: `BrandingContext` provides tenant slug, logo, and colors to all components.
-- **API layer**: Each frontend app has a dedicated `lib/api.ts` with typed async functions wrapping `fetch`. All use `safeJson()` to handle non-JSON error responses gracefully.
+- **Resilient API Layer**: Frontend apps use a `safeJson()` utility that gracefully handles non-JSON responses by returning `null`, preventing application crashes during server errors (e.g. 500s).
 - **Role-based access**: `role:teacher,admin,owner` middleware on write routes; roles stored per-user per-tenant.
 - **Filament panels**: Three separate panels with distinct providers, each scoped to a user role.

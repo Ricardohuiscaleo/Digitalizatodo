@@ -55,8 +55,9 @@ Personal portfolio site for the developer.
 - **Superadmin**: manage all tenants via the central admin panel
 
 ## Key Business Features
-- Multi-tenant isolation (each school = one tenant, own DB schema)
-- Trial period management (`CheckTenantTrial` middleware)
+- **Standardized Architecture**: Uses numeric auto-incrementing IDs for all primary entities (Tenants, Users, Students, Guardians) for better performance and integrity.
+- **Multi-tenant Isolation**: Each school = one tenant, own DB schema. URLs and identification use `slugs` (friendly names) resolved internally to numeric IDs.
+- **Trial period management**: `CheckTenantTrial` middleware.
 - Subscription plans per tenant
 - QR-based attendance verification
 - Payment tracking with success/failure flows
