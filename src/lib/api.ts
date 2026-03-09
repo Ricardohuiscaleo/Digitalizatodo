@@ -258,7 +258,7 @@ export async function markAttendanceViaQR(tenantId: string, token: string, qrTok
             body: JSON.stringify({ qr_token: qrToken, student_id: studentId }),
         });
 
-        return await response.json();
+        return await safeJson(response);
     } catch (error) {
         console.error('Error marking attendance via QR:', error);
         return { message: 'Error de conexión' };
@@ -294,7 +294,7 @@ export async function approvePayment(tenantId: string, token: string, payerId: s
             },
         });
 
-        return await response.json();
+        return await safeJson(response);
     } catch (error) {
         console.error('Error approving payment:', error);
         return { message: 'Error de conexión' };
@@ -380,7 +380,7 @@ export async function getRegistrationPage(code: string) {
     try {
         const response = await fetch(`${API_URL}/r/${code}`);
         if (!response.ok) return null;
-        return await response.json();
+        return await safeJson(response);
     } catch {
         return null;
     }
