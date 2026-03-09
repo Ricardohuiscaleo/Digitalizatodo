@@ -36,6 +36,7 @@ class DebugController extends Controller
             if (Schema::hasTable('tenants')) {
                 $checks['database']['tenants_table'] = 'EXISTS';
                 $checks['database']['tenants_count'] = DB::table('tenants')->count();
+                $checks['database']['sample_tenants'] = DB::table('tenants')->select('id', 'name', 'industry', 'logo')->limit(5)->get();
             }
             else {
                 $checks['database']['tenants_table'] = 'MISSING';
