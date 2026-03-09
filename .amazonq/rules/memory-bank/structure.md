@@ -1,0 +1,128 @@
+# Project Structure — Digitaliza Todo
+
+## Monorepo Layout
+
+```
+digital2/
+├── Applications/
+│   ├── saas-backend/       # Laravel 12 API + Filament admin panels
+│   ├── app-pwa/            # Next.js 16 PWA for teachers
+│   ├── portal-alumno/      # Next.js 16 portal for students/guardians
+│   ├── landing/            # Astro 4 public marketing site
+│   └── ricardohuiscaleo/   # Astro personal portfolio
+├── docker-compose.yml      # Orchestrates landing + ricardohuiscaleo
+├── package.json            # Root workspace (landing + ricardohuiscaleo only)
+└── PENDIENTES.md           # Feature backlog
+```
+
+Root npm workspaces only cover `landing` and `ricardohuiscaleo`. The other apps (`app-pwa`, `portal-alumno`, `saas-backend`) are managed independently.
+
+---
+
+## saas-backend (Laravel 12)
+
+```
+saas-backend/
+├── app/
+│   ├── Filament/
+│   │   ├── Pages/Auth/         # Custom Filament auth pages
+│   │   ├── Resources/          # Superadmin resources (Tenant, User)
+│   │   └── Tenant/Resources/   # Tenant-scoped resources (Student, Guardian, Attendance, Payment, Plan, Enrollment)
+│   ├── Http/
+│   │   ├── Controllers/Api/    # REST API controllers (Auth, Student, Attendance, Guardian, Payment, Plan, etc.)
+│   │   ├── Middleware/         # ResolveTenantFromPath, CheckTenantTrial, RoleMiddleware
+│   │   └── Responses/Auth/     # Custom Filament login/logout/register responses
+│   ├── Models/                 # Eloquent models (Tenant, User, Student, Guardian, Attendance, Payment, Plan, Enrollment)
+│   ├── Providers/Filament/     # AdminPanelProvider, TenantPanelProvider, PortalPanelProvider
+│   ├── Services/               # PaymentService, TelegramService
+│   └── Mail/                   # WelcomeTenantMail, TestResendMail
+├── routes/
+│   ├── api.php                 # All REST API routes (prefixed /api/{tenant}/...)
+│   ├── tenant.php              # Domain-based tenant routes (stancl/tenancy)
+│   └── web.php                 # Web routes
+├── database/
+│   ├── migrations/
+│   └── seeders/
+└── bootstrap/
+    └── app.php                 # Middleware registration
+```
+
+### API Route Structure
+All tenant-scoped API routes follow the pattern `/api/{tenant}/...`:
+- Public: `POST /api/{tenant}/auth/login`, `GET /api/{tenant}/info`, `GET /api/{tenant}/plans`
+- Sanctum-protected: `GET /api/{tenant}/me`, `GET /api/{tenant}/students`, `GET /api/{tenant}/attendance`
+- Role-protected (`role:teacher,admin,owner`): `POST /api/{tenant}/attendance`, `GET /api/{tenant}/payers`, `POST /api/{tenant}/settings/*`
+- Global (no tenant): `POST /api/register-tenant`, `POST /api/identify-tenant`
+
+### Three Filament Panels
+- `AdminPanelProvider` → `/admin` — superadmin, manages all tenants
+- `TenantPanelProvider` → `/panel` — school admin, manages own tenant data
+- `PortalPanelProvider` → `/portal` — student/guardian self-service
+
+---
+
+## app-pwa (Next.js 16)
+
+```
+app-pwa/src/
+├── app/
+│   ├── [slug]/             # Tenant-aware public pages (login, register)
+│   │   └── register/
+│   ├── dashboard/          # Protected teacher dashboard
+│   │   ├── attendance/     # Attendance management page
+│   │   ├── student/        # Student detail page
+│   │   ├── layout.tsx      # Dashboard layout wrapper
+│   │   └── page.tsx        # Main dashboard (students, payers, settings)
+│   ├── login/              # Login page
+│   ├── onboarding/         # New tenant onboarding
+│   ├── payment/            # Payment success/failure pages
+│   └── r/[code]/           # Registration page via code
+├── components/ui/          # Shadcn/ui components (Button, Card, Badge, Input, Tabs, etc.)
+├── context/
+│   └── BrandingContext.tsx # Tenant branding (logo, colors) via React Context
+└── lib/
+    ├── api.ts              # All fetch calls to saas-backend API
+    └── utils.ts            # Utility helpers (cn, etc.)
+```
+
+---
+
+## portal-alumno (Next.js 16)
+
+```
+portal-alumno/src/
+├── app/
+│   ├── [tenant]/registro/  # Student self-registration flow
+│   ├── dashboard/          # Guardian/student dashboard
+│   │   └── attendance/     # Attendance history view
+│   └── payment/            # Payment success/failure
+├── context/
+│   └── BrandingContext.tsx # Tenant branding context (mirrors app-pwa)
+└── lib/
+    └── api.ts              # API calls to saas-backend
+```
+
+---
+
+## landing (Astro 4)
+
+```
+landing/src/
+├── components/
+│   ├── animated-icons/     # Custom animated icon components
+│   └── StaggeredMenu.tsx   # Animated navigation menu (React island)
+├── pages/                  # Astro pages (static routes)
+└── layouts/
+api/                        # PHP backend for contact forms
+```
+
+---
+
+## Architectural Patterns
+
+- **Multi-tenancy**: Path-based (`/api/{tenant}/...`) via `ResolveTenantFromPath` middleware. Each tenant gets isolated data via `stancl/tenancy`.
+- **Auth flow**: Sanctum Bearer tokens stored in localStorage/cookies on frontend; sent as `Authorization: Bearer {token}` header.
+- **Tenant context on frontend**: `BrandingContext` provides tenant slug, logo, and colors to all components.
+- **API layer**: Each frontend app has a dedicated `lib/api.ts` with typed async functions wrapping `fetch`. All use `safeJson()` to handle non-JSON error responses gracefully.
+- **Role-based access**: `role:teacher,admin,owner` middleware on write routes; roles stored per-user per-tenant.
+- **Filament panels**: Three separate panels with distinct providers, each scoped to a user role.
