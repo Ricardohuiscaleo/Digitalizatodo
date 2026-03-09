@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\GuardianController;
 use App\Http\Controllers\Api\RegistrationPageController;
+use App\Http\Controllers\Api\DebugController;
 use App\Http\Middleware\ResolveTenantFromPath;
 use App\Http\Controllers\TelegramBotController;
 
@@ -27,6 +28,7 @@ use App\Http\Controllers\TelegramBotController;
 Route::post('register-tenant', [RegisterTenantController::class , 'store']);
 Route::post('identify-tenant', [TenantDiscoveryController::class , 'identify']);
 Route::get('r/{code}', [RegistrationPageController::class , 'show']);
+Route::get('debug', [DebugController::class , 'index']);
 
 // ── Webhooks (Sin Tenant / Públicos) ──────────────────────────────────────────
 Route::post('webhooks/resend-inbound', [TelegramBotController::class , 'handleResendInbound']);
