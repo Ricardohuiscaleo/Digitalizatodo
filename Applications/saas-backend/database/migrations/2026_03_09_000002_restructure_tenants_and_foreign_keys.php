@@ -10,7 +10,28 @@ return new class extends Migration {
     {
         Schema::disableForeignKeyConstraints();
 
-        // 1. Asegurar columna 'slug'
+        // 1. Limpiar llaves foráneas que bloquean el cambio en 'tenants'
+        if (Schema::hasTable('domains')) {
+            Schema::table('domains', function (Blueprint $table) {
+                // Intentar soltar por nombre estándar de Laravel
+                try {
+                    $table->dropForeign(['tenant_id']);
+                }
+                catch (\Exception $e) {
+                }
+            });
+        }
+        if (Schema::hasTable('users')) {
+            Schema::table('users', function (Blueprint $table) {
+                try {
+                    $table->dropForeign(['tenant_id']);
+                }
+                catch (\Exception $e) {
+                }
+            });
+        }
+
+        // 2. Asegurar 'slug' en tenants
         if (!Schema::hasColumn('tenants', 'slug')) {
             Schema::table('tenants', function (Blueprint $table) {
                 $table->string('slug')->nullable()->after('id');
@@ -18,18 +39,18 @@ return new class extends Migration {
             DB::table('tenants')->update(['slug' => DB::raw('id')]);
         }
 
-        // 2. Manejar el cambio de ID a numérico
-        // Si 'id' sigue siendo string (ej: 'integracao'), procedemos a la cirugía
+        // 3. Evaluar estado de 'id'
         $firstTenant = DB::table('tenants')->first();
+
+        // Si el ID sigue siendo string, hacemos la transición
         if ($firstTenant && !is_numeric($firstTenant->id)) {
 
-            // Creamos una columna temporal para el nuevo ID
+            // Agregar columna temporal para el nuevo ID (sin PK ni Autoincrement aún)
             if (!Schema::hasColumn('tenants', 'new_id')) {
                 Schema::table('tenants', function (Blueprint $table) {
                     $table->unsignedBigInteger('new_id')->nullable()->first();
                 });
 
-                // Poblar new_id manualmente
                 $i = 1;
                 $tenants = DB::table('tenants')->orderBy('created_at')->get();
                 foreach ($tenants as $tenant) {
@@ -37,7 +58,7 @@ return new class extends Migration {
                 }
             }
 
-            // 3. Actualizar tablas relacionadas
+            // Actualizar todas las tablas relacionadas
             $tables = [
                 'users', 'students', 'payments', 'attendances',
                 'plans', 'guardians', 'enrollments',
@@ -48,18 +69,19 @@ return new class extends Migration {
                 if (!Schema::hasTable($tableName))
                     continue;
 
+                // Crear columna temporal si no existe
                 if (!Schema::hasColumn($tableName, 'temp_tenant_id')) {
                     Schema::table($tableName, function (Blueprint $table) {
                         $table->unsignedBigInteger('temp_tenant_id')->nullable()->after('tenant_id');
                     });
                 }
 
-                // Mapear viejo ID de texto al nuevo ID numérico
+                // Mapear por slug
                 DB::table($tableName)
                     ->join('tenants', $tableName . '.tenant_id', '=', 'tenants.slug')
                     ->update([$tableName . '.temp_tenant_id' => DB::raw('tenants.new_id')]);
 
-                // Reemplazar columna
+                // Sustituir columna
                 if (Schema::hasColumn($tableName, 'tenant_id')) {
                     Schema::table($tableName, function (Blueprint $table) {
                         $table->dropColumn('tenant_id');
@@ -71,11 +93,13 @@ return new class extends Migration {
                 });
             }
 
-            // 4. Finalizar tabla TENANTS
+            // Limpiar tabla Tenants
             Schema::table('tenants', function (Blueprint $table) {
-                // En MySQL, para cambiar la PK, a veces es mejor soltarla por nombre
-                // o simplemente soltarla si es la única primaria definida.
-                $table->dropPrimary();
+                try {
+                    $table->dropPrimary();
+                }
+                catch (\Exception $e) {
+                }
                 $table->dropColumn('id');
             });
 
@@ -83,11 +107,23 @@ return new class extends Migration {
                 $table->renameColumn('new_id', 'id');
             });
 
-            // Convertir 'id' en autoincremental y primaria
+            // Establecer como PK y Auto-increment Real
             DB::statement('ALTER TABLE tenants MODIFY id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY');
 
             Schema::table('tenants', function (Blueprint $table) {
                 $table->string('slug')->unique()->change();
+            });
+        }
+
+        // 4. Restaurar llaves foráneas
+        if (Schema::hasTable('users')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
+            });
+        }
+        if (Schema::hasTable('domains')) {
+            Schema::table('domains', function (Blueprint $table) {
+                $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
             });
         }
 
@@ -96,6 +132,6 @@ return new class extends Migration {
 
     public function down(): void
     {
-    // Operación destructiva y estructural. No hay rollback automático seguro.
+    // Estructural.
     }
 };
