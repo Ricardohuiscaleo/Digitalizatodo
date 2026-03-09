@@ -125,6 +125,22 @@ export default function OnboardingPage() {
                         </div>
 
                         <div className="space-y-2">
+                            <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-4 italic">Rubro o Especialización</label>
+                            <select
+                                name="industry"
+                                required
+                                value={formData.industry}
+                                onChange={handleChange}
+                                className="w-full h-14 bg-zinc-50 border-none rounded-2xl px-6 font-black text-[11px] uppercase text-zinc-950 focus:ring-2 ring-black transition-all outline-none appearance-none cursor-pointer"
+                            >
+                                <option value="" disabled>Seleccionar Rubro</option>
+                                <option value="academy">Artes Marciales - Deportes</option>
+                                <option value="clinic">Salud - Estética</option>
+                                <option value="other">Otros Negocios</option>
+                            </select>
+                        </div>
+
+                        <div className="space-y-2">
                             <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-4 italic">Nombre de quien administrará este software</label>
                             <input name="user_name" required value={formData.user_name} onChange={handleChange} placeholder="Tu Nombre Completo" className="w-full h-14 bg-zinc-50 border-none rounded-2xl px-6 font-bold text-zinc-950 focus:ring-2 ring-black transition-all outline-none" />
                         </div>
