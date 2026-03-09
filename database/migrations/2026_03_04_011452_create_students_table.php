@@ -9,7 +9,7 @@ return new class extends Migration {
     {
         Schema::create('students', function (Blueprint $table) {
             $table->id();
-            $table->string('tenant_id'); // slug del tenant
+            $table->unsignedBigInteger('tenant_id');
             $table->string('name');
             $table->string('photo')->nullable();
             $table->date('birth_date')->nullable();

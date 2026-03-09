@@ -9,7 +9,7 @@ return new class extends Migration {
     {
         Schema::create('enrollments', function (Blueprint $table) {
             $table->id();
-            $table->string('tenant_id');
+            $table->unsignedBigInteger('tenant_id');
             $table->foreignId('student_id')->constrained()->cascadeOnDelete();
             $table->foreignId('plan_id')->constrained()->cascadeOnDelete();
             $table->date('start_date');

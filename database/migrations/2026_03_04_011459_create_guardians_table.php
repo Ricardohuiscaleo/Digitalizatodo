@@ -9,7 +9,7 @@ return new class extends Migration {
     {
         Schema::create('guardians', function (Blueprint $table) {
             $table->id();
-            $table->string('tenant_id');
+            $table->unsignedBigInteger('tenant_id');
             $table->string('name');
             $table->string('email')->nullable();
             $table->string('phone')->nullable();

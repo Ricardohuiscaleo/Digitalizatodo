@@ -16,10 +16,12 @@ class CreateTenantsTable extends Migration
     public function up(): void
     {
         Schema::create('tenants', function (Blueprint $table) {
-            $table->string('id')->primary(); // slug: "gimbox", "taekwondo-norte"
+            $table->id();
+            $table->string('slug')->unique(); // "gimbox", "taekwondo-norte"
 
             // Información básica
             $table->string('name'); // "Gimbox Academia"
+            $table->string('industry')->nullable();
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
             $table->string('logo')->nullable();

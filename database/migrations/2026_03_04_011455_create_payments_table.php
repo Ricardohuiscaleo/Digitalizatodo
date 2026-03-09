@@ -9,7 +9,7 @@ return new class extends Migration {
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
-            $table->string('tenant_id');
+            $table->unsignedBigInteger('tenant_id');
             $table->foreignId('enrollment_id')->constrained()->cascadeOnDelete();
             $table->decimal('amount', 10, 2);
             $table->date('due_date'); // fecha de vencimiento
