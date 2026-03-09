@@ -197,7 +197,7 @@ CREATE TABLE `registration_pages` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `registration_pages_slug_unique` (`slug`),
-  KEY `registration_pages_tenant_id_foreign" (`tenant_id`),
+  KEY `registration_pages_tenant_id_foreign` (`tenant_id`),
   CONSTRAINT `registration_pages_tenant_id_foreign` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
