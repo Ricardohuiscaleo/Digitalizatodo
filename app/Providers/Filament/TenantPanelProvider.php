@@ -40,7 +40,7 @@ class TenantPanelProvider extends PanelProvider
                 fn (): string => '<div class="text-center text-sm text-gray-500 py-4">&copy; ' . date('Y') . ' Digitaliza Todo. Todos los derechos reservados.</div>'
             )
             ->discoverResources(in: app_path('Filament/Tenant/Resources'), for: 'App\\Filament\\Tenant\\Resources')
-            ->discoverPages(in: app_path('Filament/Tenant/Pages'), for: 'App\\Filament\\Tenant\\Pages')
+
             ->pages([
                 Pages\Dashboard::class,
             ])
