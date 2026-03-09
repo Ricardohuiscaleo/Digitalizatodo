@@ -33,6 +33,20 @@ export async function identifyTenant(email: string) {
     }
 }
 
+export async function getIndustries() {
+    try {
+        const response = await fetch(`${API_URL}/industries`, {
+            method: 'GET',
+            headers: defaultHeaders,
+        });
+
+        return await safeJson(response) || [];
+    } catch (error) {
+        console.error('Error fetching industries:', error);
+        return [];
+    }
+}
+
 export async function getTenantInfo(slug: string) {
     try {
         const response = await fetch(`${API_URL}/${slug}/info`, {
