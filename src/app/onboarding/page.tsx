@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CheckCircle2, ArrowRight, Loader2, AlertCircle, RefreshCw, Trophy } from "lucide-react";
-import { registerTenant } from "@/lib/api";
+import { registerTenant, getIndustries } from "@/lib/api";
 
 export default function OnboardingPage() {
     const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingIndustries, setIsLoadingIndustries] = useState(true);
+    const [industries, setIndustries] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
     const [formData, setFormData] = useState({
@@ -17,6 +19,20 @@ export default function OnboardingPage() {
         password: "",
         password_confirmation: ""
     });
+
+    useEffect(() => {
+        async function loadIndustries() {
+            try {
+                const data = await getIndustries();
+                setIndustries(data);
+            } catch (err) {
+                console.error("Error loading industries:", err);
+            } finally {
+                setIsLoadingIndustries(false);
+            }
+        }
+        loadIndustries();
+    }, []);
 
     const handleChange = (e: any) => {
         const { name, value } = e.target;
@@ -126,18 +142,26 @@ export default function OnboardingPage() {
 
                         <div className="space-y-2">
                             <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-4 italic">Rubro o Especialización</label>
-                            <select
-                                name="industry"
-                                required
-                                value={formData.industry}
-                                onChange={handleChange}
-                                className="w-full h-14 bg-zinc-50 border-none rounded-2xl px-6 font-black text-[11px] uppercase text-zinc-950 focus:ring-2 ring-black transition-all outline-none appearance-none cursor-pointer"
-                            >
-                                <option value="" disabled>Seleccionar Rubro</option>
-                                <option value="academy">Artes Marciales - Deportes</option>
-                                <option value="clinic">Salud - Estética</option>
-                                <option value="other">Otros Negocios</option>
-                            </select>
+                            <div className="relative">
+                                <select
+                                    name="industry"
+                                    required
+                                    value={formData.industry}
+                                    onChange={handleChange}
+                                    disabled={isLoadingIndustries}
+                                    className="w-full h-14 bg-zinc-50 border-none rounded-2xl px-6 font-black text-[11px] uppercase text-zinc-950 focus:ring-2 ring-black transition-all outline-none appearance-none cursor-pointer disabled:opacity-50"
+                                >
+                                    <option value="" disabled>{isLoadingIndustries ? 'Cargando Rubros...' : 'Seleccionar Rubro'}</option>
+                                    {industries.map((ind: any) => (
+                                        <option key={ind.id} value={ind.id}>{ind.name}</option>
+                                    ))}
+                                </select>
+                                {isLoadingIndustries && (
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                        <Loader2 size={14} className="animate-spin text-zinc-400" />
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div className="space-y-2">
