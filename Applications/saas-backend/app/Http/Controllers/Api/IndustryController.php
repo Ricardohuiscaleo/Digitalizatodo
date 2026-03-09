@@ -14,9 +14,15 @@ class IndustryController extends Controller
     public function index()
     {
         try {
+            // Ya que confirmamos que la tabla existe en la DB real
             $industries = Industry::where('active', true)->get();
             return response()->json($industries);
         }
         catch (\Exception $e) {
             return response()->json([
                 'error' => 'Error fetching industries',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+}
