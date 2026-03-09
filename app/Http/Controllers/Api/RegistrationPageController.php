@@ -12,8 +12,8 @@ class RegistrationPageController extends Controller
 {
     public function generate(Request $request)
     {
-        $tenantId = $request->header('X-Tenant-Id');
-        $tenant = Tenant::findOrFail($tenantId);
+        $tenant = app('currentTenant');
+        $tenantId = $tenant->id;
 
         // Reusar si ya existe una activa
         $existing = DB::table('registration_pages')
@@ -28,15 +28,15 @@ class RegistrationPageController extends Controller
         $code = strtolower(Str::random(8));
 
         DB::table('registration_pages')->insert([
-            'code'                => $code,
-            'tenant_id'           => $tenant->id,
-            'tenant_name'         => $tenant->name,
-            'tenant_logo'         => $tenant->logo,
-            'tenant_primary_color'=> $tenant->primary_color ?? '#6366f1',
-            'tenant_industry'     => $tenant->industry,
-            'is_active'           => true,
-            'created_at'          => now(),
-            'updated_at'          => now(),
+            'code' => $code,
+            'tenant_id' => $tenant->id,
+            'tenant_name' => $tenant->name,
+            'tenant_logo' => $tenant->logo,
+            'tenant_primary_color' => $tenant->primary_color ?? '#6366f1',
+            'tenant_industry' => $tenant->industry,
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         return response()->json(['code' => $code]);
@@ -44,7 +44,7 @@ class RegistrationPageController extends Controller
 
     public function getCode(Request $request)
     {
-        $tenantId = $request->header('X-Tenant-Id');
+        $tenantId = app('currentTenant')->id;
         $existing = DB::table('registration_pages')
             ->where('tenant_id', $tenantId)
             ->where('is_active', true)
@@ -55,7 +55,7 @@ class RegistrationPageController extends Controller
 
     public function deactivate(Request $request)
     {
-        $tenantId = $request->header('X-Tenant-Id');
+        $tenantId = app('currentTenant')->id;
         DB::table('registration_pages')
             ->where('tenant_id', $tenantId)
             ->where('is_active', true)
@@ -76,11 +76,11 @@ class RegistrationPageController extends Controller
         }
 
         return response()->json([
-            'id'            => $page->tenant_id,
-            'name'          => $page->tenant_name,
-            'logo'          => $page->tenant_logo,
+            'id' => $page->tenant_id,
+            'name' => $page->tenant_name,
+            'logo' => $page->tenant_logo,
             'primary_color' => $page->tenant_primary_color,
-            'industry'      => $page->tenant_industry,
+            'industry' => $page->tenant_industry,
         ]);
     }
 }

@@ -20,7 +20,7 @@ class ResolveTenantFromPath
         $slug = $request->route('tenant');
 
         if ($slug) {
-            $tenant = Tenant::where('id', $slug)->where('active', true)->first();
+            $tenant = Tenant::where('slug', $slug)->where('active', true)->first();
 
             if (!$tenant) {
                 abort(404, "Academia '$slug' no encontrada.");
