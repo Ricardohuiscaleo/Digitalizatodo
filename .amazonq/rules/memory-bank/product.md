@@ -1,14 +1,14 @@
 # Product Overview — Digitaliza Todo
 
 ## Purpose
-Digitaliza Todo is a multi-tenant SaaS platform for educational institutions (schools, academies) in Chile. It digitizes school management: student enrollment, attendance tracking, guardian (apoderado) management, and payment processing — all under a white-label, per-tenant model.
+Digitaliza Todo is a multi-tenant SaaS platform designed for any business or industry (academies, clinics, gyms, schools, etc.) in Chile. It provides a universal infrastructure for management: client/student enrollment, attendance tracking, guardian/payer management, and automated payment processing — all under a modular, per-tenant white-label model.
 
 ## Value Proposition
-- Schools get their own isolated tenant environment with branded portals
-- Teachers manage attendance via a mobile-first PWA (app-pwa)
-- Parents/guardians access student info through a dedicated portal (portal-alumno)
-- Admins manage everything via a Filament-powered admin panel
-- Automated notifications via Telegram and email (Resend)
+- **Versatility**: Adaptable vocabularies and configurations for different industries (Martial Arts, Fitness, Dance, Music, etc.)
+- **Isolated Environments**: Each business gets its own isolated tenant environment with custom branding
+- **Mobile-First Management**: Manage everything from a PWA (app-pwa) designed for field operation
+- **Self-Service Portals**: Clients can access their information, history, and payments through a branded portal
+- **Automated Communication**: Notifications via Telegram, WhatsApp, and email
 
 ## Applications
 
