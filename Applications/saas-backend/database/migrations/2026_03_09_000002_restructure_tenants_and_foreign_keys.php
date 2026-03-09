@@ -8,80 +8,94 @@ use Illuminate\Support\Facades\DB;
 return new class extends Migration {
     public function up(): void
     {
-        // 1. Desactivar checks de llaves foráneas para poder maniobrar
         Schema::disableForeignKeyConstraints();
 
-        // 2. Preparar tabla TENANTS
-        Schema::table('tenants', function (Blueprint $table) {
-            // Agregar slug temporalmente
-            $table->string('slug')->nullable()->after('id');
-        });
-
-        // Copiar id actual (texto) al nuevo campo slug
-        DB::table('tenants')->update(['slug' => DB::raw('id')]);
-
-        // Cambiar la llave primaria: Esto es delicado en SQL
-        // Agregamos el nuevo ID numérico
-        Schema::table('tenants', function (Blueprint $table) {
-            $table->bigIncrements('new_id')->first();
-        });
-
-        // 3. Actualizar tablas relacionadas
-        $tables = [
-            'users',
-            'students',
-            'payments',
-            'attendances',
-            'plans',
-            'guardians',
-            'enrollments',
-            'registration_pages',
-            'domains'
-        ];
-
-        foreach ($tables as $tableName) {
-            if (!Schema::hasTable($tableName))
-                continue;
-
-            Schema::table($tableName, function (Blueprint $table) use ($tableName) {
-                $table->unsignedBigInteger('temp_tenant_id')->nullable()->after('tenant_id');
+        // 1. Asegurar columna 'slug'
+        if (!Schema::hasColumn('tenants', 'slug')) {
+            Schema::table('tenants', function (Blueprint $table) {
+                $table->string('slug')->nullable()->after('id');
             });
-
-            // Mapear el viejo tenant_id (texto) al nuevo ID numérico
-            DB::table($tableName)
-                ->join('tenants', $tableName . '.tenant_id', '=', 'tenants.slug')
-                ->update([$tableName . '.temp_tenant_id' => DB::raw('tenants.new_id')]);
-
-            Schema::table($tableName, function (Blueprint $table) {
-                $table->dropColumn('tenant_id');
-            });
-
-            Schema::table($tableName, function (Blueprint $table) {
-                $table->renameColumn('temp_tenant_id', 'tenant_id');
-            });
-
-        // Re-aplicar restricción de no nulo si es necesario
-        // DB::statement("ALTER TABLE $tableName MODIFY tenant_id BIGINT UNSIGNED NOT NULL");
+            DB::table('tenants')->update(['slug' => DB::raw('id')]);
         }
 
-        // 4. Limpieza final de tabla TENANTS
-        Schema::table('tenants', function (Blueprint $table) {
-            $table->dropPrimary(['id']);
-            $table->dropColumn('id');
-        });
+        // 2. Manejar el cambio de ID a numérico
+        // Si 'id' sigue siendo string (ej: 'integracao'), procedemos a la cirugía
+        $firstTenant = DB::table('tenants')->first();
+        if ($firstTenant && !is_numeric($firstTenant->id)) {
 
-        Schema::table('tenants', function (Blueprint $table) {
-            $table->renameColumn('new_id', 'id');
-            $table->primary('id');
-            $table->string('slug')->unique()->change();
-        });
+            // Creamos una columna temporal para el nuevo ID
+            if (!Schema::hasColumn('tenants', 'new_id')) {
+                Schema::table('tenants', function (Blueprint $table) {
+                    $table->unsignedBigInteger('new_id')->nullable()->first();
+                });
+
+                // Poblar new_id manualmente
+                $i = 1;
+                $tenants = DB::table('tenants')->orderBy('created_at')->get();
+                foreach ($tenants as $tenant) {
+                    DB::table('tenants')->where('slug', $tenant->id)->update(['new_id' => $i++]);
+                }
+            }
+
+            // 3. Actualizar tablas relacionadas
+            $tables = [
+                'users', 'students', 'payments', 'attendances',
+                'plans', 'guardians', 'enrollments',
+                'registration_pages', 'domains'
+            ];
+
+            foreach ($tables as $tableName) {
+                if (!Schema::hasTable($tableName))
+                    continue;
+
+                if (!Schema::hasColumn($tableName, 'temp_tenant_id')) {
+                    Schema::table($tableName, function (Blueprint $table) {
+                        $table->unsignedBigInteger('temp_tenant_id')->nullable()->after('tenant_id');
+                    });
+                }
+
+                // Mapear viejo ID de texto al nuevo ID numérico
+                DB::table($tableName)
+                    ->join('tenants', $tableName . '.tenant_id', '=', 'tenants.slug')
+                    ->update([$tableName . '.temp_tenant_id' => DB::raw('tenants.new_id')]);
+
+                // Reemplazar columna
+                if (Schema::hasColumn($tableName, 'tenant_id')) {
+                    Schema::table($tableName, function (Blueprint $table) {
+                        $table->dropColumn('tenant_id');
+                    });
+                }
+
+                Schema::table($tableName, function (Blueprint $table) {
+                    $table->renameColumn('temp_tenant_id', 'tenant_id');
+                });
+            }
+
+            // 4. Finalizar tabla TENANTS
+            Schema::table('tenants', function (Blueprint $table) {
+                // En MySQL, para cambiar la PK, a veces es mejor soltarla por nombre
+                // o simplemente soltarla si es la única primaria definida.
+                $table->dropPrimary();
+                $table->dropColumn('id');
+            });
+
+            Schema::table('tenants', function (Blueprint $table) {
+                $table->renameColumn('new_id', 'id');
+            });
+
+            // Convertir 'id' en autoincremental y primaria
+            DB::statement('ALTER TABLE tenants MODIFY id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY');
+
+            Schema::table('tenants', function (Blueprint $table) {
+                $table->string('slug')->unique()->change();
+            });
+        }
 
         Schema::enableForeignKeyConstraints();
     }
 
     public function down(): void
     {
-    // El rollback de esto sería extremadamente complejo y arriesgado.
-    // En este punto, el cambio es estructural y definitivo.
+    // Operación destructiva y estructural. No hay rollback automático seguro.
     }
 };
