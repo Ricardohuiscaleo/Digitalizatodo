@@ -9,7 +9,7 @@ return new class extends Migration {
     {
         Schema::create('plans', function (Blueprint $table) {
             $table->id();
-            $table->string('tenant_id');
+            $table->unsignedBigInteger('tenant_id');
             $table->string('name'); // ej: "Mensualidad Kids", "Mensualidad Adultos"
             $table->text('description')->nullable();
             $table->decimal('price', 10, 2); // precio en CLP
