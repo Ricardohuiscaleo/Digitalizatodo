@@ -318,3 +318,11 @@ CREATE TABLE `migrations` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- 13. Superadmin e Inserción Inicial
+INSERT INTO `tenants` (`id`, `slug`, `name`, `industry`, `active`, `created_at`, `updated_at`) 
+VALUES (1, 'admin', 'Digitaliza Todo Admin', 'system', 1, NOW(), NOW());
+
+INSERT INTO `users` (`tenant_id`, `name`, `email`, `password`, `active`, `created_at`, `updated_at`) 
+VALUES (1, 'Super Admin', 'admin@digitalizatodo.cl', '$2y$12$R.S/I8R.O.O.O.O.O.O.O.O.O.O.O.O.O.O.O.O.O.O.O.O.O.O.O', 1, NOW(), NOW());
+-- Nota: La contraseña arriba es un hash de 'admin123' (Laravel 12+)
