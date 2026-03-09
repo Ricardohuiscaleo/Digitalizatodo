@@ -30,9 +30,7 @@ Route::post('identify-tenant', [TenantDiscoveryController::class , 'identify']);
 Route::get('r/{code}', [RegistrationPageController::class , 'show']);
 Route::get('debug', [DebugController::class , 'index']);
 
-Route::get('industries', function () {
-    return \App\Models\Industry::where('active', true)->get();
-});
+Route::get('industries', [\App\Http\Controllers\Api\IndustryController::class , 'index']);
 
 // ── Webhooks (Sin Tenant / Públicos) ──────────────────────────────────────────
 Route::post('webhooks/resend-inbound', [TelegramBotController::class , 'handleResendInbound']);
