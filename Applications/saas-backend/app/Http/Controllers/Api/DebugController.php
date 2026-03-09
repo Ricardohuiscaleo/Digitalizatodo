@@ -36,7 +36,18 @@ class DebugController extends Controller
             if (Schema::hasTable('tenants')) {
                 $checks['database']['tenants_table'] = 'EXISTS';
                 $checks['database']['tenants_count'] = DB::table('tenants')->count();
-                $checks['database']['sample_tenants'] = DB::table('tenants')->select('id', 'name', 'industry', 'logo')->limit(5)->get();
+                $checks['database']['sample_tenants'] = DB::table('tenants')->limit(5)->get();
+
+                // Inspeccionar columnas
+                $columns = DB::select('DESCRIBE tenants');
+                $checks['database']['tenants_columns'] = array_map(function ($col) {
+                    return [
+                    'Field' => $col->Field,
+                    'Type' => $col->Type,
+                    'Key' => $col->Key,
+                    'Extra' => $col->Extra
+                    ];
+                }, $columns);
             }
             else {
                 $checks['database']['tenants_table'] = 'MISSING';
