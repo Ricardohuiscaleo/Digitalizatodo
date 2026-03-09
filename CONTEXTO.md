@@ -47,13 +47,7 @@ Cualquier cambio al backend PHP/Laravel debe hacerse en **DOS lugares**:
 | `db867ae` | saas-backend | fix: eliminar ruta AttendanceQRController inexistente |
 
 ## Variables de Entorno Backend (Coolify)
-```
-MAIL_MAILER=resend
-MAIL_FROM_ADDRESS=info@digitalizatodo.cl  ← (quitar mailto: si lo tiene)
-RESEND_API_KEY=re_Xfb7feoH_8886FXQGohwSbuuB7grRkNWX
-TELEGRAM_BOT_TOKEN=8621342984:AAEI44j--b8Ix0Sq5OFvl1nv_Jd0iARUQXQ
-TELEGRAM_ADMIN_ID=8104543914
-```
+Configuradas directamente en Coolify. No se versionan aquí.
 
 ## Pendientes (ver PENDIENTES.md)
 1. 🔴 Fix 500 en `settings/registration-page`
