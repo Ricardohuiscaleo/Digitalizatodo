@@ -48,7 +48,12 @@ echo "==> Publicando assets de Filament..."
 php artisan vendor:publish --tag=filament-assets --force 2>/dev/null || true
 
 echo "==> Corriendo migraciones..."
-php artisan migrate --force --no-interaction || echo "⚠️  Migraciones fallaron"
+if [ "$DB_FRESH" = "true" ]; then
+    echo "⚠️  EJECUTANDO REINICIO TOTAL (migrate:fresh)..."
+    php artisan migrate:fresh --force --no-interaction || echo "❌ Reset falló"
+else
+    php artisan migrate --force --no-interaction || echo "⚠️  Migraciones fallaron"
+fi
 
 echo "==> Creando usuario admin si no existe..."
 if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ]; then
