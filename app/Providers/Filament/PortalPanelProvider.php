@@ -36,8 +36,9 @@ class PortalPanelProvider extends PanelProvider
             ])
             ->brandLogoHeight('2rem')
             ->favicon(asset('DLogo-v2.webp', true))
-            ->renderHooks([
-                \Filament\View\PanelsRenderHook::AUTH_LOGIN_FORM_AFTER => fn (): string => '
+            ->renderHook(
+                \Filament\View\PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
+                fn (): string => '
                     <div class="text-center mt-4">
                         <p class="text-sm text-gray-600 dark:text-gray-400">
                             ¿No tienes cuenta? 
@@ -46,13 +47,16 @@ class PortalPanelProvider extends PanelProvider
                             </a>
                         </p>
                     </div>
-                ',
-                \Filament\View\PanelsRenderHook::FOOTER => fn (): string => '
+                '
+            )
+            ->renderHook(
+                \Filament\View\PanelsRenderHook::FOOTER,
+                fn (): string => '
                     <div class="text-center text-sm text-gray-500 py-4">
                         &copy; ' . date('Y') . ' Digitaliza Todo. Todos los derechos reservados.
                     </div>
-                ',
-            ])
+                '
+            )
             ->assets([
                 \Filament\Support\Assets\Css::make('custom-stylesheet', asset('css/custom.css', true)),
             ])
