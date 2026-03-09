@@ -324,5 +324,5 @@ INSERT INTO `tenants` (`id`, `slug`, `name`, `industry`, `active`, `created_at`,
 VALUES (1, 'admin', 'Digitaliza Todo Admin', 'system', 1, NOW(), NOW());
 
 INSERT INTO `users` (`tenant_id`, `name`, `email`, `password`, `active`, `created_at`, `updated_at`) 
-VALUES (NULL, 'Super Admin', 'admin@digitalizatodo.cl', '$2y$10$XFM/DW9VnJ0WJ9.nJ0WJ9.nJ0WJ9.nJ0WJ9.nJ0WJ9.nJ0WJ9.nJ0', 1, NOW(), NOW());
+VALUES (NULL, 'Super Admin', 'admin@digitalizatodo.cl', '$2y$12$GpgmIF1lbx.aByiWmTcY8.Z8Iy/IUDqYcZtnem7nT1E3uXHyuNM2u', 1, NOW(), NOW());
 -- Nota: La contraseña arriba es un hash de 'admin123' (Laravel 12+)
