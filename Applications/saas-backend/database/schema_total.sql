@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS `enrollments`;
 DROP TABLE IF EXISTS `failed_jobs`;
 DROP TABLE IF EXISTS `guardian_student`;
 DROP TABLE IF EXISTS `guardians`;
+DROP TABLE IF EXISTS `industries`;
 DROP TABLE IF EXISTS `job_batches`;
 DROP TABLE IF EXISTS `jobs`;
 DROP TABLE IF EXISTS `migrations`;
@@ -53,6 +54,22 @@ CREATE TABLE `tenants` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `tenants_slug_unique` (`slug`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 3. Crear Tabla INDUSTRIES
+CREATE TABLE `industries` (
+  `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `active` tinyint(1) NOT NULL DEFAULT '1',
+  `icon` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `industries` (`id`, `name`, `active`, `created_at`, `updated_at`) VALUES
+('academy', 'Artes Marciales - Deportes', 1, NOW(), NOW()),
+('clinic', 'Salud - Estética', 1, NOW(), NOW()),
+('other', 'Otros Negocios', 1, NOW(), NOW());
 
 -- 3. Crear Tabla USERS
 CREATE TABLE `users` (
