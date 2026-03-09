@@ -50,7 +50,7 @@ php artisan vendor:publish --tag=filament-assets --force 2>/dev/null || true
 echo "==> Corriendo migraciones..."
 if [ "$DB_FRESH" = "true" ]; then
     echo "⚠️  EJECUTANDO REINICIO TOTAL (migrate:fresh)..."
-    php artisan migrate:fresh --force --no-interaction || echo "❌ Reset falló"
+    php artisan migrate:fresh --force --no-interaction --seed || echo "❌ Reset falló"
 else
     php artisan migrate --force --no-interaction || echo "⚠️  Migraciones fallaron"
 fi
