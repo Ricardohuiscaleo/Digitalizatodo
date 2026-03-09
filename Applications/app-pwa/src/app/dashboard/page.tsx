@@ -53,10 +53,10 @@ export default function App() {
 
     const industryConfig: Record<string, { attendance: string; cat1: string; cat2: string; memberLabel: string; placeLabel: string }> = {
         martial_arts: { attendance: 'Tatami', cat1: 'Kids', cat2: 'Adultos', memberLabel: 'Alumno', placeLabel: 'Dojo' },
-        fitness:      { attendance: 'Clase',  cat1: 'Mensual', cat2: 'Trimestral', memberLabel: 'Socio', placeLabel: 'Clientes' },
-        dance:        { attendance: 'Sala',   cat1: 'Infantil', cat2: 'Adultos', memberLabel: 'Alumno', placeLabel: 'Clientes' },
-        music:        { attendance: 'Sala',   cat1: 'Infantil', cat2: 'Adultos', memberLabel: 'Alumno', placeLabel: 'Clientes' },
-        default:      { attendance: 'Clase',  cat1: 'Categoría 1', cat2: 'Categoría 2', memberLabel: 'Miembro', placeLabel: 'Clientes' },
+        fitness: { attendance: 'Clase', cat1: 'Mensual', cat2: 'Trimestral', memberLabel: 'Socio', placeLabel: 'Clientes' },
+        dance: { attendance: 'Sala', cat1: 'Infantil', cat2: 'Adultos', memberLabel: 'Alumno', placeLabel: 'Clientes' },
+        music: { attendance: 'Sala', cat1: 'Infantil', cat2: 'Adultos', memberLabel: 'Alumno', placeLabel: 'Clientes' },
+        default: { attendance: 'Clase', cat1: 'Categoría 1', cat2: 'Categoría 2', memberLabel: 'Miembro', placeLabel: 'Clientes' },
     };
     const vocab = industryConfig[branding?.industry || 'default'] || industryConfig.default;
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -193,8 +193,10 @@ export default function App() {
         return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
     };
 
-    const formatCLP = (value: number) =>
-        value === 0 ? '' : `$ ${new Intl.NumberFormat('es-CL').format(value)}`;
+    const formatCLP = (value: number) => {
+        if (!value || value === 0) return '';
+        return `$ ${new Intl.NumberFormat('es-CL').format(value)}`;
+    };
 
     const parseCLP = (str: string) => {
         const digits = str.replace(/\D/g, '');
@@ -209,13 +211,14 @@ export default function App() {
     const calculatePrice = (payer: any) => {
         let total = 0;
         payer.enrolledStudents.forEach((student: any) => {
-            total += student.category === 'adults' ? prices.adult : prices.kids;
+            const cat = student.category?.toLowerCase();
+            total += (cat === 'adult' || cat === 'adults') ? prices.adult : prices.kids;
         });
 
-        let hasDiscount = false;
         const numEnrollments = payer.enrolledStudents.length;
+        let hasDiscount = false;
 
-        if (numEnrollments > prices.discountThreshold) {
+        if (numEnrollments > prices.discountThreshold && prices.discountPercentage > 0) {
             total = total * (1 - prices.discountPercentage / 100);
             hasDiscount = true;
         }
@@ -712,7 +715,7 @@ export default function App() {
                         <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Mensualidad</span>
                     </div>
                     <div className="divide-y divide-zinc-50">
-                        {[{label: vocab.cat1, field: 'kids' as const}, {label: vocab.cat2, field: 'adult' as const}].map(({label, field}) => (
+                        {[{ label: vocab.cat1, field: 'kids' as const }, { label: vocab.cat2, field: 'adult' as const }].map(({ label, field }) => (
                             <div key={field} className="flex items-center px-4 py-2">
                                 <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest w-20 shrink-0">{label}</span>
                                 <input type="text" inputMode="numeric" className="flex-1 bg-transparent text-xs font-black text-zinc-950 focus:ring-0 outline-none text-right"
@@ -722,12 +725,12 @@ export default function App() {
                         <div className="flex items-center px-4 py-2">
                             <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest w-20 shrink-0">Desc. desde</span>
                             <input type="text" inputMode="numeric" className="flex-1 bg-transparent text-xs font-black text-zinc-950 focus:ring-0 outline-none text-right"
-                                value={prices.discountThreshold || ''} onChange={e => { const v = e.target.value.replace(/\D/g,''); setPrices(p => ({ ...p, discountThreshold: v === '' ? 0 : parseInt(v) })); }} placeholder="0 inscritos" />
+                                value={prices.discountThreshold === 0 ? '' : prices.discountThreshold} onChange={e => { const v = e.target.value.replace(/\D/g, ''); setPrices(p => ({ ...p, discountThreshold: v === '' ? 0 : parseInt(v) })); }} placeholder="0 inscritos" />
                         </div>
                         <div className="flex items-center px-4 py-2">
                             <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest w-20 shrink-0">Descuento</span>
                             <input type="text" inputMode="numeric" className="flex-1 bg-transparent text-xs font-black text-zinc-950 focus:ring-0 outline-none text-right"
-                                value={prices.discountPercentage ? `${prices.discountPercentage}%` : ''} onChange={e => { const v = e.target.value.replace(/\D/g,''); setPrices(p => ({ ...p, discountPercentage: v === '' ? 0 : Math.min(100, parseInt(v)) })); }} placeholder="0%" />
+                                value={prices.discountPercentage === 0 ? '' : `${prices.discountPercentage}%`} onChange={e => { const v = e.target.value.replace(/\D/g, ''); setPrices(p => ({ ...p, discountPercentage: v === '' ? 0 : Math.min(100, parseInt(v)) })); }} placeholder="0%" />
                         </div>
                     </div>
                 </div>
