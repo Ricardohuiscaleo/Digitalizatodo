@@ -52,6 +52,7 @@ export default function RegisterPage() {
     if (!validate()) return;
 
     setSubmitting(true); setError("");
+    console.log("Intentando registro en tenant:", tenant.slug, tenant);
     const result = await registerStudent(tenant.slug, form);
     setSubmitting(false);
     if (result?.errors) {
@@ -93,6 +94,7 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-white flex flex-col items-center p-6 pb-20">
       <div className="w-full max-w-sm pt-10 space-y-8">
         <div className="flex flex-col items-center gap-3">
+          <p className="text-[8px] text-zinc-300 font-mono uppercase tracking-widest">v1.0.2-fix</p>
           <div className="h-14 w-14 rounded-2xl bg-zinc-100 overflow-hidden flex items-center justify-center shadow-sm">
             {tenant.logo
               ? <img src={tenant.logo} className="h-full w-full object-contain" />
