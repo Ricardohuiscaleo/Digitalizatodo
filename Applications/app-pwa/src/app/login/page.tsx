@@ -78,17 +78,29 @@ export default function LoginPage() {
           </div>
           <div className="text-center">
             <h1 className="text-xl font-black text-zinc-900">{tenant?.name || "Digitaliza Todo"}</h1>
-            <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-0.5">
+            <div className="mt-2 min-h-[28px] flex justify-center">
               {step === "email" ? (
-                "Ingresa tu correo para continuar"
+                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest pt-1">
+                  Ingresa tu correo para continuar
+                </p>
               ) : (
-                tenant?.detected_roles?.includes("guardian") && tenant?.detected_roles?.includes("staff")
-                  ? "Cuenta con Múltiples Roles"
-                  : tenant?.detected_roles?.includes("staff")
-                    ? "Portal de Administración"
-                    : "Portal de Apoderados / Alumnos"
+                <div className="animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-500">
+                  <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-950 border border-zinc-800 shadow-md">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-indigo-500"></span>
+                    </span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white">
+                      {tenant?.detected_roles?.includes("guardian") && tenant?.detected_roles?.includes("staff")
+                        ? "Cuenta con Múltiples Roles"
+                        : tenant?.detected_roles?.includes("staff")
+                          ? "Portal de Administración"
+                          : "Portal de Apoderados / Alumnos"}
+                    </span>
+                  </span>
+                </div>
               )}
-            </p>
+            </div>
           </div>
         </div>
 
