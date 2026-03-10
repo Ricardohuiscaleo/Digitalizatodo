@@ -337,154 +337,141 @@ export default function App() {
         const pagedDates = historyDates.slice(historyPage * PAGE_SIZE, (historyPage + 1) * PAGE_SIZE);
 
         return (
-            <div className="space-y-4 px-4">
-                <div className="bg-gradient-to-r from-indigo-600 to-violet-600 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
-                    <div className="relative z-10">
-                        <h2 className="text-sm font-medium opacity-90 mb-1">Total Alumnos Participantes</h2>
-                        <p className="text-4xl font-bold mb-4">{totalStudents}</p>
-                        <div className="flex justify-between items-center text-sm bg-white/20 rounded-xl p-3 backdrop-blur-sm">
-                            <div className="flex items-center gap-2">
-                                <CheckCircle2 size={18} className="text-green-300" />
-                                <span>{paidStudents} Pagados</span>
+            <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-gradient-to-r from-indigo-600 to-violet-600 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
+                        <div className="relative z-10">
+                            <h2 className="text-sm font-medium opacity-90 mb-1 leading-none uppercase tracking-widest text-[10px]">Total Alumnos Participantes</h2>
+                            <p className="text-4xl font-black mb-4 tracking-tighter">{totalStudents}</p>
+                            <div className="flex justify-between items-center text-[11px] bg-white/20 rounded-xl p-4 backdrop-blur-sm font-black uppercase tracking-widest">
+                                <div className="flex items-center gap-2">
+                                    <CheckCircle2 size={16} className="text-green-300 border-none" />
+                                    <span>{paidStudents} Pagados</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <XCircle size={16} className="text-red-300 border-none" />
+                                    <span>{pendingStudents} Pendientes</span>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <XCircle size={18} className="text-red-300" />
-                                <span>{pendingStudents} Pendientes</span>
-                            </div>
+                            {isDemo && <p className="text-[10px] font-black uppercase text-center mt-4 text-white/50 tracking-[0.3em]">MODO DEMO ACTIVO</p>}
                         </div>
-                        {isDemo && <p className="text-[10px] font-black uppercase text-center mt-3 text-white/50 tracking-widest text-zinc-950">MODO DEMO ACTIVO</p>}
+                        <div className="absolute -right-6 -top-6 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl"></div>
                     </div>
-                    <div className="absolute -right-6 -top-6 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl"></div>
-                </div>
 
-                <div className="bg-white rounded-3xl p-4 shadow-sm border border-zinc-100">
-                    <div className="flex justify-between items-center mb-3">
-                        <div>
-                            <h3 className="text-sm font-black text-zinc-800 flex items-center gap-1.5 uppercase tracking-tighter">
-                                <CalendarCheck className="text-indigo-500" size={16} />
-                                Asistencia Hoy
-                            </h3>
-                            <p className="text-[10px] text-zinc-400 font-bold mt-0.5 capitalize">
-                                {now.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'short' })} · {now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-black">
+                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100 flex flex-col justify-between">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2 uppercase tracking-tighter">
+                                    <CalendarCheck className="text-indigo-500" size={18} />
+                                    Asistencia Hoy
+                                </h3>
+                                <p className="text-[10px] text-zinc-400 font-bold mt-1 uppercase tracking-widest">
+                                    {now.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'short' })}
+                                </p>
+                            </div>
+                            <span className="bg-indigo-50 text-indigo-600 px-4 py-1.5 rounded-full text-xs font-black">
                                 {presentToday} / {totalStudents}
                             </span>
-                            <button onClick={() => changeTab('attendance')} className="flex items-center gap-1 text-indigo-500 text-[10px] font-black uppercase tracking-widest active:opacity-70 transition-all">
-                                Ir al {vocab.placeLabel} <ChevronRight size={13} />
-                            </button>
                         </div>
-                    </div>
 
-                    {presentToday > 0 ? (
-                        <div className="space-y-3">
-                            <div className="flex -space-x-2 overflow-x-auto pb-1">
-                                {allStudents.filter(s => attendance.has(s.id)).map(s => (
-                                    <img
-                                        key={s.id}
-                                        className="inline-block h-10 w-10 rounded-full border-2 border-white shadow-sm object-cover shrink-0"
-                                        src={s.photo}
-                                        alt={s.name}
-                                    />
-                                ))}
+                        {presentToday > 0 ? (
+                            <div className="space-y-4">
+                                <div className="flex -space-x-2 overflow-x-auto pb-1 scrollbar-hide">
+                                    {allStudents.filter(s => attendance.has(s.id)).map(s => (
+                                        <img
+                                            key={s.id}
+                                            className="inline-block h-10 w-10 rounded-full border-2 border-white shadow-sm object-cover shrink-0"
+                                            src={s.photo}
+                                            alt={s.name}
+                                        />
+                                    ))}
+                                </div>
+                                <button onClick={() => changeTab('attendance')} className="w-full py-4 rounded-2xl bg-zinc-950 text-white text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-zinc-200">
+                                    Actualizar {vocab.placeLabel}
+                                </button>
                             </div>
-                            <button onClick={() => changeTab('attendance')} className="w-full py-3 rounded-2xl bg-zinc-950 text-white text-xs font-black uppercase tracking-widest active:scale-95 transition-all">
-                                Registrar Asistencia 👇
+                        ) : (
+                            <button onClick={() => changeTab('attendance')} className="flex items-center justify-center gap-3 py-6 px-4 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200 w-full group transition-all hover:bg-zinc-100">
+                                <CalendarCheck size={20} className="text-zinc-300 shrink-0 group-hover:scale-110 transition-transform" />
+                                <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">Sin registros · Empezar Ahora</p>
                             </button>
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-3 py-3 px-4 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">
-                            <CalendarCheck size={16} className="text-zinc-300 shrink-0" />
-                            <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest">Sin registros aún</p>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
 
-                {/* HISTORIAL DE ASISTENCIA */}
-                <div className="bg-white rounded-3xl p-4 shadow-sm border border-zinc-100">
-                    <div className="flex justify-between items-center mb-3">
-                        <h3 className="text-sm font-black text-zinc-800 flex items-center gap-1.5 uppercase tracking-tighter">
-                            <CalendarCheck className="text-zinc-400" size={16} />
-                            Historial
+                {/* HISTORIAL DE ASISTENCIA - RE-ESTILIZADO PARA DESKTOP */}
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2 uppercase tracking-tighter">
+                            <RefreshCw className="text-zinc-400" size={18} />
+                            Historial Reciente
                         </h3>
                         {totalPages > 1 && (
-                            <div className="flex items-center gap-2">
-                                <button disabled={historyPage === 0} onClick={() => setHistoryPage(p => p - 1)} className="w-7 h-7 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center disabled:opacity-30 active:scale-95 transition-all">
-                                    <ChevronUp size={14} className="text-zinc-500" />
+                            <div className="flex items-center gap-3">
+                                <button disabled={historyPage === 0} onClick={() => setHistoryPage(p => p - 1)} className="w-9 h-9 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center disabled:opacity-30 active:scale-95 transition-all hover:bg-zinc-100">
+                                    <ChevronUp size={16} className="text-zinc-500" />
                                 </button>
-                                <span className="text-[10px] font-black text-zinc-400">{historyPage + 1}/{totalPages}</span>
-                                <button disabled={historyPage >= totalPages - 1} onClick={() => setHistoryPage(p => p + 1)} className="w-7 h-7 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center disabled:opacity-30 active:scale-95 transition-all">
-                                    <ChevronDown size={14} className="text-zinc-500" />
+                                <span className="text-[10px] font-black text-zinc-400 tracking-widest">{historyPage + 1} / {totalPages}</span>
+                                <button disabled={historyPage >= totalPages - 1} onClick={() => setHistoryPage(p => p + 1)} className="w-9 h-9 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center disabled:opacity-30 active:scale-95 transition-all hover:bg-zinc-100">
+                                    <ChevronDown size={16} className="text-zinc-500" />
                                 </button>
                             </div>
                         )}
                     </div>
 
                     {pagedDates.length === 0 ? (
-                        <div className="flex items-center gap-3 py-3 px-4 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">
-                            <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest">Sin historial disponible</p>
+                        <div className="flex items-center gap-3 py-10 px-4 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200 justify-center">
+                            <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">No hay historial disponible aún</p>
                         </div>
                     ) : (
-                        <div className="space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-1 gap-3">
                             {pagedDates.map(date => {
                                 const records: any[] = historyByDate[date];
                                 const presentCount = records.filter(r => r.status === 'present').length;
-                                const sampleTime = records[0]?.created_at;
-                                const timeStr = sampleTime ? new Date(sampleTime).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : '';
                                 const dateObj = new Date(date + 'T12:00:00');
                                 const dateStr = dateObj.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' });
                                 const students = records.filter(r => r.status === 'present' && r.student);
 
                                 return (
-                                    <div key={date} className="bg-zinc-50 rounded-2xl p-3 border border-zinc-100">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <div>
-                                                <p className="text-[11px] font-black text-zinc-800 capitalize">{dateStr}</p>
-                                                {timeStr && <p className="text-[9px] text-zinc-400 font-bold">{timeStr}</p>}
+                                    <div key={date} className="bg-zinc-50/50 hover:bg-zinc-50 rounded-2xl p-4 border border-zinc-100 transition-colors">
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-xl bg-white border border-zinc-100 flex flex-col items-center justify-center shrink-0 shadow-sm">
+                                                    <span className="text-[8px] font-black uppercase text-indigo-500 leading-none mb-1">{dateObj.toLocaleDateString('es-CL', { month: 'short' })}</span>
+                                                    <span className="text-lg font-black text-zinc-900 leading-none">{dateObj.getDate()}</span>
+                                                </div>
+                                                <div>
+                                                    <p className="text-[11px] font-black text-zinc-800 uppercase tracking-widest leading-none">{dateStr}</p>
+                                                    <span className="inline-flex items-center gap-1 mt-1 text-indigo-600 text-[9px] font-black uppercase">
+                                                        {presentCount} presentes
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full text-[10px] font-black">
-                                                    {presentCount} presentes
-                                                </span>
-                                                <button
-                                                    onClick={() => changeTab('attendance')}
-                                                    className="w-7 h-7 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center active:scale-95 transition-all"
-                                                    title="Editar"
-                                                >
-                                                    <span className="text-amber-500 text-[9px] font-black">✎</span>
-                                                </button>
-                                                <button
-                                                    onClick={async () => {
-                                                        if (!confirm('¿Borrar asistencia de este día?')) return;
-                                                        const token = localStorage.getItem('staff_token');
-                                                        if (token && user?.tenant_id) {
-                                                            for (const r of records) {
-                                                                await storeAttendance(user.tenant_id, token, { student_id: r.student_id || r.student?.id, status: 'absent' });
-                                                            }
-                                                            setAttendanceHistory(prev => prev.filter(r => (r.date || r.created_at?.split('T')[0]) !== date));
-                                                        }
-                                                    }}
-                                                    className="w-7 h-7 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center active:scale-95 transition-all"
-                                                    title="Borrar"
-                                                >
-                                                    <span className="text-red-400 text-[9px] font-black">✕</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        {students.length > 0 && (
-                                            <div className="flex -space-x-2 overflow-x-auto">
-                                                {students.slice(0, 8).map((r: any) => (
-                                                    <img key={r.id} src={r.student?.photo} className="h-8 w-8 rounded-full border-2 border-white object-cover shrink-0 shadow-sm" alt={r.student?.name} />
-                                                ))}
-                                                {students.length > 8 && (
-                                                    <div className="h-8 w-8 rounded-full border-2 border-white bg-zinc-200 flex items-center justify-center shrink-0">
-                                                        <span className="text-[8px] font-black text-zinc-500">+{students.length - 8}</span>
+
+                                            <div className="flex items-center gap-4">
+                                                {students.length > 0 && (
+                                                    <div className="flex -space-x-2 overflow-hidden px-2">
+                                                        {students.slice(0, 10).map((r: any) => (
+                                                            <img key={r.id} src={r.student?.photo} className="h-8 w-8 rounded-full border-2 border-white object-cover shrink-0 shadow-sm" alt={r.student?.name} />
+                                                        ))}
+                                                        {students.length > 10 && (
+                                                            <div className="h-8 w-8 rounded-full border-2 border-white bg-zinc-200 flex items-center justify-center shrink-0">
+                                                                <span className="text-[8px] font-black text-zinc-500">+{students.length - 10}</span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
+
+                                                <div className="flex items-center gap-2 ml-auto">
+                                                    <button
+                                                        onClick={() => changeTab('attendance')}
+                                                        className="h-9 px-4 rounded-xl bg-white border border-zinc-200 text-zinc-600 text-[9px] font-black uppercase tracking-widest hover:bg-zinc-950 hover:text-white hover:border-zinc-950 transition-all active:scale-95"
+                                                    >
+                                                        Registrar
+                                                    </button>
+                                                </div>
                                             </div>
-                                        )}
+                                        </div>
                                     </div>
                                 );
                             })}
@@ -512,7 +499,62 @@ export default function App() {
                     />
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                {/* VISTA DESKTOP: TABLA */}
+                <div className="hidden md:block bg-white rounded-3xl shadow-sm border border-zinc-100 overflow-hidden">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-zinc-50 border-b border-zinc-100">
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-400">Participante</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-400">Categoría / Rango</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-400">Estado Hoy</th>
+                                <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-zinc-400">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-50">
+                            {filteredStudents.map(student => {
+                                const isPresent = attendance.has(student.id);
+                                return (
+                                    <tr key={student.id} className="hover:bg-zinc-50/50 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <img src={student.photo} className="w-10 h-10 rounded-full object-cover border border-zinc-100" />
+                                                <span className="text-sm font-black text-zinc-900 uppercase">{student.name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {student.label && branding?.industry === 'martial_arts' ? (
+                                                <span className={`text-[9px] px-2 py-1 rounded font-black uppercase tracking-widest ${getBeltColor(student.label)}`}>{student.label}</span>
+                                            ) : (
+                                                <span className="text-[9px] uppercase tracking-widest font-bold text-zinc-400">{student.category === 'kids' ? vocab.cat1 : student.category === 'adult' ? vocab.cat2 : student.category || ''}</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {isPresent ? (
+                                                <div className="flex items-center gap-2 text-emerald-600">
+                                                    <CheckCircle2 size={16} />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">Presente</span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Ausente</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <button
+                                                onClick={() => toggleAttendance(student.id)}
+                                                className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${isPresent ? 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200' : 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-md shadow-emerald-100'}`}
+                                            >
+                                                {isPresent ? 'Quitar' : 'Marcar'}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* VISTA MOBILE: GRID DE TARJETAS */}
+                <div className="grid grid-cols-3 gap-3 md:hidden">
                     {filteredStudents.map(student => {
                         const isPresent = attendance.has(student.id);
                         return (
@@ -574,7 +616,69 @@ export default function App() {
                     ))}
                 </div>
 
-                <div className="space-y-3 pb-6">
+                {/* VISTA DESKTOP: TABLA DE PAGOS */}
+                <div className="hidden md:block bg-white rounded-3xl shadow-sm border border-zinc-100 overflow-hidden">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-zinc-50 border-b border-zinc-100">
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-400">Titular</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-400">Inscritos</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-400">Monto</th>
+                                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-400">Estado</th>
+                                <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-zinc-400">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-50">
+                            {filteredPayers.map(payer => {
+                                const { amount, hasDiscount, numEnrollments } = calculatePrice(payer);
+                                const isPaid = payer.status === 'paid';
+                                return (
+                                    <tr key={payer.id} className="hover:bg-zinc-50/50 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <img src={payer.photo} className="w-10 h-10 rounded-full object-cover border border-zinc-100" />
+                                                <span className="text-sm font-black text-zinc-900 uppercase">{payer.name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm font-bold text-zinc-500">
+                                            {numEnrollments} {numEnrollments === 1 ? 'Participante' : 'Participantes'}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-black text-indigo-600">{formatMoney(amount)}</span>
+                                                {hasDiscount && <span className="text-[8px] text-emerald-600 font-black uppercase tracking-widest">Con Descuento</span>}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {isPaid ? (
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest">
+                                                    <CheckCircle2 size={12} /> Al Día
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-widest">
+                                                    <XCircle size={12} /> Pendiente
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            {!isPaid && (
+                                                <button
+                                                    onClick={() => handlePaymentApprove(payer.id)}
+                                                    className="px-5 py-2 rounded-xl bg-zinc-950 text-white text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-md shadow-zinc-100"
+                                                >
+                                                    Pagar
+                                                </button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* VISTA MOBILE: LISTA DE TARJETAS */}
+                <div className="space-y-3 pb-6 md:hidden">
                     {filteredPayers.map(payer => {
                         const { amount, hasDiscount, numEnrollments } = calculatePrice(payer);
                         const isPaid = payer.status === 'paid';
@@ -760,10 +864,9 @@ export default function App() {
     );
 
     return (
-        <div className="flex flex-col h-screen bg-white font-sans sm:max-w-lg sm:mx-auto relative overflow-hidden text-zinc-950">
-
-            {/* HEADER DINÁMICO */}
-            <header className="bg-white px-8 py-8 flex items-center justify-between sticky top-0 z-50 border-none shrink-0">
+        <div className="flex flex-col h-screen bg-white font-sans relative overflow-hidden text-zinc-950">
+            {/* HEADER DINÁMICO - Oculto en Desktop ya que se integra en el Content */}
+            <header className="bg-white px-8 py-8 flex items-center justify-between sticky top-0 z-50 border-none shrink-0 md:hidden">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 flex items-center justify-center shrink-0 rounded-full overflow-hidden border-2 border-zinc-100">
                         {branding?.logo ? (
@@ -791,18 +894,65 @@ export default function App() {
                 </div>
             </header>
 
-            {/* CONTENIDO CON ANIMACIÓN LATERAL */}
-            <main className="flex-1 overflow-y-auto pb-32 hide-scrollbar relative">
-                <div key={activeTab} className="w-full animate-in fade-in duration-150">
-                    {activeTab === 'dashboard' && renderDashboard()}
-                    {activeTab === 'attendance' && renderAttendance()}
-                    {activeTab === 'payments' && renderPayments()}
-                    {activeTab === 'settings' && renderSettings()}
-                </div>
-            </main>
+            <div className="flex flex-1 overflow-hidden">
+                {/* SIDEBAR DESKTOP */}
+                <aside className="hidden md:flex flex-col w-64 bg-white border-r border-zinc-100 p-6 gap-8">
+                    <div className="flex items-center gap-3 px-2">
+                        <div className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full overflow-hidden border-2 border-zinc-100">
+                            {branding?.logo ? (
+                                <img src={branding.logo} className="w-full h-full object-cover" alt="L" />
+                            ) : (
+                                <span className="font-black text-xl uppercase tracking-tighter text-zinc-950">{branding?.name?.[0] || 'D'}</span>
+                            )}
+                        </div>
+                        <div className="min-w-0">
+                            <h2 className="text-sm font-black uppercase tracking-tighter text-zinc-950 truncate leading-none">{branding?.name || 'Academy'}</h2>
+                            <p className="text-[8px] font-black text-indigo-600 uppercase tracking-widest mt-1">Software de Gestión</p>
+                        </div>
+                    </div>
 
-            {/* NAV CON ESTILO PREMIUM */}
-            <nav className="fixed bottom-0 left-0 right-0 sm:max-w-lg sm:mx-auto bg-white border-t border-zinc-100 pt-3 pb-8 px-10 flex justify-between items-center h-24 z-50">
+                    <nav className="flex flex-col gap-2">
+                        <SidebarButton icon={LayoutDashboard} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} />
+                        <SidebarButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} />
+                        <SidebarButton icon={CreditCard} label="Pagos" active={activeTab === 'payments'} onClick={() => changeTab('payments')} />
+                        <SidebarButton icon={Settings} label="Ajustes" active={activeTab === 'settings'} onClick={() => changeTab('settings')} />
+                    </nav>
+
+                    <div className="mt-auto pt-6 border-t border-zinc-50 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full overflow-hidden border border-zinc-100">
+                            <img src="/DLogo-v2.webp" className="w-full h-full object-cover" alt="D" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-black text-zinc-900 truncate leading-none uppercase">{user?.name || 'Admin'}</p>
+                            <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">Administrator</p>
+                        </div>
+                        <button onClick={() => { localStorage.clear(); window.location.href = "/"; }} className="text-zinc-300 hover:text-rose-500 transition-colors">
+                            <LogOut size={16} />
+                        </button>
+                    </div>
+                </aside>
+
+                {/* CONTENIDO PRINCIPAL */}
+                <main className="flex-1 overflow-y-auto pb-32 md:pb-8 hide-scrollbar relative bg-zinc-50/30">
+                    <div className="max-w-6xl mx-auto py-4 md:py-8 px-4 md:px-8">
+                        <div key={activeTab} className="w-full animate-in fade-in duration-150">
+                            <div className="hidden md:flex justify-between items-center mb-8">
+                                <h2 className="text-2xl font-black uppercase tracking-tighter text-zinc-950">
+                                    {activeTab === 'dashboard' ? 'Resumen General' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? 'Estado de Pagos' : 'Configuración'}
+                                </h2>
+                                {isDemo && <span className="bg-emerald-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Modo Demo Activo</span>}
+                            </div>
+                            {activeTab === 'dashboard' && renderDashboard()}
+                            {activeTab === 'attendance' && renderAttendance()}
+                            {activeTab === 'payments' && renderPayments()}
+                            {activeTab === 'settings' && renderSettings()}
+                        </div>
+                    </div>
+                </main>
+            </div>
+
+            {/* NAV CON ESTILO PREMIUM - Solo visible en Mobile */}
+            <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 pt-3 pb-8 px-10 flex justify-between items-center h-24 z-50 md:hidden text-zinc-950">
                 <TabButton icon={LayoutDashboard} label="Inicio" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} />
                 <TabButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} />
                 <TabButton icon={CreditCard} label="Pagos" active={activeTab === 'payments'} onClick={() => changeTab('payments')} />
@@ -815,6 +965,15 @@ export default function App() {
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}} />
         </div>
+    );
+}
+
+function SidebarButton({ icon: Icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) {
+    return (
+        <button onClick={onClick} className={`flex items- center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 w-full group ${active ? 'bg-zinc-950 text-white shadow-lg' : 'text-zinc-400 hover:bg-zinc-50 hover:text-zinc-600'}`}>
+            <Icon size={20} strokeWidth={active ? 3 : 2} className={`transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`} />
+            <span className="text-[11px] font-black uppercase tracking-widest">{label}</span>
+        </button>
     );
 }
 
