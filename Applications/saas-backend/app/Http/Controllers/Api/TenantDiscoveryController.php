@@ -25,37 +25,57 @@ class TenantDiscoveryController extends Controller
         $guardianTenants = \App\Models\Guardian::with('tenant')
             ->where('email', $email)
             ->where('active', true)
-            ->get()
-            ->map(fn($g) => $g->tenant);
+            ->get();
 
         // 2. Buscar Staff/Owners (User)
-        // Se elimina la restricción whereNotNull('tenant_id') para permitir la identificación de SuperAdmins.
         $userTenants = \App\Models\User::with('tenant')
             ->where('email', $email)
-            ->get()
-            ->map(fn($u) => $u->tenant);
+            ->get();
 
-        // Combinar y filtrar nulos/inactivos
-        $allTenants = $guardianTenants->concat($userTenants)
-            ->filter(fn($t) => $t && $t->active)
-            ->unique('id')
-            ->values();
+        // Extraer tenants y prepararlos
+        $allTenantsMap = [];
 
-        if ($allTenants->isEmpty()) {
+        foreach ($guardianTenants as $g) {
+            if ($g->tenant && $g->tenant->active) {
+                $tid = $g->tenant->id;
+                if (!isset($allTenantsMap[$tid])) {
+                    $allTenantsMap[$tid] = ['tenant' => $g->tenant, 'roles' => []];
+                }
+                $allTenantsMap[$tid]['roles'][] = 'guardian';
+            }
+        }
+
+        foreach ($userTenants as $u) {
+            if ($u->tenant && $u->tenant->active) {
+                $tid = $u->tenant->id;
+                if (!isset($allTenantsMap[$tid])) {
+                    $allTenantsMap[$tid] = ['tenant' => $u->tenant, 'roles' => []];
+                }
+                if (!in_array('staff', $allTenantsMap[$tid]['roles'])) {
+                    $allTenantsMap[$tid]['roles'][] = 'staff';
+                }
+            }
+        }
+
+        if (empty($allTenantsMap)) {
             return response()->json([
                 'found' => false,
                 'message' => 'No se encontraron academias asociadas a este correo.',
             ], 200);
         }
 
-        $tenants = $allTenants->map(fn($t) => [
-        'id' => $t->id,
-        'slug' => $t->slug,
-        'name' => $t->name,
-        'industry' => $t->industry,
-        'logo' => $t->logo ? (str_starts_with($t->logo, 'http') ? $t->logo : \Illuminate\Support\Facades\Storage::disk('public')->url($t->logo)) : '/icon.webp',
-        'primary_color' => $t->primary_color ?? '#f59e0b',
-        ]);
+        $tenants = collect(array_values($allTenantsMap))->map(function ($data) {
+            $t = $data['tenant'];
+            return [
+            'id' => $t->id,
+            'slug' => $t->slug,
+            'name' => $t->name,
+            'industry' => $t->industry,
+            'logo' => $t->logo ? (str_starts_with($t->logo, 'http') ? $t->logo : \Illuminate\Support\Facades\Storage::disk('public')->url($t->logo)) : '/icon.webp',
+            'primary_color' => $t->primary_color ?? '#f59e0b',
+            'detected_roles' => $data['roles']
+            ];
+        });
 
         return response()->json([
             'found' => true,
