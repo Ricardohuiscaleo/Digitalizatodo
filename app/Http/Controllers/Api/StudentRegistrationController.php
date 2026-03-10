@@ -65,11 +65,17 @@ class StudentRegistrationController extends Controller
                 // El apoderado es el alumno titular
                 $studentsToCreate[] = [
                     'name' => $request->guardian_name,
-                    'category' => 'adults', // Por defecto adultos si es titular, o recibir de PWA
+                    'category' => 'adults', // Por defecto adultos si es titular
                 ];
             }
-            else {
-                $studentsToCreate = $request->students;
+
+            // Añadir el resto de los alumnos si existen
+            if ($request->has('students') && is_array($request->students)) {
+                foreach ($request->students as $studentData) {
+                    if (!empty($studentData['name'])) {
+                        $studentsToCreate[] = $studentData;
+                    }
+                }
             }
 
             $studentCount = count($studentsToCreate);
@@ -107,29 +113,30 @@ class StudentRegistrationController extends Controller
                     'status' => 'pending',
                 ]);
             }
-            
+
             // 4. Notificaciones por Email
             try {
                 // Email al Apoderado/Titular
                 Mail::to($guardian->email)->send(new StudentRegistrationMail(
-                    $guardian, 
-                    $tenant, 
-                    $plan, 
-                    $studentCount, 
+                    $guardian,
+                    $tenant,
+                    $plan,
+                    $studentCount,
                     false // isForTenant
-                ));
+                    ));
 
                 // Email a la Academia (Tenant)
                 if ($tenant->email) {
                     Mail::to($tenant->email)->send(new StudentRegistrationMail(
-                        $guardian, 
-                        $tenant, 
-                        $plan, 
-                        $studentCount, 
+                        $guardian,
+                        $tenant,
+                        $plan,
+                        $studentCount,
                         true // isForTenant
-                    ));
+                        ));
                 }
-            } catch (\Exception $e) {
+            }
+            catch (\Exception $e) {
                 Log::error("Error enviando emails de registro alumno: " . $e->getMessage());
             }
 
