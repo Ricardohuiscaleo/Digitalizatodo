@@ -66,6 +66,40 @@ export default function RegisterPage() {
     }
   };
 
+  const pricing = tenant?.data?.pricing || tenant?.data?.prices || { kids: 0, adult: 0, discountThreshold: 2, discountPercentage: 0 };
+
+  const calculateTotal = () => {
+    let kidsCount = 0;
+    let adultsCount = 0;
+
+    if (form.is_self_register) {
+      adultsCount += 1;
+    }
+
+    form.students.forEach(s => {
+      // Solo sumamos si hay un nombre escrito, para no cobrar filas vacías
+      if (s.name.trim() !== "") {
+        if (s.category === 'kids') kidsCount += 1;
+        else if (s.category === 'adults') adultsCount += 1;
+      }
+    });
+
+    const totalInscriptions = kidsCount + adultsCount;
+    const subtotal = (kidsCount * (pricing.kids || 0)) + (adultsCount * (pricing.adult || 0));
+
+    let total = subtotal;
+    let hasDiscount = false;
+
+    if (pricing.discountThreshold > 0 && totalInscriptions >= pricing.discountThreshold && pricing.discountPercentage > 0) {
+      total = subtotal * (1 - (pricing.discountPercentage / 100));
+      hasDiscount = true;
+    }
+
+    return { kidsCount, adultsCount, totalInscriptions, subtotal, total, hasDiscount };
+  };
+
+  const totals = calculateTotal();
+
   if (loading) return (
     <div className="flex min-h-screen items-center justify-center bg-white">
       <Loader2 className="animate-spin text-zinc-300" size={24} />
@@ -242,6 +276,48 @@ export default function RegisterPage() {
           </div>
 
           <div className="pt-4">
+            {totals.totalInscriptions > 0 && (
+              <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-200 mb-6 space-y-3">
+                <h3 className="text-[10px] uppercase font-black tracking-widest text-zinc-400">Resumen de Inscripción</h3>
+
+                <div className="space-y-1 text-sm">
+                  {totals.adultsCount > 0 && (
+                    <div className="flex justify-between items-center text-zinc-600">
+                      <span>{totals.adultsCount}x Adulto</span>
+                      <span className="font-medium">${(totals.adultsCount * (pricing.adult || 0)).toLocaleString('es-CL')}</span>
+                    </div>
+                  )}
+                  {totals.kidsCount > 0 && (
+                    <div className="flex justify-between items-center text-zinc-600">
+                      <span>{totals.kidsCount}x Kids</span>
+                      <span className="font-medium">${(totals.kidsCount * (pricing.kids || 0)).toLocaleString('es-CL')}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-zinc-200 pt-3 flex items-end justify-between">
+                  <div className="flex flex-col">
+                    <span className="text-zinc-900 font-bold">Total a pagar mensual</span>
+                    {totals.hasDiscount && (
+                      <span className="text-[10px] font-black text-emerald-500 uppercase">
+                        ¡Aplica {pricing.discountPercentage}% Descuento Familiar!
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    {totals.hasDiscount && (
+                      <span className="text-xs text-zinc-400 line-through block leading-none w-full text-right">
+                        ${totals.subtotal.toLocaleString('es-CL')}
+                      </span>
+                    )}
+                    <span className="text-xl font-black text-zinc-900 leading-none">
+                      ${totals.total.toLocaleString('es-CL')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <button type="submit" disabled={submitting}
               className="w-full h-12 bg-zinc-950 hover:bg-zinc-800 text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-zinc-200 disabled:opacity-40">
               {submitting ? <Loader2 className="animate-spin text-zinc-400" size={18} /> : (
