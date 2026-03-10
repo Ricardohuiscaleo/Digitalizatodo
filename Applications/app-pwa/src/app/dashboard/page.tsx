@@ -99,7 +99,7 @@ export default function App() {
         setTabDirection(newIndex > currentIndex ? 1 : -1);
         setActiveTab(newTab);
         if (newTab === 'settings' && !regPageCode) {
-            getRegistrationPageCode(user?.tenant_id ?? '', token ?? '').then(r => { if (r?.code) setRegPageCode(r.code); });
+            getRegistrationPageCode(user?.tenant_slug ?? user?.tenant_id ?? '', token ?? '').then(r => { if (r?.code) setRegPageCode(r.code); });
         }
     };
 
@@ -108,13 +108,14 @@ export default function App() {
     useEffect(() => {
         const init = async () => {
             let storedToken = localStorage.getItem("staff_token") || localStorage.getItem("auth_token");
-            let tenantId = localStorage.getItem("tenant_id")?.trim();
+            let tenantSlug = localStorage.getItem("tenant_slug")?.trim();
+            const tenantId = localStorage.getItem("tenant_id")?.trim();
 
             // Intentar renovar sesión con remember_token si no hay token activo
-            if (!storedToken && tenantId) {
+            if (!storedToken && tenantSlug) {
                 const rememberToken = localStorage.getItem("remember_token");
                 if (rememberToken) {
-                    const resumed = await resumeSession(tenantId, rememberToken);
+                    const resumed = await resumeSession(tenantSlug, rememberToken);
                     if (resumed?.token) {
                         storedToken = resumed.token;
                         const key = resumed.user_type === 'staff' ? 'staff_token' : 'auth_token';
@@ -123,20 +124,25 @@ export default function App() {
                 }
             }
 
-            if (!storedToken || !tenantId) {
+            if (!storedToken || !tenantSlug) {
                 window.location.href = "/";
                 return;
             }
 
             setToken(storedToken);
 
-            const [profile, payersData]: [any, any] = await Promise.all([
-                getProfile(tenantId, storedToken),
-                getPayers(tenantId, storedToken)
+            const [profile, payersData, attendanceHistoryData]: [any, any, any] = await Promise.all([
+                getProfile(tenantSlug, storedToken),
+                getPayers(tenantSlug, storedToken),
+                getAttendanceHistory(tenantSlug, storedToken)
             ]);
 
             if (profile) {
-                setUser({ ...profile, tenant_id: profile.tenant_id || tenantId });
+                setUser({
+                    ...profile,
+                    tenant_id: profile.tenant_id || tenantId,
+                    tenant_slug: profile.tenant?.slug || tenantSlug
+                });
                 if (profile.tenant?.data?.pricing) {
                     setPrices(profile.tenant.data.pricing);
                 }
@@ -152,9 +158,8 @@ export default function App() {
                 }
                 setPayers(payersData?.payers || []);
 
-                const historyData = await getAttendanceHistory(tenantId, storedToken);
-                if (historyData?.attendance) {
-                    setAttendanceHistory(historyData.attendance);
+                if (attendanceHistoryData?.attendance) {
+                    setAttendanceHistory(attendanceHistoryData.attendance);
                 }
 
                 if (payersData?.payers) {
@@ -267,8 +272,8 @@ export default function App() {
         else newAttendance.add(studentId);
         setAttendance(newAttendance);
 
-        if (!isDemo && token && user?.tenant_id) {
-            await storeAttendance(user.tenant_id, token, { student_id: studentId, status: newStatus });
+        if (!isDemo && token && (user?.tenant_slug || user?.tenant_id)) {
+            await storeAttendance(user.tenant_slug || user.tenant_id, token, { student_id: studentId, status: newStatus });
         }
     };
 
@@ -278,9 +283,9 @@ export default function App() {
             return;
         }
 
-        if (token && user?.tenant_id && confirm('¿Confirmar registro de pago?')) {
-            await approvePayment(user.tenant_id, token, payerId);
-            const payersData = await getPayers(user.tenant_id, token);
+        if (token && (user?.tenant_slug || user?.tenant_id) && confirm('¿Confirmar registro de pago?')) {
+            await approvePayment(user.tenant_slug || user.tenant_id, token, payerId);
+            const payersData = await getPayers(user.tenant_slug || user.tenant_id, token);
             setPayers(payersData?.payers || []);
         }
     };

@@ -15,7 +15,7 @@ export default function DashboardLayout({
 
     useEffect(() => {
         const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-        const tenantId = localStorage.getItem("tenant_id");
+        const tenantSlug = localStorage.getItem("tenant_slug");
 
         if (!token) {
             window.location.href = "/login";
@@ -24,11 +24,8 @@ export default function DashboardLayout({
 
         const verifySession = async () => {
             try {
-                // Si no hay tenantId en localStorage, pero sí token, intentamos recuperar el perfil
-                // El backend debería resolver el tenant si el token es válido o si el host ayuda
-                // Por ahora usamos el tenantId guardado
-                if (tenantId) {
-                    const profile = await getProfile(tenantId, token);
+                if (tenantSlug) {
+                    const profile = await getProfile(tenantSlug, token);
                     if (!profile || profile.message === 'Unauthenticated.') {
                         localStorage.clear();
                         window.location.href = "/login";
