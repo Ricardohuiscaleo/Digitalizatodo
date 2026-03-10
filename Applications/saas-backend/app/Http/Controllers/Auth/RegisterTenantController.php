@@ -45,11 +45,11 @@ class RegisterTenantController extends Controller
         // Notificar por Telegram
         $msg = "<b>🚀 ¡NUEVO REGISTRO DE EMPRESA!</b>\n\n"
             . "🏢 <b>Empresa:</b> {$tenant->name} ({$tenant->industry})\n"
-            . "🔗 <b>Slug:</b> {$tenant->id}\n"
+            . "🔗 <b>Slug:</b> {$tenant->slug}\n"
             . "👤 <b>Dueño:</b> {$user->name}\n"
             . "📧 <b>Email:</b> {$user->email}\n\n"
-            . "📱 <a href='https://app.digitalizatodo.cl/{$tenant->id}'>Abrir App de Gestión</a>\n"
-            . "🌍 <a href='https://admin.digitalizatodo.cl/{$tenant->id}'>Ver Panel admin.digitalizatodo.cl</a>";
+            . "📱 <a href='https://app.digitalizatodo.cl/{$tenant->slug}'>Abrir App de Gestión</a>\n"
+            . "🌍 <a href='https://admin.digitalizatodo.cl/{$tenant->slug}'>Ver Panel admin.digitalizatodo.cl</a>";
 
         TelegramService::sendMessage($msg);
 
