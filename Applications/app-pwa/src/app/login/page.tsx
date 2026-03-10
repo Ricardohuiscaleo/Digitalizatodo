@@ -1,4 +1,4 @@
-git"use client";
+"use client";
 
 import { useState } from "react";
 import { useBranding } from "@/context/BrandingContext";
