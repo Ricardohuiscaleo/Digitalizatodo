@@ -17,13 +17,20 @@ class ResolveTenantFromPath
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $slug = $request->route('tenant');
+        $identifier = $request->route('tenant');
 
-        if ($slug) {
-            $tenant = Tenant::where('slug', $slug)->where('active', true)->first();
+        if ($identifier) {
+            $tenant = Tenant::where('active', true)
+                ->where(function ($query) use ($identifier) {
+                $query->where('slug', $identifier);
+                if (is_numeric($identifier)) {
+                    $query->orWhere('id', $identifier);
+                }
+            })
+                ->first();
 
             if (!$tenant) {
-                abort(404, "Academia '$slug' no encontrada.");
+                abort(404, "Academia '$identifier' no encontrada.");
             }
 
             // Disponible globalmente en la app
