@@ -53,129 +53,160 @@ class StudentRegistrationController extends Controller
             ]
             );
 
-            $plan = $request->plan_id
-                ?Plan::findOrFail($request->plan_id)
-                : Plan::where('tenant_id', $tenant->id)->first();
+            // Recuperar configuración de precios del JSON
+            $pricing = $tenant->data['pricing'] ?? ($tenant->data['prices'] ?? [
+                'kids' => 0, 'adult' => 0, 'discountThreshold' => 2, 'discountPercentage' => 0
+            ]);
 
-            if (!$plan) {
-                // Intentar obtener precios del JSON del tenant
-                $pricing = $tenant->data['pricing'] ?? ($tenant->data['prices'] ?? []);
-                $defaultPrice = $pricing['adult'] ?? ($pricing['kids'] ?? 0);
+            // Helper para obtener o crear plan por categoría
+            $getOrCreatePlan = function ($category) use ($tenant, $pricing) {
+                    $planName = $category === 'kids' ? 'Mensualidad Kids' : 'Mensualidad Adulto';
+                    $price = $category === 'kids' ? ($pricing['kids'] ?? 0) : ($pricing['adult'] ?? 0);
 
-                $plan = Plan::create([
-                    'tenant_id' => $tenant->id,
-                    'name' => 'Mensualidad Base',
-                    'description' => 'Plan creado automáticamente basado en configuración de precios.',
-                    'price' => $defaultPrice,
-                    'currency' => 'CLP',
-                    'billing_interval' => 'monthly',
-                    'active' => true,
-                ]);
-            }
-            $studentsToCreate = [];
+                    // Buscar un plan activo que coincida en nombre para este tenant
+                    $plan = Plan::where('tenant_id', $tenant->id)
+                        ->where('name', $planName)
+                        ->first();
 
-            if ($request->is_self_register) {
-                // El apoderado es el alumno titular
-                $studentsToCreate[] = [
-                    'name' => $request->guardian_name,
-                    'category' => 'adults', // Por defecto adultos si es titular
-                ];
-            }
+                    if (!$plan) {
+                        $plan = Plan::create([
+                            'tenant_id' => $tenant->id,
+                            'name' => $planName,
+                            'description' => "Plan mensual para $category",
+                            'price' => $price,
+                            'currency' => 'CLP',
+                            'billing_interval' => 'monthly',
+                            'active' => true,
+                            // Guardamos el porcentaje de descuento familiar en el plan provisionalmente, 
+                            // aunque lo aplicaremos basado en la lógica general
+                            'family_discount_percent' => $pricing['discountPercentage'] ?? 0
+                        ]);
+                    }
+                    return $plan;
+                }
+                    ;
 
-            // Añadir el resto de los alumnos si existen
-            if ($request->has('students') && is_array($request->students)) {
-                foreach ($request->students as $studentData) {
-                    if (!empty($studentData['name'])) {
-                        $studentsToCreate[] = $studentData;
+                $studentsToCreate = [];
+
+                if ($request->is_self_register) {
+                    // El apoderado es el alumno titular
+                    $studentsToCreate[] = [
+                        'name' => $request->guardian_name,
+                        'category' => 'adults', // Adulto por defecto para titular
+                    ];
+                }
+
+                // Añadir el resto de los alumnos si existen
+                if ($request->has('students') && is_array($request->students)) {
+                    foreach ($request->students as $studentData) {
+                        if (!empty($studentData['name'])) {
+                            $studentsToCreate[] = [
+                                'name' => $studentData['name'],
+                                'category' => strtolower($studentData['category'] ?? 'kids') // kids o adults
+                            ];
+                        }
                     }
                 }
-            }
 
-            $studentCount = count($studentsToCreate);
+                $studentCount = count($studentsToCreate);
 
-            // 2. Crear Alumnos e Inscripciones
-            foreach ($studentsToCreate as $studentData) {
-                $student = Student::create([
-                    'tenant_id' => $tenant->id,
-                    'name' => $studentData['name'],
-                    'category' => $studentData['category'],
-                    'active' => true,
-                ]);
+                // Determinar si aplica descuento global según el JSON
+                $threshold = (int)($pricing['discountThreshold'] ?? 2);
+                $discountPct = (float)($pricing['discountPercentage'] ?? 0);
+                $appliesDiscount = ($studentCount >= $threshold && $discountPct > 0);
 
-                $guardian->students()->attach($student->id, ['primary' => true]);
+                // 2. Crear Alumnos e Inscripciones
+                foreach ($studentsToCreate as $studentData) {
+                    $category = $studentData['category'];
+                    // Obtener el plan específico para la categoría de este alumno
+                    $plan = $getOrCreatePlan($category);
 
-                $enrollment = Enrollment::create([
-                    'tenant_id' => $tenant->id,
-                    'student_id' => $student->id,
-                    'plan_id' => $plan->id,
-                    'start_date' => now(),
-                    'status' => 'active',
-                ]);
+                    $student = Student::create([
+                        'tenant_id' => $tenant->id,
+                        'name' => $studentData['name'],
+                        'category' => $category,
+                        'active' => true,
+                    ]);
 
-                // 3. Crear primer pago pendiente (Aplicando descuento si amerita)
-                $amount = $plan->price;
-                if ($studentCount >= 2 && $plan->family_discount_percent > 0) {
-                    $amount = $amount * (1 - ($plan->family_discount_percent / 100));
+                    // Asignar el primer alumno como principal (primary=true), los demás no
+                    $isPrimary = (empty($studentsToCreate) || $studentData === $studentsToCreate[0]);
+                    $guardian->students()->attach($student->id, ['primary' => $isPrimary]);
+
+                    $enrollment = Enrollment::create([
+                        'tenant_id' => $tenant->id,
+                        'student_id' => $student->id,
+                        'plan_id' => $plan->id,
+                        'start_date' => now(),
+                        'status' => 'active',
+                    ]);
+
+                    // 3. Crear primer pago pendiente (Aplicando descuento dinámico)
+                    $amount = $plan->price;
+                    if ($appliesDiscount) {
+                        $amount = $amount * (1 - ($discountPct / 100));
+                    }
+
+                    Payment::create([
+                        'tenant_id' => $tenant->id,
+                        'enrollment_id' => $enrollment->id,
+                        'amount' => $amount,
+                        'due_date' => now(), // Vence hoy para el primer cobro
+                        'status' => 'pending',
+                    ]);
                 }
 
-                Payment::create([
-                    'tenant_id' => $tenant->id,
-                    'enrollment_id' => $enrollment->id,
-                    'amount' => $amount,
-                    'due_date' => now(), // Vence hoy para que paguen de inmediato
-                    'status' => 'pending',
-                ]);
-            }
+                // Para el email, usamos el plan del primer alumno como referencia
+                $referencePlan = $getOrCreatePlan($studentsToCreate[0]['category'] ?? 'adults');
 
-            // 4. Notificaciones por Email
-            try {
-                // Email al Apoderado/Titular
-                Mail::to($guardian->email)->send(new StudentRegistrationMail(
-                    $guardian,
-                    $tenant,
-                    $plan,
-                    $studentCount,
-                    false // isForTenant
-                    ));
-
-                // Email a la Academia (Tenant)
-                if ($tenant->email) {
-                    Mail::to($tenant->email)->send(new StudentRegistrationMail(
+                // 4. Notificaciones por Email
+                try {
+                    // Email al Apoderado/Titular
+                    Mail::to($guardian->email)->send(new StudentRegistrationMail(
                         $guardian,
                         $tenant,
-                        $plan,
+                        $referencePlan, // Enviamos el plan de referencia por ahora
                         $studentCount,
-                        true // isForTenant
+                        false // isForTenant
                         ));
+
+                    // Email a la Academia (Tenant)
+                    if ($tenant->email) {
+                        Mail::to($tenant->email)->send(new StudentRegistrationMail(
+                            $guardian,
+                            $tenant,
+                            $plan,
+                            $studentCount,
+                            true // isForTenant
+                            ));
+                    }
                 }
-            }
-            catch (\Exception $e) {
-                Log::error("Error enviando emails de registro alumno: " . $e->getMessage());
-            }
+                catch (\Exception $e) {
+                    Log::error("Error enviando emails de registro alumno: " . $e->getMessage());
+                }
 
-            // 5. Notificar vía Telegram
-            try {
-                $telegram = app(\App\Services\TelegramService::class);
-                $msg = "<b>🆕 NUEVO REGISTRO DE ALUMNO</b>\n\n"
-                    . "🏢 <b>Academia:</b> {$tenant->name}\n"
-                    . "👤 <b>Apoderado/Titular:</b> {$guardian->name}\n"
-                    . "📧 <b>Email:</b> {$guardian->email}\n"
-                    . "👥 <b>Alumnos Inscritos:</b> {$studentCount}\n"
-                    . "📋 <b>Plan:</b> {$plan->name}\n\n"
-                    . "<i>_Gestionado automáticamente por Digitaliza Todo_</i>";
+                // 5. Notificar vía Telegram
+                try {
+                    $telegram = app(\App\Services\TelegramService::class);
+                    $msg = "<b>🆕 NUEVO REGISTRO DE ALUMNO</b>\n\n"
+                        . "🏢 <b>Academia:</b> {$tenant->name}\n"
+                        . "👤 <b>Apoderado/Titular:</b> {$guardian->name}\n"
+                        . "📧 <b>Email:</b> {$guardian->email}\n"
+                        . "👥 <b>Alumnos Inscritos:</b> {$studentCount}\n"
+                        . "📋 <b>Plan:</b> {$plan->name}\n\n"
+                        . "<i>_Gestionado automáticamente por Digitaliza Todo_</i>";
 
-                $telegram->sendMessage($msg);
-            }
-            catch (\Exception $e) {
-                Log::error("Error enviando notificación telegram registro alumno: " . $e->getMessage());
-            }
+                    $telegram->sendMessage($msg);
+                }
+                catch (\Exception $e) {
+                    Log::error("Error enviando notificación telegram registro alumno: " . $e->getMessage());
+                }
 
-            return response()->json([
-                'message' => '¡Registro exitoso! Ya puedes iniciar sesión.',
-                'guardian_id' => $guardian->id,
-                'redirect_url' => '/login',
-                'tenant_name' => $tenant->name
-            ], 201);
-        });
+                return response()->json([
+                    'message' => '¡Registro exitoso! Ya puedes iniciar sesión.',
+                    'guardian_id' => $guardian->id,
+                    'redirect_url' => '/login',
+                    'tenant_name' => $tenant->name
+                ], 201);
+            });
     }
 }
