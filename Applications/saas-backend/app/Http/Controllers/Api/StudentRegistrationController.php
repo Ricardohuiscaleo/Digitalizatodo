@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\StudentRegistrationMail;
 
 class StudentRegistrationController extends Controller
 {
@@ -51,7 +53,7 @@ class StudentRegistrationController extends Controller
             );
 
             $plan = $request->plan_id
-                ? Plan::findOrFail($request->plan_id)
+                ?Plan::findOrFail($request->plan_id)
                 : Plan::where('tenant_id', $tenant->id)->first();
 
             if (!$plan) {
@@ -105,8 +107,33 @@ class StudentRegistrationController extends Controller
                     'status' => 'pending',
                 ]);
             }
+            
+            // 4. Notificaciones por Email
+            try {
+                // Email al Apoderado/Titular
+                Mail::to($guardian->email)->send(new StudentRegistrationMail(
+                    $guardian, 
+                    $tenant, 
+                    $plan, 
+                    $studentCount, 
+                    false // isForTenant
+                ));
 
-            // 4. Notificar vía Telegram
+                // Email a la Academia (Tenant)
+                if ($tenant->email) {
+                    Mail::to($tenant->email)->send(new StudentRegistrationMail(
+                        $guardian, 
+                        $tenant, 
+                        $plan, 
+                        $studentCount, 
+                        true // isForTenant
+                    ));
+                }
+            } catch (\Exception $e) {
+                Log::error("Error enviando emails de registro alumno: " . $e->getMessage());
+            }
+
+            // 5. Notificar vía Telegram
             try {
                 $telegram = app(\App\Services\TelegramService::class);
                 $msg = "<b>🆕 NUEVO REGISTRO DE ALUMNO</b>\n\n"
