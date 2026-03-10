@@ -3,7 +3,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface TenantBranding {
-    id: string;
+    id: string | number;
+    slug: string;
     name: string;
     industry?: string;
     logo: string;
@@ -20,6 +21,7 @@ const BrandingContext = createContext<BrandingContextType | undefined>(undefined
 
 const defaultBranding: TenantBranding = {
     id: "digitalizatodo",
+    slug: "portal",
     name: "Digitaliza Todo",
     logo: "/icon.webp",
     primaryColor: "#f59e0b",
