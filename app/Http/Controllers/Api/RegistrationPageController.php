@@ -72,7 +72,8 @@ class RegistrationPageController extends Controller
             ->where('registration_pages.is_active', true)
             ->select(
             'registration_pages.*',
-            'tenants.slug as tenant_slug'
+            'tenants.slug as tenant_slug',
+            'tenants.data as tenant_data'
         )
             ->first();
 
@@ -87,6 +88,7 @@ class RegistrationPageController extends Controller
             'logo' => $page->tenant_logo,
             'primary_color' => $page->tenant_primary_color,
             'industry' => $page->tenant_industry,
+            'data' => is_string($page->tenant_data) ? json_decode($page->tenant_data, true) : $page->tenant_data,
         ]);
     }
 }
