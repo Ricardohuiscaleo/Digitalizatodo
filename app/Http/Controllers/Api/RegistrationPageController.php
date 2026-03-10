@@ -67,8 +67,13 @@ class RegistrationPageController extends Controller
     public function show($code)
     {
         $page = DB::table('registration_pages')
-            ->where('code', $code)
-            ->where('is_active', true)
+            ->join('tenants', 'registration_pages.tenant_id', '=', 'tenants.id')
+            ->where('registration_pages.code', $code)
+            ->where('registration_pages.is_active', true)
+            ->select(
+            'registration_pages.*',
+            'tenants.slug as tenant_slug'
+        )
             ->first();
 
         if (!$page) {
@@ -77,6 +82,7 @@ class RegistrationPageController extends Controller
 
         return response()->json([
             'id' => $page->tenant_id,
+            'slug' => $page->tenant_slug,
             'name' => $page->tenant_name,
             'logo' => $page->tenant_logo,
             'primary_color' => $page->tenant_primary_color,
