@@ -140,16 +140,32 @@ export default function RegisterPage() {
             <label className="text-[10px] uppercase tracking-widest font-black text-zinc-400">Crear Cuenta</label>
             <div className="space-y-2.5">
               <div className="relative">
+                {errors.password && (
+                  <div className="absolute -top-7 left-2 animate-in fade-in zoom-in slide-in-from-bottom-2 duration-300 z-10">
+                    <div className="bg-red-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-md shadow-lg flex items-center gap-1.5 whitespace-nowrap">
+                      <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
+                      {errors.password}
+                      <div className="absolute -bottom-1 left-3 w-2 h-2 bg-red-500 rotate-45"></div>
+                    </div>
+                  </div>
+                )}
                 <input type="password" placeholder="Contraseña (mín. 8 caracteres)" value={form.password}
                   onChange={e => { setForm({ ...form, password: e.target.value }); if (errors.password) setErrors({ ...errors, password: "" }); }}
-                  className={`w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors.password ? 'border-red-400' : 'border-zinc-100 hover:border-zinc-200'}`} />
-                {errors.password && <span className="text-[9px] text-red-500 font-bold uppercase ml-4 absolute -bottom-4 left-0">{errors.password}</span>}
+                  className={`w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors.password ? 'border-red-400 shadow-[0_0_15px_-3px_rgba(248,113,113,0.2)]' : 'border-zinc-100 hover:border-zinc-200'}`} />
               </div>
               <div className="relative">
+                {errors.password_confirmation && (
+                  <div className="absolute -top-7 left-2 animate-in fade-in zoom-in slide-in-from-bottom-2 duration-300 z-10">
+                    <div className="bg-red-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-md shadow-lg flex items-center gap-1.5 whitespace-nowrap">
+                      <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
+                      {errors.password_confirmation}
+                      <div className="absolute -bottom-1 left-3 w-2 h-2 bg-red-500 rotate-45"></div>
+                    </div>
+                  </div>
+                )}
                 <input type="password" placeholder="Confirmar contraseña" value={form.password_confirmation}
                   onChange={e => { setForm({ ...form, password_confirmation: e.target.value }); if (errors.password_confirmation) setErrors({ ...errors, password_confirmation: "" }); }}
-                  className={`w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors.password_confirmation ? 'border-red-400' : 'border-zinc-100 hover:border-zinc-200'}`} />
-                {errors.password_confirmation && <span className="text-[9px] text-red-500 font-bold uppercase ml-4 absolute -bottom-4 left-0">{errors.password_confirmation}</span>}
+                  className={`w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors.password_confirmation ? 'border-red-400 shadow-[0_0_15px_-3px_rgba(248,113,113,0.2)]' : 'border-zinc-100 hover:border-zinc-200'}`} />
               </div>
             </div>
           </div>
