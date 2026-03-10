@@ -22,8 +22,9 @@ class StudentRegistrationController extends Controller
     /**
      * Auto-registro de alumno por parte de un apoderado.
      */
-    public function register(Request $request, Tenant $tenant)
+    public function register(Request $request, $tenantSlug)
     {
+        $tenant = app('currentTenant');
         $validator = Validator::make($request->all(), [
             'guardian_name' => 'required|string|max:255',
             'guardian_email' => 'required|email|max:255',
