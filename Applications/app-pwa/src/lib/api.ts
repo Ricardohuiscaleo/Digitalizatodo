@@ -326,7 +326,7 @@ export async function updatePricing(tenantId: string, token: string, prices: any
                 'Authorization': `Bearer ${token}`,
                 'X-Tenant-Id': tenantId,
             },
-            body: JSON.stringify({ prices }),
+            body: JSON.stringify(prices),
         });
 
         return await safeJson(response);
