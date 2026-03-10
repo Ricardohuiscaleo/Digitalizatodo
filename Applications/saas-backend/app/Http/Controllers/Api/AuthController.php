@@ -28,16 +28,26 @@ class AuthController extends Controller
             // Buscamos el usuario en staff (User) o clientes (Guardian) de forma agnóstica
             $user = User::where('email', $credentials['email'])->where('tenant_id', $tenant->id)->first();
             $userType = 'staff';
+            $passwordValidated = false;
 
-            if (!$user) {
-                $user = Guardian::where('email', $credentials['email'])
+            // Intentar validar contraseña contra el perfil de Staff
+            if ($user && Hash::check($credentials['password'], $user->password)) {
+                $passwordValidated = true;
+            } else {
+                // Si no existe como Staff o la contraseña no coincide, intentamos buscar y validar como Guardian
+                $guardian = Guardian::where('email', $credentials['email'])
                     ->where('tenant_id', $tenant->id)
                     ->where('active', true)
                     ->first();
-                $userType = 'guardian';
+
+                if ($guardian && Hash::check($credentials['password'], $guardian->password)) {
+                    $user = $guardian;
+                    $userType = 'guardian';
+                    $passwordValidated = true;
+                }
             }
 
-            if (!$user || !Hash::check($credentials['password'], $user->password)) {
+            if (!$passwordValidated) {
                 return response()->json(['message' => 'Credenciales inválidas.'], 401);
             }
 
