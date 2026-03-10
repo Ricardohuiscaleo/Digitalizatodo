@@ -60,4 +60,5 @@ class RegisterTenantController extends Controller
             'admin_url' => "https://admin.digitalizatodo.cl/{$tenant->id}",
             'instructions' => 'Ya puedes ingresar a tu panel de administración privado y comenzar a configurar tu negocio.'
         ], 201);
- 
+    }
+}

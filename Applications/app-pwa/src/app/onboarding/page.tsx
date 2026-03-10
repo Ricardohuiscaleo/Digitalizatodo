@@ -70,10 +70,17 @@ export default function OnboardingPage() {
         }
         try {
             const data = await registerTenant(formData) as any;
-            if (data?.errors) {
+            if (!data) {
+                throw new Error("El servidor no respondió correctamente");
+            }
+            if (data.errors) {
                 const errorKey = Object.keys(data.errors)[0];
                 const errorMessage = data.errors[errorKey][0];
                 throw new Error(errorMessage);
+            }
+            if (data.message && !data.tenant) {
+                // Si hay mensaje pero no hay tenant, probablemente es un error
+                throw new Error(data.message);
             }
             setSuccess(true);
         } catch (err: any) {

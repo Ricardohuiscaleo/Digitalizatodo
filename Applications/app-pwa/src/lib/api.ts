@@ -77,7 +77,11 @@ export async function registerTenant(data: any) {
             body: JSON.stringify(data),
         });
 
-        return await safeJson(response);
+        const result = await safeJson(response);
+        if (!response.ok) {
+            return { errors: result?.errors, message: result?.message || 'Error en el servidor' };
+        }
+        return result;
     } catch (error) {
         console.error('Error registering tenant:', error);
         return { message: 'Error de conexión' };
