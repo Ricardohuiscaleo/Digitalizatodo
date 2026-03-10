@@ -26,11 +26,11 @@ class RegisterTenantController extends Controller
 
         // Crear Empresa
         $tenant = Tenant::create([
-            'id' => $validated['tenant_slug'], // Slug es el ID en nuestro caso
             'name' => $validated['tenant_name'],
+            'slug' => $validated['tenant_slug'],
             'industry' => $validated['industry'],
             'email' => $validated['email'], // Contacto empresa
-            'saas_plan' => 'free',
+            'saas_plan' => 'starter',
             'active' => true,
         ]);
 
