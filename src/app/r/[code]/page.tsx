@@ -27,9 +27,30 @@ export default function RegisterPage() {
     });
   }, [code]);
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!form.guardian_name) newErrors.guardian_name = "El nombre es obligatorio";
+    if (!form.guardian_email) newErrors.guardian_email = "El correo es obligatorio";
+    if (!form.guardian_phone) newErrors.guardian_phone = "El teléfono es obligatorio";
+    if (!form.password) newErrors.password = "La contraseña es obligatoria";
+    if (form.password.length < 8) newErrors.password = "Mínimo 8 caracteres";
+    if (form.password !== form.password_confirmation) newErrors.password_confirmation = "No coinciden";
+
+    // Si no se registra a sí mismo, debe haber al menos un alumno
+    if (!form.is_self_register && (form.students.length === 0 || !form.students[0].name)) {
+      newErrors.students = "Debes inscribir al menos a un alumno si tú no participas";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.password !== form.password_confirmation) { setError("Las contraseñas no coinciden."); return; }
+    if (!validate()) return;
+
     setSubmitting(true); setError("");
     const result = await registerStudent(tenant.id, form);
     setSubmitting(false);
@@ -72,7 +93,7 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-white flex flex-col items-center p-6 pb-20">
       <div className="w-full max-w-sm pt-10 space-y-8">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-14 w-14 rounded-2xl bg-zinc-100 overflow-hidden flex items-center justify-center">
+          <div className="h-14 w-14 rounded-2xl bg-zinc-100 overflow-hidden flex items-center justify-center shadow-sm">
             {tenant.logo
               ? <img src={tenant.logo} className="h-full w-full object-contain" />
               : <span className="text-xl font-black text-zinc-400">{tenant.name?.[0]}</span>
@@ -80,65 +101,130 @@ export default function RegisterPage() {
           </div>
           <div className="text-center">
             <h1 className="text-lg font-black text-zinc-900">Únete a {tenant.name}</h1>
-            <p className="text-[10px] text-zinc-400 uppercase tracking-widest mt-0.5">Registro de titular</p>
+            <p className="text-[10px] text-zinc-400 uppercase tracking-widest mt-0.5">Formulario de registro</p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {error && <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</p>}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {error && <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2 animate-in fade-in zoom-in duration-200">{error}</p>}
 
-          <div className="space-y-3">
-            <label className="text-xs font-medium text-zinc-500">Tus datos</label>
-            <input required placeholder="Nombre completo" value={form.guardian_name}
-              onChange={e => setForm({...form, guardian_name: e.target.value})}
-              className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 focus:ring-2 ring-zinc-900 outline-none" />
-            <input required type="email" placeholder="Correo electrónico" value={form.guardian_email}
-              onChange={e => setForm({...form, guardian_email: e.target.value})}
-              className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 focus:ring-2 ring-zinc-900 outline-none" />
-            <input required type="tel" placeholder="Teléfono" value={form.guardian_phone}
-              onChange={e => setForm({...form, guardian_phone: e.target.value})}
-              className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 focus:ring-2 ring-zinc-900 outline-none" />
-          </div>
-
-          <div className="space-y-3">
-            <label className="text-xs font-medium text-zinc-500">Contraseña</label>
-            <input required type="password" placeholder="Contraseña" value={form.password}
-              onChange={e => setForm({...form, password: e.target.value})}
-              className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 focus:ring-2 ring-zinc-900 outline-none" />
-            <input required type="password" placeholder="Confirmar contraseña" value={form.password_confirmation}
-              onChange={e => setForm({...form, password_confirmation: e.target.value})}
-              className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 focus:ring-2 ring-zinc-900 outline-none" />
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-zinc-500">Alumnos a inscribir</label>
-              <button type="button" onClick={() => setForm({...form, students: [...form.students, {name:"",category:"kids"}]})}
-                className="text-xs font-semibold text-zinc-600 hover:text-zinc-900">+ Agregar</button>
-            </div>
-            {form.students.map((s, i) => (
-              <div key={i} className="flex gap-2">
-                <input required placeholder="Nombre del alumno" value={s.name}
-                  onChange={e => { const st=[...form.students]; st[i].name=e.target.value; setForm({...form,students:st}); }}
-                  className="flex-1 h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 focus:ring-2 ring-zinc-900 outline-none" />
-                <select value={s.category}
-                  onChange={e => { const st=[...form.students]; st[i].category=e.target.value; setForm({...form,students:st}); }}
-                  className="h-11 bg-zinc-50 rounded-xl px-3 text-xs text-zinc-600 focus:ring-2 ring-zinc-900 outline-none">
-                  <option value="kids">Kids</option>
-                  <option value="adults">Adulto</option>
-                </select>
+          {/* DATOS DEL TITULAR */}
+          <div className="space-y-4">
+            <label className="text-[10px] uppercase tracking-widest font-black text-zinc-400">Datos del titular (Tú)</label>
+            <div className="space-y-2.5">
+              <div className="relative">
+                <input placeholder="Nombre completo" value={form.guardian_name}
+                  onChange={e => { setForm({ ...form, guardian_name: e.target.value }); if (errors.guardian_name) setErrors({ ...errors, guardian_name: "" }); }}
+                  className={`w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors.guardian_name ? 'border-red-400' : 'border-zinc-100 hover:border-zinc-200'}`} />
+                {errors.guardian_name && <span className="text-[9px] text-red-500 font-bold uppercase ml-4 absolute -bottom-4 left-0">{errors.guardian_name}</span>}
               </div>
-            ))}
+
+              <div className="relative">
+                <input type="email" placeholder="Correo electrónico" value={form.guardian_email}
+                  onChange={e => { setForm({ ...form, guardian_email: e.target.value }); if (errors.guardian_email) setErrors({ ...errors, guardian_email: "" }); }}
+                  className={`w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors.guardian_email ? 'border-red-400' : 'border-zinc-100 hover:border-zinc-200'}`} />
+                {errors.guardian_email && <span className="text-[9px] text-red-500 font-bold uppercase ml-4 absolute -bottom-4 left-0">{errors.guardian_email}</span>}
+              </div>
+
+              <div className="relative">
+                <input type="tel" placeholder="Teléfono" value={form.guardian_phone}
+                  onChange={e => { setForm({ ...form, guardian_phone: e.target.value }); if (errors.guardian_phone) setErrors({ ...errors, guardian_phone: "" }); }}
+                  className={`w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors.guardian_phone ? 'border-red-400' : 'border-zinc-100 hover:border-zinc-200'}`} />
+                {errors.guardian_phone && <span className="text-[9px] text-red-500 font-bold uppercase ml-4 absolute -bottom-4 left-0">{errors.guardian_phone}</span>}
+              </div>
+            </div>
           </div>
 
-          <button type="submit" disabled={submitting}
-            className="w-full h-11 bg-zinc-950 hover:bg-zinc-800 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-40">
-            {submitting ? <Loader2 className="animate-spin" size={16} /> : "Completar registro"}
-          </button>
+          {/* CONTRASEÑA */}
+          <div className="space-y-4 pt-2">
+            <label className="text-[10px] uppercase tracking-widest font-black text-zinc-400">Crear Cuenta</label>
+            <div className="space-y-2.5">
+              <div className="relative">
+                <input type="password" placeholder="Contraseña (mín. 8 caracteres)" value={form.password}
+                  onChange={e => { setForm({ ...form, password: e.target.value }); if (errors.password) setErrors({ ...errors, password: "" }); }}
+                  className={`w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors.password ? 'border-red-400' : 'border-zinc-100 hover:border-zinc-200'}`} />
+                {errors.password && <span className="text-[9px] text-red-500 font-bold uppercase ml-4 absolute -bottom-4 left-0">{errors.password}</span>}
+              </div>
+              <div className="relative">
+                <input type="password" placeholder="Confirmar contraseña" value={form.password_confirmation}
+                  onChange={e => { setForm({ ...form, password_confirmation: e.target.value }); if (errors.password_confirmation) setErrors({ ...errors, password_confirmation: "" }); }}
+                  className={`w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors.password_confirmation ? 'border-red-400' : 'border-zinc-100 hover:border-zinc-200'}`} />
+                {errors.password_confirmation && <span className="text-[9px] text-red-500 font-bold uppercase ml-4 absolute -bottom-4 left-0">{errors.password_confirmation}</span>}
+              </div>
+            </div>
+          </div>
 
-          <p className="text-center text-xs text-zinc-400">
+          {/* CONFIGURACIÓN DE INSCRIPCIÓN */}
+          <div className="space-y-6 pt-4">
+            <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-100 space-y-4">
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <div className="relative flex items-center justify-center">
+                  <input type="checkbox" checked={form.is_self_register}
+                    onChange={e => setForm({ ...form, is_self_register: e.target.checked })}
+                    className="sr-only" />
+                  <div className={`w-10 h-6 rounded-full transition-colors ${form.is_self_register ? 'bg-zinc-950' : 'bg-zinc-200'}`}></div>
+                  <div className={`absolute left-1 w-4 h-4 bg-white rounded-full transition-transform ${form.is_self_register ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-black text-zinc-900 uppercase">Yo también participaré</span>
+                  <span className="text-[9px] text-zinc-400 font-bold uppercase">{form.is_self_register ? 'Se te inscribirá como alumno' : 'Solo inscribirás a otros (hijos/alumnos)'}</span>
+                </div>
+              </label>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] uppercase tracking-widest font-black text-zinc-400">Otros alumnos para inscribir</label>
+                <button type="button" onClick={() => setForm({ ...form, students: [...form.students, { name: "", category: "kids" }] })}
+                  className="text-[10px] font-black uppercase text-indigo-600 hover:text-indigo-800 transition-colors">+ Agregar</button>
+              </div>
+
+              {errors.students && <p className="text-[9px] text-red-500 font-bold uppercase mt-1 animate-pulse">{errors.students}</p>}
+
+              <div className="space-y-3">
+                {form.students.map((s, i) => (
+                  <div key={i} className="flex gap-2 group animate-in slide-in-from-right-2 duration-200">
+                    <input required placeholder="Nombre del alumno" value={s.name}
+                      onChange={e => { const st = [...form.students]; st[i].name = e.target.value; setForm({ ...form, students: st }); if (errors.students) setErrors({ ...errors, students: "" }); }}
+                      className="flex-1 h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border border-zinc-100 focus:border-zinc-950 transition-all outline-none" />
+                    <select value={s.category}
+                      onChange={e => { const st = [...form.students]; st[i].category = e.target.value; setForm({ ...form, students: st }); }}
+                      className="h-11 bg-zinc-50 rounded-xl px-3 text-[10px] font-black uppercase text-zinc-600 border border-zinc-100 focus:border-zinc-950 outline-none">
+                      <option value="kids">Kids</option>
+                      <option value="adults">Adulto</option>
+                    </select>
+                    {form.students.length > 0 && (
+                      <button type="button" onClick={() => { const st = form.students.filter((_, idx) => idx !== i); setForm({ ...form, students: st }); }}
+                        className="w-11 h-11 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-300 hover:text-red-400 hover:bg-red-50 transition-all border border-zinc-100">
+                        <span className="text-lg leading-none">×</span>
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {form.students.length === 0 && !form.is_self_register && (
+                <div className="bg-zinc-50 rounded-xl p-6 border border-dashed border-zinc-200 text-center">
+                  <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest">Inicia agregando a un alumno</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="pt-4">
+            <button type="submit" disabled={submitting}
+              className="w-full h-12 bg-zinc-950 hover:bg-zinc-800 text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-zinc-200 disabled:opacity-40">
+              {submitting ? <Loader2 className="animate-spin text-zinc-400" size={18} /> : (
+                <>
+                  <span>Completar Inscripción</span>
+                  <CheckCircle2 size={18} className="opacity-40" />
+                </>
+              )}
+            </button>
+          </div>
+
+          <p className="text-center text-[10px] font-black text-zinc-400 uppercase tracking-widest">
             ¿Ya tienes cuenta?{" "}
-            <a href="/login" className="text-zinc-600 hover:text-zinc-900 font-medium">Iniciar sesión</a>
+            <a href="/login" className="text-zinc-950 hover:underline">Iniciar sesión</a>
           </p>
         </form>
       </div>
