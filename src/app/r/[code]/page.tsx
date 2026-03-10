@@ -52,7 +52,7 @@ export default function RegisterPage() {
     if (!validate()) return;
 
     setSubmitting(true); setError("");
-    const result = await registerStudent(tenant.id, form);
+    const result = await registerStudent(tenant.slug, form);
     setSubmitting(false);
     if (result?.errors) {
       const first = Object.values(result.errors)[0] as string[];
