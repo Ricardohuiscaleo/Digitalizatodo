@@ -48,7 +48,7 @@ class AuthController extends Controller
                 'token' => $token,
                 'user_type' => $userType,
                 'user' => $user->only('id', 'name', 'email', 'phone'),
-                'tenant' => $tenant->only('id', 'name', 'primary_color', 'logo'),
+                'tenant' => $tenant->only('id', 'slug', 'name', 'primary_color', 'logo'),
             ]);
         }
         catch (\Throwable $e) {
@@ -76,6 +76,7 @@ class AuthController extends Controller
                 'tenant_id' => $tenant->id,
                 'tenant'    => [
                     'id'            => $tenant->id,
+                    'slug'          => $tenant->slug,
                     'name'          => $tenant->name,
                     'logo'          => $tenant->logo,
                     'primary_color' => $tenant->primary_color,

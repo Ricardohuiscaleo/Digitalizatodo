@@ -143,6 +143,7 @@ export default function App() {
                 if (profile.tenant && (!branding?.name || !branding?.industry)) {
                     setBranding({
                         id: String(profile.tenant.id),
+                        slug: profile.tenant.slug,
                         name: profile.tenant.name,
                         industry: profile.tenant.industry,
                         logo: profile.tenant.logo,

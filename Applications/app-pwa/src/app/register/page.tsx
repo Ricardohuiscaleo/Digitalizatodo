@@ -26,12 +26,14 @@ export default function RegisterPage() {
         if (!formData.guardian_email || identifying) return;
         setIdentifying(true);
         const data = await identifyTenant(formData.guardian_email);
-        if (data) {
+        if (data?.found && data.tenants.length > 0) {
+            const t = data.tenants[0];
             setBranding({
-                id: data.id,
-                name: data.name,
-                logo: data.logo,
-                primaryColor: data.primaryColor || "#3b82f6",
+                id: t.id,
+                slug: t.slug,
+                name: t.name,
+                logo: t.logo,
+                primaryColor: t.primary_color || "#3b82f6",
             });
         }
         setIdentifying(false);
@@ -60,7 +62,7 @@ export default function RegisterPage() {
         setLoading(true);
         setError("");
 
-        const result = await registerStudent(branding.id, formData);
+        const result = await registerStudent(String(branding.id), formData);
         setLoading(false);
 
         if (result.errors) {
