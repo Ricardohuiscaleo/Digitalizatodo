@@ -21,27 +21,28 @@ class TelegramBotController extends Controller
 
             $data = $payload['data'] ?? $payload;
 
-            $from    = $data['from']    ?? 'Desconocido';
+            $from = $data['from'] ?? 'Desconocido';
             $subject = $data['subject'] ?? 'Sin Asunto';
-            $text    = $data['text']    ?? ($data['html'] ?? null);
+            $text = $data['text'] ?? ($data['html'] ?? null);
             $emailId = $data['email_id'] ?? null;
 
             // Si no tenemos el texto pero tenemos un email_id, lo pedimos a Resend
             if (!$text && $emailId) {
                 try {
                     $resend = \Resend::client(env('RESEND_API_KEY'));
-                    $email  = $resend->emails->receiving->get($emailId);
-                    $text    = $email->text ?? ($email->html ?? null);
-                    $from    = $email->from ?? $from;
+                    $email = $resend->emails->receiving->get($emailId);
+                    $text = $email->text ?? ($email->html ?? null);
+                    $from = $email->from ?? $from;
                     $subject = $email->subject ?? $subject;
-                } catch (\Exception $e) {
+                }
+                catch (\Exception $e) {
                     Log::error('Error recuperando email desde Resend API: ' . $e->getMessage());
                 }
             }
 
             $text = $text ? strip_tags($text) : "(sin cuerpo — email_id: {$emailId})";
 
-            $token  = env('TELEGRAM_BOT_TOKEN');
+            $token = env('TELEGRAM_BOT_TOKEN');
             $chatId = env('TELEGRAM_ADMIN_ID');
 
             if (!$token || !$chatId) {
@@ -49,15 +50,15 @@ class TelegramBotController extends Controller
                 return response()->json(['status' => 'config_error']);
             }
 
-            $message  = "*Nuevo Correo Recibido*\n\n";
+            $message = "*Nuevo Correo Recibido*\n\n";
             $message .= "*De:* {$from}\n";
             $message .= "*Asunto:* {$subject}\n\n";
             $message .= "```\n" . substr($text, 0, 3000) . "\n```\n\n";
             $message .= "_Responde a este mensaje para contestar el correo._";
 
             $response = Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
-                'chat_id'    => $chatId,
-                'text'       => $message,
+                'chat_id' => $chatId,
+                'text' => $message,
                 'parse_mode' => 'Markdown',
             ]);
 
@@ -66,13 +67,14 @@ class TelegramBotController extends Controller
             if ($response->successful()) {
                 $tgMessageId = $response->json('result.message_id');
                 TelegramConversation::create([
-                    'chat_id'    => $chatId,
+                    'chat_id' => $chatId,
                     'message_id' => $tgMessageId,
                     'from_email' => $from,
-                    'subject'    => $subject,
+                    'subject' => $subject,
                 ]);
             }
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             Log::error('handleResendInbound fatal: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
         }
 
@@ -162,7 +164,7 @@ class TelegramBotController extends Controller
         }
 
         if ($url) {
-            $message .= "<b>🌐 URL:</b> <a href=\"{$url}\">Ver Cambios</a>\n";
+            $message .= "<b>🌐 URL:</b> <a href=\"" . htmlspecialchars($url) . "\">Ver Cambios</a>\n";
         }
 
         if ($subject && $subject !== 'Coolify Notification') {
