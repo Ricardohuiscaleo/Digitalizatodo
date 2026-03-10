@@ -111,7 +111,7 @@ class AuthController extends Controller
                 'students' => $guardian->students ? $guardian->students->map(fn($s) => [
                     'id' => $s->id,
                     'name' => $s->name,
-                    'photo' => reset_photo_url($s->photo),
+                    'photo' => $s->photo ? (str_starts_with($s->photo, 'http') ? $s->photo : 'https://' . env('AWS_BUCKET', env('S3_BUCKET')) . '.s3.' . env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1')) . '.amazonaws.com/' . $s->photo) : null,
                     'category' => $s->category ?? 'Sin Categoría',
                     'belt_rank' => $s->belt_rank,
                     'attendance_count' => $s->all_attendances ? $s->all_attendances->count() : 0,
