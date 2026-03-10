@@ -144,7 +144,8 @@ export default function App() {
                     tenant_slug: profile.tenant?.slug || tenantSlug
                 });
                 if (profile.tenant?.data?.pricing) {
-                    setPrices(profile.tenant.data.pricing);
+                    const p = profile.tenant.data.pricing;
+                    setPrices(p.prices || p);
                 }
                 if (profile.tenant && (!branding?.name || !branding?.industry)) {
                     setBranding({
@@ -224,7 +225,7 @@ export default function App() {
         const numEnrollments = payer.enrolledStudents.length;
         let hasDiscount = false;
 
-        if (numEnrollments > prices.discountThreshold && prices.discountPercentage > 0) {
+        if (numEnrollments >= prices.discountThreshold && prices.discountThreshold > 0 && prices.discountPercentage > 0) {
             total = total * (1 - prices.discountPercentage / 100);
             hasDiscount = true;
         }
