@@ -58,7 +58,19 @@ class StudentRegistrationController extends Controller
                 : Plan::where('tenant_id', $tenant->id)->first();
 
             if (!$plan) {
-                return response()->json(['message' => 'No hay planes disponibles para esta academia.'], 422);
+                // Intentar obtener precios del JSON del tenant
+                $pricing = $tenant->data['pricing'] ?? ($tenant->data['prices'] ?? []);
+                $defaultPrice = $pricing['adult'] ?? ($pricing['kids'] ?? 0);
+
+                $plan = Plan::create([
+                    'tenant_id' => $tenant->id,
+                    'name' => 'Mensualidad Base',
+                    'description' => 'Plan creado automáticamente basado en configuración de precios.',
+                    'price' => $defaultPrice,
+                    'currency' => 'CLP',
+                    'billing_interval' => 'monthly',
+                    'active' => true,
+                ]);
             }
             $studentsToCreate = [];
 
