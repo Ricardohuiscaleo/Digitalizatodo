@@ -26,7 +26,7 @@ export default function LoginPage() {
     if (data?.found && data.tenants.length > 0) {
       const t = data.tenants[0];
       setTenant(t);
-      setBranding({ id: t.id, name: t.name, industry: t.industry, logo: t.logo, primaryColor: t.primary_color });
+      setBranding({ id: t.id, slug: t.slug, name: t.name, industry: t.industry, logo: t.logo, primaryColor: t.primary_color });
       setStep("password");
     } else {
       setError("No encontramos una academia asociada a este correo.");
@@ -37,10 +37,12 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setIsLoggingIn(true);
-    const result: any = await login(tenant.id, { email, password, remember });
+    // IMPORTANTE: El backend espera el SLUG en la URL
+    const result: any = await login(tenant.slug || tenant.id, { email, password, remember });
     setIsLoggingIn(false);
     if (result.token) {
-      localStorage.setItem("tenant_id", tenant.id);
+      localStorage.setItem("tenant_id", String(tenant.id));
+      localStorage.setItem("tenant_slug", tenant.slug);
       if (remember && result.remember_token) {
         localStorage.setItem("remember_token", result.remember_token);
       }

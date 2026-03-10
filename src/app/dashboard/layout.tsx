@@ -39,6 +39,7 @@ export default function DashboardLayout({
                     if (profile.tenant) {
                         setBranding({
                             id: profile.tenant.id,
+                            slug: profile.tenant.slug,
                             name: profile.tenant.name,
                             logo: profile.tenant.logo,
                             primaryColor: profile.tenant.primary_color

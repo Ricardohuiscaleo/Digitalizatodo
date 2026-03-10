@@ -20,6 +20,7 @@ export default function TenantEntryPage() {
             if (tenant && !tenant.message) {
                 setBranding({
                     id: tenant.id,
+                    slug: tenant.slug,
                     name: tenant.name,
                     industry: tenant.industry,
                     logo: tenant.logo,
