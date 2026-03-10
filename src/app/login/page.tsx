@@ -78,8 +78,16 @@ export default function LoginPage() {
           </div>
           <div className="text-center">
             <h1 className="text-xl font-black text-zinc-900">{tenant?.name || "Digitaliza Todo"}</h1>
-            <p className="text-[10px] text-zinc-400 uppercase tracking-widest mt-0.5">
-              {step === "email" ? "Ingresa tu correo para continuar" : "Portal de gestión"}
+            <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-0.5">
+              {step === "email" ? (
+                "Ingresa tu correo para continuar"
+              ) : (
+                tenant?.detected_roles?.includes("guardian") && tenant?.detected_roles?.includes("staff")
+                  ? "Cuenta con Múltiples Roles"
+                  : tenant?.detected_roles?.includes("staff")
+                    ? "Portal de Administración"
+                    : "Portal de Apoderados / Alumnos"
+              )}
             </p>
           </div>
         </div>
