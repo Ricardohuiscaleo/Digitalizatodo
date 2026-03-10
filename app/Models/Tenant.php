@@ -18,6 +18,11 @@ class Tenant extends Model implements HasAvatar
         'bank_account_holder', 'bank_rut', 'bank_email', 'data',
     ];
 
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
     protected $casts = [
         'active' => 'boolean',
         'saas_trial_ends_at' => 'date',

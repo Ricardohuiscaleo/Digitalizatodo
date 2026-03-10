@@ -16,7 +16,8 @@ class AttendanceController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $tenantId = $request->header('X-Tenant-Id') ?? app('currentTenant')->id;
+        $tenant = app('currentTenant');
+        $tenantId = $tenant->id;
         $studentId = $request->query('student_id');
 
         // Staff ve toda la asistencia del tenant; Guardian solo la de sus alumnos
@@ -24,7 +25,8 @@ class AttendanceController extends Controller
             $query = Attendance::where('tenant_id', $tenantId)
                 ->with('student')
                 ->orderBy('date', 'desc');
-        } else {
+        }
+        else {
             $query = Attendance::whereIn('student_id', $user->students->pluck('id'))
                 ->with('student')
                 ->orderBy('date', 'desc');
@@ -38,14 +40,14 @@ class AttendanceController extends Controller
 
         return response()->json([
             'attendance' => $attendances->map(fn($a) => [
-                'id'           => $a->id,
-                'student_id'   => $a->student_id,
-                'student'      => $a->student ? ['id' => $a->student->id, 'name' => $a->student->name, 'photo' => $a->student->photo] : null,
-                'date'         => $a->date instanceof \Carbon\Carbon ? $a->date->format('Y-m-d') : $a->date,
-                'status'       => $a->status,
-                'created_at'   => $a->created_at,
-                'notes'        => $a->notes,
-            ]),
+        'id' => $a->id,
+        'student_id' => $a->student_id,
+        'student' => $a->student ? ['id' => $a->student->id, 'name' => $a->student->name, 'photo' => $a->student->photo] : null,
+        'date' => $a->date instanceof \Carbon\Carbon ? $a->date->format('Y-m-d') : $a->date,
+        'status' => $a->status,
+        'created_at' => $a->created_at,
+        'notes' => $a->notes,
+        ]),
         ]);
     }
 
@@ -54,7 +56,8 @@ class AttendanceController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $tenantId = $request->header('X-Tenant-Id');
+        $tenant = app('currentTenant');
+        $tenantId = $tenant->id;
 
         $request->validate([
             'student_id' => 'required|exists:students,id',
