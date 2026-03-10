@@ -50,6 +50,7 @@ class TenantDiscoveryController extends Controller
 
         $tenants = $allTenants->map(fn($t) => [
         'id' => $t->id,
+        'slug' => $t->slug,
         'name' => $t->name,
         'industry' => $t->industry,
         'logo' => $t->logo ? (str_starts_with($t->logo, 'http') ? $t->logo : \Illuminate\Support\Facades\Storage::disk('public')->url($t->logo)) : '/icon.webp',
@@ -77,6 +78,7 @@ class TenantDiscoveryController extends Controller
 
         return response()->json([
             'id' => $tenant->id,
+            'slug' => $tenant->slug,
             'name' => $tenant->name,
             'industry' => $tenant->industry,
             'logo' => $tenant->logo ? (str_starts_with($tenant->logo, 'http') ? $tenant->logo : \Illuminate\Support\Facades\Storage::disk('public')->url($tenant->logo)) : '/icon.webp',
