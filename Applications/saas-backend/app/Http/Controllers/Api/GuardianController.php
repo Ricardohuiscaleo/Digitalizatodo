@@ -16,7 +16,8 @@ class GuardianController extends Controller
      */
     public function index(Request $request)
     {
-        $tenantId = $request->header('X-Tenant-Id');
+        $tenant = app('currentTenant');
+        $tenantId = $tenant->id;
 
         $guardians = Guardian::where('tenant_id', $tenantId)
             ->with(['students' => function ($query) use ($tenantId) {
@@ -62,16 +63,16 @@ class GuardianController extends Controller
             return [
             'id' => $guardian->id,
             'name' => $guardian->name,
-            'photo' => $guardian->photo ? (str_starts_with($guardian->photo, 'http') ? $guardian->photo : 'https://' . env('AWS_BUCKET', env('S3_BUCKET')) . '.s3.' . env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1')) . '.amazonaws.com/' . $guardian->photo) : "https://i.pravatar.cc/150?u=" . $guardian->id,
+            'photo' => $guardian->photo ? (str_starts_with($guardian->photo, 'http') ? $guardian->photo : 'https://' . env('AWS_BUCKET', env('S3_BUCKET', 'digitalizatodo')) . '.s3.' . env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1')) . '.amazonaws.com/' . $guardian->photo) : "https://i.pravatar.cc/150?u=" . $guardian->id,
             'status' => $status,
             'pricing' => $pricing,
             'enrolledStudents' => $students->map(function ($s) {
                     return [
                     'id' => $s->id,
                     'name' => $s->name,
-                    'category' => $s->category, // Use raw category
-                    'photo' => $s->photo ? (str_starts_with($s->photo, 'http') ? $s->photo : 'https://' . env('AWS_BUCKET', env('S3_BUCKET')) . '.s3.' . env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1')) . '.amazonaws.com/' . $s->photo) : "https://i.pravatar.cc/150?img=" . $s->id,
-                    'label' => $s->belt_rank ?? '', // Generic label
+                    'category' => $s->category,
+                    'photo' => $s->photo ? (str_starts_with($s->photo, 'http') ? $s->photo : 'https://' . env('AWS_BUCKET', env('S3_BUCKET', 'digitalizatodo')) . '.s3.' . env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1')) . '.amazonaws.com/' . $s->photo) : "https://i.pravatar.cc/150?img=" . $s->id,
+                    'label' => $s->belt_rank ?? '',
                     ];
                 }
                 ),
@@ -86,8 +87,8 @@ class GuardianController extends Controller
      */
     public function updatePricing(Request $request)
     {
-        $tenantId = $request->header('X-Tenant-Id');
-        $tenant = Tenant::findOrFail($tenantId);
+        $tenant = app('currentTenant');
+        $tenantId = $tenant->id;
 
         $data = $tenant->data ?? [];
         $data['pricing'] = $request->except('industry');
@@ -107,9 +108,8 @@ class GuardianController extends Controller
      */
     public function approvePayment(Request $request, $id)
     {
-        // For simplicity in this PWA version, we'll approve all pending 'proof_uploaded' 
-        // payments for the students of this guardian.
-        $tenantId = $request->header('X-Tenant-Id');
+        $tenant = app('currentTenant');
+        $tenantId = $tenant->id;
         $guardian = Guardian::where('tenant_id', $tenantId)->findOrFail($id);
 
         foreach ($guardian->students as $student) {
@@ -127,8 +127,8 @@ class GuardianController extends Controller
      */
     public function updateLogo(Request $request)
     {
-        $tenantId = $request->header('X-Tenant-Id');
-        $tenant = Tenant::findOrFail($tenantId);
+        $tenant = app('currentTenant');
+        $tenantId = $tenant->id;
 
         $request->validate([
             'logo' => 'required|image|max:2048',
@@ -137,12 +137,16 @@ class GuardianController extends Controller
         if ($request->hasFile('logo')) {
             $file = $request->file('logo');
             $src = imagecreatefromstring(file_get_contents($file->getRealPath()));
-            $w = imagesx($src); $h = imagesy($src);
+            $w = imagesx($src);
+            $h = imagesy($src);
             $scale = min(1, 400 / max($w, $h));
-            $nw = (int)($w * $scale); $nh = (int)($h * $scale);
+            $nw = (int)($w * $scale);
+            $nh = (int)($h * $scale);
             $dst = imagecreatetruecolor($nw, $nh);
             imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
-            ob_start(); imagewebp($dst, null, 80); $webp = ob_get_clean();
+            ob_start();
+            imagewebp($dst, null, 80);
+            $webp = ob_get_clean();
 
             $s3Path = 'digitalizatodo/' . $tenantId . '/logo/' . Str::uuid() . '.webp';
             Storage::disk('s3')->put($s3Path, $webp);

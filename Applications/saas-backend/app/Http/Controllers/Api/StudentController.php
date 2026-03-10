@@ -12,7 +12,8 @@ class StudentController extends Controller
      */
     public function index(Request $request)
     {
-        $tenantId = $request->header('X-Tenant-Id');
+        $tenant = app('currentTenant');
+        $tenantId = $tenant->id;
         $students = \App\Models\Student::where('tenant_id', $tenantId)
             ->with([
             'enrollments' => fn($q) => $q->where('status', 'active'),
