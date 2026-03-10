@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { getRegistrationPage, registerStudent } from "@/lib/api";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2, CheckCircle2, Eye, EyeOff } from "lucide-react";
 
 export default function RegisterPage() {
   const { code } = useParams();
@@ -12,6 +12,7 @@ export default function RegisterPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
     guardian_name: "", guardian_email: "", guardian_phone: "",
     password: "", password_confirmation: "",
@@ -151,9 +152,15 @@ export default function RegisterPage() {
                     </div>
                   </div>
                 )}
-                <input type="password" placeholder="Contraseña (mín. 8 caracteres)" value={form.password}
-                  onChange={e => { setForm({ ...form, password: e.target.value }); if (errors.password) setErrors({ ...errors, password: "" }); }}
-                  className={`w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors.password ? 'border-red-400 shadow-[0_0_15px_-3px_rgba(248,113,113,0.2)]' : 'border-zinc-100 hover:border-zinc-200'}`} />
+                <div className="relative">
+                  <input type={showPassword ? "text" : "password"} placeholder="Contraseña (mín. 8 caracteres)" value={form.password}
+                    onChange={e => { setForm({ ...form, password: e.target.value }); if (errors.password) setErrors({ ...errors, password: "" }); }}
+                    className={`w-full h-11 bg-zinc-50 rounded-xl px-4 pr-11 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors.password ? 'border-red-400 shadow-[0_0_15px_-3px_rgba(248,113,113,0.2)]' : 'border-zinc-100 hover:border-zinc-200'}`} />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors">
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
               <div className="relative">
                 {errors.password_confirmation && (
@@ -165,9 +172,15 @@ export default function RegisterPage() {
                     </div>
                   </div>
                 )}
-                <input type="password" placeholder="Confirmar contraseña" value={form.password_confirmation}
-                  onChange={e => { setForm({ ...form, password_confirmation: e.target.value }); if (errors.password_confirmation) setErrors({ ...errors, password_confirmation: "" }); }}
-                  className={`w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors.password_confirmation ? 'border-red-400 shadow-[0_0_15px_-3px_rgba(248,113,113,0.2)]' : 'border-zinc-100 hover:border-zinc-200'}`} />
+                <div className="relative">
+                  <input type={showPassword ? "text" : "password"} placeholder="Confirmar contraseña" value={form.password_confirmation}
+                    onChange={e => { setForm({ ...form, password_confirmation: e.target.value }); if (errors.password_confirmation) setErrors({ ...errors, password_confirmation: "" }); }}
+                    className={`w-full h-11 bg-zinc-50 rounded-xl px-4 pr-11 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors.password_confirmation ? 'border-red-400 shadow-[0_0_15px_-3px_rgba(248,113,113,0.2)]' : 'border-zinc-100 hover:border-zinc-200'}`} />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors">
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
