@@ -14,7 +14,7 @@ class AttendanceQRController extends Controller
      * Genera un token TOTP (Time-based One Time Password) para el tenant.
      * Cambia cada 30 segundos basado en tiempo UNIX.
      */
-    public function generate(Request $request)
+    public function generate(Request $request, $tenant)
     {
         /** @var \App\Models\Tenant $tenant */
         $tenant = app('currentTenant');

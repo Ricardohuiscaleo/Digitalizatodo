@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\RegistrationPageController;
 use App\Http\Controllers\Api\DebugController;
 use App\Http\Middleware\ResolveTenantFromPath;
 use App\Http\Controllers\TelegramBotController;
+use App\Http\Controllers\Api\AttendanceQRController;
 
 /*
  |--------------------------------------------------------------------------
