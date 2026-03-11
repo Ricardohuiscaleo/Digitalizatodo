@@ -78,8 +78,9 @@ Route::middleware([ResolveTenantFromPath::class])->prefix('{tenant}')->group(fun
                     // Gestión de Cuentas (Payers)
                     Route::get('payers', [GuardianController::class , 'index']);
                     Route::post('payers/{id}/approve', [GuardianController::class , 'approvePayment']);
-                    Route::post('settings/pricing', [GuardianController::class , 'updatePricing']);
-                    Route::post('settings/logo', [GuardianController::class , 'updateLogo']);
+                    Route::post('settings/pricing', [GuardianController::class, 'updatePricing']);
+                    Route::post('settings/bank-info', [GuardianController::class, 'updateBankInfo']);
+                    Route::post('settings/logo', [GuardianController::class, 'updateLogo']);
                     Route::post('settings/registration-page', [RegistrationPageController::class , 'generate']);
                     Route::get('settings/registration-page', [RegistrationPageController::class , 'getCode']);
                     Route::delete('settings/registration-page', [RegistrationPageController::class , 'deactivate']);
