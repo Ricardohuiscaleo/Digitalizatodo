@@ -290,9 +290,7 @@ export default function StudentDashboard() {
 
         try {
             const API = process.env.NEXT_PUBLIC_API_URL || "https://admin.digitalizatodo.cl/api";
-            // Asumiendo que existe un endpoint genérico para actualizar el perfil del alumno, o uno específico para fotos.
-            // Ajustar ruta según tu API. Usaré la convención REST común.
-            const tenantSlug = localStorage.getItem("tenant_slug");
+            const tenantSlug = localStorage.getItem("tenant_slug") || tenantId; // Fallback a ID si no hay slug
             const res = await fetch(`${API}/${tenantSlug}/students/${studentId}/photo`, {
                 method: "POST",
                 headers: { Authorization: `Bearer ${token}` },
@@ -611,7 +609,6 @@ function PaymentRow({
                             ref={fileRef}
                             type="file"
                             accept="image/*"
-                            capture="environment"
                             className="hidden"
                             onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); }}
                         />
