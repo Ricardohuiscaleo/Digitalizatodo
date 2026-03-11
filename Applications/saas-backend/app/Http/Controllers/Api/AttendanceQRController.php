@@ -14,8 +14,11 @@ class AttendanceQRController extends Controller
      * Genera un token TOTP (Time-based One Time Password) para el tenant.
      * Cambia cada 30 segundos basado en tiempo UNIX.
      */
-    public function generate(Request $request, Tenant $tenant)
+    public function generate(Request $request)
     {
+        /** @var \App\Models\Tenant $tenant */
+        $tenant = app('currentTenant');
+
         // Solo dueños o profesores pueden generar el QR
         if (!$request->user() || !in_array($request->user()->id, $tenant->staff->pluck('id')->toArray())) {
             return response()->json(['message' => 'No autorizado'], 403);
