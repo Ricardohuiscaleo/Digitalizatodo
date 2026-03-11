@@ -273,6 +273,10 @@ export default function StudentDashboard() {
             if (res.ok) {
                 setUploadSuccess(paymentId);
                 setTimeout(() => { setUploadSuccess(null); refreshData(); }, 2000);
+            } else {
+                const err = await res.text();
+                console.error("Error subiendo comprobante:", err);
+                alert("No se pudo subir el comprobante. Por favor intenta de nuevo.");
             }
         } finally {
             setUploadingPayment(null);
@@ -297,9 +301,12 @@ export default function StudentDashboard() {
                 body: formData,
             });
             if (res.ok) {
+                alert("¡Foto actualizada con éxito!");
                 refreshData();
             } else {
-                alert("Error al subir la foto.");
+                const err = await res.text();
+                console.error("Error subiendo foto:", err);
+                alert(`Error al subir la foto: ${err.substring(0, 100)}`);
             }
         } catch (error) {
             console.error("Upload error:", error);

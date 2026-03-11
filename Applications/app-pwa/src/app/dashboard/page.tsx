@@ -1180,8 +1180,15 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor }: { onCl
             const res = await fetch(`${API}/${tenantSlug}/attendance/qr-token`, {
                 headers: { Authorization: `Bearer ${authToken}` }
             });
+            
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error("Server error response:", errorText);
+                return;
+            }
+
             const data = await res.json();
-            if (res.ok && data.token) {
+            if (data.token) {
                 setQrData(data.token);
                 setTimeLeft(data.expires_in || 30);
             }

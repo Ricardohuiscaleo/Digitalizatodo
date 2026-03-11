@@ -106,7 +106,7 @@ class GuardianController extends Controller
     /**
      * Approve a payment (simplified from guardian context).
      */
-    public function approvePayment(Request $request, $id)
+    public function approvePayment(Request $request, $tenant, $id)
     {
         $tenant = app('currentTenant');
         $tenantId = $tenant->id;

@@ -87,8 +87,10 @@ class AttendanceController extends Controller
      * Valida el token del QR y registra la asistencia.
      * POST /api/{tenant}/attendance/verify-qr
      */
-    public function verifyQR(Request $request, \App\Models\Tenant $tenant)
+    public function verifyQR(Request $request, $tenantSlug)
     {
+        $tenant = app('currentTenant'); // Usamos el ya resuelto por el middleware
+        
         $request->validate([
             'qr_token' => 'required|string',
             'student_id' => 'required|exists:students,id',
