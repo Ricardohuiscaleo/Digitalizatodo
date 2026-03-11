@@ -74,7 +74,7 @@ Route::middleware([ResolveTenantFromPath::class])->prefix('{tenant}')->group(fun
             // Asistencia (solo teachers/admins - Escritura)
             Route::middleware('role:teacher,admin,owner')->group(function () {
                     Route::post('attendance', [AttendanceController::class , 'store']);
-                    Route::get('attendance/generate-qr', [AttendanceQRController::class , 'generate']);
+                    Route::get('attendance/qr-token', [AttendanceQRController::class , 'generate']);
 
                     // Gestión de Cuentas (Payers)
                     Route::get('payers', [GuardianController::class , 'index']);
