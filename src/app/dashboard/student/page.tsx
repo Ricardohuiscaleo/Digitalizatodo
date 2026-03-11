@@ -3,7 +3,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
     Calendar,
-    CreditCard,
     User,
     AlertCircle,
     LogOut,
@@ -15,7 +14,8 @@ import {
     Eye,
     X,
     Copy,
-    Check
+    Check,
+    Camera
 } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
 import { getProfile, markAttendanceViaQR } from "@/lib/api";
@@ -235,6 +235,10 @@ export default function StudentDashboard() {
     const [proofModalUrl, setProofModalUrl] = useState<string | null>(null);
     const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
     const [copiedBank, setCopiedBank] = useState(false);
+    
+    // Subida de foto de perfil
+    const photoInputRef = useRef<HTMLInputElement>(null);
+    const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
 
     const refreshData = async () => {
         const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
@@ -275,6 +279,38 @@ export default function StudentDashboard() {
         }
     };
 
+    const handleUploadPhoto = async (studentId: string, file: File) => {
+        setUploadingPhotoFor(studentId);
+        const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
+        const tenantId = localStorage.getItem("tenant_id");
+        if (!token || !tenantId) return;
+
+        const formData = new FormData();
+        formData.append("photo", file);
+
+        try {
+            const API = process.env.NEXT_PUBLIC_API_URL || "https://admin.digitalizatodo.cl/api";
+            // Asumiendo que existe un endpoint genérico para actualizar el perfil del alumno, o uno específico para fotos.
+            // Ajustar ruta según tu API. Usaré la convención REST común.
+            const tenantSlug = localStorage.getItem("tenant_slug");
+            const res = await fetch(`${API}/${tenantSlug}/students/${studentId}/photo`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+                body: formData,
+            });
+            if (res.ok) {
+                refreshData();
+            } else {
+                alert("Error al subir la foto.");
+            }
+        } catch (error) {
+            console.error("Upload error:", error);
+            alert("Error de conexión al subir foto.");
+        } finally {
+            setUploadingPhotoFor(null);
+        }
+    };
+
     const primaryColor = branding?.primaryColor || "#a855f7";
 
     if (loading) return (
@@ -289,67 +325,75 @@ export default function StudentDashboard() {
     const bankInfo = data?.bank_info;
 
     return (
-        <div className="max-w-md mx-auto min-h-screen bg-stone-50 text-zinc-900 pb-32">
-            {/* Header */}
-            <div className="p-6 pt-12">
-                <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center border border-zinc-200 shadow-sm shrink-0">
-                            <User className="w-6 h-6 text-orange-500" />
-                        </div>
-                        <div>
-                            <h1 className="text-xl font-bold tracking-tight text-zinc-800">Hola, {guardian.name.split(' ')[0]}</h1>
-                            <p className="text-xs text-orange-600/80 uppercase tracking-widest font-black">Portal del Apoderado</p>
+        <div className="max-w-7xl mx-auto min-h-screen bg-stone-50 text-zinc-900 pb-32 md:pb-12 md:px-8">
+            <div className="md:grid md:grid-cols-12 md:gap-8 md:mt-8">
+                
+                {/* Columna Izquierda (Fija en PC): Perfil y Deuda */}
+                <div className="md:col-span-4 md:sticky md:top-8 md:self-start space-y-6">
+                    {/* Header */}
+                    <div className="p-6 md:p-0 md:bg-white md:rounded-[2rem] md:shadow-sm md:border md:border-zinc-100 md:p-6 transition-all pt-12 md:pt-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center border border-zinc-200 shadow-sm shrink-0">
+                                    <User className="w-6 h-6 text-orange-500" />
+                                </div>
+                                <div>
+                                    <h1 className="text-xl font-bold tracking-tight text-zinc-800 break-words line-clamp-2">Hola, {guardian.name.split(' ')[0]}</h1>
+                                    <p className="text-xs text-orange-600/80 uppercase tracking-widest font-black">Portal del Apoderado</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => { localStorage.clear(); window.location.href = "/login"; }}
+                                className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-zinc-200 shadow-sm hover:bg-red-50 hover:border-red-200 transition-all text-zinc-400 hover:text-red-500 shrink-0"
+                            >
+                                <LogOut className="w-5 h-5" />
+                            </button>
                         </div>
                     </div>
-                    <button
-                        onClick={() => { localStorage.clear(); window.location.href = "/login"; }}
-                        className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-zinc-200 shadow-sm hover:bg-red-50 hover:border-red-200 transition-all text-zinc-400 hover:text-red-500"
-                    >
-                        <LogOut className="w-5 h-5" />
-                    </button>
+
+                    {/* Deuda banner */}
+                    {data?.total_due > 0 && (
+                        <div className="mx-4 md:mx-0 bg-gradient-to-br from-red-50 to-orange-50 border border-red-100/50 rounded-3xl p-5 shadow-sm animate-in fade-in duration-200 relative overflow-hidden">
+                            <div className="relative z-10">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-1">Saldo Pendiente</p>
+                                <p className="text-3xl font-black text-red-950">${Number(data.total_due).toLocaleString("es-CL")}</p>
+                                {bankInfo && (
+                                    <div className="mt-4 pt-4 border-t border-red-200/50">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <p className="text-[10px] font-black uppercase text-red-600/70">Datos para transferencia</p>
+                                            <button
+                                                onClick={() => {
+                                                    const text = `Banco: ${bankInfo.bank_name}\nTipo: ${bankInfo.account_type}\nCta: ${bankInfo.account_number}\nTitular: ${bankInfo.holder_name}\nRUT: ${bankInfo.holder_rut}`;
+                                                    navigator.clipboard.writeText(text);
+                                                    setCopiedBank(true);
+                                                    setTimeout(() => setCopiedBank(false), 2000);
+                                                }}
+                                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all shadow-sm ${
+                                                    copiedBank ? 'bg-emerald-500 text-white border border-emerald-600' : 'bg-white text-zinc-600 hover:bg-zinc-50 border border-zinc-200'
+                                                }`}
+                                            >
+                                                {copiedBank ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                                {copiedBank ? 'Copiado' : 'Copiar info'}
+                                            </button>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-xs text-red-950/70 font-bold break-words">{bankInfo.bank_name} · {bankInfo.account_type}</p>
+                                            <p className="text-sm font-black text-red-950 break-all">Cta: {bankInfo.account_number}</p>
+                                            <p className="text-xs text-red-950/60 font-medium break-words">{bankInfo.holder_name} · RUT: {bankInfo.holder_rut}</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-red-500/5 rounded-full blur-2xl pointer-events-none" />
+                        </div>
+                    )}
                 </div>
 
-                {/* Deuda banner */}
-                {data?.total_due > 0 && (
-                    <div className="bg-gradient-to-br from-red-50 to-orange-50 border border-red-100/50 rounded-3xl p-5 mb-8 shadow-sm animate-in fade-in duration-200 relative overflow-hidden">
-                        <div className="relative z-10">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-1">Saldo Pendiente</p>
-                            <p className="text-3xl font-black text-red-950">${Number(data.total_due).toLocaleString("es-CL")}</p>
-                            {bankInfo && (
-                                <div className="mt-4 pt-4 border-t border-red-200/50">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <p className="text-[10px] font-black uppercase text-red-600/70">Datos para transferencia</p>
-                                        <button
-                                            onClick={() => {
-                                                const text = `Banco: ${bankInfo.bank_name}\nTipo: ${bankInfo.account_type}\nCta: ${bankInfo.account_number}\nTitular: ${bankInfo.holder_name}\nRUT: ${bankInfo.holder_rut}`;
-                                                navigator.clipboard.writeText(text);
-                                                setCopiedBank(true);
-                                                setTimeout(() => setCopiedBank(false), 2000);
-                                            }}
-                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all shadow-sm ${
-                                                copiedBank ? 'bg-emerald-500 text-white border border-emerald-600' : 'bg-white text-zinc-600 hover:bg-zinc-50 border border-zinc-200'
-                                            }`}
-                                        >
-                                            {copiedBank ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                                            {copiedBank ? 'Copiado' : 'Copiar info'}
-                                        </button>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-xs text-red-950/70 font-bold">{bankInfo.bank_name} · {bankInfo.account_type}</p>
-                                        <p className="text-sm font-black text-red-950">Cta: {bankInfo.account_number}</p>
-                                        <p className="text-xs text-red-950/60 font-medium">{bankInfo.holder_name} · RUT: {bankInfo.holder_rut}</p>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-red-500/5 rounded-full blur-2xl pointer-events-none" />
-                    </div>
-                )}
-
-                {/* Students */}
-                <div className="space-y-6">
-                    <h2 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Mis Alumnos</h2>
+                {/* Columna Derecha (Scroll fluído en PC): Alumnos e Historial */}
+                <div className="md:col-span-8 space-y-8 mt-8 md:mt-0">
+                    {/* Alumnos */}
+                    <div className="space-y-6 px-4 md:px-0">
+                        <h2 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Mis Alumnos</h2>
 
                     {students.map((student: any) => (
                         <div
@@ -358,7 +402,12 @@ export default function StudentDashboard() {
                         >
                             {/* Student header */}
                             <div className="flex items-start gap-4 relative z-10">
-                                <div className="w-16 h-16 rounded-3xl overflow-hidden bg-zinc-50 border border-zinc-100 shadow-sm shrink-0">
+                                <div className="w-16 h-16 rounded-3xl overflow-hidden bg-zinc-50 border border-zinc-100 shadow-sm shrink-0 relative group">
+                                    {uploadingPhotoFor === student.id ? (
+                                        <div className="absolute inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center z-20">
+                                            <Loader2 className="animate-spin text-zinc-400" size={20} />
+                                        </div>
+                                    ) : null}
                                     {student.photo ? (
                                         <img src={student.photo} alt={student.name} className="w-full h-full object-cover" />
                                     ) : (
@@ -366,9 +415,22 @@ export default function StudentDashboard() {
                                             {student.name[0]}
                                         </div>
                                     )}
+                                    
+                                    {/* Botón flotante para subir foto */}
+                                    <button 
+                                        className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 text-white"
+                                        onClick={() => {
+                                            // Hack simple para abrir el file dialog pasando el ID en el data-student-id momentáneamente
+                                            photoInputRef.current?.setAttribute('data-student-id', student.id);
+                                            photoInputRef.current?.click();
+                                        }}
+                                        title="Cambiar Foto"
+                                    >
+                                        <Camera className="w-6 h-6" />
+                                    </button>
                                 </div>
-                                <div className="flex-1">
-                                    <h3 className="text-lg font-black text-zinc-900 mb-1">{student.name}</h3>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-lg font-black text-zinc-900 mb-1 truncate">{student.name}</h3>
                                     <div className="flex flex-wrap items-center gap-2">
                                         <span className="text-[10px] bg-zinc-100 py-1 px-2 rounded-full border border-zinc-200 text-zinc-500 uppercase font-black tracking-wider">
                                             {student.category}
@@ -469,7 +531,24 @@ export default function StudentDashboard() {
                         ))}
                     </div>
                 )}
+                </div>
             </div>
+
+            {/* Hidden Photo Input */}
+            <input 
+                type="file" 
+                ref={photoInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    const studentId = photoInputRef.current?.getAttribute('data-student-id');
+                    if (file && studentId) {
+                        handleUploadPhoto(studentId, file);
+                    }
+                    if (photoInputRef.current) photoInputRef.current.value = ""; // reset
+                }}
+            />
 
             {/* QR Scanner modal */}
             {activeScanner && (
