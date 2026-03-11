@@ -904,41 +904,71 @@ export default function App() {
                                     let newBankData = { ...bankData };
                                     
                                     const typeKeywords = ['vista', 'corriente', 'ahorro', 'rut'];
+                                    const bankKeywords = ['banco', 'santander', 'scotiabank', 'itaú', 'itau', 'bci', 'falabella', 'mercado pago', 'mercadopago', 'tenpo', 'mach', 'coopeuch', 'security', 'bice', 'consorcio'];
                                     
                                     for (const line of lines) {
                                         const lowerLine = line.toLowerCase();
                                         
-                                        // Buscar RUT
-                                        const rutMatch = line.match(/\b\d{1,2}\.?\d{3}\.?\d{3}[-][0-9kK]\b/);
-                                        if (rutMatch && !lowerLine.includes('cuenta')) {
-                                            newBankData.holder_rut = rutMatch[0];
-                                            continue;
-                                        }
-
-                                        // Buscar Tipo de Cuenta
-                                        if (typeKeywords.some(k => lowerLine.includes(k)) && lowerLine.includes('cuenta')) {
+                                        // 1. Tipo de Cuenta
+                                        if (typeKeywords.some(k => lowerLine.includes(k)) && (lowerLine.includes('cuenta') || lowerLine === 'cuentarut')) {
                                             if (lowerLine.includes('vista') || lowerLine.includes('rut')) newBankData.account_type = 'Cuenta Vista';
                                             else if (lowerLine.includes('corriente')) newBankData.account_type = 'Cuenta Corriente';
                                             else if (lowerLine.includes('ahorro')) newBankData.account_type = 'Cuenta de Ahorro';
+                                            
+                                            // Si además viene el número en la misma línea (ej: "Cuenta Corriente 123456")
+                                            const digits = line.replace(/\D/g, '');
+                                            if (digits.length >= 6) {
+                                                newBankData.account_number = digits;
+                                            }
                                             continue;
                                         }
 
-                                        // Buscar Número de Cuenta (solo números, > 5 dígitos)
-                                        const accountMatch = line.match(/\b\d{6,20}\b/);
-                                        if (accountMatch && !rutMatch && !lowerLine.includes('rut')) {
-                                            newBankData.account_number = accountMatch[0];
-                                            continue;
-                                        }
-
-                                        // Buscar Banco 
-                                        if (lowerLine.includes('banco') || lowerLine.includes('santander') || lowerLine.includes('scotiabank') || lowerLine.includes('itau') || lowerLine.includes('bci') || lowerLine.includes('falabella')) {
+                                        // 2. Banco
+                                        if (bankKeywords.some(k => lowerLine.includes(k))) {
                                             const parts = line.split(':');
                                             newBankData.bank_name = (parts.length > 1 ? parts[1] : line).trim();
                                             continue;
                                         }
 
-                                        // Asumir Nombre (si tiene 2-4 palabras y no es número puro)
-                                        if (line.split(' ').length >= 2 && line.split(' ').length <= 5 && !/\d/.test(line)) {
+                                        // 3. RUT
+                                        const rutMatch = line.match(/\b\d{1,2}\.?\d{3}\.?\d{3}[-][0-9kK]\b/);
+                                        if (rutMatch) {
+                                            newBankData.holder_rut = rutMatch[0];
+                                            continue;
+                                        }
+                                        if (lowerLine.startsWith('rut')) {
+                                            const parts = line.split(':');
+                                            const val = (parts.length > 1 ? parts[1] : line.replace(/rut/i, '')).trim();
+                                            if (val.replace(/\D/g, '').length >= 7) {
+                                                newBankData.holder_rut = val;
+                                            }
+                                            continue;
+                                        }
+
+                                        // 4. Número de Cuenta
+                                        if (lowerLine.includes('cuenta') || lowerLine.includes('nro') || lowerLine.includes('número')) {
+                                            const digits = line.replace(/\D/g, '');
+                                            if (digits.length >= 6) {
+                                                newBankData.account_number = digits;
+                                                continue;
+                                            }
+                                        }
+                                        
+                                        // Número suelto (ej: 17638433)
+                                        if (/^\d{6,20}$/.test(line.replace(/\s/g, ''))) {
+                                            if (!newBankData.account_number) {
+                                                newBankData.account_number = line.replace(/\s/g, '');
+                                            }
+                                            continue;
+                                        }
+
+                                        // 5. Ignorar correos
+                                        if (lowerLine.includes('@') && lowerLine.includes('.')) {
+                                            continue;
+                                        }
+
+                                        // 6. Asumir Nombre (si tiene 2-6 palabras y no es número puro)
+                                        if (!newBankData.holder_name && line.split(' ').length >= 2 && line.split(' ').length <= 6 && !/\d/.test(line)) {
                                             const parts = line.split(':');
                                             newBankData.holder_name = (parts.length > 1 ? parts[1] : line).trim();
                                         }
