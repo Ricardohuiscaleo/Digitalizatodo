@@ -14,6 +14,8 @@ import {
     Clock,
     Eye,
     X,
+    Copy,
+    Check
 } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
 import { getProfile, markAttendanceViaQR } from "@/lib/api";
@@ -43,6 +45,33 @@ function StudentQRScanner({
         streamRef.current?.getTracks().forEach((t) => t.stop());
     }, []);
 
+    const playBeep = (type: 'success' | 'error') => {
+        try {
+            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            if (type === 'success') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, ctx.currentTime);     // A5
+                gain.gain.setValueAtTime(0.5, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.1);
+            } else {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, ctx.currentTime);     // Low note
+                gain.gain.setValueAtTime(0.5, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.3);
+            }
+        } catch(e) { console.error("Audio error", e) }
+    };
+
     const processFrame = useCallback(() => {
         const video = videoRef.current;
         const canvas = canvasRef.current;
@@ -67,9 +96,11 @@ function StudentQRScanner({
             if (token && tenantId) {
                 markAttendanceViaQR(tenantId, token, code.data, studentId).then((res) => {
                     if (res?.attendance) {
+                        playBeep('success');
                         setStatus("success");
                         setTimeout(onComplete, 1500);
                     } else {
+                        playBeep('error');
                         setStatus("error");
                         setErrorMsg(res?.message || "Código inválido o expirado");
                     }
@@ -203,6 +234,7 @@ export default function StudentDashboard() {
     const [uploadingPayment, setUploadingPayment] = useState<string | null>(null);
     const [proofModalUrl, setProofModalUrl] = useState<string | null>(null);
     const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+    const [copiedBank, setCopiedBank] = useState(false);
 
     const refreshData = async () => {
         const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
@@ -246,8 +278,8 @@ export default function StudentDashboard() {
     const primaryColor = branding?.primaryColor || "#a855f7";
 
     if (loading) return (
-        <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
-            <Loader2 className="w-6 h-6 text-gray-600 animate-spin" />
+        <div className="flex min-h-screen items-center justify-center bg-orange-50">
+            <Loader2 className="w-6 h-6 text-orange-600 animate-spin" />
         </div>
     );
 
@@ -257,22 +289,22 @@ export default function StudentDashboard() {
     const bankInfo = data?.bank_info;
 
     return (
-        <div className="max-w-md mx-auto min-h-screen bg-[#0a0a0a] text-white pb-32">
+        <div className="max-w-md mx-auto min-h-screen bg-stone-50 text-zinc-900 pb-32">
             {/* Header */}
             <div className="p-6 pt-12">
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shrink-0">
-                            <User className="w-6 h-6 text-gray-400" />
+                        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center border border-zinc-200 shadow-sm shrink-0">
+                            <User className="w-6 h-6 text-orange-500" />
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold tracking-tight">Hola, {guardian.name.split(' ')[0]}</h1>
-                            <p className="text-xs text-gray-500 uppercase tracking-widest font-medium">Portal del Apoderado</p>
+                            <h1 className="text-xl font-bold tracking-tight text-zinc-800">Hola, {guardian.name.split(' ')[0]}</h1>
+                            <p className="text-xs text-orange-600/80 uppercase tracking-widest font-black">Portal del Apoderado</p>
                         </div>
                     </div>
                     <button
                         onClick={() => { localStorage.clear(); window.location.href = "/login"; }}
-                        className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10 hover:bg-red-500/10 hover:border-red-500/20 transition-all text-gray-500 hover:text-red-500"
+                        className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-zinc-200 shadow-sm hover:bg-red-50 hover:border-red-200 transition-all text-zinc-400 hover:text-red-500"
                     >
                         <LogOut className="w-5 h-5" />
                     </button>
@@ -280,53 +312,74 @@ export default function StudentDashboard() {
 
                 {/* Deuda banner */}
                 {data?.total_due > 0 && (
-                    <div className="bg-red-500/10 border border-red-500/20 rounded-3xl p-5 mb-8 animate-in fade-in duration-200">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-red-500/80 mb-1">Saldo Pendiente</p>
-                        <p className="text-3xl font-black text-white">${Number(data.total_due).toLocaleString("es-CL")}</p>
-                        {bankInfo && (
-                            <div className="mt-4 pt-4 border-t border-red-500/20 space-y-1">
-                                <p className="text-[10px] font-black uppercase text-red-400/70">Datos para transferencia</p>
-                                <p className="text-xs text-white/70">{bankInfo.bank_name} · {bankInfo.account_type}</p>
-                                <p className="text-sm font-bold text-white">Cta: {bankInfo.account_number}</p>
-                                <p className="text-xs text-white/60">{bankInfo.holder_name} · RUT: {bankInfo.holder_rut}</p>
-                            </div>
-                        )}
+                    <div className="bg-gradient-to-br from-red-50 to-orange-50 border border-red-100/50 rounded-3xl p-5 mb-8 shadow-sm animate-in fade-in duration-200 relative overflow-hidden">
+                        <div className="relative z-10">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-1">Saldo Pendiente</p>
+                            <p className="text-3xl font-black text-red-950">${Number(data.total_due).toLocaleString("es-CL")}</p>
+                            {bankInfo && (
+                                <div className="mt-4 pt-4 border-t border-red-200/50">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <p className="text-[10px] font-black uppercase text-red-600/70">Datos para transferencia</p>
+                                        <button
+                                            onClick={() => {
+                                                const text = `Banco: ${bankInfo.bank_name}\nTipo: ${bankInfo.account_type}\nCta: ${bankInfo.account_number}\nTitular: ${bankInfo.holder_name}\nRUT: ${bankInfo.holder_rut}`;
+                                                navigator.clipboard.writeText(text);
+                                                setCopiedBank(true);
+                                                setTimeout(() => setCopiedBank(false), 2000);
+                                            }}
+                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all shadow-sm ${
+                                                copiedBank ? 'bg-emerald-500 text-white border border-emerald-600' : 'bg-white text-zinc-600 hover:bg-zinc-50 border border-zinc-200'
+                                            }`}
+                                        >
+                                            {copiedBank ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                            {copiedBank ? 'Copiado' : 'Copiar info'}
+                                        </button>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-red-950/70 font-bold">{bankInfo.bank_name} · {bankInfo.account_type}</p>
+                                        <p className="text-sm font-black text-red-950">Cta: {bankInfo.account_number}</p>
+                                        <p className="text-xs text-red-950/60 font-medium">{bankInfo.holder_name} · RUT: {bankInfo.holder_rut}</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-red-500/5 rounded-full blur-2xl pointer-events-none" />
                     </div>
                 )}
 
                 {/* Students */}
                 <div className="space-y-6">
-                    <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-500 ml-1">Mis Alumnos</h2>
+                    <h2 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Mis Alumnos</h2>
 
                     {students.map((student: any) => (
                         <div
                             key={student.id}
-                            className="bg-white/[0.03] border border-white/[0.08] rounded-[2.5rem] p-6 backdrop-blur-sm relative overflow-hidden"
+                            className="bg-white border border-zinc-100 rounded-[2.5rem] p-6 shadow-sm relative overflow-hidden transition-all hover:shadow-md"
                         >
                             {/* Student header */}
                             <div className="flex items-start gap-4 relative z-10">
-                                <div className="w-16 h-16 rounded-3xl overflow-hidden bg-white/5 border border-white/10 shrink-0">
+                                <div className="w-16 h-16 rounded-3xl overflow-hidden bg-zinc-50 border border-zinc-100 shadow-sm shrink-0">
                                     {student.photo ? (
                                         <img src={student.photo} alt={student.name} className="w-full h-full object-cover" />
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-2xl font-black text-white/20">
+                                        <div className="w-full h-full flex items-center justify-center text-2xl font-black text-zinc-300">
                                             {student.name[0]}
                                         </div>
                                     )}
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="text-lg font-bold mb-1">{student.name}</h3>
+                                    <h3 className="text-lg font-black text-zinc-900 mb-1">{student.name}</h3>
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <span className="text-[10px] bg-white/5 py-1 px-2 rounded-full border border-white/10 text-gray-400 uppercase font-bold tracking-wider">
+                                        <span className="text-[10px] bg-zinc-100 py-1 px-2 rounded-full border border-zinc-200 text-zinc-500 uppercase font-black tracking-wider">
                                             {student.category}
                                         </span>
                                         {student.belt_rank && (
-                                            <span className="text-[10px] bg-white/5 py-1 px-2 rounded-full border border-white/10 text-gray-400 uppercase font-bold tracking-wider">
+                                            <span className="text-[10px] bg-zinc-100 py-1 px-2 rounded-full border border-zinc-200 text-zinc-500 uppercase font-black tracking-wider shadow-sm">
                                                 🥋 {student.belt_rank}
                                             </span>
                                         )}
                                         {student.pending_payments > 0 && (
-                                            <span className="text-[10px] bg-red-500/10 py-1 px-2 rounded-full border border-red-500/20 text-red-400 uppercase font-black tracking-wider flex items-center gap-1">
+                                            <span className="text-[10px] bg-red-50 py-1 px-2 rounded-full border border-red-200 text-red-600 uppercase font-black tracking-wider flex items-center gap-1 shadow-sm">
                                                 <AlertCircle className="w-3 h-3" />
                                                 {student.pending_payments} pendiente{student.pending_payments > 1 ? "s" : ""}
                                             </span>
@@ -337,37 +390,37 @@ export default function StudentDashboard() {
 
                             {/* Attendance quick */}
                             <div className="mt-5 grid grid-cols-2 gap-3">
-                                <div className="bg-white/5 rounded-2xl p-3 border border-white/5">
-                                    <div className="flex items-center gap-2 mb-2 text-gray-500">
+                                <div className="bg-orange-50/50 rounded-2xl p-3 border border-orange-100">
+                                    <div className="flex items-center gap-2 mb-2 text-orange-600">
                                         <Calendar className="w-4 h-4" />
-                                        <span className="text-[10px] font-bold uppercase tracking-widest">Última Clase</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest">Última Clase</span>
                                     </div>
                                     {student.recent_attendance?.[0] ? (
-                                        <p className="text-xs font-bold">
+                                        <p className="text-xs font-bold text-zinc-900">
                                             {student.recent_attendance[0].status === "present" ? "✅ Presente" : "❌ Ausente"}
-                                            <span className="block text-[10px] text-gray-500 font-medium">{student.recent_attendance[0].date}</span>
+                                            <span className="block text-[10px] text-zinc-500 font-bold mt-0.5">{student.recent_attendance[0].date}</span>
                                         </p>
                                     ) : (
-                                        <p className="text-[10px] text-gray-600 italic">Sin registros aún</p>
+                                        <p className="text-[10px] text-zinc-400 font-bold italic">Sin registros</p>
                                     )}
                                 </div>
-                                <div className="bg-white/5 rounded-2xl p-3 border border-white/5">
-                                    <div className="flex items-center gap-2 mb-2 text-gray-500">
+                                <div className="bg-orange-50/50 rounded-2xl p-3 border border-orange-100">
+                                    <div className="flex items-center gap-2 mb-2 text-orange-600">
                                         <CheckCircle2 className="w-4 h-4" />
-                                        <span className="text-[10px] font-bold uppercase tracking-widest">Asistencias</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest">Asistencias</span>
                                     </div>
-                                    <p className="text-lg font-black text-white">{student.attendance_count}</p>
-                                    <p className="text-[10px] text-gray-500">clases registradas</p>
+                                    <p className="text-lg font-black text-zinc-900 leading-none">{student.attendance_count}</p>
+                                    <p className="text-[9px] font-bold text-zinc-500 mt-1 uppercase tracking-widest">clases total</p>
                                 </div>
                             </div>
 
                             {/* QR Button */}
                             <button
                                 onClick={() => setActiveScanner(student.id)}
-                                className="mt-4 w-full h-14 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center gap-3 text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
+                                className="mt-4 w-full h-14 bg-zinc-950 text-white rounded-2xl flex items-center justify-center gap-3 text-xs font-black uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-md shadow-zinc-200 active:scale-95"
                             >
-                                <QrCode className="w-5 h-5" style={{ color: primaryColor }} />
-                                Registrar Ingreso con QR
+                                <QrCode className="w-5 h-5 text-orange-400" />
+                                Registrar Ingreso QR
                             </button>
 
                             {/* Payments for this student */}
@@ -396,18 +449,18 @@ export default function StudentDashboard() {
                 {/* Payment History */}
                 {paymentHistory.length > 0 && (
                     <div className="mt-8 space-y-3">
-                        <h2 className="text-xs font-black uppercase tracking-[0.2em] text-gray-500 ml-1">Historial de Pagos</h2>
+                        <h2 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Historial de Pagos</h2>
                         {paymentHistory.map((p: any) => (
-                            <div key={p.id} className="flex items-center justify-between bg-white/[0.03] border border-white/[0.06] rounded-2xl px-4 py-3">
+                            <div key={p.id} className="flex items-center justify-between bg-white border border-zinc-100 rounded-2xl px-4 py-3 shadow-sm hover:shadow-md transition-shadow">
                                 <div>
-                                    <p className="text-sm font-bold text-white">${Number(p.amount).toLocaleString("es-CL")}</p>
-                                    <p className="text-[10px] text-gray-500">{p.paid_at || p.due_date}</p>
+                                    <p className="text-sm font-black text-zinc-900">${Number(p.amount).toLocaleString("es-CL")}</p>
+                                    <p className="text-[10px] text-zinc-400 font-bold">{p.paid_at || p.due_date}</p>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    {p.status === "approved" && <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full px-2 py-0.5 font-black uppercase">Pagado</span>}
-                                    {p.status === "pending_review" && <span className="text-[10px] bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 rounded-full px-2 py-0.5 font-black uppercase">En Revisión</span>}
+                                    {p.status === "approved" && <span className="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full px-2 py-0.5 font-black uppercase shadow-sm">Pagado</span>}
+                                    {p.status === "pending_review" && <span className="text-[10px] bg-yellow-50 text-yellow-600 border border-yellow-200 rounded-full px-2 py-0.5 font-black uppercase shadow-sm">En Revisión</span>}
                                     {p.proof_url && (
-                                        <button onClick={() => setProofModalUrl(p.proof_url)} className="text-gray-500 hover:text-white transition-colors">
+                                        <button onClick={() => setProofModalUrl(p.proof_url)} className="text-zinc-400 hover:text-zinc-600 transition-colors p-1 bg-zinc-50 rounded-full border border-zinc-200">
                                             <Eye className="w-4 h-4" />
                                         </button>
                                     )}
@@ -453,24 +506,24 @@ function PaymentRow({
     const fileRef = useRef<HTMLInputElement>(null);
 
     const statusConfig: Record<string, { label: string; color: string }> = {
-        pending: { label: "Pendiente", color: "text-red-400 bg-red-500/10 border-red-500/20" },
-        pending_review: { label: "En Revisión", color: "text-yellow-400 bg-yellow-500/10 border-yellow-500/20" },
-        approved: { label: "Pagado", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
+        pending: { label: "Pendiente", color: "text-red-500 bg-red-50 border-red-200" },
+        pending_review: { label: "En Revisión", color: "text-yellow-600 bg-yellow-50 border-yellow-200" },
+        approved: { label: "Pagado", color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
     };
     const sc = statusConfig[payment.status] || statusConfig.pending;
 
     return (
-        <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
+        <div className="bg-white border border-zinc-100 rounded-2xl px-4 py-3 flex items-center justify-between gap-3 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow">
             <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-white">${Number(payment.amount).toLocaleString("es-CL")}</p>
-                <p className="text-[10px] text-gray-500 truncate">Vence: {payment.due_date || "—"}</p>
+                <p className="text-sm font-black text-zinc-900">${Number(payment.amount).toLocaleString("es-CL")}</p>
+                <p className="text-[10px] text-zinc-400 font-bold truncate">Vence: {payment.due_date || "—"}</p>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-                <span className={`text-[10px] border rounded-full px-2 py-0.5 font-black uppercase ${sc.color}`}>{sc.label}</span>
+                <span className={`text-[9px] border rounded-full px-2 py-0.5 font-black uppercase shadow-sm ${sc.color}`}>{sc.label}</span>
 
                 {uploadSuccess && (
-                    <span className="text-emerald-400"><CheckCircle2 className="w-4 h-4" /></span>
+                    <span className="text-emerald-500"><CheckCircle2 className="w-5 h-5" /></span>
                 )}
 
                 {payment.status === "pending" && !uploadSuccess && (
@@ -486,11 +539,10 @@ function PaymentRow({
                         <button
                             onClick={() => fileRef.current?.click()}
                             disabled={uploading}
-                            className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 hover:bg-white/10 transition-all disabled:opacity-50"
-                            style={{ color: primaryColor }}
+                            className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider bg-orange-50 text-orange-600 border border-orange-200 rounded-xl px-3 py-1.5 hover:bg-orange-100 transition-all disabled:opacity-50 shadow-sm"
                         >
                             {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
-                            {uploading ? "Subiendo..." : "Comprobante"}
+                            {uploading ? "..." : "Comprobante"}
                         </button>
                     </>
                 )}
@@ -498,7 +550,7 @@ function PaymentRow({
                 {payment.status === "pending_review" && payment.proof_url && (
                     <button
                         onClick={() => onViewProof(payment.proof_url)}
-                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 hover:bg-white/10 transition-all text-gray-400"
+                        className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider bg-zinc-50 border border-zinc-200 text-zinc-500 rounded-xl px-3 py-1.5 hover:bg-zinc-100 transition-all shadow-sm"
                     >
                         <Eye className="w-3 h-3" />
                         Ver
@@ -508,7 +560,7 @@ function PaymentRow({
                 {payment.status === "approved" && payment.proof_url && (
                     <button
                         onClick={() => onViewProof(payment.proof_url)}
-                        className="text-gray-600 hover:text-gray-400 transition-colors"
+                        className="text-zinc-400 hover:text-zinc-600 transition-colors p-1 bg-zinc-50 rounded-full border border-zinc-200"
                     >
                         <Eye className="w-4 h-4" />
                     </button>
