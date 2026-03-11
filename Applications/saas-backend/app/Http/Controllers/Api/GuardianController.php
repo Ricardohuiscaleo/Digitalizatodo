@@ -161,4 +161,27 @@ class GuardianController extends Controller
 
         return response()->json(['message' => 'No se subió ningún archivo'], 400);
     }
+
+    /**
+     * Save bank transfer details for this tenant.
+     * POST /api/{tenant}/settings/bank-info
+     */
+    public function updateBankInfo(Request $request)
+    {
+        $tenant = app('currentTenant');
+
+        $validated = $request->validate([
+            'bank_name'      => 'required|string|max:100',
+            'account_type'   => 'required|string|max:50',
+            'account_number' => 'required|string|max:50',
+            'holder_name'    => 'required|string|max:100',
+            'holder_rut'     => 'required|string|max:20',
+        ]);
+
+        $data = $tenant->data ?? [];
+        $data['bank_info'] = $validated;
+        $tenant->update(['data' => $data]);
+
+        return response()->json(['message' => 'Datos bancarios guardados correctamente.', 'bank_info' => $validated]);
+    }
 }

@@ -98,39 +98,55 @@ class AuthController extends Controller
 
         if ($user instanceof Guardian) {
             // Perfil de Guardian
+            $tenant = app('currentTenant');
+            $bankInfo = $tenant->data['bank_info'] ?? null;
+
             $guardian = $user->load([
                 'students.enrollments.plan',
-                'students.enrollments.payments' => fn($q) => $q->where('status', 'pending')->orderBy('due_date'),
+                'students.enrollments.payments' => fn($q) => $q->whereIn('status', ['pending', 'pending_review'])->orderBy('due_date'),
                 'students.attendances' => fn($q) => $q->orderBy('date', 'desc')->limit(5),
             ]);
 
+            $allEnrollmentIds = $guardian->students->flatMap->enrollments->pluck('id')->filter();
+
             return response()->json([
                 'user_type' => 'guardian',
-                'guardian' => $guardian->only('id', 'name', 'email', 'phone', 'photo'),
-                'students' => $guardian->students ? $guardian->students->map(fn($s) => [
-                    'id' => $s->id,
-                    'name' => $s->name,
-                    'photo' => $s->photo ? (str_starts_with($s->photo, 'http') ? $s->photo : 'https://' . env('AWS_BUCKET', env('S3_BUCKET')) . '.s3.' . env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1')) . '.amazonaws.com/' . $s->photo) : null,
-                    'category' => $s->category ?? 'Sin Categoría',
-                    'belt_rank' => $s->belt_rank,
-                    'attendance_count' => \App\Models\Attendance::where('student_id', $s->id)->where('status', 'present')->count(),
-                    'pending_payments' => $s->enrollments ? $s->enrollments->flatMap->payments->count() : 0,
+                'guardian'  => $guardian->only('id', 'name', 'email', 'phone', 'photo'),
+                'bank_info' => $bankInfo,
+                'students'  => $guardian->students ? $guardian->students->map(fn($s) => [
+                    'id'                => $s->id,
+                    'name'              => $s->name,
+                    'photo'             => $s->photo ? (str_starts_with($s->photo, 'http') ? $s->photo : 'https://' . env('AWS_BUCKET', env('S3_BUCKET')) . '.s3.' . env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1')) . '.amazonaws.com/' . $s->photo) : null,
+                    'category'          => $s->category ?? 'Sin Categoría',
+                    'belt_rank'         => $s->belt_rank,
+                    'attendance_count'  => \App\Models\Attendance::where('student_id', $s->id)->where('status', 'present')->count(),
+                    'pending_payments'  => $s->enrollments ? $s->enrollments->flatMap->payments->count() : 0,
                     'recent_attendance' => $s->attendances ? $s->attendances->map(fn($a) => [
-                        'date' => $a->date->format('Y-m-d'),
+                        'date'   => $a->date->format('Y-m-d'),
                         'status' => $a->status,
+                    ]) : [],
+                    'payments' => $s->enrollments ? $s->enrollments->flatMap->payments->map(fn($p) => [
+                        'id'        => $p->id,
+                        'amount'    => $p->amount,
+                        'due_date'  => $p->due_date?->format('d M, Y'),
+                        'status'    => $p->status,
+                        'proof_url' => $p->proof_image,
                     ]) : [],
                 ]) : [],
                 'total_due' => $guardian->total_due,
-                'payment_history' => $guardian->students ? \App\Models\Payment::whereIn(
-                    'enrollment_id',
-                    $guardian->students->flatMap->enrollments->pluck('id')->filter()
-                )->where('status', 'approved')->orderByDesc('paid_at')->limit(6)->get()->map(fn($p) => [
-                    'id' => $p->id,
-                    'amount' => $p->amount,
-                    'status' => $p->status,
-                    'paid_at' => $p->paid_at?->format('d M, Y'),
-                    'due_date' => $p->due_date?->format('d M, Y'),
-                ]) : collect([]),
+                'payment_history' => $allEnrollmentIds->isNotEmpty() ? \App\Models\Payment::whereIn('enrollment_id', $allEnrollmentIds)
+                    ->whereIn('status', ['approved', 'pending_review'])
+                    ->orderByDesc('paid_at')
+                    ->limit(10)
+                    ->get()
+                    ->map(fn($p) => [
+                        'id'        => $p->id,
+                        'amount'    => $p->amount,
+                        'status'    => $p->status,
+                        'paid_at'   => $p->paid_at?->format('d M, Y'),
+                        'due_date'  => $p->due_date?->format('d M, Y'),
+                        'proof_url' => $p->proof_image,
+                    ]) : collect([]),
             ]);
         }
 

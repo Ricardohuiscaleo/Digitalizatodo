@@ -173,6 +173,23 @@ export async function initiatePayment(tenantId: string, paymentId: string, token
     }
 }
 
+export async function updateBankInfo(tenantId: string, token: string, bankData: any) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/settings/bank-info`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(bankData),
+        });
+
+        return await safeJson(response);
+    } catch {
+        return null;
+    }
+}
+
 export async function registerStudent(tenantId: string, data: any) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/register-student`, {

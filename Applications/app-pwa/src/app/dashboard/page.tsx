@@ -31,7 +31,8 @@ import {
     getRegistrationPageCode,
     deleteRegistrationPage,
     getAttendanceHistory,
-    resumeSession
+    resumeSession,
+    updateBankInfo
 } from "@/lib/api";
 
 export default function App() {
@@ -75,6 +76,8 @@ export default function App() {
         discountThreshold: 2,
         discountPercentage: 15
     });
+
+    const [bankData, setBankData] = useState<any>({});
 
     const [searchTerm, setSearchTerm] = useState('');
     const [paymentFilter, setPaymentFilter] = useState('all');
@@ -146,6 +149,9 @@ export default function App() {
                 if (profile.tenant?.data?.pricing) {
                     const p = profile.tenant.data.pricing;
                     setPrices(p.prices || p);
+                }
+                if (profile.tenant?.data?.bank_info) {
+                    setBankData(profile.tenant.data.bank_info);
                 }
                 if (profile.tenant && (!branding?.name || !branding?.industry)) {
                     setBranding({
@@ -302,6 +308,17 @@ export default function App() {
         }
     };
 
+    const handleSaveBankInfo = async () => {
+        if (isDemo) {
+            alert("Datos bancarios guardados localmente (Modo Demo)");
+            return;
+        }
+        if (token && (user?.tenant_slug || user?.tenant_id)) {
+            await updateBankInfo(user.tenant_slug || user.tenant_id, token, bankData);
+            alert("Datos bancarios actualizados con éxito");
+        }
+    };
+
     const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !token || (!user?.tenant_slug && !user?.tenant_id)) return;
@@ -388,7 +405,7 @@ export default function App() {
                                     ))}
                                 </div>
                                 <button onClick={() => changeTab('attendance')} className="w-full py-4 rounded-2xl bg-zinc-950 text-white text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-zinc-200">
-                                    Actualizar {vocab.placeLabel}
+                                    Registrar Asistencia 👇
                                 </button>
                             </div>
                         ) : (
@@ -443,9 +460,16 @@ export default function App() {
                                                 </div>
                                                 <div>
                                                     <p className="text-[11px] font-black text-zinc-800 uppercase tracking-widest leading-none">{dateStr}</p>
-                                                    <span className="inline-flex items-center gap-1 mt-1 text-indigo-600 text-[9px] font-black uppercase">
-                                                        {presentCount} presentes
-                                                    </span>
+                                                    <div className="flex items-center gap-3 mt-1">
+                                                        <span className="inline-flex items-center gap-1 text-indigo-600 text-[9px] font-black uppercase">
+                                                            {presentCount} presentes
+                                                        </span>
+                                                        {records[0]?.created_at && (
+                                                            <span className="text-[9px] text-zinc-400 font-bold">
+                                                                🕐 {new Date(records[0].created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -847,7 +871,37 @@ export default function App() {
                 </div>
 
                 <button onClick={handleSavePrices} className="w-full bg-zinc-950 text-white font-black py-4 rounded-2xl active:scale-95 transition-all text-[10px] uppercase tracking-widest">
-                    Guardar Configuración
+                    Guardar Configuración de Precios
+                </button>
+
+                {/* DATOS DE TRANSFERENCIA */}
+                <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden">
+                    <div className="px-4 py-2 border-b border-zinc-50 flex items-center gap-2">
+                        <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">💳 Datos para Transferencia Bancaria</span>
+                    </div>
+                    <div className="divide-y divide-zinc-50">
+                        {([
+                            { label: 'Banco', field: 'bank_name', placeholder: 'Ej: Banco Estado' },
+                            { label: 'Tipo Cta.', field: 'account_type', placeholder: 'Cuenta Corriente / Vista' },
+                            { label: 'N° Cuenta', field: 'account_number', placeholder: '00000000' },
+                            { label: 'Titular', field: 'holder_name', placeholder: 'Nombre del titular' },
+                            { label: 'RUT', field: 'holder_rut', placeholder: '12.345.678-9' },
+                        ] as const).map(({ label, field, placeholder }) => (
+                            <div key={field} className="flex items-center px-4 py-2">
+                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest w-20 shrink-0">{label}</span>
+                                <input
+                                    type="text"
+                                    className="flex-1 bg-transparent text-xs font-black text-zinc-950 focus:ring-0 outline-none text-right"
+                                    value={bankData[field] || ''}
+                                    onChange={e => setBankData((b: any) => ({ ...b, [field]: e.target.value }))}
+                                    placeholder={placeholder}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <button onClick={handleSaveBankInfo} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-2xl active:scale-95 transition-all text-[10px] uppercase tracking-widest">
+                    Guardar Datos Bancarios
                 </button>
 
                 <button className="w-full text-rose-400 font-black py-3 rounded-2xl hover:bg-rose-50 uppercase tracking-widest text-[8px] transition-all" onClick={() => { localStorage.clear(); window.location.href = "/"; }}>
