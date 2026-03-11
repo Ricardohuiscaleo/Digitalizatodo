@@ -48,7 +48,7 @@ class PaymentController extends Controller
      * Sube el comprobante de transferencia para un pago.
      * POST /api/{tenant}/payments/{payment}/upload-proof
      */
-    public function uploadProof(Request $request, Payment $payment): JsonResponse
+    public function uploadProof(Request $request, $tenant, Payment $payment): JsonResponse
     {
         $guardian = $request->user();
         $tenant = app('currentTenant');
@@ -92,7 +92,7 @@ class PaymentController extends Controller
      * Inicia un proceso de pago (gateway).
      * POST /api/{tenant}/payments/{payment}/pay
      */
-    public function initiatePayment(Request $request, Payment $payment): JsonResponse
+    public function initiatePayment(Request $request, $tenant, Payment $payment): JsonResponse
     {
         $guardian = $request->user();
         $allowedEnrollments = $guardian->students->flatMap->enrollments->pluck('id')->toArray();

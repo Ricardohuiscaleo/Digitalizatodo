@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 
 class RegistrationPageController extends Controller
 {
-    public function generate(Request $request)
+    public function generate(Request $request, $tenant)
     {
         $tenant = app('currentTenant');
         $tenantId = $tenant->id;
@@ -42,7 +42,7 @@ class RegistrationPageController extends Controller
         return response()->json(['code' => $code]);
     }
 
-    public function getCode(Request $request)
+    public function getCode(Request $request, $tenant)
     {
         $tenantId = app('currentTenant')->id;
         $existing = DB::table('registration_pages')
@@ -53,7 +53,7 @@ class RegistrationPageController extends Controller
         return response()->json(['code' => $existing]);
     }
 
-    public function deactivate(Request $request)
+    public function deactivate(Request $request, $tenant)
     {
         $tenantId = app('currentTenant')->id;
         DB::table('registration_pages')
