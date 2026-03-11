@@ -20,7 +20,7 @@ class AttendanceQRController extends Controller
         $tenant = app('currentTenant');
 
         // Solo dueños o profesores pueden generar el QR
-        if (!$request->user() || !in_array($request->user()->id, $tenant->staff->pluck('id')->toArray())) {
+        if (!$request->user() || !in_array($request->user()->id, $tenant->users->pluck('id')->toArray())) {
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
