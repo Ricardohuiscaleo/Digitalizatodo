@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { QRCodeCanvas } from 'qrcode.react';
 import {
     Users,
     CreditCard,
@@ -17,7 +18,9 @@ import {
     RefreshCw,
     ChevronRight,
     Plus,
-    Loader2
+    Loader2,
+    ClipboardPaste,
+    QrCode
 } from 'lucide-react';
 import { useBranding } from "@/context/BrandingContext";
 import {
@@ -88,6 +91,7 @@ export default function App() {
     const [copied, setCopied] = useState(false);
     const [regPageCode, setRegPageCode] = useState<string | null>(null);
     const [generatingPage, setGeneratingPage] = useState(false);
+    const [showQRModal, setShowQRModal] = useState(false);
 
     useEffect(() => {
         const t = setInterval(() => setNow(new Date()), 60000);
@@ -524,6 +528,14 @@ export default function App() {
                     />
                 </div>
 
+                <button
+                    onClick={() => setShowQRModal(true)}
+                    className="w-full bg-zinc-950 hover:bg-zinc-800 text-white rounded-2xl p-4 flex items-center justify-center gap-3 shadow-md transition-all active:scale-95"
+                >
+                    <QrCode size={20} className="text-emerald-400" />
+                    <span className="text-[11px] font-black uppercase tracking-widest text-white">Modo Escáner: Mostrar QR Dinámico</span>
+                </button>
+
                 {/* VISTA DESKTOP: TABLA */}
                 <div className="hidden md:block bg-white rounded-3xl shadow-sm border border-zinc-100 overflow-hidden">
                     <table className="w-full text-left border-collapse">
@@ -875,9 +887,73 @@ export default function App() {
                 </button>
 
                 {/* DATOS DE TRANSFERENCIA */}
-                <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden">
-                    <div className="px-4 py-2 border-b border-zinc-50 flex items-center gap-2">
-                        <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">💳 Datos para Transferencia Bancaria</span>
+                {/* DATOS DE TRANSFERENCIA */}
+                <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden mt-6">
+                    <div className="px-4 py-3 border-b border-zinc-50 flex items-center justify-between">
+                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                            <CreditCard size={12} /> Datos Bancarios
+                        </span>
+                        <button
+                            onClick={async () => {
+                                try {
+                                    const text = await navigator.clipboard.readText();
+                                    if (!text) return;
+                                    
+                                    // Heurística simple para adivinar campos desde un texto copiado estándar
+                                    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+                                    let newBankData = { ...bankData };
+                                    
+                                    const typeKeywords = ['vista', 'corriente', 'ahorro', 'rut'];
+                                    
+                                    for (const line of lines) {
+                                        const lowerLine = line.toLowerCase();
+                                        
+                                        // Buscar RUT
+                                        const rutMatch = line.match(/\b\d{1,2}\.?\d{3}\.?\d{3}[-][0-9kK]\b/);
+                                        if (rutMatch && !lowerLine.includes('cuenta')) {
+                                            newBankData.holder_rut = rutMatch[0];
+                                            continue;
+                                        }
+
+                                        // Buscar Tipo de Cuenta
+                                        if (typeKeywords.some(k => lowerLine.includes(k)) && lowerLine.includes('cuenta')) {
+                                            if (lowerLine.includes('vista') || lowerLine.includes('rut')) newBankData.account_type = 'Cuenta Vista';
+                                            else if (lowerLine.includes('corriente')) newBankData.account_type = 'Cuenta Corriente';
+                                            else if (lowerLine.includes('ahorro')) newBankData.account_type = 'Cuenta de Ahorro';
+                                            continue;
+                                        }
+
+                                        // Buscar Número de Cuenta (solo números, > 5 dígitos)
+                                        const accountMatch = line.match(/\b\d{6,20}\b/);
+                                        if (accountMatch && !rutMatch && !lowerLine.includes('rut')) {
+                                            newBankData.account_number = accountMatch[0];
+                                            continue;
+                                        }
+
+                                        // Buscar Banco 
+                                        if (lowerLine.includes('banco') || lowerLine.includes('santander') || lowerLine.includes('scotiabank') || lowerLine.includes('itau') || lowerLine.includes('bci') || lowerLine.includes('falabella')) {
+                                            const parts = line.split(':');
+                                            newBankData.bank_name = (parts.length > 1 ? parts[1] : line).trim();
+                                            continue;
+                                        }
+
+                                        // Asumir Nombre (si tiene 2-4 palabras y no es número puro)
+                                        if (line.split(' ').length >= 2 && line.split(' ').length <= 5 && !/\d/.test(line)) {
+                                            const parts = line.split(':');
+                                            newBankData.holder_name = (parts.length > 1 ? parts[1] : line).trim();
+                                        }
+                                    }
+                                    
+                                    setBankData(newBankData);
+                                    alert("Datos copiados del portapapeles. Por favor revisa que estén correctos.");
+                                } catch (err) {
+                                    alert("No se pudo acceder al portapapeles o no hay texto copiado.");
+                                }
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-full text-[9px] font-black uppercase tracking-widest transition-all active:scale-95"
+                        >
+                            <ClipboardPaste size={10} /> Pegar Copiado
+                        </button>
                     </div>
                     <div className="divide-y divide-zinc-50">
                         {([
@@ -1006,6 +1082,16 @@ export default function App() {
                 </main>
             </div>
 
+            {/* QR DINAMICO MODAL */}
+            {showQRModal && (
+                <DynamicQRModal 
+                    tenantSlug={user?.tenant_slug ?? ''} 
+                    authToken={token ?? ''} 
+                    onClose={() => setShowQRModal(false)}
+                    primaryColor={branding?.primaryColor || '#a855f7'}
+                />
+            )}
+
             {/* NAV CON ESTILO PREMIUM - Solo visible en Mobile */}
             <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 pt-3 pb-8 px-10 flex justify-between items-center h-24 z-50 md:hidden text-zinc-950">
                 <TabButton icon={LayoutDashboard} label="Inicio" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} />
@@ -1041,5 +1127,94 @@ function TabButton({ icon: Icon, label, active, onClick }: { icon: any, label: s
             <span className="text-[8px] font-black uppercase tracking-[0.2em]">{label}</span>
             {active && <div className="absolute -bottom-2 w-1 h-1 bg-zinc-950 rounded-full" />}
         </button>
+    );
+}
+
+function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor }: { onClose: () => void; tenantSlug: string; authToken: string; primaryColor: string }) {
+    const [qrData, setQrData] = useState<string | null>(null);
+    const [timeLeft, setTimeLeft] = useState(30);
+    const [loading, setLoading] = useState(true);
+
+    const fetchToken = useCallback(async () => {
+        try {
+            setLoading(true);
+            const API = process.env.NEXT_PUBLIC_API_URL || "https://admin.digitalizatodo.cl/api";
+            const res = await fetch(`${API}/${tenantSlug}/attendance/qr-token`, {
+                headers: { Authorization: `Bearer ${authToken}` }
+            });
+            const data = await res.json();
+            if (res.ok && data.token) {
+                setQrData(data.token);
+                setTimeLeft(data.expires_in || 30);
+            }
+        } catch (error) {
+            console.error("Error fetching QR token:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [tenantSlug, authToken]);
+
+    useEffect(() => {
+        fetchToken();
+    }, [fetchToken]);
+
+    useEffect(() => {
+        if (loading) return;
+        if (timeLeft <= 0) {
+            fetchToken();
+            return;
+        }
+        
+        const t = setTimeout(() => {
+            setTimeLeft(prev => prev - 1);
+        }, 1000);
+        return () => clearTimeout(t);
+    }, [timeLeft, loading, fetchToken]);
+
+    const progressPercent = (timeLeft / 30) * 100;
+
+    return (
+        <div className="fixed inset-0 z-[100] bg-zinc-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden shadow-2xl scale-in-center">
+                <div className="p-6 text-center relative border-b border-zinc-100">
+                    <button onClick={onClose} className="absolute right-4 top-4 p-2 bg-zinc-50 rounded-full text-zinc-400 hover:text-zinc-600 transition-colors active:scale-95">
+                        <XCircle size={24} />
+                    </button>
+                    <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
+                        <QrCode size={24} />
+                    </div>
+                    <h2 className="text-xl font-black text-zinc-900 leading-tight">Registrar Ingreso</h2>
+                    <p className="text-[10px] uppercase font-bold tracking-widest text-zinc-400 mt-1">Acerca la cámara del apoderado</p>
+                </div>
+                
+                <div className="p-8 flex flex-col items-center">
+                    <div className="relative p-4 bg-white rounded-3xl shadow-[0_0_20px_rgba(0,0,0,0.05)] border border-zinc-100 mb-6 flex items-center justify-center">
+                        {qrData ? (
+                            <QRCodeCanvas value={qrData} size={200} level="H" includeMargin={false} fgColor={primaryColor} />
+                        ) : (
+                            <div className="w-[200px] h-[200px] flex items-center justify-center bg-zinc-50 rounded-xl">
+                                <Loader2 className="animate-spin text-zinc-300" size={32} />
+                            </div>
+                        )}
+                        
+                        {/* Indicador visual del tiempo (Overlay) */}
+                        <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none border-4 border-transparent transition-all duration-1000" style={{ borderColor: timeLeft <= 5 ? 'rgba(239,68,68,0.3)' : 'transparent' }} />
+                    </div>
+                    
+                    <div className="w-full space-y-2">
+                        <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                            <span>Actualizando en:</span>
+                            <span className={timeLeft <= 5 ? "text-red-500" : ""}>{timeLeft}s</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
+                            <div 
+                                className={`h-full transition-all duration-1000 ease-linear rounded-full ${timeLeft <= 5 ? 'bg-red-500' : 'bg-emerald-500'}`}
+                                style={{ width: `${progressPercent}%` }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }
