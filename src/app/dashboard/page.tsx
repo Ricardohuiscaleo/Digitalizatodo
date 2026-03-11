@@ -946,11 +946,14 @@ export default function App() {
                                         }
 
                                         // 4. Número de Cuenta
-                                        if (lowerLine.includes('cuenta') || lowerLine.includes('nro') || lowerLine.includes('número')) {
-                                            const digits = line.replace(/\D/g, '');
-                                            if (digits.length >= 6) {
-                                                newBankData.account_number = digits;
-                                                continue;
+                                        if (lowerLine.includes('cuenta') || lowerLine.includes('nro') || lowerLine.includes('número') || lowerLine.includes('numero')) {
+                                            // Ignorar si es la línea de "Tipo de cuenta:"
+                                            if (!lowerLine.includes('tipo')) {
+                                                const digits = line.replace(/\D/g, '');
+                                                if (digits.length >= 6) {
+                                                    newBankData.account_number = digits;
+                                                    continue;
+                                                }
                                             }
                                         }
                                         
@@ -967,10 +970,15 @@ export default function App() {
                                             continue;
                                         }
 
-                                        // 6. Asumir Nombre (si tiene 2-6 palabras y no es número puro)
-                                        if (!newBankData.holder_name && line.split(' ').length >= 2 && line.split(' ').length <= 6 && !/\d/.test(line)) {
-                                            const parts = line.split(':');
-                                            newBankData.holder_name = (parts.length > 1 ? parts[1] : line).trim();
+                                        // 6. Asumir Nombre 
+                                        if (!newBankData.holder_name) {
+                                            if (lowerLine.startsWith('nombre')) {
+                                                const parts = line.split(':');
+                                                newBankData.holder_name = (parts.length > 1 ? parts[1] : line.replace(/nombre/i, '')).trim();
+                                            } else if (line.split(' ').length >= 2 && line.split(' ').length <= 6 && !/\d/.test(line)) {
+                                                const parts = line.split(':');
+                                                newBankData.holder_name = (parts.length > 1 ? parts[1] : line).trim();
+                                            }
                                         }
                                     }
                                     
