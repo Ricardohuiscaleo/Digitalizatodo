@@ -19,6 +19,7 @@ class DebugController extends Controller
             'php_version' => PHP_VERSION,
             'laravel_version' => app()->version(),
             'environment' => app()->environment(),
+            'deploy_ver' => 'v101',
             'database' => [
                 'connection' => config('database.default'),
                 'host' => config('database.connections.mysql.host'),
