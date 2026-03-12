@@ -288,13 +288,26 @@ class TelegramBotController extends Controller
         ]);
 
         if ($response->successful()) {
-            $chatMsg->update(['telegram_message_id' => $response->json('result.message_id')]);
+            $msgId = $response->json('result.message_id');
+            $chatMsg->update(['telegram_message_id' => $msgId]);
+            \Illuminate\Support\Facades\Cache::put('last_telegram_success', [
+                'time' => now()->toDateTimeString(),
+                'message_id' => $msgId,
+                'session_id' => $data['session_id']
+            ], 3600);
         } else {
-            Log::error('Telegram Chat Send Failed', [
+            $error = [
+                'time' => now()->toDateTimeString(),
                 'status' => $response->status(),
                 'body' => $response->json(),
-                'session_id' => $data['session_id']
-            ]);
+                'session_id' => $data['session_id'],
+                'config_used' => [
+                    'token_prefix' => substr($token, 0, 10) . '...',
+                    'chat_id' => $chatId
+                ]
+            ];
+            Log::error('Telegram Chat Send Failed', $error);
+            \Illuminate\Support\Facades\Cache::put('last_telegram_error', $error, 3600);
         }
 
         return response()->json(['status' => 'ok']);

@@ -20,6 +20,10 @@ class DebugController extends Controller
                 'database' => config('database.connections.mysql.database'),
                 'username' => config('database.connections.mysql.username'),
                 'port' => config('database.connections.mysql.port'),
+            ],
+            'telegram_debug' => [
+                'last_error' => \Illuminate\Support\Facades\Cache::get('last_telegram_error'),
+                'last_success' => \Illuminate\Support\Facades\Cache::get('last_telegram_success'),
             ]
         ];
 
