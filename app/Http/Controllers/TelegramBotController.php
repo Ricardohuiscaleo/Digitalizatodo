@@ -222,13 +222,14 @@ class TelegramBotController extends Controller
         $chatId = config('services.telegram_chat.admin_id');
 
         $urlPath = parse_url($data['url'] ?? '', PHP_URL_PATH) ?: '/';
-        $ip = $request->ip();
-        $device = str_contains(strtolower($data['metadata']['userAgent'] ?? ''), 'mobile') ? '📱 Móvil' : '💻 Desktop';
-        
+        $geo = $this->getGeolocation($ip);
+        $deviceInfo = $this->getDeviceFromUA($data['metadata']['userAgent'] ?? $request->header('User-Agent'));
+
         $message = "👀 <b>Visitante en Vivo</b>\n\n";
         $message .= "📍 <b>Ruta:</b> <code>{$urlPath}</code>\n";
+        $message .= "🌍 <b>Ubicación:</b> <code>" . ($geo['city'] ?? 'Desconocida') . ", " . ($geo['country'] ?? 'Desconocido') . "</code>\n";
+        $message .= "🖥️ <b>Disp:</b> {$deviceInfo}\n";
         $message .= "🌐 <b>IP:</b> <pre>{$ip}</pre>\n";
-        $message .= "🖥️ <b>Disp:</b> {$device}\n";
         $message .= "🆔 <b>Sesión:</b> <code>" . $data['session_id'] . "</code>\n\n";
 
         Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
@@ -265,16 +266,19 @@ class TelegramBotController extends Controller
         $ip = $request->ip();
         $message = "💬 <b>Nuevo Chat en Vivo</b>\n\n";
         $message .= "🆔 <b>Sesión:</b> <code>" . $data['session_id'] . "</code>\n";
-        $message .= "🌐 <b>IP:</b> <pre>{$ip}</pre>\n";
         
         if (isset($data['metadata'])) {
             $m = $data['metadata'];
             $urlPath = parse_url($m['url'] ?? '', PHP_URL_PATH) ?: '/';
-            $device = str_contains(strtolower($m['userAgent'] ?? ''), 'mobile') ? '📱 Móvil' : '💻 Desktop';
+            $geo = $this->getGeolocation($ip);
+            $deviceInfo = $this->getDeviceFromUA($m['userAgent'] ?? $request->header('User-Agent'));
+
+            $message .= "🌍 <b>Ubicación:</b> <code>" . ($geo['city'] ?? 'Desconocida') . ", " . ($geo['country'] ?? 'Desconocido') . "</code>\n";
+            $message .= "📱 <b>Disp:</b> {$deviceInfo}\n";
             $message .= "📍 <b>Ruta:</b> <code>{$urlPath}</code>\n";
-            $message .= "🖥️ <b>Disp:</b> {$device} (" . ($m['screen'] ?? '?') . ")\n";
         }
-        
+
+        $message .= "🌐 <b>IP:</b> <pre>{$ip}</pre>\n";
         $message .= "\n<b>Mensaje:</b>\n" . htmlspecialchars($data['message']) . "\n\n";
         $message .= "<i>Responde directamente para contestar.</i>";
 
@@ -598,6 +602,43 @@ class TelegramBotController extends Controller
             Log::error("Error downloading Telegram file to S3: " . $e->getMessage());
             return null;
         }
+    }
+
+    private function getGeolocation($ip)
+    {
+        try {
+            // Using ip-api.com (free for non-commercial use, 45 requests/min)
+            $response = Http::get("http://ip-api.com/json/{$ip}?fields=status,message,country,regionName,city");
+            if ($response->successful() && $response->json('status') === 'success') {
+                return $response->json();
+            }
+        } catch (\Exception $e) {
+            Log::error('Geolocation failed: ' . $e->getMessage());
+        }
+        return ['city' => 'Desconocida', 'country' => 'Desconocido'];
+    }
+
+    private function getDeviceFromUA($ua)
+    {
+        if (!$ua) return '💻 Desktop';
+        
+        $uaLower = strtolower($ua);
+        $device = '💻 Desktop';
+        
+        if (str_contains($uaLower, 'macintosh')) $device = '🍎 Mac';
+        elseif (str_contains($uaLower, 'iphone')) $device = '📱 iPhone';
+        elseif (str_contains($uaLower, 'ipad')) $device = '📱 iPad';
+        elseif (str_contains($uaLower, 'android')) $device = '🤖 Android';
+        elseif (str_contains($uaLower, 'windows')) $device = '🪟 Windows';
+        elseif (str_contains($uaLower, 'linux')) $device = '🐧 Linux';
+
+        $browser = 'Browser';
+        if (str_contains($uaLower, 'chrome')) $browser = 'Chrome';
+        elseif (str_contains($uaLower, 'safari')) $browser = 'Safari';
+        elseif (str_contains($uaLower, 'firefox')) $browser = 'Firefox';
+        elseif (str_contains($uaLower, 'edge')) $browser = 'Edge';
+
+        return "{$device} ({$browser})";
     }
 
     /**
