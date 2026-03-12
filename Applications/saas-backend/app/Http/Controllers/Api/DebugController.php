@@ -10,6 +10,11 @@ class DebugController extends Controller
 {
     public function index()
     {
+        try {
+            \Illuminate\Support\Facades\Artisan::call('route:clear');
+            \Illuminate\Support\Facades\Artisan::call('config:clear');
+        } catch (\Exception $e) {}
+
         $checks = [
             'php_version' => PHP_VERSION,
             'laravel_version' => app()->version(),
