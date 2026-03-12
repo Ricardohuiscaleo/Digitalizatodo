@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\DebugController;
 use App\Http\Middleware\ResolveTenantFromPath;
 use App\Http\Controllers\TelegramBotController;
 use App\Http\Controllers\Api\AttendanceQRController;
+use Illuminate\Support\Facades\Artisan;
 
 /*
  |--------------------------------------------------------------------------
@@ -30,8 +31,8 @@ Route::post('register-tenant', [RegisterTenantController::class , 'store']);
 Route::post('identify-tenant', [TenantDiscoveryController::class , 'identify']);
 Route::get('r/{code}', [RegistrationPageController::class , 'show']);
 Route::get('reboot', function() { 
-    \Artisan::call('route:clear');
-    \Artisan::call('cache:clear');
+    Artisan::call('route:clear');
+    Artisan::call('cache:clear');
     return "CACHE-CLEARED"; 
 });
 Route::get('debug', [DebugController::class , 'index']);
