@@ -3,7 +3,7 @@ import { Instagram, Linkedin, Twitter } from 'lucide-react';
 
 const ModernFooter = () => {
     return (
-        <footer className="bg-slate-950 pt-32 pb-12 px-6 relative overflow-hidden">
+        <footer className="bg-slate-950 pt-32 pb-12 px-[5px] sm:px-6 relative overflow-hidden">
             {/* Decorative circles */}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-orange/5 rounded-full blur-[120px] -z-0"></div>
             <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-brand-blue/5 rounded-full blur-[100px] -z-0"></div>
@@ -13,7 +13,7 @@ const ModernFooter = () => {
                     {/* Brand Section */}
                     <div className="lg:col-span-4 space-y-8">
                         <div className="flex items-center gap-3">
-                            <img src="/DLogo-v2.webp" alt="Digitaliza Todo" className="h-10 w-10 brightness-0 invert" />
+                            <img src="/DLogo-v2.webp" alt="Digitaliza Todo" className="h-10 w-10 object-contain" />
                             <div>
                                 <h2 className="font-black text-2xl tracking-tighter text-white leading-none">DIGITALIZA</h2>
                                 <h2 className="font-black text-2xl tracking-tighter text-brand-orange leading-none">TODO</h2>

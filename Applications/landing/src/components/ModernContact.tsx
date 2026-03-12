@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send, Loader2, CheckCircle2 } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Loader2, CheckCircle2, MessageCircle } from 'lucide-react';
+import SectionBadge from './common/SectionBadge';
 
 const ModernContact = () => {
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -43,44 +44,36 @@ const ModernContact = () => {
     };
 
     return (
-        <section id="contacto" className="py-24 px-6 bg-slate-50 relative overflow-hidden">
+        <section id="contacto" className="py-24 px-[5px] sm:px-6 bg-slate-50 relative overflow-hidden">
             <div className="max-w-7xl mx-auto">
                 <div className="bg-white rounded-[32px] overflow-hidden shadow-2xl border border-slate-100 grid lg:grid-cols-5 relative z-10">
                     {/* Left: Contact Info (2/5) */}
-                    <div className="lg:col-span-2 bg-slate-900 p-10 lg:p-16 text-white space-y-12 relative overflow-hidden">
+                    <div className="lg:col-span-2 bg-slate-900 p-6 sm:p-10 lg:p-16 text-white space-y-12 relative overflow-hidden flex flex-col justify-between">
                         <div className="relative z-10 space-y-6">
-                            <h3 className="text-3xl font-black tracking-tight">Hablemos de tu próximo proyecto</h3>
-                            <p className="text-slate-400 text-lg leading-relaxed">
+                            <SectionBadge text="Conectemos" />
+                            <h3 className="text-3xl font-black tracking-tight leading-none text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">Hablemos de tu próximo proyecto</h3>
+                            <p className="text-slate-400 text-lg leading-relaxed font-medium">
                                 Estamos listos para ayudarte a digitalizar tu empresa. Déjanos tus datos y nos pondremos en contacto en menos de 24 horas.
                             </p>
                         </div>
 
-                        <div className="relative z-10 space-y-8">
+                        <div className="relative z-10 space-y-6 pt-10 border-t border-white/5">
                             <div className="flex items-center gap-4 group">
-                                <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-brand-orange transition-colors">
-                                    <Mail className="w-5 h-5" />
+                                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-brand-orange group-hover:border-transparent transition-all duration-300">
+                                    <Mail className="w-5 h-5 text-slate-400 group-hover:text-white" />
                                 </div>
-                                <div>
-                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Email</p>
-                                    <p className="text-lg font-medium">contacto@digitalizatodo.cl</p>
+                                <div className="space-y-0.5">
+                                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">Email Directo</p>
+                                    <p className="text-lg font-bold text-slate-200">contacto@digitalizatodo.cl</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4 group">
-                                <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-brand-orange transition-colors">
-                                    <Phone className="w-5 h-5" />
+                                <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-brand-orange group-hover:border-transparent transition-all duration-300">
+                                    <MessageCircle className="w-5 h-5 text-slate-400 group-hover:text-white" />
                                 </div>
-                                <div>
-                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Teléfono</p>
-                                    <p className="text-lg font-medium">+56 9 1234 5678</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4 group">
-                                <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-brand-orange transition-colors">
-                                    <MapPin className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Ubicación</p>
-                                    <p className="text-lg font-medium">Santiago, Chile</p>
+                                <div className="space-y-0.5">
+                                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">WhatsApp Business</p>
+                                    <p className="text-lg font-bold text-slate-200">+56 9 1234 5678</p>
                                 </div>
                             </div>
                         </div>
@@ -90,7 +83,7 @@ const ModernContact = () => {
                     </div>
 
                     {/* Right: Form (3/5) */}
-                    <div className="lg:col-span-3 p-10 lg:p-16">
+                    <div className="lg:col-span-3 p-6 sm:p-10 lg:p-16">
                         {status === 'success' ? (
                             <div className="h-full flex flex-col items-center justify-center text-center space-y-6 animate-in zoom-in-95 duration-500">
                                 <div className="w-24 h-24 rounded-full bg-emerald-50 flex items-center justify-center">

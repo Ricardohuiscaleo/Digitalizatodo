@@ -1,34 +1,49 @@
 import React from 'react';
 import { Monitor, Layout, Cpu, Smartphone, BarChart, Lightbulb, ArrowUpRight } from 'lucide-react';
+import SectionBadge from './common/SectionBadge';
 
-const ServiceCard = ({ title, description, icon: Icon, color, bg, delay, price, tags }) => (
+interface ServiceCardProps {
+    title: string;
+    description: string;
+    icon: React.ElementType;
+    color: string;
+    bg: string;
+    delay: number;
+    price: string;
+    tags: string[];
+}
+
+const ServiceCard: React.FC<ServiceCardProps> = ({ title, description, icon: Icon, color, bg, delay, price, tags }) => (
     <div 
-        className="group p-8 rounded-[32px] bg-white border border-slate-100 hover:border-transparent hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.1)] transition-all duration-500 animate-in fade-in slide-in-from-bottom-8 fill-mode-both relative overflow-hidden"
+        className="group p-5 sm:p-8 rounded-[32px] bg-white border border-slate-100 hover:border-transparent hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.1)] transition-all duration-500 animate-in fade-in slide-in-from-bottom-8 fill-mode-both relative overflow-hidden"
         style={{ animationDelay: `${delay}ms` }}
     >
         {/* Hover Glow */}
         <div className={`absolute top-0 right-0 w-32 h-32 blur-[60px] rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-500 ${bg}`}></div>
         
-        <div className={`w-16 h-16 rounded-2xl ${bg} flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500`}>
-            <Icon className={`w-8 h-8 ${color}`} />
+        <div className={`w-16 h-16 rounded-2xl ${bg as string} flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500`}>
+            <Icon className={`w-8 h-8 ${color as string}`} />
         </div>
         
         <h4 className="text-2xl font-black text-slate-900 mb-4 tracking-tight">{title}</h4>
-        <p className="text-slate-500 leading-relaxed mb-6 font-medium">
+        <p className="text-slate-500 leading-relaxed mb-6 font-medium text-sm">
             {description}
         </p>
         
         <div className="flex flex-wrap gap-2 mb-8">
-            {tags?.map((tag, i) => (
-                <span key={i} className="px-3 py-1 rounded-full bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-widest border border-slate-100">
+            {tags?.map((tag: string, i: number) => (
+                <span key={i} className="px-3 py-1 rounded-full bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-widest border border-slate-100">
                     {tag}
                 </span>
             ))}
         </div>
 
-        <div className="pt-6 border-t border-slate-50 flex items-center justify-between">
-            <span className="text-lg font-black text-slate-900 font-mono tracking-tighter">{price}</span>
-            <div className={`w-10 h-10 rounded-full ${bg} flex items-center justify-center transition-all group-hover:bg-brand-orange group-hover:text-white`}>
+        <div className="pt-6 border-t border-slate-50 flex items-center justify-between mt-auto">
+            <div className="flex flex-col">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Inversión</span>
+                <span className="text-lg font-black text-slate-900 font-mono tracking-tighter">{price}</span>
+            </div>
+            <div className={`w-10 h-10 rounded-full ${bg} flex items-center justify-center transition-all group-hover:bg-brand-orange group-hover:text-white group-hover:rotate-45`}>
                 <ArrowUpRight className="w-5 h-5" />
             </div>
         </div>
@@ -100,15 +115,15 @@ const ModernServices = () => {
     ];
 
     return (
-        <section id="servicios" className="py-24 px-6 bg-white">
+        <section id="servicios" className="py-24 px-[5px] sm:px-6 bg-white">
             <div className="max-w-7xl mx-auto">
                 <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8">
                     <div className="space-y-4">
-                        <h2 className="text-brand-orange font-black tracking-widest uppercase text-sm">Nuestras Capacidades</h2>
-                        <h3 className="text-4xl lg:text-6xl font-black text-slate-900 tracking-tighter">Soluciones de <br /> <span className="text-brand-blue">Siguiente Generación.</span></h3>
+                        <SectionBadge text="Nuestras Capacidades" />
+                        <h3 className="text-3xl lg:text-6xl font-black text-slate-900 tracking-tighter">Soluciones de <br /> <span className="text-brand-blue">Siguiente Generación.</span></h3>
                     </div>
                     <p className="text-slate-500 font-medium max-w-sm border-l-4 border-brand-orange pl-6 mb-2">
-                        Ingeniería de precisión aplicada a cada píxel y línea de código. Precios transparentes diseñados para escalar.
+                        Ingeniería de precisión aplicada a cada píxel y línea de código. Precios transparentes diseñados para escalar tu negocio.
                     </p>
                 </div>
 

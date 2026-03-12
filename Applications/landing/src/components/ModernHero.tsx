@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import SectionBadge from './common/SectionBadge';
+import { ArrowRight } from 'lucide-react';
 
 const CodeIllustration = () => {
     const [blink, setBlink] = useState(true);
@@ -103,43 +105,41 @@ const CodeIllustration = () => {
 
 const ModernHero = () => {
     return (
-        <section id="hero" className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 overflow-x-hidden bg-white">
+        <section id="hero" className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-[5px] sm:px-6 overflow-x-hidden bg-white">
             {/* Background Engineering Grids */}
             <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(to_bottom,white,transparent)] -z-10"></div>
             
             <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center relative">
                 {/* Left Column: Content */}
-                <div className="space-y-10 animate-in fade-in slide-in-from-left-8 duration-1000">
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-50 border border-orange-100 text-brand-orange text-xs font-black tracking-widest uppercase shadow-sm">
-                        <span className="flex h-2 w-2 relative">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-orange opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-orange"></span>
-                        </span>
-                        Software Factory & Automatización
+                <div className="space-y-8 animate-in fade-in slide-in-from-left-8 duration-1000 text-center lg:text-left">
+                    <div className="flex justify-center lg:justify-start">
+                        <SectionBadge text="Software Factory & Automatización" />
                     </div>
                     
-                    <h1 className="text-4xl sm:text-6xl lg:text-8xl xl:text-9xl font-black text-slate-900 leading-[0.9] tracking-tighter">
-                        Transformamos <br />
-                        <span className="text-brand-orange italic">ideas</span> en <br />
-                        soluciones <br />
-                        digitales.
+                    <h1 className="text-3xl sm:text-6xl lg:text-7xl xl:text-8xl font-black text-slate-900 leading-[1.05] tracking-tighter">
+                        Transformamos <br className="hidden lg:block"/>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange to-rose-500 italic pr-2">
+                            ideas
+                        </span> 
+                        en <br className="hidden lg:block"/>
+                        soluciones digitales.
                     </h1>
                     
-                    <p className="text-xl lg:text-2xl text-slate-600 max-w-xl leading-relaxed font-medium">
-                        No somos una agencia más. Somos tu <span className="text-slate-900 border-b-4 border-brand-blue/20">laboratorio de innovación</span>. Desarrollamos software de alto rendimiento que redefine industrias.
+                    <p className="text-lg lg:text-xl text-slate-600 max-w-xl mx-auto lg:mx-0 leading-relaxed font-medium">
+                        No somos una agencia más. Somos tu <span className="text-slate-900 font-bold border-b-2 border-orange-200">laboratorio de innovación en Arica y para todo Chile</span>. Desarrollamos software de alto rendimiento que redefine industrias.
                     </p>
                     
-                    <div className="flex flex-col sm:flex-row gap-5 pt-4">
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
                         <a 
                             href="#contacto" 
-                            className="bg-brand-orange text-white px-10 py-5 rounded-full font-black text-xl hover:bg-orange-600 transition-all hover:scale-105 active:scale-95 shadow-[0_20px_50px_rgba(249,115,22,0.3)] text-center group"
+                            className="bg-brand-orange text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-orange-600 transition-all hover:-translate-y-1 shadow-lg shadow-orange-500/30 flex items-center justify-center gap-2 group"
                         >
                             Agendar Consultoría
-                            <span className="inline-block transition-transform group-hover:translate-x-1 ml-2">→</span>
+                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </a>
                         <a 
                             href="#servicios" 
-                            className="bg-white text-slate-900 px-10 py-5 rounded-full font-black text-xl hover:bg-slate-50 transition-all border-2 border-slate-100 text-center"
+                            className="bg-white text-slate-900 px-8 py-4 rounded-xl font-bold text-lg hover:bg-slate-50 transition-all border border-slate-200 text-center shadow-sm hover:shadow-md"
                         >
                             Explorar Capacidad
                         </a>

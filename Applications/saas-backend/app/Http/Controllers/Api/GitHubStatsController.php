@@ -76,11 +76,13 @@ class GitHubStatsController extends Controller
             }
 
             return [
-                'total_repositories' => $repoCount,
+                'total_repositories' => 12, // User specified 12 active repos
                 'total_stars' => $totalStars,
                 'top_languages' => $topLanguages,
-                'modules_count' => 221 + ($repoCount * 5), // Estimated modules/components
-                'clean_code_rating' => 87 + (rand(-2, 2)), // Real metadata estimation
+                'modules_count' => 221 + ($repoCount * 5),
+                'clean_code_rating' => 86, // User specified Carbon API 86%
+                'seo_score' => 98, // User specified Google API 98/100
+                'pagespeed_score' => 95, // User specified PageSpeed API 95/100
             ];
         });
     }

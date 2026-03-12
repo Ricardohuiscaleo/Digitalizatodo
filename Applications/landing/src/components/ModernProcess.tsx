@@ -1,14 +1,14 @@
 import React from 'react';
 import { Search, Code2, Rocket, HeartHandshake } from 'lucide-react';
 
-const ProcessStep = ({ number, title, description, icon: Icon, delay }) => (
+const ProcessStep = ({ number, title, description, icon: Icon, delay }: { number: string, title: string, description: string, icon: React.ElementType, delay: number }) => (
     <div 
         className="relative flex flex-col items-center text-center space-y-4 animate-in fade-in slide-in-from-bottom-8 fill-mode-both"
         style={{ animationDelay: `${delay}ms` }}
     >
         <div className="relative">
             <div className="w-20 h-20 rounded-3xl bg-white border-2 border-slate-100 shadow-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-500 relative z-10">
-                <Icon className="w-8 h-8 text-brand-blue" />
+                <Icon className={`w-8 h-8 ${'text-brand-blue' as string}`} />
             </div>
             <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-brand-orange text-white flex items-center justify-center text-xs font-black shadow-lg z-20">
                 {number}
@@ -59,7 +59,7 @@ const ModernProcess = () => {
     ];
 
     return (
-        <section id="proceso" className="py-24 px-6 bg-white relative overflow-hidden">
+        <section id="proceso" className="py-24 px-[5px] sm:px-6 bg-white relative overflow-hidden">
             {/* Background Grid */}
             <div className="absolute inset-0 bg-dot-slate-200 [mask-image:radial-gradient(ellipse_at_center,black,transparent)] opacity-50 -z-10"></div>
             

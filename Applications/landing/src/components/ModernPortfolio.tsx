@@ -1,5 +1,6 @@
 import React from 'react';
 import { ExternalLink, ArrowUpRight } from 'lucide-react';
+import SectionBadge from './common/SectionBadge';
 
 interface ProjectCardProps {
     title: string;
@@ -10,7 +11,7 @@ interface ProjectCardProps {
     delay: number;
 }
 
-const ProjectCard = ({ title, category, image, tags, link, delay }: ProjectCardProps) => (
+const ProjectCard: React.FC<ProjectCardProps> = ({ title, category, image, tags, link, delay }) => (
     <div 
         className="group relative rounded-[32px] overflow-hidden bg-white border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-700 animate-in fade-in zoom-in-95 fill-mode-both h-full flex flex-col"
         style={{ animationDelay: `${delay}ms` }}
@@ -35,7 +36,7 @@ const ProjectCard = ({ title, category, image, tags, link, delay }: ProjectCardP
         </div>
 
         {/* Content */}
-        <div className="p-8 space-y-6 flex-grow flex flex-col justify-between">
+        <div className="p-6 sm:p-8 space-y-6 flex-grow flex flex-col justify-between">
             <div className="space-y-4">
                 <div className="flex justify-between items-start">
                     <div>
@@ -116,15 +117,15 @@ const ModernPortfolio = () => {
     ];
 
     return (
-        <section id="proyectos" className="py-24 px-6 bg-slate-50/50 relative overflow-hidden">
+        <section id="proyectos" className="py-24 px-[5px] sm:px-6 bg-slate-50/50 relative overflow-hidden">
             {/* Engineering Grid */}
             <div className="absolute inset-x-0 top-0 h-px bg-slate-200"></div>
             
             <div className="max-w-7xl mx-auto">
-                <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8">
+                <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8 text-center md:text-left">
                     <div className="space-y-4">
-                        <h2 className="text-brand-orange font-black tracking-widest uppercase text-sm">Nuestro Portafolio</h2>
-                        <h3 className="text-4xl lg:text-6xl font-black text-slate-900 tracking-tighter leading-[1.1]">Casos de <br /> <span className="text-brand-blue">Ingeniería Real.</span></h3>
+                        <SectionBadge text="Nuestro Portafolio" />
+                        <h3 className="text-3xl lg:text-6xl font-black text-slate-900 tracking-tighter leading-[1.1]">Casos de <br className="hidden md:block" /> <span className="text-brand-blue italic pr-2">Ingeniería Real.</span></h3>
                     </div>
                     <p className="text-slate-600 font-medium max-w-sm border-l-4 border-brand-orange pl-6 mb-2">
                         Hecho con pasión en Chile. Soluciones que ya están procesando miles de datos por segundo.
