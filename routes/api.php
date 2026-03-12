@@ -29,6 +29,7 @@ use App\Http\Controllers\Api\AttendanceQRController;
 Route::post('register-tenant', [RegisterTenantController::class , 'store']);
 Route::post('identify-tenant', [TenantDiscoveryController::class , 'identify']);
 Route::get('r/{code}', [RegistrationPageController::class , 'show']);
+Route::get('stream-test', function() { return "STREAM-TEST-REACHED"; });
 Route::get('debug', [DebugController::class , 'index']);
 
 Route::get('industries', [\App\Http\Controllers\Api\IndustryController::class , 'index']);
