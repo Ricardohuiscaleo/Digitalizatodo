@@ -274,14 +274,14 @@ const FloatingChat = () => {
     }, [messages, isOpen]);
 
     return (
-        <div className={`fixed z-[100] font-sans transition-all duration-300 ${
+        <div className={`fixed z-[100] font-sans ${
             isOpen 
             ? 'inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[400px] sm:h-[650px]' 
             : 'bottom-4 right-4 sm:bottom-6 sm:right-6 w-14 h-14'
         }`}>
             {/* Chat Window */}
             {isOpen && (
-                <div className="flex flex-col w-full h-full bg-white sm:rounded-[28px] sm:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] sm:border sm:border-slate-100 overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
+                <div className="flex flex-col w-full h-full bg-white sm:rounded-[28px] sm:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.2)] sm:border sm:border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-300">
                     {/* Header */}
                     <div className="bg-slate-900 p-4 sm:p-5 text-white flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-3">
