@@ -39,10 +39,12 @@ Route::post('w/resend-inbound', [TelegramBotController::class , 'handleResendInb
 Route::post('w/telegram', [TelegramBotController::class , 'handleTelegramWebhook']);
 Route::post('w/coolify-deploy', [TelegramBotController::class , 'handleCoolifyDeploy']);
 Route::post('w/contact', [TelegramBotController::class , 'handleContactForm']);
-Route::post('w/chat/send', [TelegramBotController::class , 'handleChatSend']);
-Route::post('w/chat/attachment', [TelegramBotController::class , 'handleChatUpload']);
-Route::get('w/chat/messages', [TelegramBotController::class , 'getChatMessages']);
-Route::get('w/chat/stream', [TelegramBotController::class , 'streamMessages']);
+Route::prefix('w/chat')->group(function() {
+    Route::post('send', [TelegramBotController::class , 'handleChatSend']);
+    Route::post('upload', [TelegramBotController::class , 'handleChatUpload']);
+    Route::get('messages', [TelegramBotController::class , 'getChatMessages']);
+    Route::get('stream', [TelegramBotController::class , 'streamMessages']);
+});
 Route::post('w/telegram/chat', [TelegramBotController::class , 'handleChatBotWebhook']);
 Route::post('w/visit', [TelegramBotController::class , 'handleVisitPing']);
 Route::get('w/github-stats', [\App\Http\Controllers\Api\GitHubStatsController::class, 'index']);
