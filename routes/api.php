@@ -40,6 +40,7 @@ Route::post('w/telegram', [TelegramBotController::class , 'handleTelegramWebhook
 Route::post('w/coolify-deploy', [TelegramBotController::class , 'handleCoolifyDeploy']);
 Route::post('w/contact', [TelegramBotController::class , 'handleContactForm']);
 Route::post('w/chat/send', [TelegramBotController::class , 'handleChatSend']);
+Route::post('w/chat/upload', [TelegramBotController::class , 'handleChatUpload']);
 Route::get('w/chat/messages', [TelegramBotController::class , 'getChatMessages']);
 Route::get('w/chat/stream', [TelegramBotController::class , 'streamMessages']);
 Route::post('w/telegram/chat', [TelegramBotController::class , 'handleChatBotWebhook']);

@@ -329,6 +329,69 @@ class TelegramBotController extends Controller
     }
 
     /**
+     * Manejar subida de archivos desde el cliente (Web Chat -> Telegram)
+     * POST /api/w/chat/upload
+     */
+    public function handleChatUpload(Request $request)
+    {
+        $request->validate([
+            'session_id' => 'required|string',
+            'file' => 'required|file|max:10240', // 10MB
+        ]);
+
+        $sessionId = $request->input('session_id');
+        $file = $request->file('file');
+        $mime = $file->getMimeType();
+        $type = str_contains($mime, 'image') ? 'image' : 'document';
+        
+        $extension = $file->getClientOriginalExtension();
+        $fileName = "client_upload_" . time() . "_" . bin2hex(random_bytes(4)) . "." . $extension;
+        $savePath = "chat_media/{$fileName}";
+
+        // Subir a S3
+        \Illuminate\Support\Facades\Storage::disk('s3')->put($savePath, file_get_contents($file->getRealPath()), 'public');
+
+        $chatMsg = \App\Models\ChatMessage::create([
+            'session_id' => $sessionId,
+            'sender' => 'user',
+            'type' => $type,
+            'message' => "📎 Archivo enviado: " . $file->getClientOriginalName(),
+            'file_path' => $savePath,
+        ]);
+
+        $token = config('services.telegram_chat.bot_token');
+        $chatId = config('services.telegram_chat.admin_id');
+        $fullUrl = \Illuminate\Support\Facades\Storage::disk('s3')->url($savePath);
+
+        // Notificar a Telegram
+        $caption = "📎 <b>Archivo recibido del Cliente</b>\n";
+        $caption .= "🆔 Sesión: <code>{$sessionId}</code>\n";
+        $caption .= "📁 Nombre: <code>" . $file->getClientOriginalName() . "</code>";
+        
+        if ($type === 'image') {
+            Http::post("https://api.telegram.org/bot{$token}/sendPhoto", [
+                'chat_id' => $chatId,
+                'photo' => $fullUrl,
+                'caption' => $caption,
+                'parse_mode' => 'HTML'
+            ]);
+        } else {
+            Http::post("https://api.telegram.org/bot{$token}/sendDocument", [
+                'chat_id' => $chatId,
+                'document' => $fullUrl,
+                'caption' => $caption,
+                'parse_mode' => 'HTML'
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'ok', 
+            'id' => $chatMsg->id,
+            'file_url' => $fullUrl
+        ]);
+    }
+
+    /**
      * Obtener historial de mensajes para una sesión (Polling)
      * GET /api/webhooks/chat/messages?session_id=...
      */
