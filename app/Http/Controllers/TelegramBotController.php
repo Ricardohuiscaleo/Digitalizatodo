@@ -273,6 +273,14 @@ class TelegramBotController extends Controller
         $message .= "\n<b>Mensaje:</b>\n" . htmlspecialchars($data['message']) . "\n\n";
         $message .= "<i>Responde directamente para contestar al cliente.</i>";
 
+        if (!$token || !$chatId) {
+            Log::error('Chat Telegram Token or Admin ID missing in config/services.php', [
+                'token_exists' => !empty($token),
+                'chatId_exists' => !empty($chatId)
+            ]);
+            return response()->json(['status' => 'config_error'], 500);
+        }
+
         $response = Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
             'chat_id' => $chatId,
             'text' => $message,
@@ -281,6 +289,12 @@ class TelegramBotController extends Controller
 
         if ($response->successful()) {
             $chatMsg->update(['telegram_message_id' => $response->json('result.message_id')]);
+        } else {
+            Log::error('Telegram Chat Send Failed', [
+                'status' => $response->status(),
+                'body' => $response->json(),
+                'session_id' => $data['session_id']
+            ]);
         }
 
         return response()->json(['status' => 'ok']);
