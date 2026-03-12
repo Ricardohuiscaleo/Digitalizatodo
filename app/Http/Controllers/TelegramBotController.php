@@ -322,51 +322,54 @@ class TelegramBotController extends Controller
         $sessionId = $request->query('session_id');
         if (!$sessionId) return response()->json(['error' => 'No session_id'], 400);
 
-        return new \Symfony\Component\HttpFoundation\StreamedResponse(function () use ($sessionId) {
-            $lastId = \App\Models\ChatMessage::where('session_id', $sessionId)->max('id') ?? 0;
+        return response()->stream(function () use ($sessionId) {
+            try {
+                $lastId = \App\Models\ChatMessage::where('session_id', $sessionId)->max('id') ?? 0;
 
-            // Enviar headers necesarios para SSE
-            echo "Access-Control-Allow-Origin: *\n";
-            echo "Content-Type: text/event-stream\n";
-            echo "Cache-Control: no-cache\n";
-            echo "Connection: keep-alive\n\n";
+                // Loop infinito de escucha
+                $startTime = time();
+                while (true) {
+                    if (connection_aborted()) break;
 
-            // Loop infinito de escucha
-            $startTime = time();
-            while (true) {
-                // Si el cliente se desconecta, salir
-                if (connection_aborted()) break;
+                    $newMessages = \App\Models\ChatMessage::where('session_id', $sessionId)
+                        ->where('id', '>', $lastId)
+                        ->orderBy('id', 'asc')
+                        ->get();
 
-                // Buscar mensajes nuevos
-                $newMessages = \App\Models\ChatMessage::where('session_id', $sessionId)
-                    ->where('id', '>', $lastId)
-                    ->orderBy('id', 'asc')
-                    ->get();
-
-                if ($newMessages->count() > 0) {
-                    foreach ($newMessages as $msg) {
-                        echo "event: new-message\n";
-                        echo "data: " . json_encode($msg) . "\n\n";
-                        $lastId = $msg->id;
+                    if ($newMessages->count() > 0) {
+                        foreach ($newMessages as $msg) {
+                            echo "event: new-message\n";
+                            echo "data: " . json_encode($msg) . "\n\n";
+                            $lastId = $msg->id;
+                        }
                     }
-                    ob_flush();
-                    flush();
-                }
 
-                // Heartbeat para mantener conexión viva cada 15s si no hay datos
-                if ((time() - $startTime) % 15 == 0) {
-                    echo "event: heartbeat\n";
-                    echo "data: {\"time\":\"" . date('Y-m-d H:i:s') . "\"}\n\n";
-                    ob_flush();
-                    flush();
-                }
+                    // Heartbeat cada 15s para evitar timeouts del proxy
+                    if ((time() - $startTime) % 15 == 0) {
+                        echo "event: heartbeat\n";
+                        echo "data: {\"time\":\"" . date('Y-m-d H:i:s') . "\"}\n\n";
+                    }
 
-                usleep(500000); // Esperar 0.5s antes de re-consultar (latencia mínima)
-                
-                // Limitar duración total a 10 min para evitar timeouts infinitos en el server
-                if (time() - $startTime > 600) break;
+                    if (ob_get_level() > 0) ob_flush();
+                    flush();
+
+                    usleep(500000); // 0.5s check
+                    
+                    if (time() - $startTime > 600) break;
+                }
+            } catch (\Exception $e) {
+                Log::error("SSE Error for session {$sessionId}: " . $e->getMessage());
+                echo "event: error\n";
+                echo "data: " . json_encode(['error' => $e->getMessage()]) . "\n\n";
+                if (ob_get_level() > 0) ob_flush();
+                flush();
             }
-        });
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Connection' => 'keep-alive',
+            'X-Accel-Buffering' => 'no', // Crítico para Nginx/Coolify
+        ]);
     }
 
     public function getChatMessages(Request $request)
