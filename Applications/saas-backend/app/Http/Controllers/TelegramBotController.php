@@ -358,6 +358,9 @@ class TelegramBotController extends Controller
 
                     if ($newMessages->count() > 0) {
                         foreach ($newMessages as $msg) {
+                            if ($msg->file_path) {
+                                $msg->file_path = \Illuminate\Support\Facades\Storage::disk('s3')->url($msg->file_path);
+                            }
                             echo "event: new-message\n";
                             echo "data: " . json_encode($msg) . "\n\n";
                             $lastId = $msg->id;
@@ -399,7 +402,13 @@ class TelegramBotController extends Controller
 
         $messages = \App\Models\ChatMessage::where('session_id', $sessionId)
             ->orderBy('created_at', 'asc')
-            ->get();
+            ->get()
+            ->map(function($msg) {
+                if ($msg->file_path) {
+                    $msg->file_path = \Illuminate\Support\Facades\Storage::disk('s3')->url($msg->file_path);
+                }
+                return $msg;
+            });
 
         return response()->json($messages);
     }
@@ -518,11 +527,11 @@ class TelegramBotController extends Controller
             $savePath = "chat_media/{$fileName}";
 
             $contents = Http::get($fileUrl)->body();
-            \Illuminate\Support\Facades\Storage::disk('public')->put($savePath, $contents);
+            \Illuminate\Support\Facades\Storage::disk('s3')->put($savePath, $contents, 'public');
 
             return $savePath;
         } catch (\Exception $e) {
-            Log::error("Error downloading Telegram file: " . $e->getMessage());
+            Log::error("Error downloading Telegram file to S3: " . $e->getMessage());
             return null;
         }
     }
