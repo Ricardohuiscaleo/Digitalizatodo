@@ -277,7 +277,7 @@ const FloatingChat = () => {
         <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[100] font-sans">
             {/* Chat Window */}
             {isOpen && (
-                <div className="absolute bottom-16 sm:bottom-20 right-0 w-[calc(100vw-2rem)] max-w-[350px] sm:max-w-[400px] h-[600px] bg-white rounded-[32px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-100 flex flex-col overflow-hidden animate-in d-flex slide-in-from-bottom-10 duration-300">
+                <div className="fixed sm:absolute top-0 left-0 sm:top-auto sm:left-auto sm:bottom-20 sm:right-0 w-full sm:max-w-[400px] h-[100dvh] sm:h-[600px] bg-white sm:rounded-[32px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border-none sm:border sm:border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-10 duration-300">
                     {/* Header */}
                     <div className="bg-slate-900 p-4 sm:p-5 text-white flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-3">
@@ -307,10 +307,10 @@ const FloatingChat = () => {
                     </div>
 
                     {/* Messages Area */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/50 scroll-smooth">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 sm:space-y-4 bg-slate-50/50 scroll-smooth">
                         {messages.map((msg, idx) => (
                             <div key={idx} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${
+                                <div className={`max-w-[85%] p-3 sm:p-4 rounded-2xl text-xs sm:text-sm leading-relaxed shadow-sm ${
                                     msg.sender === 'user' 
                                     ? 'bg-brand-orange text-white rounded-tr-none' 
                                     : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none'
