@@ -163,6 +163,22 @@ const FloatingChat = () => {
                                     ? 'bg-brand-orange text-white rounded-tr-none' 
                                     : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none'
                                 }`}>
+                                    {(msg as any).type === 'image' && (msg as any).file_path && (
+                                        <img 
+                                            src={`${import.meta.env.PUBLIC_API_URL || 'https://admin.digitalizatodo.cl'}/storage/${(msg as any).file_path}`} 
+                                            alt="Media" 
+                                            className="rounded-lg mb-2 max-w-full h-auto cursor-pointer hover:opacity-90 transition-opacity"
+                                            onClick={() => window.open(`${import.meta.env.PUBLIC_API_URL || 'https://admin.digitalizatodo.cl'}/storage/${(msg as any).file_path}`, '_blank')}
+                                        />
+                                    )}
+                                    {(msg as any).type === 'audio' && (msg as any).file_path && (
+                                        <div className="mb-2 min-w-[200px]">
+                                            <audio controls className="w-full h-8">
+                                                <source src={`${import.meta.env.PUBLIC_API_URL || 'https://admin.digitalizatodo.cl'}/storage/${(msg as any).file_path}`} type="audio/ogg" />
+                                                Audio
+                                            </audio>
+                                        </div>
+                                    )}
                                     {msg.message}
                                     <p className={`text-[9px] mt-1 font-bold uppercase opacity-30 ${msg.sender === 'user' ? 'text-right' : 'text-left'}`}>
                                         {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
