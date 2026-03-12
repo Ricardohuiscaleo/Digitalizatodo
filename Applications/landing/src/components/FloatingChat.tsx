@@ -274,43 +274,51 @@ const FloatingChat = () => {
     }, [messages, isOpen]);
 
     return (
-        <div className={`${isOpen ? 'fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-6' : 'fixed bottom-4 right-4 sm:bottom-6 sm:right-6'} z-[100] font-sans`}>
+        <div className={`fixed z-[100] font-sans transition-all duration-300 ${
+            isOpen 
+            ? 'inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[400px] sm:h-[700px]' 
+            : 'bottom-4 right-4 sm:bottom-6 sm:right-6 w-auto h-auto'
+        }`}>
             {/* Chat Window */}
             {isOpen && (
-                <div className="absolute inset-0 sm:inset-auto sm:bottom-16 sm:right-0 w-full sm:max-w-[400px] h-full sm:h-[600px] bg-white sm:rounded-[32px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border-none sm:border sm:border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-10 duration-300">
+                <div className="relative w-full h-full bg-white sm:rounded-[32px] sm:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] sm:border sm:border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-10 duration-300">
                     {/* Header */}
-                    <div className="bg-slate-900 p-3 sm:p-5 text-white flex items-center justify-between shrink-0">
-                        <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="bg-slate-900 p-4 sm:p-5 text-white flex items-center justify-between shrink-0">
+                        <div className="flex items-center gap-3">
                             <div className="relative">
-                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-brand-orange/50">
+                                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-brand-orange/50">
                                     <img 
                                         src="/crh.png" 
                                         alt="Ricardo" 
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
-                                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-emerald-500 border-2 border-slate-900 rounded-full"></div>
+                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full"></div>
                             </div>
                             <div>
-                                <h4 className="font-black text-xs sm:text-sm uppercase tracking-tight">Ricardo - DigitalizaTodo</h4>
-                                <p className="text-[8px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">Responde en minutos</p>
+                                <h4 className="font-black text-sm uppercase tracking-tight">Ricardo - DigitalizaTodo</h4>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">Responde en minutos</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                            <button className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400">
-                                <MoreVertical className="w-5 h-5" />
+                        <div className="flex items-center gap-2">
+                            <button className="p-2 text-slate-400 hover:text-white transition-colors">
+                                <MoreHorizontal className="w-5 h-5" />
                             </button>
-                            <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 sm:hidden">
+                            <button 
+                                onClick={() => setIsOpen(false)}
+                                className="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors"
+                            >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
                     </div>
+/div>
 
                     {/* Messages Area */}
                 <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 sm:space-y-4 bg-slate-50/50 scroll-smooth">
                         {messages.map((msg, idx) => (
                             <div key={idx} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[85%] p-3 sm:p-4 rounded-2xl text-xs sm:text-sm leading-relaxed shadow-sm ${
+                                <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${
                                     msg.sender === 'user' 
                                     ? 'bg-brand-orange text-white rounded-tr-none' 
                                     : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none'
@@ -409,7 +417,7 @@ const FloatingChat = () => {
                                                 handleSend(e);
                                             }
                                         }}
-                                        className="w-full bg-transparent border-none outline-none resize-none px-3 sm:px-4 py-3 text-xs sm:text-sm text-slate-700 placeholder:text-slate-400"
+                                        className="w-full bg-transparent border-none outline-none resize-none px-4 py-3 text-sm text-slate-700 placeholder:text-slate-400"
                                     />
                                 </div>
 
