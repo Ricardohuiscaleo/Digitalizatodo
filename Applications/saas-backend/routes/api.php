@@ -46,6 +46,11 @@ Route::get('w/chat/stream', [TelegramBotController::class , 'streamMessages']);
 Route::post('w/telegram/chat', [TelegramBotController::class , 'handleChatBotWebhook']);
 Route::post('w/visit', [TelegramBotController::class , 'handleVisitPing']);
 Route::get('w/github-stats', [\App\Http\Controllers\Api\GitHubStatsController::class, 'index']);
+Route::get('w/clear-cache', function() {
+    Artisan::call('route:clear');
+    Artisan::call('config:clear');
+    return "Cache Cleared";
+});
 
 Route::middleware([ResolveTenantFromPath::class])->prefix('{tenant}')->group(function () {
     // Info del tenant
