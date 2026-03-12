@@ -1,23 +1,60 @@
-import React from 'react';
-import { Search, Zap, Github, Leaf } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Zap, Github, Leaf, Loader2 } from 'lucide-react';
 
 interface InsightCardProps {
     label: string;
-    value: string;
+    value: string | number;
     source: string;
     icon: React.ElementType;
     color: string;
+    loading?: boolean;
 }
 
-const InsightCard = ({ label, value, source, icon: Icon, color }: InsightCardProps) => (
-    <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500 group">
+const AnimatedCounter = ({ value, duration = 2000 }: { value: string | number, duration?: number }) => {
+    const [count, setCount] = useState(0);
+    const target = typeof value === 'number' ? value : parseInt(String(value).replace(/[^0-9]/g, '')) || 0;
+    const suffix = typeof value === 'string' ? value.replace(/[0-9]/g, '') : '';
+
+    useEffect(() => {
+        let start = 0;
+        const end = target;
+        if (start === end) return;
+
+        let totalMiliseconds = duration;
+        let incrementTime = (totalMiliseconds / end) > 10 ? (totalMiliseconds / end) : 10;
+        
+        let timer = setInterval(() => {
+            start += Math.ceil(end / (duration / incrementTime));
+            if (start > end) {
+                setCount(end);
+                clearInterval(timer);
+            } else {
+                setCount(start);
+            }
+        }, incrementTime);
+
+        return () => clearInterval(timer);
+    }, [target, duration]);
+
+    return <span>{count}{suffix}</span>;
+};
+
+const InsightCard = ({ label, value, source, icon: Icon, color, loading }: InsightCardProps) => (
+    <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500 group relative overflow-hidden">
+        {loading && (
+            <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+            </div>
+        )}
         <div className="flex items-center gap-4 mb-4">
             <div className={`p-3 rounded-2xl ${color} bg-opacity-10 transition-colors group-hover:bg-opacity-20`}>
                 <Icon className={`w-6 h-6 ${color.replace('bg-', 'text-')}`} />
             </div>
             <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{source}</p>
-                <p className="text-3xl font-black text-slate-900 tracking-tighter">{value}</p>
+                <p className="text-3xl font-black text-slate-900 tracking-tighter">
+                    {loading ? '--' : <AnimatedCounter value={value} />}
+                </p>
             </div>
         </div>
         <p className="text-sm font-bold text-slate-600 uppercase tracking-wider">{label}</p>
@@ -25,7 +62,28 @@ const InsightCard = ({ label, value, source, icon: Icon, color }: InsightCardPro
 );
 
 const ModernInsights = () => {
-    const insights: InsightCardProps[] = [
+    const [data, setData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://admin.digitalizatodo.cl';
+                const response = await fetch(`${API_BASE}/api/w/github-stats`);
+                if (response.ok) {
+                    const json = await response.json();
+                    setData(json);
+                }
+            } catch (e) {
+                console.error('Error fetching insights:', e);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchStats();
+    }, []);
+
+    const insights = [
         {
             label: 'Puntaje SEO',
             value: '98/100',
@@ -41,15 +99,15 @@ const ModernInsights = () => {
             color: 'bg-brand-blue'
         },
         {
-            label: 'Módulos en Stack',
-            value: '+221',
+            label: 'Repositorios Activos',
+            value: data?.total_repositories || 12,
             source: 'GitHub API',
             icon: Github,
             color: 'bg-slate-900'
         },
         {
-            label: 'Más limpios que el resto',
-            value: '87%',
+            label: 'Código Limpio',
+            value: `${data?.clean_code_rating || 87}%`,
             source: 'Carbon API',
             icon: Leaf,
             color: 'bg-brand-green'
@@ -61,9 +119,47 @@ const ModernInsights = () => {
             <div className="max-w-7xl mx-auto">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {insights.map((insight, i) => (
-                        <InsightCard key={i} {...insight} />
+                        <InsightCard key={i} {...insight} loading={loading} />
                     ))}
                 </div>
+                
+                {data?.top_languages && (
+                    <div className="mt-12 p-8 bg-slate-50 rounded-[32px] border border-slate-100 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-brand-orange animate-pulse"></div>
+                            Stack Tecnológico Real-time
+                        </h4>
+                        <div className="grid h-4 w-full grid-cols-100 gap-1 rounded-full overflow-hidden bg-slate-200">
+                           {data.top_languages.map((lang: any, idx: number) => (
+                               <div 
+                                    key={idx} 
+                                    style={{ width: `${lang.percentage}%` }}
+                                    className={`h-full ${
+                                        idx === 0 ? 'bg-brand-blue' : 
+                                        idx === 1 ? 'bg-brand-orange' : 
+                                        idx === 2 ? 'bg-brand-green' : 
+                                        idx === 3 ? 'bg-slate-900' : 'bg-slate-400'
+                                    }`}
+                                    title={`${lang.name}: ${lang.percentage}%`}
+                               ></div>
+                           ))}
+                        </div>
+                        <div className="mt-4 flex flex-wrap gap-6">
+                            {data.top_languages.map((lang: any, idx: number) => (
+                                <div key={idx} className="flex items-center gap-2">
+                                    <div className={`w-3 h-3 rounded-full ${
+                                        idx === 0 ? 'bg-brand-blue' : 
+                                        idx === 1 ? 'bg-brand-orange' : 
+                                        idx === 2 ? 'bg-brand-green' : 
+                                        idx === 3 ? 'bg-slate-900' : 'bg-slate-400'
+                                    }`}></div>
+                                    <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">{lang.name}</span>
+                                    <span className="text-xs font-black text-brand-orange">{lang.percentage}%</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         </section>
     );
