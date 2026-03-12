@@ -320,6 +320,7 @@ class TelegramBotController extends Controller
     public function streamMessages(Request $request)
     {
         $sessionId = $request->query('session_id');
+        Log::info("SSE Stream Request received", ['session_id' => $sessionId]);
         if (!$sessionId) return response()->json(['error' => 'No session_id'], 400);
 
         return response()->stream(function () use ($sessionId) {
