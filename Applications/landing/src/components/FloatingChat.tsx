@@ -274,14 +274,14 @@ const FloatingChat = () => {
     }, [messages, isOpen]);
 
     return (
-        <div className={`fixed z-[100] font-sans transition-all duration-300 ${
+        <div className={`fixed z-[100] font-sans ${
             isOpen 
-            ? 'inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[400px] sm:h-[700px]' 
+            ? 'inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[400px] sm:h-[650px]' 
             : 'bottom-4 right-4 sm:bottom-6 sm:right-6 w-auto h-auto'
         }`}>
             {/* Chat Window */}
             {isOpen && (
-                <div className="relative w-full h-full bg-white sm:rounded-[32px] sm:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] sm:border sm:border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-10 duration-300">
+                <div className="flex flex-col w-full h-full bg-white sm:rounded-[28px] sm:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] sm:border sm:border-slate-100 overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
                     {/* Header */}
                     <div className="bg-slate-900 p-4 sm:p-5 text-white flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-3">
@@ -296,8 +296,8 @@ const FloatingChat = () => {
                                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full"></div>
                             </div>
                             <div>
-                                <h4 className="font-black text-sm uppercase tracking-tight">Ricardo - DigitalizaTodo</h4>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">Responde en minutos</p>
+                                <h4 className="font-bold text-sm sm:text-base tracking-tight">Ricardo - DigitalizaTodo</h4>
+                                <p className="text-[10px] sm:text-xs text-slate-400 font-medium uppercase tracking-wider">Responde en minutos</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -314,7 +314,7 @@ const FloatingChat = () => {
                     </div>
 
                     {/* Messages Area */}
-                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 sm:space-y-4 bg-slate-50/50 scroll-smooth">
+                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 bg-slate-50/50 scroll-smooth">
                         {messages.map((msg, idx) => (
                             <div key={idx} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${
@@ -434,21 +434,19 @@ const FloatingChat = () => {
             )}
 
             {/* Toggle Button */}
-            <div className={`relative ${isOpen ? 'hidden sm:block' : 'block'}`}>
-                {unreadCount > 0 && (
-                    <div className="absolute -top-2 -left-2 w-7 h-7 bg-slate-900 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-50 animate-bounce">
-                        <span className="text-emerald-500 text-xs font-black">{unreadCount}</span>
-                    </div>
-                )}
+            {!isOpen && (
                 <button 
-                    onClick={() => setIsOpen(!isOpen)}
-                    className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 hover:scale-110 active:scale-90 ${
-                        isOpen ? 'bg-slate-900 text-white rotate-90' : 'bg-brand-orange text-white'
-                    }`}
+                    onClick={() => setIsOpen(true)}
+                    className="w-14 h-14 sm:w-16 sm:h-16 bg-brand-orange text-white rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 hover:scale-110 active:scale-90"
                 >
-                    {isOpen ? <X className="w-6 h-6 sm:w-8 sm:h-8" /> : <MessageCircle className="w-6 h-6 sm:w-8 sm:h-8" />}
+                    {unreadCount > 0 && (
+                        <div className="absolute -top-1 -left-1 w-6 h-6 bg-slate-900 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                            <span className="text-emerald-500 text-[10px] font-black">{unreadCount}</span>
+                        </div>
+                    )}
+                    <MessageCircle className="w-6 h-6 sm:w-8 sm:h-8" />
                 </button>
-            </div>
+            )}
         </div>
     );
 };
