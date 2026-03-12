@@ -165,16 +165,16 @@ const FloatingChat = () => {
                                 }`}>
                                     {(msg as any).type === 'image' && (msg as any).file_path && (
                                         <img 
-                                            src={`${import.meta.env.PUBLIC_API_URL || 'https://admin.digitalizatodo.cl'}/storage/${(msg as any).file_path}`} 
+                                            src={(msg as any).file_path} 
                                             alt="Media" 
                                             className="rounded-lg mb-2 max-w-full h-auto cursor-pointer hover:opacity-90 transition-opacity"
-                                            onClick={() => window.open(`${import.meta.env.PUBLIC_API_URL || 'https://admin.digitalizatodo.cl'}/storage/${(msg as any).file_path}`, '_blank')}
+                                            onClick={() => window.open((msg as any).file_path, '_blank')}
                                         />
                                     )}
                                     {(msg as any).type === 'audio' && (msg as any).file_path && (
                                         <div className="mb-2 min-w-[200px]">
                                             <audio controls className="w-full h-8">
-                                                <source src={`${import.meta.env.PUBLIC_API_URL || 'https://admin.digitalizatodo.cl'}/storage/${(msg as any).file_path}`} type="audio/ogg" />
+                                                <source src={(msg as any).file_path} type="audio/ogg" />
                                                 Audio
                                             </audio>
                                         </div>
