@@ -323,6 +323,11 @@ class TelegramBotController extends Controller
         if (!$sessionId) return response()->json(['error' => 'No session_id'], 400);
 
         return response()->stream(function () use ($sessionId) {
+            // Deshabilitar buffering de PHP
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+
             try {
                 $lastId = \App\Models\ChatMessage::where('session_id', $sessionId)->max('id') ?? 0;
 
@@ -350,7 +355,6 @@ class TelegramBotController extends Controller
                         echo "data: {\"time\":\"" . date('Y-m-d H:i:s') . "\"}\n\n";
                     }
 
-                    if (ob_get_level() > 0) ob_flush();
                     flush();
 
                     usleep(500000); // 0.5s check
@@ -361,15 +365,15 @@ class TelegramBotController extends Controller
                 \Log::error("SSE Error for session {$sessionId}: " . $e->getMessage());
                 echo "event: error\n";
                 echo "data: " . json_encode(['error' => $e->getMessage()]) . "\n\n";
-                if (ob_get_level() > 0) ob_flush();
                 flush();
             }
         }, 200, [
             'Content-Type' => 'text/event-stream',
             'Cache-Control' => 'no-cache, no-store, must-revalidate',
             'Connection' => 'keep-alive',
-            'X-Accel-Buffering' => 'no', // Crítico para Nginx/Coolify
-            'Access-Control-Allow-Origin' => '*', // Aseguramos CORS por si acaso
+            'X-Accel-Buffering' => 'no', // Crítico para Nginx
+            'Content-Encoding' => 'none', // Intentar prevenir Gzip
+            'Access-Control-Allow-Origin' => '*',
         ]);
     }
 
