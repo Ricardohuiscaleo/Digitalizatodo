@@ -29,9 +29,9 @@ const MegaMenu = ({ title, items, footerText, footerIcon: FooterIcon, href }: { 
 
         {footerText && FooterIcon && (
           <div className="col-span-2 mt-2 bg-slate-900 rounded-2xl p-5 flex items-center justify-between group/insight cursor-pointer hover:bg-slate-800 transition-colors">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
-                <FooterIcon className="w-6 h-6 text-orange-500" />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm overflow-hidden">
+                <img src="/DLogo-v2.webp" alt="Digitaliza Todo" className="h-full w-full object-contain p-1" />
               </div>
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Insight de Valor</p>
@@ -88,7 +88,7 @@ const ModernNavbar = () => {
         }`}>
           
           <div className="flex items-center gap-3 cursor-pointer z-[71]">
-            <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg transform transition-transform hover:rotate-12 overflow-hidden">
+            <div className="w-10 h-10 bg-slate-900 rounded-full flex items-center justify-center shadow-lg transform transition-transform hover:rotate-12 overflow-hidden">
                <img src="/DLogo-v2.webp" alt="D" className="w-full h-full object-contain p-1.5 brightness-0 invert" />
             </div>
             <div className="leading-none hidden sm:block">
