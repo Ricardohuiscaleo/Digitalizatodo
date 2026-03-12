@@ -22,9 +22,7 @@ const FloatingChat = () => {
         }
         setSessionId(sid);
 
-        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? 'http://localhost:8000'
-            : 'https://admin.digitalizatodo.cl';
+        const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://admin.digitalizatodo.cl';
 
         // Traffic Ping (Live Traffic)
         const pingVisit = async () => {
@@ -44,9 +42,7 @@ const FloatingChat = () => {
     useEffect(() => {
         if (!isOpen || !sessionId) return;
 
-        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? 'http://localhost:8000'
-            : 'https://admin.digitalizatodo.cl';
+        const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://admin.digitalizatodo.cl';
 
         const fetchMessages = async () => {
             try {
@@ -73,9 +69,7 @@ const FloatingChat = () => {
         e.preventDefault();
         if (!message.trim() || !sessionId) return;
 
-        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? 'http://localhost:8000'
-            : 'https://admin.digitalizatodo.cl';
+        const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://admin.digitalizatodo.cl';
 
         const currentMsg = message;
         setMessage('');
