@@ -38,13 +38,33 @@ const FloatingChat = () => {
         pingVisit();
     }, []);
 
-    // Polling for new messages
+    // SSE for real-time messages
     useEffect(() => {
         if (!isOpen || !sessionId) return;
 
         const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://admin.digitalizatodo.cl';
+        const eventSource = new EventSource(`${API_BASE}/api/w/chat/stream?session_id=${sessionId}`);
 
-        const fetchMessages = async () => {
+        eventSource.addEventListener('new-message', (event: any) => {
+            try {
+                const newMsg = JSON.parse(event.data);
+                setMessages(prev => {
+                    // Evitar duplicados si ya existe por casualidad
+                    if (prev.find(m => m.id === newMsg.id)) return prev;
+                    return [...prev, newMsg];
+                });
+            } catch (err) {
+                console.error('SSE Parse Error:', err);
+            }
+        });
+
+        eventSource.onerror = (err) => {
+            console.error('SSE Error:', err);
+            eventSource.close();
+        };
+
+        // Fetch inicial para cargar historial
+        const fetchInitial = async () => {
             try {
                 const response = await fetch(`${API_BASE}/api/w/chat/messages?session_id=${sessionId}`);
                 if (response.ok) {
@@ -52,17 +72,18 @@ const FloatingChat = () => {
                     if (data.length > 0) {
                         setMessages(prev => {
                             const initMsg = prev[0];
+                            // Filtrar por si acaso para no duplicar el mensaje inicial o los ya recibidos por SSE
                             return [initMsg, ...data];
                         });
                     }
                 }
-            } catch (error) {
-                console.error('Polling error:', error);
-            }
+            } catch (e) {}
         };
+        fetchInitial();
 
-        const interval = setInterval(fetchMessages, 3000);
-        return () => clearInterval(interval);
+        return () => {
+            eventSource.close();
+        };
     }, [isOpen, sessionId]);
 
     const handleSend = async (e: React.FormEvent) => {
