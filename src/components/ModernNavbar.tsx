@@ -27,7 +27,12 @@ const ModernNavbar = () => {
             }`}>
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <img src="/DLogo-v2.webp" alt="Digitaliza Todo" className="h-10 w-10 object-contain" />
+                        <img 
+                            src="/DLogo-v2.webp" 
+                            alt="Digitaliza Todo" 
+                            className="h-10 w-10 object-contain"
+                            fetchPriority="high"
+                        />
                         <div className="leading-none">
                             <span className="font-black text-xl tracking-tighter text-slate-900">DIGITALIZA</span>
                             <span className="font-black text-xl tracking-tighter text-brand-orange block sm:inline sm:ml-1">TODO</span>
@@ -78,7 +83,7 @@ const ModernNavbar = () => {
                 <div className="p-8 flex flex-col h-full">
                     <div className="flex justify-between items-center mb-16">
                         <div className="flex items-center gap-3">
-                            <img src="/DLogo-v2.webp" alt="Digitaliza Todo" className="h-10 w-10" />
+                            <img src="/DLogo-v2.webp" alt="Digitaliza Todo" className="h-10 w-10" loading="lazy" />
                             <span className="font-black text-xl tracking-tighter text-slate-900">DIGITALIZA <span className="text-brand-orange">TODO</span></span>
                         </div>
                         <button onClick={() => setIsOpen(false)} className="p-2">

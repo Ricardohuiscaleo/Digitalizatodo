@@ -50,7 +50,7 @@ const FloatingChat = () => {
 
         const fetchMessages = async () => {
             try {
-                const response = await fetch(`${API_BASE}/api/webhooks/chat/messages?session_id=${sessionId}`);
+                const response = await fetch(`${API_BASE}/api/w/chat/messages?session_id=${sessionId}`);
                 if (response.ok) {
                     const data = await response.json();
                     if (data.length > 0) {
