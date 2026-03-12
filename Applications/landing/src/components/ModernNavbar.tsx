@@ -92,8 +92,8 @@ const ModernNavbar = () => {
                <img src="/DLogo-v2.webp" alt="D" className="w-full h-full object-contain" />
             </div>
             <div className="leading-none flex flex-row items-baseline sm:block">
-              <span className={`font-black text-sm sm:text-lg tracking-tighter transition-colors ${isMobileMenuOpen ? 'text-white' : 'text-slate-900'}`}>DIGITALIZA</span>
-              <span className="font-black text-sm sm:text-lg tracking-tighter text-orange-500 ml-1">TODO</span>
+              <span className={`font-black text-[13px] sm:text-lg tracking-tighter transition-colors ${isMobileMenuOpen ? 'text-white' : 'text-slate-900'}`}>DIGITALIZA</span>
+              <span className="font-black text-[13px] sm:text-lg tracking-tighter text-orange-500 ml-1">TODO</span>
             </div>
           </div>
           
