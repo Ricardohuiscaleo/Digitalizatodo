@@ -17,6 +17,8 @@ const FloatingChat = () => {
     const notificationAudio = useRef<HTMLAudioElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
+    const [userIp, setUserIp] = useState('...');
+    const [userCity, setUserCity] = useState('...');
 
     // Initial message with delay
     const [messages, setMessages] = useState<any[]>([]);
@@ -83,6 +85,17 @@ const FloatingChat = () => {
             } catch (e) {}
         };
         pingVisit();
+
+        // Fetch Geolocation
+        const fetchGeo = async () => {
+            try {
+                const res = await fetch('https://ipapi.co/json/');
+                const data = await res.json();
+                if (data.ip) setUserIp(data.ip);
+                if (data.city) setUserCity(data.city);
+            } catch (e) {}
+        };
+        fetchGeo();
     }, []);
 
     useEffect(() => {
@@ -234,7 +247,8 @@ const FloatingChat = () => {
                         </div>
                         <div>
                             <h3 className="font-bold text-sm">Ricardo - DigitalizaTodo</h3>
-                            <p className="text-[10px] text-slate-400 font-medium">En línea • responde en minutos</p>
+                            <p className="text-[10px] text-slate-400 font-medium leading-tight">En línea • responde en minutos</p>
+                            <p className="text-[10px] text-brand-orange font-bold uppercase tracking-wider leading-tight">Tu IP es: {userIp} • Ciudad: {userCity}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
