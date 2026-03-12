@@ -72,6 +72,14 @@ class DebugController extends Controller
                 $checks['database']['registration_pages_table'] = 'MISSING';
             }
 
+            if (file_exists(storage_path('logs/laravel.log'))) {
+                $logFile = file(storage_path('logs/laravel.log'));
+                $checks['last_logs'] = array_slice($logFile, -50);
+            }
+            else {
+                $checks['last_logs'] = 'File not found';
+            }
+
         }
         catch (\Exception $e) {
             $checks['database']['status'] = 'FAILED';
