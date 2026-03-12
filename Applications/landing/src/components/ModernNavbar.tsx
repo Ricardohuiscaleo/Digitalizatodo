@@ -18,9 +18,9 @@ const MegaMenu = ({ title, items, footerText, footerIcon: FooterIcon, href }: { 
       <div className="w-[600px] bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-100 p-6 grid grid-cols-2 gap-4">
         
         {items.map((item, idx) => (
-          <a key={idx} href={item.href} className="p-4 rounded-2xl hover:bg-slate-50 transition-colors group/card block text-left">
-            <div className={`w-10 h-10 rounded-xl ${item.colorClass} flex items-center justify-center mb-3 group-hover/card:scale-110 transition-transform`}>
-              <item.icon className={`w-5 h-5 ${item.iconColorClass}`} />
+          <a key={idx} href={item.href} className="p-4 rounded-2xl hover:bg-slate-50 transition-colors group/card block text-left bg-white border border-slate-100/50 shadow-sm">
+            <div className={`p-3 rounded-2xl bg-white border border-slate-50 flex items-center justify-center transition-transform duration-500 group-hover/card:scale-110 shadow-sm`}>
+              <item.icon className={`w-6 h-6 ${item.iconColorClass}`} />
             </div>
             <h5 className="font-bold text-slate-900 text-sm mb-1">{item.title}</h5>
             <p className="text-xs text-slate-500 line-clamp-2">{item.desc}</p>
@@ -88,7 +88,9 @@ const ModernNavbar = () => {
         }`}>
           
           <div className="flex items-center gap-3 cursor-pointer z-[71]">
-            <img src="/DLogo-v2.webp" alt="Digitaliza Todo" className="w-10 h-10 object-contain" />
+            <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg transform transition-transform hover:rotate-12 overflow-hidden">
+               <img src="/DLogo-v2.webp" alt="D" className="w-full h-full object-contain p-1.5 brightness-0 invert" />
+            </div>
             <div className="leading-none hidden sm:block">
               <span className={`font-black text-xl tracking-tighter transition-colors ${isMobileMenuOpen ? 'text-white' : 'text-slate-900'}`}>DIGITALIZA</span>
               <span className="font-black text-xl tracking-tighter text-orange-500 ml-1">TODO</span>

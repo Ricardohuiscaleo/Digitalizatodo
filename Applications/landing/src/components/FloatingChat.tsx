@@ -241,7 +241,7 @@ const FloatingChat = () => {
                     </div>
 
                     {/* Messages Area */}
-                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/50">
+                <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/50 scroll-smooth">
                         {messages.map((msg, idx) => (
                             <div key={idx} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${
