@@ -42,6 +42,7 @@ Route::post('w/chat/send', [TelegramBotController::class , 'handleChatSend']);
 Route::get('w/chat/messages', [TelegramBotController::class , 'getChatMessages']);
 Route::post('w/telegram/chat', [TelegramBotController::class , 'handleChatBotWebhook']);
 Route::post('w/visit', [TelegramBotController::class , 'handleVisitPing']);
+Route::get('w/github-stats', [\App\Http\Controllers\Api\GitHubStatsController::class, 'index']);
 
 Route::middleware([ResolveTenantFromPath::class])->prefix('{tenant}')->group(function () {
     // Info del tenant
