@@ -404,25 +404,20 @@ class TelegramBotController extends Controller
         return response()->json($messages);
     }
 
-    /**
-     * Webhook del Bot de Chat (Dtodochat_bot)
-     * POST /api/webhooks/telegram/chat
-     */
     public function handleChatBotWebhook(Request $request)
     {
         $update = $request->all();
+        $token = config('services.telegram_chat.bot_token');
 
-        // Manejar botones (Callback Query)
+        // 1. Manejar botones (Callback Query)
         if (isset($update['callback_query'])) {
             $cb = $update['callback_query'];
             $data = $cb['data'];
-            $token = config('services.telegram_chat.bot_token');
             
             if (str_starts_with($data, 'greet:') || str_starts_with($data, 'start:')) {
                 $parts = explode(':', $data);
                 $sessionId = $parts[1];
                 $isGreet = $parts[0] === 'greet';
-                
                 $messageText = $isGreet ? "Hola! ¿En qué puedo ayudarte?" : "Hola! Soy Ricardo, ¿en qué puedo ayudarte?";
 
                 \App\Models\ChatMessage::create([
@@ -431,25 +426,23 @@ class TelegramBotController extends Controller
                     'message' => $messageText,
                 ]);
 
-                Http::post("https://api.telegram.org/bot{$token}/answerCallbackQuery", [
-                    'callback_query_id' => $cb['id'],
-                    'text' => '✅ Mensaje enviado!',
-                ]);
-
+                Http::post("https://api.telegram.org/bot{$token}/answerCallbackQuery", ['callback_query_id' => $cb['id'], 'text' => '✅ Enviado!']);
                 Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
                     'chat_id' => $cb['message']['chat']['id'],
-                    'text' => "✅ " . ($isGreet ? "Saludo enviado" : "Chat iniciado") . " a la sesión <code>{$sessionId}</code>",
+                    'text' => "✅ " . ($isGreet ? "Saludo enviado" : "Chat iniciado") . " a <code>{$sessionId}</code>",
                     'parse_mode' => 'HTML',
                     'reply_markup' => json_encode(['force_reply' => true])
                 ]);
-
                 return response()->json(['status' => 'ok']);
             }
         }
 
-        $text = $update['message']['text'] ?? '';
+        $msg = $update['message'] ?? null;
+        if (!$msg) return response()->json(['ignored']);
 
-        // Soporte para comando Proactivo: /chat [session_id] [mensaje]
+        $text = $msg['text'] ?? '';
+
+        // 2. Soporte para comando Proactivo: /chat [session_id] [mensaje]
         if (str_starts_with($text, '/chat ')) {
             $parts = explode(' ', $text, 3);
             if (count($parts) === 3) {
@@ -462,35 +455,76 @@ class TelegramBotController extends Controller
                     'message' => $messageBody,
                 ]);
 
-                $token = config('services.telegram_chat.bot_token');
                 Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
-                    'chat_id' => $update['message']['chat']['id'],
-                    'text' => "✅ Mensaje proactivo enviado a la sesión <code>{$sessionId}</code>",
+                    'chat_id' => $msg['chat']['id'],
+                    'text' => "✅ Mensaje proactivo enviado a <code>{$sessionId}</code>",
                     'parse_mode' => 'HTML',
-                    'reply_to_message_id' => $update['message']['message_id']
+                    'reply_to_message_id' => $msg['message_id']
                 ]);
-
                 return response()->json(['status' => 'ok']);
             }
         }
 
-        if (!isset($update['message']['reply_to_message'])) return response()->json(['ignored']);
+        // 3. Manejar respuesta Multimedia o Texto (Reply To)
+        $sessionId = null;
+        if (isset($msg['reply_to_message'])) {
+            $replyToId = $msg['reply_to_message']['message_id'];
+            $originalMsg = \App\Models\ChatMessage::where('telegram_message_id', $replyToId)->first();
+            if ($originalMsg) $sessionId = $originalMsg->session_id;
+        }
 
-        $replyToId = $update['message']['reply_to_message']['message_id'];
-        $responseText = $text;
+        if ($sessionId) {
+            $type = 'text';
+            $fileId = null;
+            $messageBody = $text;
 
-        $originalMsg = \App\Models\ChatMessage::where('telegram_message_id', $replyToId)->first();
+            if (isset($msg['voice'])) {
+                $type = 'audio';
+                $fileId = $msg['voice']['file_id'];
+            } elseif (isset($msg['photo'])) {
+                $type = 'image';
+                $fileId = end($msg['photo'])['file_id'];
+            }
 
-        if ($originalMsg) {
+            $filePath = $fileId ? $this->downloadTelegramFile($fileId, $type) : null;
+
             \App\Models\ChatMessage::create([
-                'session_id' => $originalMsg->session_id,
+                'session_id' => $sessionId,
                 'sender' => 'admin',
-                'message' => $responseText,
+                'type' => $type,
+                'message' => $messageBody,
+                'file_path' => $filePath,
             ]);
+
             return response()->json(['status' => 'ok']);
         }
 
-        return response()->json(['status' => 'not_found']);
+        return response()->json(['status' => 'ignored']);
+    }
+
+    private function downloadTelegramFile($fileId, $type)
+    {
+        try {
+            $token = config('services.telegram_chat.bot_token');
+            $response = Http::get("https://api.telegram.org/bot{$token}/getFile", ['file_id' => $fileId]);
+
+            if (!$response->successful()) return null;
+
+            $remotePath = $response->json('result.file_path');
+            $fileUrl = "https://api.telegram.org/file/bot{$token}/{$remotePath}";
+
+            $extension = pathinfo($remotePath, PATHINFO_EXTENSION);
+            $fileName = "chat_" . time() . "_" . bin2hex(random_bytes(4)) . "." . $extension;
+            $savePath = "chat_media/{$fileName}";
+
+            $contents = Http::get($fileUrl)->body();
+            \Illuminate\Support\Facades\Storage::disk('public')->put($savePath, $contents);
+
+            return $savePath;
+        } catch (\Exception $e) {
+            Log::error("Error downloading Telegram file: " . $e->getMessage());
+            return null;
+        }
     }
 
     /**
