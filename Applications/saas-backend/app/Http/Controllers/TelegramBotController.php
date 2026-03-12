@@ -319,58 +319,7 @@ class TelegramBotController extends Controller
      */
     public function streamMessages(Request $request)
     {
-        $sessionId = $request->query('session_id');
-        Log::info("SSE Stream Request received", ['session_id' => $sessionId]);
-        if (!$sessionId) return response()->json(['error' => 'No session_id'], 400);
-
-        return response()->stream(function () use ($sessionId) {
-            try {
-                $lastId = \App\Models\ChatMessage::where('session_id', $sessionId)->max('id') ?? 0;
-
-                // Loop infinito de escucha
-                $startTime = time();
-                while (true) {
-                    if (connection_aborted()) break;
-
-                    $newMessages = \App\Models\ChatMessage::where('session_id', $sessionId)
-                        ->where('id', '>', $lastId)
-                        ->orderBy('id', 'asc')
-                        ->get();
-
-                    if ($newMessages->count() > 0) {
-                        foreach ($newMessages as $msg) {
-                            echo "event: new-message\n";
-                            echo "data: " . json_encode($msg) . "\n\n";
-                            $lastId = $msg->id;
-                        }
-                    }
-
-                    // Heartbeat cada 15s para evitar timeouts del proxy
-                    if ((time() - $startTime) % 15 == 0) {
-                        echo "event: heartbeat\n";
-                        echo "data: {\"time\":\"" . date('Y-m-d H:i:s') . "\"}\n\n";
-                    }
-
-                    if (ob_get_level() > 0) ob_flush();
-                    flush();
-
-                    usleep(500000); // 0.5s check
-                    
-                    if (time() - $startTime > 600) break;
-                }
-            } catch (\Exception $e) {
-                Log::error("SSE Error for session {$sessionId}: " . $e->getMessage());
-                echo "event: error\n";
-                echo "data: " . json_encode(['error' => $e->getMessage()]) . "\n\n";
-                if (ob_get_level() > 0) ob_flush();
-                flush();
-            }
-        }, 200, [
-            'Content-Type' => 'text/event-stream',
-            'Cache-Control' => 'no-cache, no-store, must-revalidate',
-            'Connection' => 'keep-alive',
-            'X-Accel-Buffering' => 'no', // Crítico para Nginx/Coolify
-        ]);
+        return "REACHED";
     }
 
     public function getChatMessages(Request $request)
