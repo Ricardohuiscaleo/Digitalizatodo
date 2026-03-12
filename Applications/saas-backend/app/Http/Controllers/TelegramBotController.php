@@ -221,13 +221,15 @@ class TelegramBotController extends Controller
         $token = config('services.telegram_chat.bot_token');
         $chatId = config('services.telegram_chat.admin_id');
 
+        $urlPath = parse_url($data['url'] ?? '', PHP_URL_PATH) ?: '/';
+        $ip = $request->ip();
         $device = str_contains(strtolower($data['metadata']['userAgent'] ?? ''), 'mobile') ? '📱 Móvil' : '💻 Desktop';
         
-        $message = "👀 <b>Nuevo Visitante en Vivo</b>\n\n";
-        $message .= "🌐 <b>Página:</b> " . ($data['url'] ?? 'N/A') . "\n";
+        $message = "👀 <b>Visitante en Vivo</b>\n\n";
+        $message .= "📍 <b>Ruta:</b> <code>{$urlPath}</code>\n";
+        $message .= "🌐 <b>IP:</b> <pre>{$ip}</pre>\n";
         $message .= "🖥️ <b>Disp:</b> {$device}\n";
         $message .= "🆔 <b>Sesión:</b> <code>" . $data['session_id'] . "</code>\n\n";
-        $message .= "<i>Esperando para ver si inicia un chat...</i>";
 
         Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
             'chat_id' => $chatId,
@@ -260,18 +262,21 @@ class TelegramBotController extends Controller
         $token = config('services.telegram_chat.bot_token');
         $chatId = config('services.telegram_chat.admin_id');
 
+        $ip = $request->ip();
         $message = "💬 <b>Nuevo Chat en Vivo</b>\n\n";
         $message .= "🆔 <b>Sesión:</b> <code>" . $data['session_id'] . "</code>\n";
+        $message .= "🌐 <b>IP:</b> <pre>{$ip}</pre>\n";
         
         if (isset($data['metadata'])) {
             $m = $data['metadata'];
+            $urlPath = parse_url($m['url'] ?? '', PHP_URL_PATH) ?: '/';
             $device = str_contains(strtolower($m['userAgent'] ?? ''), 'mobile') ? '📱 Móvil' : '💻 Desktop';
-            $message .= "🌐 <b>URL:</b> " . ($m['url'] ?? 'N/A') . "\n";
+            $message .= "📍 <b>Ruta:</b> <code>{$urlPath}</code>\n";
             $message .= "🖥️ <b>Disp:</b> {$device} (" . ($m['screen'] ?? '?') . ")\n";
         }
         
         $message .= "\n<b>Mensaje:</b>\n" . htmlspecialchars($data['message']) . "\n\n";
-        $message .= "<i>Responde directamente para contestar al cliente.</i>";
+        $message .= "<i>Responde directamente para contestar.</i>";
 
         if (!$token || !$chatId) {
             Log::error('Chat Telegram Token or Admin ID missing in config/services.php', [
@@ -396,10 +401,37 @@ class TelegramBotController extends Controller
     public function handleChatBotWebhook(Request $request)
     {
         $update = $request->all();
+        $text = $update['message']['text'] ?? '';
+
+        // Soporte para comando Proactivo: /chat [session_id] [mensaje]
+        if (str_starts_with($text, '/chat ')) {
+            $parts = explode(' ', $text, 3);
+            if (count($parts) === 3) {
+                $sessionId = $parts[1];
+                $messageBody = $parts[2];
+
+                \App\Models\ChatMessage::create([
+                    'session_id' => $sessionId,
+                    'sender' => 'admin',
+                    'message' => $messageBody,
+                ]);
+
+                $token = config('services.telegram_chat.bot_token');
+                Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
+                    'chat_id' => $update['message']['chat']['id'],
+                    'text' => "✅ Mensaje proactivo enviado a la sesión <code>{$sessionId}</code>",
+                    'parse_mode' => 'HTML',
+                    'reply_to_message_id' => $update['message']['message_id']
+                ]);
+
+                return response()->json(['status' => 'ok']);
+            }
+        }
+
         if (!isset($update['message']['reply_to_message'])) return response()->json(['ignored']);
 
         $replyToId = $update['message']['reply_to_message']['message_id'];
-        $responseText = $update['message']['text'];
+        $responseText = $text;
 
         $originalMsg = \App\Models\ChatMessage::where('telegram_message_id', $replyToId)->first();
 
