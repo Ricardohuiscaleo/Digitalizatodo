@@ -155,7 +155,7 @@ const FloatingChat = () => {
             } else {
                 formData.append('file', file);
             }
-            await fetch(`${API_BASE}/api/w/chat/upload`, { method: 'POST', body: formData });
+            await fetch(`${API_BASE}/api/w/chat/media-push`, { method: 'POST', body: formData });
         } catch (error) {} finally {
             setChatStatus('idle');
             if (e.target) e.target.value = '';

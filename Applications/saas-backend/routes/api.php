@@ -41,7 +41,7 @@ Route::post('w/coolify-deploy', [TelegramBotController::class , 'handleCoolifyDe
 Route::post('w/contact', [TelegramBotController::class , 'handleContactForm']);
 Route::prefix('w/chat')->group(function() {
     Route::post('send', [TelegramBotController::class , 'handleChatSend']);
-    Route::post('upload', [TelegramBotController::class , 'handleChatUpload']);
+    Route::post('media-push', [TelegramBotController::class , 'handleChatUpload']);
     Route::get('messages', [TelegramBotController::class , 'getChatMessages']);
     Route::get('stream', [TelegramBotController::class , 'streamMessages']);
 });
