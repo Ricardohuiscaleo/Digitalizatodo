@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, Loader2, User, Bot, Paperclip, MoreVertical, Image as ImageIcon, File as FileIcon } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, User, Bot, Paperclip, MoreVertical, Image as ImageIcon, File as FileIcon, Mic } from 'lucide-react';
 
 const FloatingChat = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -8,8 +8,15 @@ const FloatingChat = () => {
     const [sessionId, setSessionId] = useState('');
     const [unreadCount, setUnreadCount] = useState(0);
     const [isAudioEnabled, setIsAudioEnabled] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingDuration, setRecordingDuration] = useState(0);
+    const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const recordingInterval = useRef<any>(null);
+    const audioChunks = useRef<Blob[]>([]);
     const notificationAudio = useRef<HTMLAudioElement | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
 
     // Initial message with delay
     const [messages, setMessages] = useState<any[]>([]);
@@ -143,8 +150,8 @@ const FloatingChat = () => {
         };
     }, [sessionId, isOpen]);
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'file' | 'image' | 'audio' = 'file', blob?: Blob) => {
+        const file = blob || e.target.files?.[0];
         if (!file || !sessionId) return;
 
         const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://admin.digitalizatodo.cl';
@@ -153,7 +160,13 @@ const FloatingChat = () => {
         try {
             const formData = new FormData();
             formData.append('session_id', sessionId);
-            formData.append('file', file);
+            
+            if (blob) {
+                const extension = blob.type.includes('ogg') ? 'ogg' : 'webm';
+                formData.append('file', blob, `voice_note_${Date.now()}.${extension}`);
+            } else {
+                formData.append('file', file);
+            }
 
             await fetch(`${API_BASE}/api/w/chat/upload`, {
                 method: 'POST',
@@ -163,8 +176,61 @@ const FloatingChat = () => {
             console.error('Upload error:', error);
         } finally {
             setChatStatus('idle');
-            e.target.value = ''; // Reset input
+            if (e.target) e.target.value = ''; // Reset input
         }
+    };
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const recorder = new MediaRecorder(stream);
+            audioChunks.current = [];
+
+            recorder.ondataavailable = (e) => {
+                if (e.data.size > 0) audioChunks.current.push(e.data);
+            };
+
+            recorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks.current, { type: recorder.mimeType });
+                handleFileUpload({ target: {} } as any, 'audio', audioBlob);
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            recorder.start();
+            setMediaRecorder(recorder);
+            setIsRecording(true);
+            setRecordingDuration(0);
+            recordingInterval.current = setInterval(() => {
+                setRecordingDuration(prev => prev + 1);
+            }, 1000);
+        } catch (err) {
+            console.error('Error accessing microphone:', err);
+            alert('No se pudo acceder al micrófono. Por favor verifica los permisos.');
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorder && isRecording) {
+            mediaRecorder.stop();
+            setIsRecording(false);
+            clearInterval(recordingInterval.current);
+        }
+    };
+
+    const cancelRecording = () => {
+        if (mediaRecorder && isRecording) {
+            mediaRecorder.onstop = null; // Prevent sending
+            mediaRecorder.stop();
+            setIsRecording(false);
+            clearInterval(recordingInterval.current);
+            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        }
+    };
+
+    const formatDuration = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
     const handleSend = async (e: React.FormEvent) => {
@@ -211,7 +277,7 @@ const FloatingChat = () => {
         <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[100] font-sans">
             {/* Chat Window */}
             {isOpen && (
-                <div className="absolute bottom-16 sm:bottom-20 right-0 w-[calc(100vw-2rem)] max-w-[350px] sm:max-w-[400px] h-[600px] bg-white rounded-[32px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-10 duration-300">
+                <div className="absolute bottom-16 sm:bottom-20 right-0 w-[calc(100vw-2rem)] max-w-[350px] sm:max-w-[400px] h-[600px] bg-white rounded-[32px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-100 flex flex-col overflow-hidden animate-in d-flex slide-in-from-bottom-10 duration-300">
                     {/* Header */}
                     <div className="bg-slate-900 p-4 sm:p-5 text-white flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-3">
@@ -276,45 +342,86 @@ const FloatingChat = () => {
 
                     {/* Input Area */}
                     <div className="p-4 bg-white border-t border-slate-100 shrink-0">
-                        <form onSubmit={handleSend} className="flex items-end gap-2">
-                            <input 
-                                type="file" 
-                                id="chat-file-upload" 
-                                className="hidden" 
-                                onChange={handleFileUpload}
-                                accept="image/*,.pdf,.doc,.docx"
-                            />
-                            <label 
-                                htmlFor="chat-file-upload"
-                                className="p-3 text-slate-400 hover:text-brand-orange hover:bg-orange-50 rounded-full transition-all cursor-pointer"
-                            >
-                                <Paperclip className="w-5 h-5" />
-                            </label>
-
-                            <div className="flex-1 bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden focus-within:ring-2 focus-within:ring-brand-orange/20 focus-within:border-brand-orange transition-all">
-                                <textarea 
-                                    rows={1}
-                                    placeholder="Escribe tu mensaje..."
-                                    value={message}
-                                    onChange={(e) => setMessage(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && !e.shiftKey) {
-                                            e.preventDefault();
-                                            handleSend(e);
-                                        }
-                                    }}
-                                    className="w-full bg-transparent border-none outline-none resize-none px-4 py-3 text-sm text-slate-700 placeholder:text-slate-400"
-                                />
+                        {isRecording ? (
+                            <div className="flex items-center justify-between bg-orange-50 p-3 rounded-2xl border border-brand-orange/20 animate-pulse">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+                                    <span className="text-sm font-black text-brand-orange uppercase tracking-wider">Grabando... {formatDuration(recordingDuration)}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={cancelRecording} className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-red-500 transition-colors uppercase">Cancelar</button>
+                                    <button onClick={stopRecording} className="bg-brand-orange text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/20">Enviar</button>
+                                </div>
                             </div>
+                        ) : (
+                            <form onSubmit={handleSend} className="flex items-end gap-1 sm:gap-2">
+                                <input 
+                                    type="file" 
+                                    ref={fileInputRef}
+                                    className="hidden" 
+                                    onChange={(e) => handleFileUpload(e, 'file')}
+                                    accept=".pdf,.doc,.docx"
+                                />
+                                <input 
+                                    type="file" 
+                                    ref={imageInputRef}
+                                    className="hidden" 
+                                    onChange={(e) => handleFileUpload(e, 'image')}
+                                    accept="image/*"
+                                />
+                                
+                                <div className="flex items-center">
+                                    <button 
+                                        type="button"
+                                        onClick={() => imageInputRef.current?.click()}
+                                        className="p-2 sm:p-3 text-slate-400 hover:text-brand-orange hover:bg-orange-50 rounded-full transition-all"
+                                        title="Enviar Imagen"
+                                    >
+                                        <ImageIcon className="w-5 h-5" />
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="p-2 sm:p-3 text-slate-400 hover:text-brand-orange hover:bg-orange-50 rounded-full transition-all"
+                                        title="Adjuntar Archivo"
+                                    >
+                                        <Paperclip className="w-5 h-5" />
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={startRecording}
+                                        className="p-2 sm:p-3 text-slate-400 hover:text-brand-orange hover:bg-orange-50 rounded-full transition-all"
+                                        title="Grabar Nota de Voz"
+                                    >
+                                        <Mic className="w-5 h-5" />
+                                    </button>
+                                </div>
 
-                            <button 
-                                type="submit"
-                                disabled={!message.trim() || chatStatus === 'sending'}
-                                className="p-3 bg-brand-orange text-white rounded-full hover:bg-orange-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-orange-500/20"
-                            >
-                                {chatStatus === 'sending' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                            </button>
-                        </form>
+                                <div className="flex-1 bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden focus-within:ring-2 focus-within:ring-brand-orange/20 focus-within:border-brand-orange transition-all">
+                                    <textarea 
+                                        rows={1}
+                                        placeholder="Mensaje..."
+                                        value={message}
+                                        onChange={(e) => setMessage(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                handleSend(e);
+                                            }
+                                        }}
+                                        className="w-full bg-transparent border-none outline-none resize-none px-3 sm:px-4 py-3 text-sm text-slate-700 placeholder:text-slate-400"
+                                    />
+                                </div>
+
+                                <button 
+                                    type="submit"
+                                    disabled={!message.trim() || chatStatus === 'sending'}
+                                    className="p-3 bg-brand-orange text-white rounded-full hover:bg-orange-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-orange-500/20 shrink-0"
+                                >
+                                    {chatStatus === 'sending' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                                </button>
+                            </form>
+                        )}
                     </div>
                 </div>
             )}
