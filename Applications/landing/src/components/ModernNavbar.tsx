@@ -141,9 +141,9 @@ const ModernNavbar = () => {
           </div>
 
           {/* BOTONES DERECHA */}
-          <div className="flex items-center gap-3 z-[71]">
-            <a href="https://app.digitalizatodo.cl/login" className={`font-bold text-xs uppercase tracking-widest transition-colors hidden sm:block mr-2 px-4 py-2 rounded-full ${isMobileMenuOpen ? 'text-slate-300 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}>Ingresar</a>
-            <a href="#contacto" className="bg-slate-900 text-white px-6 py-2.5 rounded-full font-bold text-xs uppercase tracking-widest hover:bg-orange-500 transition-all shadow-md hover:shadow-orange-500/20 hidden md:block">Contactar</a>
+          <div className="flex items-center gap-2 sm:gap-3 z-[71]">
+            <a href="https://app.digitalizatodo.cl" target="_blank" rel="noopener noreferrer" className={`font-bold text-[10px] sm:text-xs uppercase tracking-widest transition-all px-3 sm:px-4 py-2 rounded-full border ${isMobileMenuOpen ? 'text-white border-white/20 hover:bg-white/10' : 'text-slate-500 border-slate-200 hover:bg-slate-50'}`}>Ingresar</a>
+            <a href="#contacto" className="bg-slate-900 text-white px-5 sm:px-6 py-2 sm:py-2.5 rounded-full font-bold text-[10px] sm:text-xs uppercase tracking-widest hover:bg-orange-500 transition-all shadow-md hover:shadow-orange-500/20 hidden xs:block">Contactar</a>
             <button 
               className={`lg:hidden p-2 rounded-full transition-colors ${isMobileMenuOpen ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-900'}`} 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -173,10 +173,20 @@ const ModernNavbar = () => {
               </a>
             ))}
             <a 
+              href="https://app.digitalizatodo.cl" 
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setIsMobileMenuOpen(false)} 
+              className="text-4xl sm:text-5xl font-black text-white/30 tracking-tighter hover:text-white transition-colors mt-4"
+              style={{ transitionDelay: `${navLinks.length * 50}ms` }}
+            >
+              Ingresar App
+            </a>
+            <a 
               href="#contacto" 
               onClick={() => setIsMobileMenuOpen(false)} 
-              className="text-4xl sm:text-5xl font-black text-orange-500 tracking-tighter hover:text-orange-400 transition-colors mt-4 line-height-1"
-              style={{ transitionDelay: `${navLinks.length * 50}ms` }}
+              className="text-4xl sm:text-5xl font-black text-orange-500 tracking-tighter hover:text-orange-400 transition-colors mt-2"
+              style={{ transitionDelay: `${(navLinks.length + 1) * 50}ms` }}
             >
               Contactar
             </a>
