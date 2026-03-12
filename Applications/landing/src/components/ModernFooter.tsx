@@ -13,7 +13,9 @@ const ModernFooter = () => {
                     {/* Brand Section */}
                     <div className="lg:col-span-4 space-y-8">
                         <div className="flex items-center gap-3">
-                            <img src="/DLogo-v2.webp" alt="Digitaliza Todo" className="h-10 w-10 object-contain" />
+                            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-xl overflow-hidden p-1">
+                                <img src="/DLogo-v2.webp" alt="Digitaliza Todo" className="h-full w-full object-contain" />
+                            </div>
                             <div>
                                 <h2 className="font-black text-2xl tracking-tighter text-white leading-none">DIGITALIZA</h2>
                                 <h2 className="font-black text-2xl tracking-tighter text-brand-orange leading-none">TODO</h2>
