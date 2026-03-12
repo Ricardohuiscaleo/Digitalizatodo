@@ -327,9 +327,6 @@ const FloatingChat = () => {
                             <span className="text-emerald-500 text-[10px] font-black">{unreadCount}</span>
                         </div>
                     )}
-                    {!isOpen && (
-                        <div className="absolute inset-0 bg-brand-orange rounded-full animate-ping opacity-20 scale-125 -z-10"></div>
-                    )}
                     {isOpen ? <X className="w-7 h-7" /> : <MessageCircle className="w-7 h-7 fill-white/10" />}
                 </button>
             </div>
