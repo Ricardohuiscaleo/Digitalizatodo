@@ -239,7 +239,6 @@ class TelegramBotController extends Controller
             'reply_markup' => json_encode([
                 'inline_keyboard' => [[
                     ['text' => '👋 Saludar (Hola!)', 'callback_data' => "greet:{$data['session_id']}"],
-                    ['text' => '💬 Iniciar Chat', 'callback_data' => "start:{$data['session_id']}"]
                 ]]
             ])
         ]);
