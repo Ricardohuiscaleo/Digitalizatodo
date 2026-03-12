@@ -20,9 +20,7 @@ const ModernContact = () => {
         setStatus('loading');
 
         try {
-            const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-                ? 'http://localhost:8000'
-                : 'https://admin.digitalizatodo.cl';
+            const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://admin.digitalizatodo.cl';
 
             const response = await fetch(`${API_BASE}/api/w/contact`, {
                 method: 'POST',
