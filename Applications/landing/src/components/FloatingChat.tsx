@@ -24,7 +24,7 @@ const FloatingChat = () => {
     useEffect(() => {
         const timer = setTimeout(() => {
             setMessages([
-                { id: 'init', message: "¡Hola Gabriela Fernanda! 👋 Soy el asistente virtual de DigitalizaTodo. ¿En qué te podemos ayudar con tu próximo proyecto?", sender: 'admin', created_at: new Date().toISOString() }
+                { id: 'init', message: "¡Hola! 👋 Soy Ricardo. ¿En qué podemos ayudarte con tu próximo proyecto?", sender: 'admin', created_at: new Date().toISOString() }
             ]);
             if (!isOpen) {
                 setUnreadCount(prev => prev + 1);
@@ -220,7 +220,7 @@ const FloatingChat = () => {
             <div 
                 className={`fixed z-[100] transition-all duration-500 ease-out origin-bottom-right transform-gpu
                 ${isOpen ? 'opacity-100 scale-100 pointer-events-auto translate-y-0' : 'opacity-0 scale-95 pointer-events-none translate-y-10'}
-                bottom-0 left-0 right-0 h-[85vh] sm:bottom-24 sm:right-6 sm:left-auto sm:w-[400px] sm:h-[650px] 
+                bottom-0 left-0 right-0 h-[85vh] sm:bottom-24 sm:right-6 sm:left-auto sm:w-[450px] sm:h-[650px] 
                 bg-white sm:rounded-3xl rounded-t-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] border border-slate-100 flex flex-col overflow-hidden`}
             >
                 {/* Header */}

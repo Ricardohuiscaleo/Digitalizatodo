@@ -91,7 +91,7 @@ const ModernNavbar = () => {
             <div className="w-10 h-10 bg-slate-900 rounded-full flex items-center justify-center shadow-lg transform transition-transform hover:rotate-12 overflow-hidden p-1.5">
                <img src="/DLogo-v2.webp" alt="D" className="w-full h-full object-contain" />
             </div>
-            <div className="leading-none flex flex-row items-baseline sm:block">
+            <div className="leading-none flex flex-row items-center sm:block">
               <span className={`font-black text-[13px] sm:text-lg tracking-tighter transition-colors ${isMobileMenuOpen ? 'text-white' : 'text-slate-900'}`}>DIGITALIZA</span>
               <span className="font-black text-[13px] sm:text-lg tracking-tighter text-orange-500 ml-1">TODO</span>
             </div>
