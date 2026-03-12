@@ -15,7 +15,7 @@ const MegaMenu = ({ title, items, footerText, footerIcon: FooterIcon, href }: { 
     
     {/* Panel Desplegable (Hover Bridge & Content) */}
     <div className="absolute top-full left-1/2 -translate-x-1/2 pt-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-4 group-hover:translate-y-0 transition-all duration-300 ease-out z-[80]">
-      <div className="w-[600px] bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-100 p-6 grid grid-cols-2 gap-4">
+      <div className="w-[600px] bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 grid grid-cols-2 gap-4">
         
         {items.map((item, idx) => (
           <a key={idx} href={item.href} className="p-4 rounded-2xl hover:bg-slate-50 transition-colors group/card block text-left bg-white border border-slate-100/50 shadow-sm">
