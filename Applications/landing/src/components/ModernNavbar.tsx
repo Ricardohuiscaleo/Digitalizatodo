@@ -30,8 +30,8 @@ const MegaMenu = ({ title, items, footerText, footerIcon: FooterIcon, href }: { 
         {footerText && FooterIcon && (
           <div className="col-span-2 mt-2 bg-slate-900 rounded-2xl p-5 flex items-center justify-between group/insight cursor-pointer hover:bg-slate-800 transition-colors">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-slate-900 rounded-full flex items-center justify-center shadow-lg overflow-hidden border border-white/10">
-                <img src="/DLogo-v2.webp" alt="D" className="w-full h-full object-contain p-1.5 brightness-0 invert" />
+              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden p-1.5 border border-slate-100">
+                <img src="/DLogo-v2.webp" alt="D" className="w-full h-full object-contain" />
               </div>
               <div className="leading-none text-left">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Insight de Valor</p>
@@ -88,8 +88,8 @@ const ModernNavbar = () => {
         }`}>
           
           <div className="flex items-center gap-3 cursor-pointer z-[71]">
-            <div className="w-10 h-10 bg-slate-900 rounded-full flex items-center justify-center shadow-lg transform transition-transform hover:rotate-12 overflow-hidden">
-               <img src="/DLogo-v2.webp" alt="D" className="w-full h-full object-contain p-1.5 brightness-0 invert" />
+            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg transform transition-transform hover:rotate-12 overflow-hidden p-1.5">
+               <img src="/DLogo-v2.webp" alt="D" className="w-full h-full object-contain" />
             </div>
             <div className="leading-none hidden sm:block">
               <span className={`font-black text-xl tracking-tighter transition-colors ${isMobileMenuOpen ? 'text-white' : 'text-slate-900'}`}>DIGITALIZA</span>
