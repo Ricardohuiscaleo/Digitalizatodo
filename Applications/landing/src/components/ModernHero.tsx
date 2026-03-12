@@ -103,7 +103,7 @@ const CodeIllustration = () => {
 
 const ModernHero = () => {
     return (
-        <section id="hero" className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 overflow-hidden bg-white">
+        <section id="hero" className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 overflow-x-hidden bg-white">
             {/* Background Engineering Grids */}
             <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(to_bottom,white,transparent)] -z-10"></div>
             
@@ -118,7 +118,7 @@ const ModernHero = () => {
                         Software Factory & Automatización
                     </div>
                     
-                    <h1 className="text-6xl lg:text-8xl xl:text-9xl font-black text-slate-900 leading-[0.9] tracking-tighter">
+                    <h1 className="text-4xl sm:text-6xl lg:text-8xl xl:text-9xl font-black text-slate-900 leading-[0.9] tracking-tighter">
                         Transformamos <br />
                         <span className="text-brand-orange italic">ideas</span> en <br />
                         soluciones <br />
@@ -165,8 +165,10 @@ const ModernHero = () => {
                 </div>
 
                 {/* Right Column: Illustration */}
-                <div className="animate-in fade-in slide-in-from-right-8 duration-1000 delay-300 relative">
-                    <CodeIllustration />
+                <div className="animate-in fade-in slide-in-from-right-8 duration-1000 delay-300 relative lg:block">
+                    <div className="scale-75 sm:scale-90 lg:scale-100 origin-center sm:origin-right transition-transform">
+                        <CodeIllustration />
+                    </div>
                 </div>
             </div>
             
