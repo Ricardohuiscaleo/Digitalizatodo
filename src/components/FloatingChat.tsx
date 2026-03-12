@@ -30,7 +30,7 @@ const FloatingChat = () => {
         const pingVisit = async () => {
             try {
                 const metadata = { userAgent: navigator.userAgent, language: navigator.language };
-                await fetch(`${API_BASE}/api/webhooks/visit`, {
+                await fetch(`${API_BASE}/api/w/visit`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ session_id: sid, url: window.location.href, metadata }),
@@ -89,7 +89,7 @@ const FloatingChat = () => {
                 language: navigator.language
             };
 
-            await fetch(`${API_BASE}/api/webhooks/chat/send`, {
+            await fetch(`${API_BASE}/api/w/chat/send`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
