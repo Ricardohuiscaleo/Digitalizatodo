@@ -194,14 +194,38 @@ class TelegramBotController extends Controller
 
         Log::info('Website Contact Form Received', $data);
 
+        $ip = $request->ip();
+        $geo = $this->getGeolocation($ip);
+        $deviceInfo = $this->getDeviceFromUA($request->header('User-Agent'));
+
         $message = "📬 <b>Nueva Consulta - Digitaliza Todo</b>\n\n";
         $message .= "👤 <b>Nombre:</b> " . htmlspecialchars($data['name']) . "\n";
         $message .= "📧 <b>Email:</b> " . htmlspecialchars($data['email']) . "\n";
         $message .= "🛠 <b>Servicio:</b> " . htmlspecialchars($data['service']) . "\n\n";
+
+        $message .= "🌍 <b>Ubicación:</b> <code>" . ($geo['city'] ?? 'Desconocida') . ", " . ($geo['country'] ?? 'Desconocido') . "</code>\n";
+        $message .= "🖥️ <b>Disp:</b> {$deviceInfo}\n";
+        $message .= "🌐 <b>IP:</b> <pre>{$ip}</pre>\n\n";
+
         $message .= "💬 <b>Mensaje:</b>\n" . htmlspecialchars($data['message']) . "\n\n";
         $message .= "<i>Enviado desde Landing Page</i>";
 
-        \App\Services\TelegramService::sendMessage($message);
+        $token = config('services.telegram_chat.bot_token');
+        $chatId = config('services.telegram_chat.admin_id');
+        $idForCallback = $request->input('session_id') ?? $data['email'];
+
+        Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
+            'chat_id' => $chatId,
+            'text' => $message,
+            'parse_mode' => 'HTML',
+            'reply_markup' => json_encode([
+                'inline_keyboard' => [
+                    [
+                        ['text' => '👋 SALUDAR', 'callback_data' => 'start:' . $idForCallback]
+                    ]
+                ]
+            ])
+        ]);
 
         return response()->json(['status' => 'ok', 'message' => 'Notification sent to Telegram']);
     }
@@ -221,6 +245,7 @@ class TelegramBotController extends Controller
         $token = config('services.telegram_chat.bot_token');
         $chatId = config('services.telegram_chat.admin_id');
 
+        $ip = $request->ip();
         $urlPath = parse_url($data['url'] ?? '', PHP_URL_PATH) ?: '/';
         $geo = $this->getGeolocation($ip);
         $deviceInfo = $this->getDeviceFromUA($data['metadata']['userAgent'] ?? $request->header('User-Agent'));
@@ -295,6 +320,11 @@ class TelegramBotController extends Controller
             'text' => $message,
             'parse_mode' => 'HTML',
             'reply_markup' => json_encode([
+                'inline_keyboard' => [
+                    [
+                        ['text' => '👋 SALUDAR', 'callback_data' => 'start:' . $data['session_id']]
+                    ]
+                ],
                 'force_reply' => true,
                 'selective' => true
             ])

@@ -23,13 +23,14 @@ const ModernContact = () => {
         try {
             const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://admin.digitalizatodo.cl';
 
+            const sessionId = localStorage.getItem('chat_session_id') || 'no-session';
             const response = await fetch(`${API_BASE}/api/w/contact`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({ ...formData, session_id: sessionId }),
             });
 
             if (response.ok) {
