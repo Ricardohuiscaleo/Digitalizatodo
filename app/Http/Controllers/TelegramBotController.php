@@ -88,6 +88,7 @@ class TelegramBotController extends Controller
      */
     public function handleCoolifyDeploy(Request $request)
     {
+        // ... (existing code remains identical)
         $payload = $request->all();
         Log::info('Coolify Webhook Received', $payload);
 
@@ -179,7 +180,156 @@ class TelegramBotController extends Controller
     }
 
     /**
-     * Endpoint para recibir Webhooks desde Telegram (Tus respuestas)
+     * Recibir datos desde el formulario de contacto de la landing
+     * POST /api/webhooks/contact
+     */
+    public function handleContactForm(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email',
+            'service' => 'required|string',
+            'message' => 'required|string',
+        ]);
+
+        Log::info('Website Contact Form Received', $data);
+
+        $message = "📬 <b>Nueva Consulta - Digitaliza Todo</b>\n\n";
+        $message .= "👤 <b>Nombre:</b> " . htmlspecialchars($data['name']) . "\n";
+        $message .= "📧 <b>Email:</b> " . htmlspecialchars($data['email']) . "\n";
+        $message .= "🛠 <b>Servicio:</b> " . htmlspecialchars($data['service']) . "\n\n";
+        $message .= "💬 <b>Mensaje:</b>\n" . htmlspecialchars($data['message']) . "\n\n";
+        $message .= "<i>Enviado desde Landing Page</i>";
+
+        \App\Services\TelegramService::sendMessage($message);
+
+        return response()->json(['status' => 'ok', 'message' => 'Notification sent to Telegram']);
+    }
+
+    /**
+     * Notificar visita a la página (Tráfico en vivo)
+     * POST /api/webhooks/visit
+     */
+    public function handleVisitPing(Request $request)
+    {
+        $data = $request->validate([
+            'session_id' => 'required|string',
+            'url' => 'required|string',
+            'metadata' => 'nullable|array',
+        ]);
+
+        $token = config('services.telegram_chat.bot_token');
+        $chatId = config('services.telegram_chat.admin_id');
+
+        $device = str_contains(strtolower($data['metadata']['userAgent'] ?? ''), 'mobile') ? '📱 Móvil' : '💻 Desktop';
+        
+        $message = "👀 <b>Nuevo Visitante en Vivo</b>\n\n";
+        $message .= "🌐 <b>Página:</b> " . ($data['url'] ?? 'N/A') . "\n";
+        $message .= "🖥️ <b>Disp:</b> {$device}\n";
+        $message .= "🆔 <b>Sesión:</b> <code>" . $data['session_id'] . "</code>\n\n";
+        $message .= "<i>Esperando para ver si inicia un chat...</i>";
+
+        Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
+            'chat_id' => $chatId,
+            'text' => $message,
+            'parse_mode' => 'HTML',
+            'disable_notification' => true 
+        ]);
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    /**
+     * Enviar mensaje desde el Chat en Tiempo Real de la Landing a Telegram
+     * POST /api/webhooks/chat/send
+     */
+    public function handleChatSend(Request $request)
+    {
+        $data = $request->validate([
+            'session_id' => 'required|string',
+            'message' => 'required|string',
+            'metadata' => 'nullable|array',
+        ]);
+
+        $chatMsg = \App\Models\ChatMessage::create([
+            'session_id' => $data['session_id'],
+            'sender' => 'user',
+            'message' => $data['message'],
+        ]);
+
+        $token = config('services.telegram_chat.bot_token');
+        $chatId = config('services.telegram_chat.admin_id');
+
+        $message = "💬 <b>Nuevo Chat en Vivo</b>\n\n";
+        $message .= "🆔 <b>Sesión:</b> <code>" . $data['session_id'] . "</code>\n";
+        
+        if (isset($data['metadata'])) {
+            $m = $data['metadata'];
+            $device = str_contains(strtolower($m['userAgent'] ?? ''), 'mobile') ? '📱 Móvil' : '💻 Desktop';
+            $message .= "🌐 <b>URL:</b> " . ($m['url'] ?? 'N/A') . "\n";
+            $message .= "🖥️ <b>Disp:</b> {$device} (" . ($m['screen'] ?? '?') . ")\n";
+        }
+        
+        $message .= "\n<b>Mensaje:</b>\n" . htmlspecialchars($data['message']) . "\n\n";
+        $message .= "<i>Responde directamente para contestar al cliente.</i>";
+
+        $response = Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
+            'chat_id' => $chatId,
+            'text' => $message,
+            'parse_mode' => 'HTML',
+        ]);
+
+        if ($response->successful()) {
+            $chatMsg->update(['telegram_message_id' => $response->json('result.message_id')]);
+        }
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    /**
+     * Obtener historial de mensajes para una sesión (Polling)
+     * GET /api/webhooks/chat/messages?session_id=...
+     */
+    public function getChatMessages(Request $request)
+    {
+        $sessionId = $request->query('session_id');
+        if (!$sessionId) return response()->json([]);
+
+        $messages = \App\Models\ChatMessage::where('session_id', $sessionId)
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        return response()->json($messages);
+    }
+
+    /**
+     * Webhook del Bot de Chat (Dtodochat_bot)
+     * POST /api/webhooks/telegram/chat
+     */
+    public function handleChatBotWebhook(Request $request)
+    {
+        $update = $request->all();
+        if (!isset($update['message']['reply_to_message'])) return response()->json(['ignored']);
+
+        $replyToId = $update['message']['reply_to_message']['message_id'];
+        $responseText = $update['message']['text'];
+
+        $originalMsg = \App\Models\ChatMessage::where('telegram_message_id', $replyToId)->first();
+
+        if ($originalMsg) {
+            \App\Models\ChatMessage::create([
+                'session_id' => $originalMsg->session_id,
+                'sender' => 'admin',
+                'message' => $responseText,
+            ]);
+            return response()->json(['status' => 'ok']);
+        }
+
+        return response()->json(['status' => 'not_found']);
+    }
+
+    /**
+     * Endpoint para recibir Webhooks desde Telegram (Tus respuestas del Mail Bot)
      */
     public function handleTelegramWebhook(Request $request)
     {

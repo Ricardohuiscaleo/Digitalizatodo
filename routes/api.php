@@ -37,6 +37,11 @@ Route::get('industries', [\App\Http\Controllers\Api\IndustryController::class , 
 Route::post('webhooks/resend-inbound', [TelegramBotController::class , 'handleResendInbound']);
 Route::post('webhooks/telegram', [TelegramBotController::class , 'handleTelegramWebhook']);
 Route::post('webhooks/coolify-deploy', [TelegramBotController::class , 'handleCoolifyDeploy']);
+Route::post('webhooks/contact', [TelegramBotController::class , 'handleContactForm']);
+Route::post('webhooks/chat/send', [TelegramBotController::class , 'handleChatSend']);
+Route::get('webhooks/chat/messages', [TelegramBotController::class , 'getChatMessages']);
+Route::post('webhooks/telegram/chat', [TelegramBotController::class , 'handleChatBotWebhook']);
+Route::post('webhooks/visit', [TelegramBotController::class , 'handleVisitPing']);
 
 Route::middleware([ResolveTenantFromPath::class])->prefix('{tenant}')->group(function () {
     // Info del tenant
