@@ -16,6 +16,14 @@ export default {
 			colors: {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
+				'brand-orange': '#F97316',
+				'brand-blue': '#2563EB',
+				'brand-green': '#16A34A',
+				slate: {
+					50: '#F8FAFC',
+					900: '#0F172A',
+					600: '#475569',
+				},
 				card: {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
