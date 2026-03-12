@@ -235,12 +235,7 @@ class TelegramBotController extends Controller
             'chat_id' => $chatId,
             'text' => $message,
             'parse_mode' => 'HTML',
-            'disable_notification' => true,
-            'reply_markup' => json_encode([
-                'inline_keyboard' => [[
-                    ['text' => '👋 Saludar (Hola!)', 'callback_data' => "greet:{$data['session_id']}"],
-                ]]
-            ])
+            'disable_notification' => true
         ]);
 
         return response()->json(['status' => 'ok']);
@@ -341,7 +336,7 @@ class TelegramBotController extends Controller
         $sessionId = $request->input('session_id');
         $file = $request->file('file');
         $mime = $file->getMimeType();
-        $type = str_contains($mime, 'image') ? 'image' : 'document';
+        $type = str_contains($mime, 'image') ? 'image' : (str_contains($mime, 'audio') || str_contains($mime, 'video') ? 'audio' : 'document');
         
         $extension = $file->getClientOriginalExtension();
         $fileName = "client_upload_" . time() . "_" . bin2hex(random_bytes(4)) . "." . $extension;
@@ -371,6 +366,13 @@ class TelegramBotController extends Controller
             Http::post("https://api.telegram.org/bot{$token}/sendPhoto", [
                 'chat_id' => $chatId,
                 'photo' => $fullUrl,
+                'caption' => $caption,
+                'parse_mode' => 'HTML'
+            ]);
+        } elseif ($type === 'audio') {
+            Http::post("https://api.telegram.org/bot{$token}/sendVoice", [
+                'chat_id' => $chatId,
+                'voice' => $fullUrl,
                 'caption' => $caption,
                 'parse_mode' => 'HTML'
             ]);
