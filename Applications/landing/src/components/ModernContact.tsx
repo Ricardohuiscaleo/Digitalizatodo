@@ -24,7 +24,7 @@ const ModernContact = () => {
                 ? 'http://localhost:8000'
                 : 'https://admin.digitalizatodo.cl';
 
-            const response = await fetch(`${API_BASE}/api/webhooks/contact`, {
+            const response = await fetch(`${API_BASE}/api/w/contact`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

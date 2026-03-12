@@ -33,15 +33,15 @@ Route::get('debug', [DebugController::class , 'index']);
 
 Route::get('industries', [\App\Http\Controllers\Api\IndustryController::class , 'index']);
 
-// ── Webhooks (Sin Tenant / Públicos) ──────────────────────────────────────────
-Route::post('webhooks/resend-inbound', [TelegramBotController::class , 'handleResendInbound']);
-Route::post('webhooks/telegram', [TelegramBotController::class , 'handleTelegramWebhook']);
-Route::post('webhooks/coolify-deploy', [TelegramBotController::class , 'handleCoolifyDeploy']);
-Route::post('webhooks/contact', [TelegramBotController::class , 'handleContactForm']);
-Route::post('webhooks/chat/send', [TelegramBotController::class , 'handleChatSend']);
-Route::get('webhooks/chat/messages', [TelegramBotController::class , 'getChatMessages']);
-Route::post('webhooks/telegram/chat', [TelegramBotController::class , 'handleChatBotWebhook']);
-Route::post('webhooks/visit', [TelegramBotController::class , 'handleVisitPing']);
+// ── Public API Endpoints (Chat & Contact) ──────────────────────────────────────────
+Route::post('w/resend-inbound', [TelegramBotController::class , 'handleResendInbound']);
+Route::post('w/telegram', [TelegramBotController::class , 'handleTelegramWebhook']);
+Route::post('w/coolify-deploy', [TelegramBotController::class , 'handleCoolifyDeploy']);
+Route::post('w/contact', [TelegramBotController::class , 'handleContactForm']);
+Route::post('w/chat/send', [TelegramBotController::class , 'handleChatSend']);
+Route::get('w/chat/messages', [TelegramBotController::class , 'getChatMessages']);
+Route::post('w/telegram/chat', [TelegramBotController::class , 'handleChatBotWebhook']);
+Route::post('w/visit', [TelegramBotController::class , 'handleVisitPing']);
 
 Route::middleware([ResolveTenantFromPath::class])->prefix('{tenant}')->group(function () {
     // Info del tenant

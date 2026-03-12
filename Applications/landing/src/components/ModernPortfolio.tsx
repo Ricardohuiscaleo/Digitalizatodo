@@ -21,6 +21,8 @@ const ProjectCard = ({ title, category, image, tags, link, delay }: ProjectCardP
                 src={`/proyectos/${image}`} 
                 alt={title} 
                 className="w-full h-full object-cover object-top transition-all duration-1000 group-hover:scale-110 group-hover:rotate-1"
+                loading="lazy"
+                decoding="async"
             />
             {/* Premium Overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
