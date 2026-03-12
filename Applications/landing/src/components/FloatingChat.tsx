@@ -316,7 +316,7 @@ const FloatingChat = () => {
             </div>
 
             {/* FLOATING ACTION BUTTON (FAB) */}
-            <div className="fixed bottom-6 right-6 z-[100] transform-gpu">
+            <div className={`fixed bottom-6 right-6 z-[100] transform-gpu ${isOpen ? 'hidden sm:block' : 'block'}`}>
                 <button 
                     onClick={() => setIsOpen(!isOpen)}
                     className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full text-white flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-500 relative
