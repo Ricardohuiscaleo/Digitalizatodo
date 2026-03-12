@@ -14,7 +14,6 @@ class DebugController extends Controller
             'php_version' => PHP_VERSION,
             'laravel_version' => app()->version(),
             'environment' => app()->environment(),
-            'stamp' => 'DEBUG-STAMP-V2-GZIP-FIX',
             'database' => [
                 'connection' => config('database.default'),
                 'host' => config('database.connections.mysql.host'),

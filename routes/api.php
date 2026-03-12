@@ -30,11 +30,6 @@ use Illuminate\Support\Facades\Artisan;
 Route::post('register-tenant', [RegisterTenantController::class , 'store']);
 Route::post('identify-tenant', [TenantDiscoveryController::class , 'identify']);
 Route::get('r/{code}', [RegistrationPageController::class , 'show']);
-Route::get('reboot', function() { 
-    Artisan::call('route:clear');
-    Artisan::call('cache:clear');
-    return "CACHE-CLEARED"; 
-});
 Route::get('debug', [DebugController::class , 'index']);
 
 Route::get('industries', [\App\Http\Controllers\Api\IndustryController::class , 'index']);
