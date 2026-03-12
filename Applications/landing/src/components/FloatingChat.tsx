@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, Loader2, User, Bot, Paperclip, MoreVertical, Image as ImageIcon, File as FileIcon, Mic } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, User, Bot, Paperclip, MoreHorizontal, Image as ImageIcon, File as FileIcon, Mic } from 'lucide-react';
 
 const FloatingChat = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -274,10 +274,10 @@ const FloatingChat = () => {
     }, [messages, isOpen]);
 
     return (
-        <div className={`fixed z-[100] font-sans ${
+        <div className={`fixed z-[100] font-sans transition-all duration-300 ${
             isOpen 
             ? 'inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[400px] sm:h-[650px]' 
-            : 'bottom-4 right-4 sm:bottom-6 sm:right-6 w-auto h-auto'
+            : 'bottom-4 right-4 sm:bottom-6 sm:right-6 w-14 h-14'
         }`}>
             {/* Chat Window */}
             {isOpen && (
