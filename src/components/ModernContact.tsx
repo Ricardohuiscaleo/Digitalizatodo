@@ -20,10 +20,11 @@ const ModernContact = () => {
         setStatus('loading');
 
         try {
-            // Buscando el backend de forma inteligente (asumiendo misma estructura de prod o local)
-            const apiUrl = 'https://admin.digitalizatodo.cl/api/webhooks/contact';
-            
-            const response = await fetch(apiUrl, {
+            const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                ? 'http://localhost:8000'
+                : 'https://admin.digitalizatodo.cl';
+
+            const response = await fetch(`${API_BASE}/api/webhooks/contact`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -36,25 +37,10 @@ const ModernContact = () => {
                 setStatus('success');
                 setFormData({ name: '', email: '', service: 'Selecciona un servicio', message: '' });
             } else {
-                throw new Error('Fallback to local');
-            }
-        } catch (error) {
-            // Intento local si falla el anterior (para desarrollo)
-            try {
-                const localResponse = await fetch('http://localhost:8000/api/webhooks/contact', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData),
-                });
-                if (localResponse.ok) {
-                    setStatus('success');
-                    setFormData({ name: '', email: '', service: 'Selecciona un servicio', message: '' });
-                } else {
-                    setStatus('error');
-                }
-            } catch (e) {
                 setStatus('error');
             }
+        } catch (error) {
+            setStatus('error');
         }
     };
 
