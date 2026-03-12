@@ -65,7 +65,7 @@ const ModernContact = () => {
                                 <div className="space-y-0.5">
                                     <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">Email Directo</p>
                                     <p className="text-lg font-bold text-slate-200 hover:text-brand-orange transition-colors">
-                                        <a href="mailto:contacto@digitalizatodo.cl">contacto@digitalizatodo.cl</a>
+                                        <a href="mailto:info@digitalizatodo.cl">info@digitalizatodo.cl</a>
                                     </p>
                                 </div>
                             </div>
