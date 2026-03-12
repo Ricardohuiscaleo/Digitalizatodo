@@ -2,17 +2,19 @@
 import '../styles/global.css';
 
 // React Components
-import { Background3D } from '../components/Background3D';
-import { StatsRibbon } from '../components/StatsRibbon';
-import { HeroSection } from '../components/HeroSection';
-import { Roadmap } from '../components/Roadmap';
-import { ServicesGrid } from '../components/ServicesGrid';
-import { Portfolio } from '../components/Portfolio';
-import { ContactForm } from '../components/ContactForm';
-import { DigitalMenu } from '../components/DigitalMenu';
+import ModernNavbar from '../components/ModernNavbar';
+import ModernHero from '../components/ModernHero';
+import ModernInsights from '../components/ModernInsights';
+import ModernProcess from '../components/ModernProcess';
+import ModernServices from '../components/ModernServices';
+import ModernPortfolio from '../components/ModernPortfolio';
+import WhyChooseUs from '../components/WhyChooseUs';
+import ModernContact from '../components/ModernContact';
+import ModernFooter from '../components/ModernFooter';
+import FloatingChat from '../components/FloatingChat';
 ---
 <!DOCTYPE html>
-<html lang="es" class="scroll-smooth dark">
+<html lang="es" class="scroll-smooth">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -33,40 +35,24 @@ import { DigitalMenu } from '../components/DigitalMenu';
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   </noscript>
 </head>
-<body class="font-sans text-slate-300 min-h-screen selection:bg-indigo-500 selection:text-white bg-[#03000a] transition-colors relative overflow-x-hidden">
+<body class="font-sans text-slate-600 min-h-screen selection:bg-orange-500 selection:text-white bg-white transition-colors relative overflow-x-hidden">
+  {/* Premium Grain Texture Overlay */}
+  <div class="grain-texture"></div>
 
-  {/* Interactive 3D Background - Loaded when idle to prioritize LCP */}
-  <Background3D client:idle />
-
-  {/* Header Menu */}
-  <DigitalMenu 
-    client:load 
-    logoText="DIGITALIZA TODO"
-  />
+  <ModernNavbar client:load />
 
   <main>
-    <HeroSection client:load />
-    
-    <StatsRibbon client:visible />
-    
-    <Roadmap client:visible />
-    <ServicesGrid client:visible />
-    
-    <section id="nosotros" class="py-16 md:py-32 px-4 relative overflow-hidden bg-slate-950 text-white z-10 border-y border-white/5">
-      <div class="max-w-5xl mx-auto relative z-10 text-center">
-        <h2 class="text-2xl sm:text-4xl md:text-6xl font-black mb-6 md:mb-8 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">Ingeniería + Negocios</h2>
-        <p class="text-base sm:text-xl md:text-2xl font-medium text-slate-300 mb-8 md:mb-12 max-w-4xl mx-auto leading-relaxed">
-          No solo escribimos código. Diseñamos sistemas que generan rentabilidad. Liderados por <a href="https://ricardohuiscaleo.digitalizatodo.cl" target="_blank" class="text-emerald-400 hover:text-emerald-300 underline underline-offset-8 decoration-emerald-500/50 transition-colors">Ricardo Huiscaleo</a>, Ingeniero con certificación Lean Six Sigma Black Belt.
-        </p>
-        <div class="flex flex-col sm:flex-row flex-wrap justify-center gap-3 md:gap-4">
-          <div class="px-5 py-3 md:px-8 md:py-4 bg-white/5 backdrop-blur-md rounded-2xl text-xs md:text-sm font-bold font-mono tracking-widest border border-white/10 uppercase shadow-xl hover:bg-white/10 hover:-translate-y-1 transition-all">Misión: Digitalizar Chile</div>
-          <div class="px-5 py-3 md:px-8 md:py-4 bg-white/5 backdrop-blur-md rounded-2xl text-xs md:text-sm font-bold font-mono tracking-widest border border-white/10 uppercase shadow-xl hover:bg-white/10 hover:-translate-y-1 transition-all">Visión: Acceso Universal</div>
-        </div>
-      </div>
-    </section>
-
-    <Portfolio client:visible />
-    <ContactForm client:visible />
+    <ModernHero client:load />
+    <ModernInsights client:load />
+    <ModernProcess client:visible />
+    <ModernServices client:visible />
+    <ModernPortfolio client:visible />
+    <WhyChooseUs client:visible />
+    <ModernContact client:visible />
   </main>
+
+  <ModernFooter client:visible />
+  <FloatingChat client:load />
 </body>
+</html>
 </html>

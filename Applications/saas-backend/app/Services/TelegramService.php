@@ -10,13 +10,14 @@ class TelegramService
     /**
      * Envía un mensaje a través del Bot de Telegram configurado.
      */
-    public static function sendMessage(string $message): void
+    public static function sendMessage(string $message, string $botType = 'default'): void
     {
-        $token = config('services.telegram.bot_token');
-        $chatId = config('services.telegram.admin_id');
+        $configKey = $botType === 'chat' ? 'services.telegram_chat' : 'services.telegram';
+        $token = config("{$configKey}.bot_token");
+        $chatId = config("{$configKey}.admin_id");
 
         if (!$token || !$chatId) {
-            Log::warning('Telegram: Token o Admin ID no configurado en config/services.php');
+            Log::warning("Telegram ({$botType}): Token o Admin ID no configurado.");
             return;
         }
 
@@ -28,11 +29,11 @@ class TelegramService
             ]);
 
             if (!$response->successful()) {
-                Log::error('Telegram: API retornó error: ' . $response->body());
+                Log::error("Telegram ({$botType}): API retornó error: " . $response->body());
             }
         }
         catch (\Exception $e) {
-            Log::error('Telegram: Error al enviar mensaje: ' . $e->getMessage());
+            Log::error("Telegram ({$botType}): Error al enviar mensaje: " . $e->getMessage());
         }
     }
 }
