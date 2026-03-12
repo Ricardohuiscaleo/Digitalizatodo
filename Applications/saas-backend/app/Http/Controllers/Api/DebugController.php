@@ -24,6 +24,18 @@ class DebugController extends Controller
         ];
 
         try {
+            $routes = \Illuminate\Support\Facades\Route::getRoutes();
+            $checks['routes'] = [];
+            foreach ($routes as $route) {
+                if (str_starts_with($route->uri(), 'api/')) {
+                    $checks['routes'][] = [
+                        'methods' => $route->methods(),
+                        'uri' => $route->uri(),
+                        'name' => $route->getName()
+                    ];
+                }
+            }
+            
             DB::connection()->getPdo();
             $checks['database']['status'] = 'CONNECTED';
 
