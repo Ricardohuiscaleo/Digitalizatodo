@@ -235,7 +235,13 @@ class TelegramBotController extends Controller
             'chat_id' => $chatId,
             'text' => $message,
             'parse_mode' => 'HTML',
-            'disable_notification' => true 
+            'disable_notification' => true,
+            'reply_markup' => json_encode([
+                'inline_keyboard' => [[
+                    ['text' => '👋 Saludar (Hola!)', 'callback_data' => "greet:{$data['session_id']}"],
+                    ['text' => '💬 Iniciar Chat', 'callback_data' => "start:{$data['session_id']}"]
+                ]]
+            ])
         ]);
 
         return response()->json(['status' => 'ok']);
@@ -290,6 +296,10 @@ class TelegramBotController extends Controller
             'chat_id' => $chatId,
             'text' => $message,
             'parse_mode' => 'HTML',
+            'reply_markup' => json_encode([
+                'force_reply' => true,
+                'selective' => true
+            ])
         ]);
 
         if ($response->successful()) {
@@ -401,6 +411,42 @@ class TelegramBotController extends Controller
     public function handleChatBotWebhook(Request $request)
     {
         $update = $request->all();
+
+        // Manejar botones (Callback Query)
+        if (isset($update['callback_query'])) {
+            $cb = $update['callback_query'];
+            $data = $cb['data'];
+            $token = config('services.telegram_chat.bot_token');
+            
+            if (str_starts_with($data, 'greet:') || str_starts_with($data, 'start:')) {
+                $parts = explode(':', $data);
+                $sessionId = $parts[1];
+                $isGreet = $parts[0] === 'greet';
+                
+                $messageText = $isGreet ? "Hola! ¿En qué puedo ayudarte?" : "Hola! Soy Ricardo, ¿en qué puedo ayudarte?";
+
+                \App\Models\ChatMessage::create([
+                    'session_id' => $sessionId,
+                    'sender' => 'admin',
+                    'message' => $messageText,
+                ]);
+
+                Http::post("https://api.telegram.org/bot{$token}/answerCallbackQuery", [
+                    'callback_query_id' => $cb['id'],
+                    'text' => '✅ Mensaje enviado!',
+                ]);
+
+                Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
+                    'chat_id' => $cb['message']['chat']['id'],
+                    'text' => "✅ " . ($isGreet ? "Saludo enviado" : "Chat iniciado") . " a la sesión <code>{$sessionId}</code>",
+                    'parse_mode' => 'HTML',
+                    'reply_markup' => json_encode(['force_reply' => true])
+                ]);
+
+                return response()->json(['status' => 'ok']);
+            }
+        }
+
         $text = $update['message']['text'] ?? '';
 
         // Soporte para comando Proactivo: /chat [session_id] [mensaje]
