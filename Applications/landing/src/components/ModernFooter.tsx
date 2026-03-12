@@ -72,7 +72,9 @@ const ModernFooter = () => {
                                 </p>
                                 <div className="p-4 rounded-3xl bg-white/5 border border-white/5 space-y-2">
                                     <p className="text-white text-xs font-black tracking-widest uppercase">¿Listo para empezar?</p>
-                                    <p className="text-brand-orange text-xs font-bold">contacto@digitalizatodo.cl</p>
+                                    <p className="text-brand-orange text-xs font-bold hover:underline transition-all">
+                                        <a href="mailto:contacto@digitalizatodo.cl">contacto@digitalizatodo.cl</a>
+                                    </p>
                                 </div>
                             </div>
                         </div>

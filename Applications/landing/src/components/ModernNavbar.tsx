@@ -198,8 +198,8 @@ const ModernNavbar = () => {
               <a href="#" className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-orange-500 transition-colors"><Instagram className="w-5 h-5" /></a>
               <a href="#" className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-orange-500 transition-colors"><Linkedin className="w-5 h-5" /></a>
             </div>
-            <p className="text-slate-400 font-medium mt-8 flex items-center gap-2">
-              <Mail className="w-4 h-4 text-orange-500" /> contacto@digitalizatodo.cl
+            <p className="text-slate-400 font-medium mt-8 flex items-center gap-2 hover:text-white transition-colors">
+              <Mail className="w-4 h-4 text-orange-500" /> <a href="mailto:contacto@digitalizatodo.cl">contacto@digitalizatodo.cl</a>
             </p>
           </div>
         </div>

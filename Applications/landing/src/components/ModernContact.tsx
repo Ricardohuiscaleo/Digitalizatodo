@@ -64,7 +64,9 @@ const ModernContact = () => {
                                 </div>
                                 <div className="space-y-0.5">
                                     <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">Email Directo</p>
-                                    <p className="text-lg font-bold text-slate-200">contacto@digitalizatodo.cl</p>
+                                    <p className="text-lg font-bold text-slate-200 hover:text-brand-orange transition-colors">
+                                        <a href="mailto:contacto@digitalizatodo.cl">contacto@digitalizatodo.cl</a>
+                                    </p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4 group">
@@ -73,7 +75,9 @@ const ModernContact = () => {
                                 </div>
                                 <div className="space-y-0.5">
                                     <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">WhatsApp Business</p>
-                                    <p className="text-lg font-bold text-slate-200">+56 9 1234 5678</p>
+                                    <p className="text-lg font-bold text-slate-200 hover:text-brand-orange transition-colors">
+                                        <a href="https://wa.me/56912345678" target="_blank" rel="noopener noreferrer">+56 9 1234 5678</a>
+                                    </p>
                                 </div>
                             </div>
                         </div>
