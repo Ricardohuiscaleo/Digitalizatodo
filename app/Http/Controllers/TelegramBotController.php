@@ -42,8 +42,8 @@ class TelegramBotController extends Controller
 
             $text = $text ? strip_tags($text) : "(sin cuerpo — email_id: {$emailId})";
 
-            $token = env('TELEGRAM_BOT_TOKEN');
-            $chatId = env('TELEGRAM_ADMIN_ID');
+            $token = config('services.telegram.bot_token');
+            $chatId = config('services.telegram.admin_id');
 
             if (!$token || !$chatId) {
                 Log::error('Telegram Token o Admin ID no configurado en .env');
@@ -714,7 +714,7 @@ class TelegramBotController extends Controller
                 });
 
                 // Confirmar en Telegram
-                $token = env('TELEGRAM_BOT_TOKEN');
+                $token = config('services.telegram.bot_token');
                 Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
                     'chat_id' => $convo->chat_id,
                     'text' => "Enviado a {$convo->from_email}",
