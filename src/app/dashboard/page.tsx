@@ -110,7 +110,7 @@ export default function App() {
     const [bankData, setBankData] = useState<any>({});
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [paymentFilter, setPaymentFilter] = useState('all');
+    const [paymentFilter, setPaymentFilter] = useState('pending');
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [expandedPayerId, setExpandedPayerId] = useState<string | null>(null);
@@ -690,8 +690,8 @@ export default function App() {
 
     const renderPayments = () => {
         const filteredPayers = payers.filter(p => {
-            if (paymentFilter === 'paid') return p.status === 'paid';
             if (paymentFilter === 'pending') return p.status === 'pending' || p.status === 'review';
+            // En 'history' mostramos todo lo que devuelve el backend para ese periodo
             return true;
         }).filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -716,7 +716,7 @@ export default function App() {
             <div className="space-y-6 px-4 pb-24">
                 {/* Tabs Selector Premium (Neumorphic Style) */}
                 <div className="flex bg-zinc-100 p-1.5 rounded-[2.2rem] gap-1 shadow-inner">
-                    {['all', 'pending', 'paid', 'history'].map((f) => (
+                    {['pending', 'history'].map((f) => (
                         <button
                             key={f}
                             onClick={() => {
@@ -728,7 +728,7 @@ export default function App() {
                                 : "text-zinc-400 hover:text-zinc-600"
                             }`}
                         >
-                            {f === 'all' ? 'Ver Todos' : f === 'pending' ? 'Pendientes' : f === 'paid' ? 'Al Día' : 'Historial'}
+                            {f === 'pending' ? 'Pendientes' : 'Historial'}
                         </button>
                     ))}
                 </div>
