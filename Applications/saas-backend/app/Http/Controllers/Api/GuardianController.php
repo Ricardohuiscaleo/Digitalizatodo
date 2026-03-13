@@ -79,6 +79,9 @@ class GuardianController extends Controller
                             if ($status !== 'review') $status = 'pending';
                         }
                     }
+                }
+            }
+
             // Calcular total_due y extraer el primer comprobante disponible
             $totalDue = 0;
             $proofImage = null;
