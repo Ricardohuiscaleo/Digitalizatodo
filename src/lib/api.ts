@@ -298,9 +298,16 @@ export async function markAttendanceViaQR(tenantId: string, token: string, qrTok
     }
 }
 
-export async function getPayers(tenantId: string, token: string) {
+export async function getPayers(tenantId: string, token: string, filters?: { month?: string | number, year?: string | number, history?: boolean }) {
     try {
-        const response = await fetch(`${API_URL}/${tenantId}/payers`, {
+        const url = new URL(`${API_URL}/${tenantId}/payers`);
+        if (filters) {
+            if (filters.month) url.searchParams.append('month', String(filters.month));
+            if (filters.year) url.searchParams.append('year', String(filters.year));
+            if (filters.history) url.searchParams.append('history', filters.history ? 'true' : 'false');
+        }
+
+        const response = await fetch(url.toString(), {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
