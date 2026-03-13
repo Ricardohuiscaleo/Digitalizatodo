@@ -58,7 +58,7 @@ class StudentController extends Controller
     public function uploadPhoto(Request $request, $tenant, $id)
     {
         $request->validate([
-            'photo' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120', // Max 5MB
+            'photo' => 'required|image|mimes:jpeg,png,jpg,webp|max:12288', // Max 12MB para fotos de alta resolución
         ]);
 
         $tenant = app('currentTenant');

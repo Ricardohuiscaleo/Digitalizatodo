@@ -131,7 +131,7 @@ class GuardianController extends Controller
         $tenantId = $tenant->id;
 
         $request->validate([
-            'logo' => 'required|image|max:2048',
+            'logo' => 'required|image|max:5120',
         ]);
 
         if ($request->hasFile('logo')) {
