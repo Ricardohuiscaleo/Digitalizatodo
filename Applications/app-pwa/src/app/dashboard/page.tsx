@@ -145,6 +145,12 @@ export default function App() {
             ]);
 
             if (profile) {
+                // Redirección si es apoderado
+                if (profile.user_type === 'guardian') {
+                    window.location.href = '/dashboard/student';
+                    return;
+                }
+
                 setUser({
                     ...profile,
                     tenant_id: profile.tenant_id || tenantId,
@@ -691,6 +697,10 @@ export default function App() {
                                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest">
                                                     <CheckCircle2 size={12} /> Al Día
                                                 </span>
+                                            ) : payer.status === 'review' ? (
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest">
+                                                    <RefreshCw size={12} className="animate-spin-slow" /> Por Aprobar
+                                                </span>
                                             ) : (
                                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-widest">
                                                     <XCircle size={12} /> Pendiente
@@ -759,6 +769,14 @@ export default function App() {
                                             <div className="bg-emerald-500 rounded-2xl p-2.5 shadow-lg shadow-emerald-100">
                                                 <CheckCircle2 size={24} className="text-white" />
                                             </div>
+                                        ) : payer.status === 'review' ? (
+                                            <button
+                                                className="bg-amber-50 hover:bg-amber-100 text-amber-600 px-5 py-3 rounded-2xl text-[10px] font-black uppercase shadow-sm border border-amber-100 transition-all active:scale-95 flex flex-col items-center"
+                                                onClick={(e) => { e.stopPropagation(); handlePaymentApprove(payer.id); }}
+                                            >
+                                                <RefreshCw size={14} className="mb-1 animate-spin-slow" />
+                                                <span>Aprobar</span>
+                                            </button>
                                         ) : (
                                             <button
                                                 className="bg-rose-50 hover:bg-rose-100 text-rose-600 px-5 py-3 rounded-2xl text-[10px] font-black uppercase shadow-sm border border-rose-100 transition-all active:scale-95"

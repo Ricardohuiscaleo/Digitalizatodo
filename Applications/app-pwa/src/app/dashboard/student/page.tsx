@@ -801,15 +801,8 @@ export default function StudentDashboard() {
 
     return (
         <div className="min-h-screen bg-stone-50 text-zinc-900 pb-32 md:pb-12 px-5 md:px-8 max-w-lg mx-auto md:max-w-7xl pt-8">
-            <div className="hidden md:block">
-                {/* Mantener vista Desktop clásica o similar si se desea, por ahora enfocamos en Mobile como pidió el usuario */}
-                <div className="text-center py-20">
-                    <p className="text-zinc-400">Vista Desktop en construcción. Por favor usa un dispositivo móvil o redimensiona tu navegador.</p>
-                </div>
-            </div>
-
-            {/* Mobile View Sections */}
-            <div className="md:hidden">
+            {/* Dashboard Sections - Mobile Responsive */}
+            <div className="animate-in fade-in duration-500">
                 {activeSection === "home" && renderHome()}
                 {activeSection === "calendar" && renderCalendar()}
                 {activeSection === "payments" && renderPayments()}
