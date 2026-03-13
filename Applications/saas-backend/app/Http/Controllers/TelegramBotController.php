@@ -28,16 +28,21 @@ class TelegramBotController extends Controller
 
             // Priorizamos HTML si existe para conservar links limpios, pero lo filtramos para Telegram
             if ($htmlVersion) {
-                // Reemplazamos tags de bloque comunes por saltos de línea reales
-                $html = preg_replace('/<(p|div|ul|ol|li|br|h[1-6])[^>]*>/i', "\n", $htmlVersion);
-                $html = preg_replace('/<\/(p|div|ul|ol|li|h[1-6])[^>]*>/i', "\n", $html);
+                $html = $htmlVersion;
+                // Reemplazos explícitos para asegurar saltos de línea
+                $html = str_ireplace(['<br>', '<br/>', '<br />'], "\n", $html);
+                $html = str_ireplace(['</p>', '</div>', '</li>', '</h1>', '</h2>', '</h3>', '</h4>', '</h5>', '</h6>'], "\n\n", $html);
+                $html = str_ireplace(['<p>', '<div>', '<li>', '<h1>', '<h2>', '<h3>', '<h4>', '<h5>', '<h6>'], "\n", $html);
                 
-                // Telegram solo permite ciertos tags. Limpiamos el resto pero dejamos links y negritas.
+                // Limpiamos tags no permitidos por Telegram
                 $cleanText = strip_tags($html, '<b><i><a><u>');
                 
-                // Decodificar entidades HTML y limpiar el exceso de saltos de línea vacíos
+                // Decodificar entidades HTML y limpiar espacios horizontales excesivos
                 $cleanText = html_entity_decode($cleanText);
-                $cleanText = preg_replace("/\n{3,}/", "\n\n", $cleanText); // Máximo 2 saltos de línea seguidos
+                $cleanText = preg_replace('/[ \t]+/', ' ', $cleanText);
+                
+                // Normalizar saltos de línea (máximo 2 seguidos para no alargar demasiado)
+                $cleanText = preg_replace("/\n\s*\n+/", "\n\n", $cleanText);
                 
                 $trimmedText = trim($cleanText);
                 $trimmedText = mb_substr($trimmedText, 0, 3500);
