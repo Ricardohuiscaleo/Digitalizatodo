@@ -27,9 +27,10 @@ class GuardianController extends Controller
         $tenantId = $tenant->id;
 
         $guardians = Guardian::where('tenant_id', $tenantId)
-            ->with(['students' => function ($query) use ($tenantId) {
-            $query->where('tenant_id', $tenantId);
-        }])
+            ->with(['students.enrollments.payments' => function ($query) use ($tenantId) {
+                $query->where('tenant_id', $tenantId)
+                    ->whereIn('status', ['pending', 'pending_review', 'overdue']);
+            }])
             ->get()
             ->map(function ($guardian) use ($tenantId) {
             // Calculate status based on payments of their students
@@ -46,27 +47,25 @@ class GuardianController extends Controller
                 'discount_percentage' => 15
             ];
 
-            $latestReview = null;
+            $activePayments = [];
             foreach ($students as $student) {
-                $reviewPayment = \App\Models\Payment::where('tenant_id', $student->tenant_id)
-                    ->whereIn('enrollment_id', $student->enrollments->pluck('id'))
-                    ->where('status', 'pending_review')
-                    ->latest()
-                    ->first();
-
-                if ($reviewPayment) {
-                    $status = 'review';
-                    $latestReview = $reviewPayment;
-                    break;
-                }
-
-                $hasPending = \App\Models\Payment::where('tenant_id', $student->tenant_id)
-                    ->whereIn('enrollment_id', $student->enrollments->pluck('id'))
-                    ->where('status', 'pending')
-                    ->exists();
-
-                if ($hasPending && $status !== 'review') {
-                    $status = 'pending';
+                foreach ($student->enrollments as $enrollment) {
+                    foreach ($enrollment->payments as $payment) {
+                        $activePayments[] = [
+                            'id' => $payment->id,
+                            'student_name' => $student->name,
+                            'amount' => (float)$payment->amount,
+                            'status' => $payment->status === 'pending_review' ? 'review' : $payment->status,
+                            'due_date' => $payment->due_date?->format('d M, Y'),
+                            'proof_url' => $payment->proof_image ? (str_starts_with($payment->proof_image, 'http') ? $payment->proof_image : $s3BaseUrl . $payment->proof_image) : null,
+                        ];
+                        
+                        if ($payment->status === 'pending_review') {
+                            $status = 'review';
+                        } elseif ($payment->status === 'pending' || $payment->status === 'overdue') {
+                            if ($status !== 'review') $status = 'pending';
+                        }
+                    }
                 }
             }
 
@@ -77,7 +76,7 @@ class GuardianController extends Controller
                 'name' => $guardian->name,
                 'photo' => $guardian->photo ? (str_starts_with($guardian->photo, 'http') ? $guardian->photo : $s3BaseUrl . $guardian->photo) : "https://i.pravatar.cc/150?u=" . $guardian->id,
                 'status' => $status,
-                'proof_image' => $latestReview ? (str_starts_with($latestReview->proof_image, 'http') ? $latestReview->proof_image : $s3BaseUrl . $latestReview->proof_image) : null,
+                'payments' => $activePayments,
                 'pricing' => $pricing,
                 'enrolledStudents' => $students->map(function ($s) use ($s3BaseUrl) {
                     return [
