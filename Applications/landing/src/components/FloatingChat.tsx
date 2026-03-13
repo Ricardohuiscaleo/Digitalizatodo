@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, Loader2, Paperclip, MoreHorizontal, Image as ImageIcon, Mic, Bot } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, Paperclip, Image as ImageIcon, Mic, Bot } from 'lucide-react';
 
 const FloatingChat = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -252,9 +252,6 @@ const FloatingChat = () => {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button className="p-2 hover:bg-slate-800 rounded-full transition-colors text-slate-400 hover:text-white">
-                            <MoreHorizontal className="w-5 h-5" />
-                        </button>
                         <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-slate-800 rounded-full transition-colors text-slate-400 hover:text-white sm:hidden">
                             <X className="w-5 h-5" />
                         </button>
