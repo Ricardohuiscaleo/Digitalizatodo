@@ -11,6 +11,13 @@ use Illuminate\Support\Str;
 
 class GuardianController extends Controller
 {
+    protected $imageService;
+
+    public function __construct(\App\Services\ImageService $imageService)
+    {
+        $this->imageService = $imageService;
+    }
+
     /**
      * List all guardians (Payers) grouped by account status.
      */
@@ -131,32 +138,37 @@ class GuardianController extends Controller
         $tenantId = $tenant->id;
 
         $request->validate([
-            'logo' => 'required|image|max:5120',
+            'logo' => 'required|image|max:20480', // Aceptamos hasta 20MB
         ]);
 
         if ($request->hasFile('logo')) {
             $file = $request->file('logo');
-            $src = imagecreatefromstring(file_get_contents($file->getRealPath()));
-            $w = imagesx($src);
-            $h = imagesy($src);
-            $scale = min(1, 400 / max($w, $h));
-            $nw = (int)($w * $scale);
-            $nh = (int)($h * $scale);
-            $dst = imagecreatetruecolor($nw, $nh);
-            imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
-            ob_start();
-            imagewebp($dst, null, 80);
-            $webp = ob_get_clean();
+            
+            try {
+                // Optimizar logo a un máximo de 500x500px para la UI
+                $optimizedPath = $this->imageService->optimize($file, 500, 500, 85);
+                
+                $filename = Str::uuid() . '.webp';
+                $s3Path = 'digitalizatodo/' . $tenantId . '/logo/' . $filename;
+                
+                // Subir a S3
+                Storage::disk('s3')->put($s3Path, file_get_contents($optimizedPath), 'public');
+                
+                // Limpiar temporal
+                unlink($optimizedPath);
 
-            $s3Path = 'digitalizatodo/' . $tenantId . '/logo/' . Str::uuid() . '.webp';
-            Storage::disk('s3')->put($s3Path, $webp);
+                $bucket = env('AWS_BUCKET', env('S3_BUCKET'));
+                $region = env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1'));
+                $url = "https://{$bucket}.s3.{$region}.amazonaws.com/{$s3Path}";
+                
+                $tenant->update(['logo' => $url]);
 
-            $bucket = env('AWS_BUCKET', env('S3_BUCKET'));
-            $region = env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1'));
-            $url = "https://{$bucket}.s3.{$region}.amazonaws.com/{$s3Path}";
-            $tenant->update(['logo' => $url]);
+                return response()->json(['message' => 'Logo optimizado y actualizado', 'logo_url' => $url]);
 
-            return response()->json(['message' => 'Logo actualizado', 'logo_url' => $url]);
+            } catch (\Exception $e) {
+                \Log::error("Error optimizando logo: " . $e->getMessage());
+                return response()->json(['error' => 'Error al procesar el logo: ' . $e->getMessage()], 500);
+            }
         }
 
         return response()->json(['message' => 'No se subió ningún archivo'], 400);
