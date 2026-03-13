@@ -106,7 +106,7 @@ const FloatingChat = () => {
     useEffect(() => {
         if (!sessionId) return;
         const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://admin.digitalizatodo.cl';
-        const eventSource = new EventSource(`${API_BASE}/api/w/chat/stream?session_id=${sessionId}`);
+        const eventSource = new EventSource(`${API_BASE}/api/w/chat/stream?session_id=${sessionId}&t=${Date.now()}`);
 
         eventSource.addEventListener('new-message', (event: any) => {
             try {
@@ -124,7 +124,7 @@ const FloatingChat = () => {
 
         const fetchInitial = async () => {
             try {
-                const response = await fetch(`${API_BASE}/api/w/chat/messages?session_id=${sessionId}`);
+                const response = await fetch(`${API_BASE}/api/w/chat/messages?session_id=${sessionId}&t=${Date.now()}`);
                 if (response.ok) {
                     const data = await response.json();
                     if (data.length > 0) {
@@ -155,7 +155,7 @@ const FloatingChat = () => {
             } else {
                 formData.append('file', file);
             }
-            await fetch(`${API_BASE}/api/w/chat/media-push`, { method: 'POST', body: formData });
+            await fetch(`${API_BASE}/api/w/chat/media-push?t=${Date.now()}`, { method: 'POST', body: formData });
         } catch (error) {} finally {
             setChatStatus('idle');
             if (e.target) e.target.value = '';
@@ -304,11 +304,12 @@ const FloatingChat = () => {
                             <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => handleFileUpload(e, 'file')} accept=".pdf,.doc,.docx" />
                             <input type="file" ref={imageInputRef} className="hidden" onChange={(e) => handleFileUpload(e, 'image')} accept="image/*" />
                             
-                            <div className="flex items-center">
+                            {/* Multimedia disabled by user request */}
+                            {/* <div className="flex items-center">
                                 <button type="button" onClick={() => imageInputRef.current?.click()} className="p-2.5 text-slate-400 hover:text-brand-orange hover:bg-orange-50 rounded-full transition-all"><ImageIcon className="w-5 h-5" /></button>
                                 <button type="button" onClick={() => fileInputRef.current?.click()} className="p-2.5 text-slate-400 hover:text-brand-orange hover:bg-orange-50 rounded-full transition-all"><Paperclip className="w-5 h-5" /></button>
                                 <button type="button" onClick={startRecording} className="p-2.5 text-slate-400 hover:text-brand-orange hover:bg-orange-50 rounded-full transition-all"><Mic className="w-5 h-5" /></button>
-                            </div>
+                            </div> */}
 
                             <div className="flex-1 bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden focus-within:ring-2 focus-within:ring-brand-orange/20 focus-within:border-brand-orange transition-all">
                                 <textarea 

@@ -442,10 +442,16 @@ class TelegramBotController extends Controller
             }
 
             try {
+                // Cache Buster / Padding para móviles
+                echo ":" . str_repeat(" ", 2048) . "\n";
+                echo "retry: 2000\n\n";
+                
                 $lastId = \App\Models\ChatMessage::where('session_id', $sessionId)->max('id') ?? 0;
 
                 // Loop infinito de escucha
                 $startTime = time();
+                $lastHeartbeat = time();
+                
                 while (true) {
                     if (connection_aborted()) break;
 
@@ -463,19 +469,22 @@ class TelegramBotController extends Controller
                             echo "data: " . json_encode($msg) . "\n\n";
                             $lastId = $msg->id;
                         }
+                        $lastHeartbeat = time(); // Reset heartbeat on activity
                     }
 
-                    // Heartbeat cada 15s para evitar timeouts del proxy
-                    if ((time() - $startTime) % 15 == 0) {
+                    // Heartbeat cada 5s para móviles (evita que la conexión entre en suspensión)
+                    if ((time() - $lastHeartbeat) >= 5) {
                         echo "event: heartbeat\n";
                         echo "data: {\"time\":\"" . date('Y-m-d H:i:s') . "\"}\n\n";
+                        $lastHeartbeat = time();
                     }
 
+                    if (ob_get_level() > 0) ob_flush();
                     flush();
 
-                    usleep(500000); // 0.5s check
+                    usleep(200000); // Check cada 0.2s para mayor rapidez
                     
-                    if (time() - $startTime > 600) break;
+                    if (time() - $startTime > 300) break; // 5 min max session
                 }
             } catch (\Exception $e) {
                 \Log::error("SSE Error for session {$sessionId}: " . $e->getMessage());
