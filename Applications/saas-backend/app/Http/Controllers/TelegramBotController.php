@@ -50,19 +50,27 @@ class TelegramBotController extends Controller
                 return response()->json(['status' => 'config_error']);
             }
 
-            $message = "*Nuevo Correo Recibido*\n\n";
-            $message .= "*De:* {$from}\n";
-            $message .= "*Asunto:* {$subject}\n\n";
-            $message .= "```\n" . substr($text, 0, 3000) . "\n```\n\n";
-            $message .= "_Responde a este mensaje para contestar el correo._";
+            $message = "📧 <b>Nuevo Correo Recibido</b>\n\n";
+            $message .= "👤 <b>De:</b> " . htmlspecialchars($from) . "\n";
+            $message .= "📌 <b>Asunto:</b> " . htmlspecialchars($subject) . "\n\n";
+            $message .= "<pre>" . htmlspecialchars(substr($text, 0, 3000)) . "</pre>\n\n";
+            $message .= "<i>_Responde a este mensaje para contestar el correo._</i>";
+
+            Log::info('Enviando a Telegram Bot (Resend Inbound)', [
+                'token_prefix' => substr($token, 0, 10),
+                'chat_id' => $chatId
+            ]);
 
             $response = Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
                 'chat_id' => $chatId,
                 'text' => $message,
-                'parse_mode' => 'Markdown',
+                'parse_mode' => 'HTML',
             ]);
 
-            Log::info('Telegram sendMessage response', ['status' => $response->status(), 'body' => $response->json()]);
+            Log::info('Respuesta de Telegram (Resend Inbound)', [
+                'status' => $response->status(),
+                'body' => $response->json()
+            ]);
 
             if ($response->successful()) {
                 $tgMessageId = $response->json('result.message_id');
