@@ -233,8 +233,8 @@ const FloatingChat = () => {
             <div 
                 className={`fixed z-[100] transition-all duration-500 ease-out origin-bottom-right transform-gpu
                 ${isOpen ? 'opacity-100 scale-100 pointer-events-auto translate-y-0' : 'opacity-0 scale-95 pointer-events-none translate-y-10'}
-                bottom-0 left-0 right-0 h-[85vh] sm:bottom-24 sm:right-6 sm:left-auto sm:w-[450px] sm:h-[650px] 
-                bg-white sm:rounded-3xl rounded-t-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] border border-slate-100 flex flex-col overflow-hidden`}
+                bottom-0 left-0 right-0 h-full sm:h-[650px] sm:bottom-24 sm:right-6 sm:left-auto sm:w-[450px] 
+                bg-white sm:rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] border border-slate-100 flex flex-col overflow-hidden`}
             >
                 {/* Header */}
                 <div className="bg-slate-900 text-white p-4 flex items-center justify-between shrink-0">
@@ -318,7 +318,7 @@ const FloatingChat = () => {
                                     value={message}
                                     onChange={(e) => setMessage(e.target.value)}
                                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); } }}
-                                    className="w-full bg-transparent border-none outline-none resize-none px-4 py-3 text-sm text-slate-700"
+                                    className="w-full bg-transparent border-none outline-none resize-none px-4 py-3 text-base text-slate-700"
                                 />
                             </div>
 
