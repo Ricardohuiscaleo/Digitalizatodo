@@ -342,10 +342,15 @@ export default function App() {
             return;
         }
 
-        if (token && (user?.tenant_slug || user?.tenant_id) && confirm('¿Confirmar registro de pago?')) {
+        const payer = payers.find(p => p.id === payerId);
+        const hasReview = payer?.status === 'review';
+        const message = hasReview 
+            ? `¿Aprobar TODOS los pagos en revisión de "${payer.name}"?`
+            : `¿Confirmar pago manual para "${payer?.name}"?`;
+
+        if (token && (user?.tenant_slug || user?.tenant_id) && confirm(message)) {
             await approvePayment(user.tenant_slug || user.tenant_id, token, payerId);
-            const payersData = await getPayers(user.tenant_slug || user.tenant_id, token);
-            setPayers(payersData?.payers || []);
+            refreshPayers();
         }
     };
 
@@ -823,11 +828,11 @@ export default function App() {
                                             <div className="flex items-center justify-end gap-2">
                                                 {payer.proof_image && (
                                                     <button
-                                                        onClick={() => setProofModalUrl(payer.proof_image)}
-                                                        className="p-2 bg-zinc-50 text-zinc-400 rounded-xl hover:bg-zinc-100 transition-all border border-zinc-100"
+                                                        onClick={(e) => { e.stopPropagation(); setProofModalUrl(payer.proof_image); }}
+                                                        className="p-2 bg-amber-50 text-amber-500 rounded-xl hover:bg-amber-100 transition-all border border-amber-100 shadow-sm"
                                                         title="Ver Comprobante"
                                                     >
-                                                        <Eye size={16} />
+                                                        <Eye size={18} />
                                                     </button>
                                                 )}
                                                 {isPaid ? null : (payer.status === 'review' || (paymentFilter === 'history' && reviewAmount > 0)) ? (
@@ -1332,6 +1337,14 @@ export default function App() {
                     authToken={token ?? ''} 
                     onClose={() => setShowQRModal(false)}
                     primaryColor={branding?.primaryColor || '#a855f7'}
+                />
+            )}
+
+            {/* MODAL DE COMPROBANTE */}
+            {proofModalUrl && (
+                <ProofModal 
+                    url={proofModalUrl} 
+                    onClose={() => setProofModalUrl(null)} 
                 />
             )}
 
