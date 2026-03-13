@@ -48,7 +48,7 @@ class PaymentResource extends Resource
                             ->label('Estado')
                             ->options([
                                 'pending' => 'Pendiente',
-                                'proof_uploaded' => 'Comprobante Subido',
+                                'pending_review' => 'Comprobante Subido',
                                 'approved' => 'Aprobado',
                                 'rejected' => 'Rechazado',
                                 'overdue' => 'Moroso',
@@ -130,7 +130,7 @@ class PaymentResource extends Resource
                     })
                     ->formatStateUsing(fn (string $state) => match ($state) {
                         'pending' => 'Pendiente',
-                        'proof_uploaded' => 'Comprobante',
+                        'pending_review' => 'Comprobante',
                         'approved' => 'Aprobado',
                         'rejected' => 'Rechazado',
                         'overdue' => 'Moroso',
@@ -164,7 +164,7 @@ class PaymentResource extends Resource
                     ->modalHeading('¿Aprobar este pago?')
                     ->color('success')
                     ->icon('heroicon-o-check-circle')
-                    ->visible(fn (Payment $record) => in_array($record->status, ['pending', 'proof_uploaded'])),
+                    ->visible(fn (Payment $record) => in_array($record->status, ['pending', 'pending_review'])),
                 Tables\Actions\Action::make('reject')
                     ->label('Rechazar')
                     ->form([
@@ -181,7 +181,7 @@ class PaymentResource extends Resource
                     ->modalHeading('¿Rechazar este pago?')
                     ->color('danger')
                     ->icon('heroicon-o-x-circle')
-                    ->visible(fn (Payment $record) => in_array($record->status, ['pending', 'proof_uploaded'])),
+                    ->visible(fn (Payment $record) => in_array($record->status, ['pending', 'pending_review'])),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

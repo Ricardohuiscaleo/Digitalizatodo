@@ -10,6 +10,7 @@ use App\Services\ImageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class PaymentController extends Controller
 {
@@ -28,10 +29,7 @@ class PaymentController extends Controller
     public function index(Request $request): JsonResponse
     {
         $guardian = $request->user();
-        if (!$guardian || $guardian->role !== 'guardian') {
-            return response()->json(['message' => 'No autorizado.'], 403);
-        }
-
+        
         $studentIds = $guardian->students->pluck('id');
         $enrollmentIds = Enrollment::whereIn('student_id', $studentIds)->pluck('id');
 
@@ -78,10 +76,8 @@ class PaymentController extends Controller
                 $filename = "proof_{$payment->id}_" . time() . ".webp";
                 $s3Path = "tenants/{$tenantId}/payments/{$filename}";
 
-                // Subir a S3 el archivo optimizado (sin ACL 'public' para evitar error)
+                // Subir a S3 el archivo optimizado
                 $uploaded = Storage::disk('s3')->put($s3Path, file_get_contents($optimizedPath));
-                
-                // Limpiar archivo temporal
                 unlink($optimizedPath);
 
                 if ($uploaded) {
@@ -89,20 +85,19 @@ class PaymentController extends Controller
 
                     $payment->update([
                         'proof_image' => $url,
-                        'status' => 'proof_uploaded'
+                        'status' => 'pending_review'
                     ]);
 
                     return response()->json([
                         'message' => 'Comprobante optimizado y subido correctamente.',
                         'proof_url' => $url,
-                        'status' => 'proof_uploaded'
+                        'status' => 'pending_review'
                     ]);
                 }
 
                 return response()->json(['error' => 'Error al guardar en el almacenamiento'], 500);
 
             } catch (\Exception $e) {
-                \Log::error("Error optimizando comprobante: " . $e->getMessage());
                 return response()->json(['error' => 'Error al procesar el comprobante: ' . $e->getMessage()], 500);
             }
         }
@@ -126,5 +121,62 @@ class PaymentController extends Controller
         $result  = $this->paymentService->createPaymentRequest($payment, $gateway);
 
         return response()->json($result);
+    }
+
+    /**
+     * Bulk Upload Payment Proof.
+     */
+    public function bulkUploadProof(Request $request): JsonResponse
+    {
+        $guardian = $request->user();
+        $request->validate([
+            'payment_ids' => 'required|array',
+            'payment_ids.*' => 'exists:payments,id',
+            'proof' => 'required|image|max:51200'
+        ]);
+
+        $paymentIds = $request->input('payment_ids');
+        $studentIds = $guardian->students->pluck('id');
+        
+        $validPayments = Payment::whereIn('id', $paymentIds)
+            ->whereIn('enrollment_id', function($q) use ($studentIds) {
+                $q->select('id')->from('enrollments')->whereIn('student_id', $studentIds);
+            })->get();
+
+        if ($validPayments->count() !== count($paymentIds)) {
+            return response()->json(['message' => 'Uno o más pagos no son válidos.'], 403);
+        }
+
+        if ($request->hasFile('proof')) {
+            try {
+                $file = $request->file('proof');
+                $tenant = app('currentTenant');
+                $optimizedPath = $this->imageService->optimize($file);
+                
+                $filename = "bulk_proof_" . time() . "_" . Str::random(5) . ".webp";
+                $s3Path = "tenants/{$tenant->id}/payments/{$filename}";
+                
+                Storage::disk('s3')->put($s3Path, file_get_contents($optimizedPath));
+                unlink($optimizedPath);
+
+                $url = Storage::disk('s3')->url($s3Path);
+
+                foreach ($validPayments as $payment) {
+                    $payment->update([
+                        'proof_image' => $url,
+                        'status' => 'pending_review'
+                    ]);
+                }
+
+                return response()->json([
+                    'message' => 'Comprobante subido y aplicado a ' . $validPayments->count() . ' pagos.',
+                    'proof_url' => $url
+                ]);
+            } catch (\Exception $e) {
+                return response()->json(['error' => $e->getMessage()], 500);
+            }
+        }
+
+        return response()->json(['error' => 'No se recibió archivo'], 400);
     }
 }

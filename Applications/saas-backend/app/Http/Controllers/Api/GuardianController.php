@@ -49,7 +49,7 @@ class GuardianController extends Controller
             foreach ($students as $student) {
                 $hasReview = \App\Models\Payment::where('tenant_id', $student->tenant_id)
                     ->whereIn('enrollment_id', $student->enrollments->pluck('id'))
-                    ->where('status', 'proof_uploaded')
+                    ->where('status', 'pending_review')
                     ->exists();
 
                 if ($hasReview) {
@@ -122,7 +122,7 @@ class GuardianController extends Controller
         foreach ($guardian->students as $student) {
             \App\Models\Payment::where('tenant_id', $tenantId)
                 ->whereIn('enrollment_id', $student->enrollments->pluck('id'))
-                ->where('status', 'proof_uploaded')
+                ->where('status', 'pending_review')
                 ->update(['status' => 'approved', 'paid_at' => now()]);
         }
 
