@@ -14,7 +14,7 @@ class Guardian extends Authenticatable
     use SoftDeletes, HasApiTokens;
 
     protected $fillable = [
-        'tenant_id', 'name', 'email', 'phone', 'password', 'active',
+        'tenant_id', 'name', 'email', 'phone', 'password', 'active', 'photo',
     ];
 
     protected $hidden = ['password', 'remember_token'];

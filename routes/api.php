@@ -75,6 +75,7 @@ Route::middleware([ResolveTenantFromPath::class])->prefix('{tenant}')->group(fun
         Route::middleware('auth:sanctum')->group(function () {
             // Perfil
             Route::get('me', [AuthController::class , 'me']);
+            Route::post('me/photo', [GuardianController::class, 'updatePhoto']);
             Route::post('logout', [AuthController::class , 'logout']);
 
             // Alumnos y Asistencia (Guardians/Apoderados)
