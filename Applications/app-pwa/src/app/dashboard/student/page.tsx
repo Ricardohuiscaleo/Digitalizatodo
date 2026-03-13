@@ -823,18 +823,6 @@ export default function StudentDashboard() {
                 primaryColor={primaryColor} 
             />
 
-            <input 
-                type="file" 
-                ref={photoInputRef}
-                className="hidden"
-                accept="image/*"
-                onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    const studentId = photoInputRef.current?.getAttribute('data-student-id');
-                    if (file && studentId) handleUploadPhoto(studentId, file);
-                    if (photoInputRef.current) photoInputRef.current.value = "";
-                }}
-            />
 
             {activeScanner && (
                 <StudentQRScanner
