@@ -26,10 +26,20 @@ class GuardianController extends Controller
         $tenant = app('currentTenant');
         $tenantId = $tenant->id;
 
+        $month = $request->query('month');
+        $year = $request->query('year');
+        $isHistory = $request->query('history') === 'true';
+
         $guardians = Guardian::where('tenant_id', $tenantId)
-            ->with(['students.enrollments.payments' => function ($query) use ($tenantId) {
-                $query->where('tenant_id', $tenantId)
-                    ->whereIn('status', ['pending', 'pending_review', 'overdue']);
+            ->with(['students.enrollments.payments' => function ($query) use ($tenantId, $month, $year, $isHistory) {
+                $query->where('tenant_id', $tenantId);
+                
+                if ($isHistory && $month && $year) {
+                    $query->whereMonth('due_date', $month)
+                          ->whereYear('due_date', $year);
+                } else {
+                    $query->whereIn('status', ['pending', 'pending_review', 'overdue']);
+                }
             }])
             ->get()
             ->map(function ($guardian) use ($tenantId) {

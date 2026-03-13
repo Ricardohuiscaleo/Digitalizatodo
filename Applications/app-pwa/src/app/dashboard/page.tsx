@@ -111,6 +111,8 @@ export default function App() {
 
     const [searchTerm, setSearchTerm] = useState('');
     const [paymentFilter, setPaymentFilter] = useState('all');
+    const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [expandedPayerId, setExpandedPayerId] = useState<string | null>(null);
     const [historyPage, setHistoryPage] = useState(0);
     const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
@@ -140,13 +142,38 @@ export default function App() {
 
     // --- PERSISTENCE & DATA FETCHING ---
 
+    const refreshPayers = useCallback(async (customToken?: string, slug?: string) => {
+        const storedToken = customToken || token || localStorage.getItem("staff_token") || localStorage.getItem("auth_token");
+        const tenantSlug = slug || localStorage.getItem("tenant_slug")?.trim();
+        if (!storedToken || !tenantSlug) return;
+
+        const isHistory = paymentFilter === 'history';
+        const data = await getPayers(tenantSlug, storedToken, {
+            month: selectedMonth,
+            year: selectedYear,
+            history: isHistory
+        });
+        
+        if (data?.payers) {
+            setPayers(data.payers);
+            const currentAttendance = new Set<string>();
+            data.payers.forEach((p: any) => {
+                if (p.enrolledStudents) {
+                    p.enrolledStudents.forEach((s: any) => {
+                        if (s.today_status === 'present') currentAttendance.add(s.id);
+                    });
+                }
+            });
+            setAttendance(currentAttendance);
+        }
+    }, [token, paymentFilter, selectedMonth, selectedYear]);
+
     useEffect(() => {
         const init = async () => {
             let storedToken = localStorage.getItem("staff_token") || localStorage.getItem("auth_token");
             let tenantSlug = localStorage.getItem("tenant_slug")?.trim();
             const tenantId = localStorage.getItem("tenant_id")?.trim();
 
-            // Intentar renovar sesión con remember_token si no hay token activo
             if (!storedToken && tenantSlug) {
                 const rememberToken = localStorage.getItem("remember_token");
                 if (rememberToken) {
@@ -168,12 +195,11 @@ export default function App() {
 
             const [profile, payersData, attendanceHistoryData]: [any, any, any] = await Promise.all([
                 getProfile(tenantSlug, storedToken),
-                getPayers(tenantSlug, storedToken),
+                getPayers(tenantSlug, storedToken, { month: selectedMonth, year: selectedYear, history: paymentFilter === 'history' }),
                 getAttendanceHistory(tenantSlug, storedToken)
             ]);
 
             if (profile) {
-                // Redirección si es apoderado
                 if (profile.user_type === 'guardian') {
                     window.location.href = '/dashboard/student';
                     return;
@@ -227,6 +253,12 @@ export default function App() {
 
         init();
     }, [setBranding]);
+
+    useEffect(() => {
+        if (activeTab === 'payments' && !loading) {
+            refreshPayers();
+        }
+    }, [paymentFilter, selectedMonth, selectedYear, activeTab]);
 
     // --- LÓGICA DE DATOS ---
 
@@ -661,26 +693,81 @@ export default function App() {
         const getPayerRealStats = (payer: any) => {
             const reviewAmount = payer.payments?.filter((p: any) => p.status === 'review').reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
             const pendingAmount = payer.payments?.filter((p: any) => p.status === 'pending' || p.status === 'overdue').reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
+            const approvedAmount = payer.payments?.filter((p: any) => p.status === 'approved').reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
+            
             const hasReview = reviewAmount > 0;
             const numEnrollments = payer.enrolledStudents.length;
-            const displayAmount = (hasReview || (paymentFilter === 'pending' && reviewAmount > 0)) ? reviewAmount : (pendingAmount || 0);
-            return { displayAmount, reviewAmount, pendingAmount, numEnrollments, hasReview };
+            const displayAmount = paymentFilter === 'history' 
+                ? (approvedAmount + reviewAmount + pendingAmount)
+                : ((hasReview || (paymentFilter === 'pending' && reviewAmount > 0)) ? reviewAmount : (pendingAmount || 0));
+                
+            return { displayAmount, reviewAmount, pendingAmount, approvedAmount, numEnrollments, hasReview };
         };
 
+        const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+        const years = [new Date().getFullYear(), new Date().getFullYear() - 1];
+
         return (
-            <div className="space-y-4 px-4">
-                <div className="flex gap-2 bg-white p-2 rounded-2xl shadow-sm border border-zinc-100 overflow-x-auto hide-scrollbar">
-                    {['all', 'pending', 'paid'].map((f) => (
+            <div className="space-y-6 px-4 pb-24">
+                {/* Tabs Selector Premium (Neumorphic Style) */}
+                <div className="flex bg-zinc-100 p-1.5 rounded-[2.2rem] gap-1 shadow-inner">
+                    {['all', 'pending', 'paid', 'history'].map((f) => (
                         <button
                             key={f}
-                            onClick={() => setPaymentFilter(f)}
-                            className={`px-5 py-3 rounded-xl text-[10px] font-black uppercase whitespace-nowrap transition-colors ${paymentFilter === f ? 'bg-zinc-950 text-white shadow-md' : 'text-zinc-400 bg-white border border-zinc-100'
-                                }`}
+                            onClick={() => {
+                                setPaymentFilter(f);
+                                setExpandedPayerId(null);
+                            }}
+                            className={`flex-1 py-3 px-2 rounded-[2rem] text-[9px] font-black uppercase tracking-wider transition-all duration-300 whitespace-nowrap ${paymentFilter === f 
+                                ? "bg-white text-zinc-950 shadow-md scale-[1.02] ring-1 ring-black/5" 
+                                : "text-zinc-400 hover:text-zinc-600"
+                            }`}
                         >
-                            {f === 'all' ? 'Ver Todos' : f === 'pending' ? 'Pendientes' : 'Al Día'}
+                            {f === 'all' ? 'Ver Todos' : f === 'pending' ? 'Pendientes' : f === 'paid' ? 'Al Día' : 'Historial'}
                         </button>
                     ))}
                 </div>
+
+                {/* Mes/Año Selector (Solo para Historial) */}
+                {paymentFilter === 'history' && (
+                    <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-4 shadow-sm animate-in slide-in-from-top-2 duration-300">
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1">
+                                {months.map((m, idx) => (
+                                    <button
+                                        key={m}
+                                        onClick={() => setSelectedMonth(idx + 1)}
+                                        className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${
+                                            selectedMonth === idx + 1 
+                                            ? "bg-zinc-950 text-white shadow-lg" 
+                                            : "bg-zinc-50 text-zinc-400 hover:bg-zinc-100"
+                                        }`}
+                                    >
+                                        {m}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex items-center justify-between border-t border-zinc-50 pt-3">
+                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Seleccionar Año</span>
+                                <div className="flex gap-2">
+                                    {years.map(y => (
+                                        <button
+                                            key={y}
+                                            onClick={() => setSelectedYear(y)}
+                                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${
+                                                selectedYear === y 
+                                                ? "bg-zinc-950 text-white shadow-sm" 
+                                                : "bg-zinc-50 text-zinc-400 hover:bg-zinc-100"
+                                            }`}
+                                        >
+                                            {y}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* VISTA DESKTOP: TABLA DE PAGOS */}
                 <div className="hidden md:block bg-white rounded-3xl shadow-sm border border-zinc-100 overflow-hidden">
@@ -696,8 +783,8 @@ export default function App() {
                         </thead>
                         <tbody className="divide-y divide-zinc-50">
                             {filteredPayers.map(payer => {
-                                const { displayAmount, numEnrollments, hasReview } = getPayerRealStats(payer);
-                                const isPaid = payer.status === 'paid';
+                                const { displayAmount, reviewAmount, pendingAmount, approvedAmount, numEnrollments, hasReview } = getPayerRealStats(payer);
+                                const isPaid = (payer.status === 'paid') || (paymentFilter === 'history' && approvedAmount > 0 && pendingAmount === 0 && reviewAmount === 0);
                                 return (
                                     <tr key={payer.id} className="hover:bg-zinc-50/50 transition-colors">
                                         <td className="px-6 py-4">
@@ -718,25 +805,28 @@ export default function App() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            {isPaid ? (
+                                            {isPaid || (paymentFilter === 'history' && approvedAmount > 0 && pendingAmount === 0 && reviewAmount === 0) ? (
                                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest">
-                                                    <CheckCircle2 size={12} /> Al Día
+                                                    <CheckCircle2 size={12} /> {paymentFilter === 'history' ? 'Cerrado' : 'Al Día'}
                                                 </span>
-                                            ) : payer.status === 'review' ? (
+                                            ) : payer.status === 'review' || (paymentFilter === 'history' && reviewAmount > 0) ? (
                                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest">
-                                                    <RefreshCw size={12} className="animate-spin-slow" /> Por Aprobar
+                                                    <RefreshCw size={12} className="animate-spin-slow" /> {paymentFilter === 'history' ? 'Revisiones' : 'Por Aprobar'}
                                                 </span>
                                             ) : (
                                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-widest">
-                                                    <XCircle size={12} /> Pendiente
+                                                    <XCircle size={12} /> {paymentFilter === 'history' ? 'Deuda Mes' : 'Pendiente'}
                                                 </span>
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            {isPaid ? null : payer.status === 'review' ? (
+                                            {isPaid ? null : (payer.status === 'review' || (paymentFilter === 'history' && reviewAmount > 0)) ? (
                                                 <button
-                                                    onClick={() => handlePaymentApprove(payer.id)}
-                                                    className="px-5 py-2 rounded-xl bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all shadow-md shadow-amber-100 flex items-center gap-2"
+                                                    onClick={() => {
+                                                        const firstReview = payer.payments?.find((p: any) => p.status === 'review');
+                                                        if (firstReview) handlePaymentApprove(payer.id);
+                                                    }}
+                                                    className="inline-flex ml-auto px-5 py-2 rounded-xl bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all shadow-md shadow-amber-100 items-center gap-2"
                                                 >
                                                     <RefreshCw size={12} className="animate-spin-slow" />
                                                     Aprobar
@@ -744,7 +834,7 @@ export default function App() {
                                             ) : (
                                                 <button
                                                     onClick={() => handlePaymentApprove(payer.id)}
-                                                    className="px-5 py-2 rounded-xl bg-zinc-950 text-white text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-md shadow-zinc-100"
+                                                    className="inline-flex ml-auto px-5 py-2 rounded-xl bg-zinc-950 text-white text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-md shadow-zinc-100"
                                                 >
                                                     Pagar
                                                 </button>
@@ -760,11 +850,11 @@ export default function App() {
                 {/* VISTA MOBILE: LISTA DE TARJETAS */}
                 <div className="space-y-3 pb-6">
                     {filteredPayers.map(payer => {
-                        const { displayAmount, reviewAmount, pendingAmount, numEnrollments } = getPayerRealStats(payer);
-                        const isPaid = payer.status === 'paid';
+                        const { displayAmount, reviewAmount, pendingAmount, approvedAmount, numEnrollments } = getPayerRealStats(payer);
                         const isExpanded = expandedPayerId === payer.id;
-                        const hasReview = payer.payments?.some((p: any) => p.status === 'review');
-                        const proofUrl = payer.payments?.find((p: any) => p.status === 'review')?.proof_url;
+                        const isPaid = (payer.status === 'paid') || (paymentFilter === 'history' && approvedAmount > 0 && pendingAmount === 0 && reviewAmount === 0);
+                        const hasReview = reviewAmount > 0;
+                        const proofUrl = payer.payments?.find((p: any) => p.status === 'review' && p.proof_url)?.proof_url || payer.payments?.find((p: any) => p.status === 'approved' && p.proof_url)?.proof_url;
 
                         return (
                             <div
@@ -772,7 +862,7 @@ export default function App() {
                                 className={`bg-white rounded-[2rem] shadow-sm border transition-all duration-200 overflow-hidden ${
                                     isExpanded ? 'border-zinc-300 ring-1 ring-zinc-100 mb-6' : 
                                     isPaid ? 'border-emerald-100 bg-emerald-50/10' : 
-                                    payer.status === 'review' ? 'border-amber-100 bg-amber-50/10' : 
+                                    (payer.status === 'review' || reviewAmount > 0) ? 'border-amber-100 bg-amber-50/10' : 
                                     'border-rose-100 bg-rose-50/10'
                                 }`}
                             >
@@ -812,7 +902,7 @@ export default function App() {
                                             <div className="bg-emerald-500 rounded-2xl p-2.5 shadow-lg shadow-emerald-100">
                                                 <CheckCircle2 size={24} className="text-white" />
                                             </div>
-                                        ) : payer.status === 'review' ? (
+                                        ) : (payer.status === 'review' || reviewAmount > 0) ? (
                                             <div className="flex items-center gap-1.5">
                                                 {proofUrl && (
                                                     <button
@@ -869,12 +959,18 @@ export default function App() {
                                                         </div>
                                                         <div className="flex flex-col">
                                                             <span className="text-xs font-black uppercase text-zinc-900 leading-none">{payment.student_name}</span>
-                                                            <span className="text-[8px] text-zinc-400 font-bold uppercase mt-1">Vence: {payment.due_date} • {payment.status === 'review' ? 'En Revisión' : 'Por Pagar'}</span>
+                                                            <span className="text-[8px] text-zinc-400 font-bold uppercase mt-1">
+                                                                Vence: {payment.due_date} • {
+                                                                    payment.status === 'review' ? 'En Revisión' : 
+                                                                    payment.status === 'approved' ? 'Pagado' : 
+                                                                    'Por Pagar'
+                                                                }
+                                                            </span>
                                                         </div>
                                                     </div>
                                                     <div className="text-right flex flex-col items-end gap-1">
                                                         <span className="text-xs font-black text-zinc-900">{formatMoney(payment.amount)}</span>
-                                                        {payment.status === 'review' && payment.proof_url && (
+                                                        {(payment.status === 'review' || payment.status === 'approved') && payment.proof_url && (
                                                             <button 
                                                                 onClick={(e) => { e.stopPropagation(); setProofModalUrl(payment.proof_url); }}
                                                                 className="text-[7px] font-black bg-zinc-950 text-white px-3 py-1.5 rounded-lg uppercase flex items-center gap-1 shadow-md active:scale-95 transition-all"
