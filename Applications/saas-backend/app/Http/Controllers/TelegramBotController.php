@@ -28,15 +28,19 @@ class TelegramBotController extends Controller
 
             // Priorizamos HTML si existe para conservar links limpios, pero lo filtramos para Telegram
             if ($htmlVersion) {
-                // Telegram no soporta <p> o <br>, así que los convertimos a saltos de línea reales
-                $breaks = ["<br>", "<br/>", "<br />", "</p>", "</div>"];
-                $withNewlines = str_replace($breaks, "\n", $htmlVersion);
+                // Reemplazamos tags de bloque comunes por saltos de línea reales
+                $html = preg_replace('/<(p|div|ul|ol|li|br|h[1-6])[^>]*>/i', "\n", $htmlVersion);
+                $html = preg_replace('/<\/(p|div|ul|ol|li|h[1-6])[^>]*>/i', "\n", $html);
                 
                 // Telegram solo permite ciertos tags. Limpiamos el resto pero dejamos links y negritas.
-                $cleanText = strip_tags($withNewlines, '<b><i><a><u>');
+                $cleanText = strip_tags($html, '<b><i><a><u>');
                 
-                // Decodificar entidades HTML que pudieran haber quedado y limitar longitud
-                $trimmedText = mb_substr($cleanText, 0, 3500);
+                // Decodificar entidades HTML y limpiar el exceso de saltos de línea vacíos
+                $cleanText = html_entity_decode($cleanText);
+                $cleanText = preg_replace("/\n{3,}/", "\n\n", $cleanText); // Máximo 2 saltos de línea seguidos
+                
+                $trimmedText = trim($cleanText);
+                $trimmedText = mb_substr($trimmedText, 0, 3500);
             } else {
                 $trimmedText = htmlspecialchars(mb_substr($textVersion ?? '', 0, 3500));
             }
