@@ -47,6 +47,8 @@ class GuardianController extends Controller
                 'discount_percentage' => 15
             ];
 
+            $s3BaseUrl = 'https://' . config('services.s3.bucket', 'digitalizatodo') . '.s3.' . config('services.s3.region', 'us-east-1') . '.amazonaws.com/';
+
             $activePayments = [];
             foreach ($students as $student) {
                 foreach ($student->enrollments as $enrollment) {
@@ -54,6 +56,7 @@ class GuardianController extends Controller
                         $activePayments[] = [
                             'id' => $payment->id,
                             'student_name' => $student->name,
+                            'student_photo' => $student->photo ? (str_starts_with($student->photo, 'http') ? $student->photo : $s3BaseUrl . $student->photo) : "https://i.pravatar.cc/150?u=" . $student->id,
                             'amount' => (float)$payment->amount,
                             'status' => $payment->status === 'pending_review' ? 'review' : $payment->status,
                             'due_date' => $payment->due_date?->format('d M, Y'),
@@ -68,8 +71,6 @@ class GuardianController extends Controller
                     }
                 }
             }
-
-            $s3BaseUrl = 'https://' . config('services.s3.bucket', 'digitalizatodo') . '.s3.' . config('services.s3.region', 'us-east-1') . '.amazonaws.com/';
 
             return [
                 'id' => $guardian->id,
