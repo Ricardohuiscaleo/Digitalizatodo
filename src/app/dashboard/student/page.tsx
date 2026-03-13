@@ -267,7 +267,10 @@ export default function StudentDashboard() {
             const tenantSlug = localStorage.getItem("tenant_slug");
             const res = await fetch(`${API}/${tenantSlug}/payments/${paymentId}/upload-proof`, {
                 method: "POST",
-                headers: { Authorization: `Bearer ${token}` },
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                },
                 body: formData,
             });
             if (res.ok) {
@@ -297,7 +300,10 @@ export default function StudentDashboard() {
             const tenantSlug = localStorage.getItem("tenant_slug") || tenantId; // Fallback a ID si no hay slug
             const res = await fetch(`${API}/${tenantSlug}/students/${studentId}/photo`, {
                 method: "POST",
-                headers: { Authorization: `Bearer ${token}` },
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                },
                 body: formData,
             });
             if (res.ok) {
