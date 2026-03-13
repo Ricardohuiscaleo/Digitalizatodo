@@ -34,8 +34,9 @@ RUN composer install \
 COPY . .
 RUN composer dump-autoload --optimize --no-scripts
 
-# OPcache
+# OPcache y límites PHP
 COPY docker/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+COPY docker/php.ini /usr/local/etc/php/conf.d/php-limits.ini
 
 # Permisos
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
