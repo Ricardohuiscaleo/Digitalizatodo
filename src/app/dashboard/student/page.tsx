@@ -18,6 +18,7 @@ import {
     Camera,
     CreditCard,
     Settings,
+    ShieldCheck,
     ChevronRight,
     MapPin
 } from "lucide-react";
@@ -241,10 +242,11 @@ export default function StudentDashboard() {
     const [copiedBank, setCopiedBank] = useState(false);
     
     // Subida de foto de perfil
-    const photoInputRef = useRef<HTMLInputElement>(null);
+    const profileFileInputRef = useRef<HTMLInputElement>(null);
     const bulkFileInputRef = useRef<HTMLInputElement>(null);
-    const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
+    const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
     const [selectedPayments, setSelectedPayments] = useState<string[]>([]);
+    const [paymentTab, setPaymentTab] = useState<"pending" | "history">("pending");
 
     const refreshData = async () => {
         const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
@@ -290,6 +292,38 @@ export default function StudentDashboard() {
         }
     };
 
+
+    const handleProfilePhotoUpload = async (file: File) => {
+        if (!file) return;
+        setIsUploadingPhoto(true);
+        const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
+        const tenantSlug = localStorage.getItem("tenant_slug");
+        
+        try {
+            const API = process.env.NEXT_PUBLIC_API_URL || "https://admin.digitalizatodo.cl/api";
+            const formData = new FormData();
+            formData.append("photo", file);
+            
+            const response = await fetch(`${API}/${tenantSlug}/me/photo`, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Accept": "application/json"
+                },
+                body: formData
+            });
+
+            if (!response.ok) throw new Error("Error al subir foto de perfil");
+            
+            alert("Foto de perfil actualizada con éxito");
+            refreshData();
+        } catch (error) {
+            console.error(error);
+            alert("Error al subir la foto de perfil");
+        } finally {
+            setIsUploadingPhoto(false);
+        }
+    };
     const handleBulkUploadProof = async (file: File) => {
         if (selectedPayments.length === 0) return;
         setUploadingPayment("bulk");
@@ -327,7 +361,7 @@ export default function StudentDashboard() {
     };
 
     const handleUploadPhoto = async (studentId: string, file: File) => {
-        setUploadingPhotoFor(studentId);
+        setIsUploadingPhoto(true);
         const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
         const tenantId = localStorage.getItem("tenant_id");
         if (!token || !tenantId) return;
@@ -355,7 +389,7 @@ export default function StudentDashboard() {
         } catch (error) {
             alert("Error de conexión al subir foto.");
         } finally {
-            setUploadingPhotoFor(null);
+            setIsUploadingPhoto(false);
         }
     };
 
@@ -437,11 +471,11 @@ export default function StudentDashboard() {
                                 className="w-16 h-16 rounded-3xl overflow-hidden bg-zinc-100 border border-zinc-200 shadow-sm shrink-0 relative cursor-pointer"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    photoInputRef.current?.setAttribute('data-student-id', student.id);
-                                    photoInputRef.current?.click();
+                                    profileFileInputRef.current?.setAttribute('data-student-id', student.id);
+                                    profileFileInputRef.current?.click();
                                 }}
                             >
-                                {uploadingPhotoFor === student.id ? (
+                                {isUploadingPhoto ? (
                                     <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] flex flex-col items-center justify-center z-20">
                                         <Loader2 className="animate-spin text-orange-500" size={18} />
                                     </div>
@@ -505,81 +539,145 @@ export default function StudentDashboard() {
     );
 
     const renderPayments = () => (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
             <h2 className="text-2xl font-black text-zinc-900">Pagos</h2>
             
-            {/* Metodos de pago / Banco */}
-            {bankInfo && (
-                <div className="bg-zinc-900 text-white rounded-[2.5rem] p-6 shadow-xl relative overflow-hidden">
-                    <div className="relative z-10">
-                        <div className="flex justify-between items-start mb-4">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-orange-400">Datos Transferencia</p>
-                            <button
-                                onClick={() => {
-                                    const text = `Banco: ${bankInfo.bank_name}\nCta: ${bankInfo.account_number}\nTitular: ${bankInfo.holder_name}\nRUT: ${bankInfo.holder_rut}`;
-                                    navigator.clipboard.writeText(text);
-                                    setCopiedBank(true);
-                                    setTimeout(() => setCopiedBank(false), 2000);
-                                }}
-                                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2 ${
-                                    copiedBank ? 'bg-emerald-500' : 'bg-white/10 hover:bg-white/20'
-                                }`}
-                            >
-                                {copiedBank ? <Check size={12} /> : <Copy size={12} />}
-                                {copiedBank ? 'Copiado' : 'Copiar'}
-                            </button>
+            {/* Tabs Selector */}
+            <div className="flex bg-zinc-100 p-1.5 rounded-[2.2rem] gap-1 shadow-inner">
+                <button 
+                    onClick={() => setPaymentTab("pending")}
+                    className={`flex-1 py-3 px-4 rounded-[2rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+                        paymentTab === "pending" ? "bg-white text-zinc-900 shadow-md scale-[1.02]" : "text-zinc-400 hover:text-zinc-600"
+                    }`}
+                >
+                    Pendientes
+                </button>
+                <button 
+                    onClick={() => setPaymentTab("history")}
+                    className={`flex-1 py-3 px-4 rounded-[2rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+                        paymentTab === "history" ? "bg-white text-zinc-900 shadow-md scale-[1.02]" : "text-zinc-400 hover:text-zinc-600"
+                    }`}
+                >
+                    Historial
+                </button>
+            </div>
+            
+            {paymentTab === "pending" ? (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                    {/* Metodos de pago / Banco */}
+                    {bankInfo && (
+                        <div className="bg-zinc-900 text-white rounded-[2.5rem] p-6 shadow-xl relative overflow-hidden group">
+                            <div className="relative z-10">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md">
+                                            <ShieldCheck size={20} className="text-orange-400" />
+                                        </div>
+                                        <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Datos de Transferencia</span>
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(`${bankInfo.bank_name}\n${bankInfo.account_type}\n${bankInfo.account_number}\n${bankInfo.holder_name}\n${bankInfo.holder_rut}`);
+                                            setCopiedBank(true);
+                                            setTimeout(() => setCopiedBank(false), 2000);
+                                        }}
+                                        className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border border-white/5"
+                                    >
+                                        {copiedBank ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                                        {copiedBank ? 'Copiado' : 'Copiar'}
+                                    </button>
+                                </div>
+                                <div className="space-y-2">
+                                    <p className="text-lg font-black">{bankInfo.bank_name}</p>
+                                    <p className="text-sm opacity-60">{bankInfo.account_type}</p>
+                                    <p className="text-2xl font-mono font-black tracking-wider text-orange-400">{bankInfo.account_number}</p>
+                                    <p className="text-xs opacity-60">{bankInfo.holder_name} · {bankInfo.holder_rut}</p>
+                                </div>
+                            </div>
+                            <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl" />
                         </div>
-                        <div className="space-y-2">
-                            <p className="text-lg font-black">{bankInfo.bank_name}</p>
-                            <p className="text-sm opacity-60">{bankInfo.account_type}</p>
-                            <p className="text-2xl font-mono font-black tracking-wider">{bankInfo.account_number}</p>
-                            <p className="text-xs opacity-60">{bankInfo.holder_name} · {bankInfo.holder_rut}</p>
-                        </div>
-                    </div>
-                    <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl" />
-                </div>
-            )}
+                    )}
 
-            {/* Pendientes */}
-            <div className="space-y-3">
-                <div className="flex items-center justify-between ml-2">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Pendientes</h3>
-                    {selectedPayments.length > 0 && (
-                        <button 
-                            onClick={() => bulkFileInputRef.current?.click()}
-                            disabled={uploadingPayment === "bulk"}
-                            className="bg-orange-500 text-white text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg shadow-orange-200 animate-in zoom-in duration-200 flex items-center gap-2"
-                        >
-                            {uploadingPayment === "bulk" ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
-                            Pagar {selectedPayments.length} Seleccionados
-                        </button>
+                    {/* Pendientes List */}
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between ml-2">
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Mensualidades</h3>
+                            {selectedPayments.length > 0 && (
+                                <button 
+                                    onClick={() => bulkFileInputRef.current?.click()}
+                                    disabled={uploadingPayment === "bulk"}
+                                    className="bg-orange-500 text-white text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg shadow-orange-200 animate-in zoom-in duration-200 flex items-center gap-2"
+                                >
+                                    {uploadingPayment === "bulk" ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
+                                    Pagar {selectedPayments.length} Masivamente
+                                </button>
+                            )}
+                        </div>
+                        {students.flatMap((s: any) => s.payments || []).map((payment: any) => (
+                            <PaymentRow
+                                key={payment.id}
+                                payment={payment}
+                                primaryColor={primaryColor}
+                                uploading={uploadingPayment === String(payment.id)}
+                                uploadSuccess={uploadSuccess === String(payment.id) || (uploadSuccess === "bulk" && selectedPayments.includes(String(payment.id)))}
+                                onUpload={(file) => handleUploadProof(String(payment.id), file)}
+                                onViewProof={(url) => setProofModalUrl(url)}
+                                isSelected={selectedPayments.includes(String(payment.id))}
+                                onToggleSelect={() => {
+                                    setSelectedPayments(prev => 
+                                        prev.includes(String(payment.id)) 
+                                            ? prev.filter(id => id !== String(payment.id))
+                                            : [...prev, String(payment.id)]
+                                    );
+                                }}
+                            />
+                        ))}
+                        {students.every((s: any) => (s.payments || []).length === 0) && (
+                            <div className="bg-white border border-dashed border-zinc-200 rounded-[2rem] p-8 text-center">
+                                <p className="text-sm text-zinc-400 font-bold italic">No hay pagos pendientes</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            ) : (
+                <div className="space-y-4 animate-in fade-in duration-300">
+                    {paymentHistory.length > 0 ? (
+                        paymentHistory.map((p: any) => (
+                            <div key={p.id} className="flex items-center justify-between bg-white border border-zinc-100 rounded-[2rem] px-6 py-5 shadow-sm hover:shadow-md transition-all group">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-zinc-50 rounded-2xl flex items-center justify-center text-zinc-400 group-hover:bg-orange-50 transition-colors">
+                                        <CreditCard size={20} />
+                                    </div>
+                                    <div>
+                                        <p className="text-base font-black text-zinc-900">${Number(p.amount).toLocaleString("es-CL")}</p>
+                                        <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{p.paid_at || p.due_date}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full border shadow-sm ${
+                                        p.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-yellow-50 text-yellow-600 border-yellow-100'
+                                    }`}>
+                                        {p.status === 'approved' ? 'Pagado' : 'En Revisión'}
+                                    </span>
+                                    {p.proof_url && (
+                                        <button 
+                                            onClick={() => setProofModalUrl(p.proof_url)} 
+                                            className="w-10 h-10 flex items-center justify-center bg-zinc-900 text-white rounded-xl hover:bg-orange-500 transition-all shadow-lg shadow-zinc-200"
+                                        >
+                                            <Eye size={18} />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="bg-white border border-dashed border-zinc-200 rounded-[2.5rem] p-12 text-center">
+                            <Clock className="w-12 h-12 text-zinc-200 mx-auto mb-3" />
+                            <p className="text-sm text-zinc-400 font-bold italic">No hay registro de pagos anteriores</p>
+                        </div>
                     )}
                 </div>
-                {students.flatMap((s: any) => s.payments || []).map((payment: any) => (
-                    <PaymentRow
-                        key={payment.id}
-                        payment={payment}
-                        primaryColor={primaryColor}
-                        uploading={uploadingPayment === String(payment.id)}
-                        uploadSuccess={uploadSuccess === String(payment.id) || (uploadSuccess === "bulk" && selectedPayments.includes(String(payment.id)))}
-                        onUpload={(file) => handleUploadProof(String(payment.id), file)}
-                        onViewProof={(url) => setProofModalUrl(url)}
-                        isSelected={selectedPayments.includes(String(payment.id))}
-                        onToggleSelect={() => {
-                            setSelectedPayments(prev => 
-                                prev.includes(String(payment.id)) 
-                                    ? prev.filter(id => id !== String(payment.id))
-                                    : [...prev, String(payment.id)]
-                            );
-                        }}
-                    />
-                ))}
-                {students.every((s: any) => (s.payments || []).length === 0) && (
-                    <div className="bg-white border border-dashed border-zinc-200 rounded-[2rem] p-8 text-center">
-                        <p className="text-sm text-zinc-400 font-bold italic">No hay pagos pendientes</p>
-                    </div>
-                )}
-            </div>
+            )}
             
             <input 
                 type="file"
@@ -592,33 +690,6 @@ export default function StudentDashboard() {
                     if (e.target) e.target.value = "";
                 }}
             />
-
-            {/* Historial */}
-            {paymentHistory.length > 0 && (
-                <div className="space-y-3">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-2">Historial</h3>
-                    {paymentHistory.map((p: any) => (
-                        <div key={p.id} className="flex items-center justify-between bg-white border border-zinc-100 rounded-2xl px-5 py-4 shadow-sm">
-                            <div>
-                                <p className="text-sm font-black text-zinc-900">${Number(p.amount).toLocaleString("es-CL")}</p>
-                                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{p.paid_at || p.due_date}</p>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
-                                    p.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-yellow-50 text-yellow-600 border-yellow-100'
-                                }`}>
-                                    {p.status === 'approved' ? 'Pagado' : 'En Revisión'}
-                                </span>
-                                {p.proof_url && (
-                                    <button onClick={() => setProofModalUrl(p.proof_url)} className="text-zinc-300 hover:text-orange-500 transition-colors">
-                                        <Eye size={18} />
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
         </div>
     );
 
@@ -626,9 +697,31 @@ export default function StudentDashboard() {
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <h2 className="text-2xl font-black text-zinc-900">Mi Perfil</h2>
             
-            <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-8 text-center shadow-sm">
-                <div className="w-24 h-24 bg-stone-100 rounded-[2.5rem] mx-auto mb-4 flex items-center justify-center border border-zinc-100 text-zinc-300">
-                    <User size={40} />
+            <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-8 text-center shadow-sm relative overflow-hidden">
+                <div className="relative w-24 h-24 mx-auto mb-4 group">
+                    <div 
+                        onClick={() => profileFileInputRef.current?.click()}
+                        className="w-24 h-24 bg-stone-100 rounded-[2.5rem] flex items-center justify-center border border-zinc-100 text-zinc-300 overflow-hidden cursor-pointer hover:border-orange-200 transition-all"
+                    >
+                        {guardian.photo ? (
+                            <img src={guardian.photo} alt={guardian.name} className="w-full h-full object-cover" />
+                        ) : (
+                            <User size={40} />
+                        )}
+                        
+                        {isUploadingPhoto && (
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-[2.5rem]">
+                                <Loader2 className="text-white animate-spin" />
+                            </div>
+                        )}
+                    </div>
+                    
+                    <button 
+                        onClick={() => profileFileInputRef.current?.click()}
+                        className="absolute -bottom-1 -right-1 w-8 h-8 bg-orange-500 text-white rounded-xl flex items-center justify-center border-4 border-white shadow-sm active:scale-90 transition-transform"
+                    >
+                        <Camera size={14} />
+                    </button>
                 </div>
                 <h3 className="text-xl font-black text-zinc-900">{guardian.name}</h3>
                 <p className="text-sm text-zinc-400 font-bold">{guardian.email}</p>
@@ -646,12 +739,15 @@ export default function StudentDashboard() {
                         <ChevronRight size={18} className="text-zinc-300" />
                     </button>
                     <div className="h-px bg-zinc-50 mx-4" />
-                    <button className="w-full flex items-center justify-between p-4 hover:bg-stone-50 rounded-2xl transition-all group">
+                    <button 
+                        onClick={() => { setActiveSection("payments"); setPaymentTab("history"); }}
+                        className="w-full flex items-center justify-between p-4 hover:bg-stone-50 rounded-2xl transition-all group"
+                    >
                         <div className="flex items-center gap-4">
                             <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400 group-hover:text-orange-500 transition-colors">
-                                <MapPin size={20} />
+                                <CreditCard size={20} />
                             </div>
-                            <span className="font-black text-sm text-zinc-700">Mi Academia</span>
+                            <span className="font-black text-sm text-zinc-700">Historial de Pagos</span>
                         </div>
                         <ChevronRight size={18} className="text-zinc-300" />
                     </button>
@@ -680,6 +776,26 @@ export default function StudentDashboard() {
                 <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Digitaliza Todo © 2026</p>
                 <p className="text-[8px] font-bold text-zinc-200 mt-1 uppercase">v2.4.0 optimized</p>
             </div>
+
+            <input 
+                type="file"
+                ref={profileFileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    const studentId = e.target.getAttribute('data-student-id');
+                    if (file) {
+                        if (studentId) {
+                            handleUploadPhoto(studentId, file);
+                            e.target.removeAttribute('data-student-id');
+                        } else {
+                            handleProfilePhotoUpload(file);
+                        }
+                    }
+                    if (e.target) e.target.value = "";
+                }}
+            />
         </div>
     );
 
