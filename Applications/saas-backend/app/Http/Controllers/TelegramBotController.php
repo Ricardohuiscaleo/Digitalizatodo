@@ -28,25 +28,25 @@ class TelegramBotController extends Controller
 
             // Priorizamos HTML si existe para conservar el formato
             if ($htmlVersion) {
-                // 1. Normalizar: Quitar saltos de línea del código fuente para evitar ruido y espacios extra
-                $html = str_replace(["\r", "\n"], ' ', $htmlVersion);
+                // 1. Convertir tags de estructura en placeholders unívocos
+                $html = str_ireplace(['<br>', '<br/>', '<br />'], " [BR] ", $htmlVersion);
+                $html = str_ireplace(['</p>', '</div>', '</li>', '</h1>', '</h2>', '</h3>', '</h4>', '</h5>', '</h6>', '</tr>'], " [P] ", $html);
+                $html = str_ireplace(['<li>', '<td>'], "  • ", $html);
                 
-                // 2. Insertar saltos de línea controlados en bloques
-                $html = str_ireplace(['<br>', '<br/>', '<br />'], "\n", $html);
-                $html = str_ireplace(['</p>', '</div>', '</li>', '</h1>', '</h2>', '</h3>', '</h4>', '</h5>', '</h6>', '</tr>'], "\n\n", $html);
-                $html = str_ireplace(['<li>', '<td>'], "  • ", $html); // Viñetas para listas y celdas
-                
-                // 3. Limpiar tags manteniendo SOLO los soportados oficialmente por Telegram
+                // 2. Limpiar tags manteniendo SOLO los soportados por Telegram
                 $allowedTags = '<b><strong><i><em><u><ins><s><strike><del><a><code><pre><tg-spoiler>';
                 $cleanText = strip_tags($html, $allowedTags);
                 
-                // 4. Decodificar entidades HTML y limpiar el exceso de espacios horizontales
+                // 3. Decodificar entidades y limpiar espacios horizontales
                 $cleanText = html_entity_decode($cleanText);
                 $cleanText = preg_replace('/[ \t]+/', ' ', $cleanText);
                 
-                // 5. Normalizar saltos de línea (máximo 2 seguidos para párrafos claros)
-                $cleanText = preg_replace("/\s*\n\s*\n\s*/", "\n\n", $cleanText);
-                $cleanText = preg_replace("/\n\s+/", "\n", $cleanText);
+                // 4. Restaurar saltos de línea desde los placeholders
+                $cleanText = str_replace(" [BR] ", "\n", $cleanText);
+                $cleanText = str_replace(" [P] ", "\n\n", $cleanText);
+                
+                // 5. Normalizar saltos de línea finales (máximo 2 seguidos)
+                $cleanText = preg_replace("/\n\s*\n+/", "\n\n", $cleanText);
                 
                 $trimmedText = trim($cleanText);
                 $trimmedText = mb_substr($trimmedText, 0, 3500);
