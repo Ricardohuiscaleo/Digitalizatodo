@@ -79,6 +79,16 @@ class GuardianController extends Controller
                             if ($status !== 'review') $status = 'pending';
                         }
                     }
+            // Calcular total_due y extraer el primer comprobante disponible
+            $totalDue = 0;
+            $proofImage = null;
+            
+            foreach ($activePayments as $p) {
+                if ($p['status'] === 'pending' || $p['status'] === 'overdue') {
+                    $totalDue += $p['amount'];
+                }
+                if ($p['proof_url'] && !$proofImage) {
+                    $proofImage = $p['proof_url'];
                 }
             }
 
@@ -87,6 +97,8 @@ class GuardianController extends Controller
                 'name' => $guardian->name,
                 'photo' => $guardian->photo ? (str_starts_with($guardian->photo, 'http') ? $guardian->photo : $s3BaseUrl . $guardian->photo) : "https://i.pravatar.cc/150?u=" . $guardian->id,
                 'status' => $status,
+                'total_due' => round($totalDue),
+                'proof_image' => $proofImage,
                 'payments' => $activePayments,
                 'pricing' => $pricing,
                 'enrolledStudents' => $students->map(function ($s) use ($s3BaseUrl) {

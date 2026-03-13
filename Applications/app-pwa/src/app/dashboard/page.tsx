@@ -820,25 +820,36 @@ export default function App() {
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            {isPaid ? null : (payer.status === 'review' || (paymentFilter === 'history' && reviewAmount > 0)) ? (
-                                                <button
-                                                    onClick={() => {
-                                                        const firstReview = payer.payments?.find((p: any) => p.status === 'review');
-                                                        if (firstReview) handlePaymentApprove(payer.id);
-                                                    }}
-                                                    className="inline-flex ml-auto px-5 py-2 rounded-xl bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all shadow-md shadow-amber-100 items-center gap-2"
-                                                >
-                                                    <RefreshCw size={12} className="animate-spin-slow" />
-                                                    Aprobar
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    onClick={() => handlePaymentApprove(payer.id)}
-                                                    className="inline-flex ml-auto px-5 py-2 rounded-xl bg-zinc-950 text-white text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-md shadow-zinc-100"
-                                                >
-                                                    Pagar
-                                                </button>
-                                            )}
+                                            <div className="flex items-center justify-end gap-2">
+                                                {payer.proof_image && (
+                                                    <button
+                                                        onClick={() => setProofModalUrl(payer.proof_image)}
+                                                        className="p-2 bg-zinc-50 text-zinc-400 rounded-xl hover:bg-zinc-100 transition-all border border-zinc-100"
+                                                        title="Ver Comprobante"
+                                                    >
+                                                        <Eye size={16} />
+                                                    </button>
+                                                )}
+                                                {isPaid ? null : (payer.status === 'review' || (paymentFilter === 'history' && reviewAmount > 0)) ? (
+                                                    <button
+                                                        onClick={() => {
+                                                            const firstReview = payer.payments?.find((p: any) => p.status === 'review');
+                                                            if (firstReview) handlePaymentApprove(payer.id);
+                                                        }}
+                                                        className="px-5 py-2 rounded-xl bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all shadow-md shadow-amber-100 flex items-center gap-2"
+                                                    >
+                                                        <RefreshCw size={12} className="animate-spin-slow" />
+                                                        Aprobar
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handlePaymentApprove(payer.id)}
+                                                        className="px-5 py-2 rounded-xl bg-zinc-950 text-white text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-md shadow-zinc-100"
+                                                    >
+                                                        Pagar
+                                                    </button>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 );
@@ -854,7 +865,7 @@ export default function App() {
                         const isExpanded = expandedPayerId === payer.id;
                         const isPaid = (payer.status === 'paid') || (paymentFilter === 'history' && approvedAmount > 0 && pendingAmount === 0 && reviewAmount === 0);
                         const hasReview = reviewAmount > 0;
-                        const proofUrl = payer.payments?.find((p: any) => p.status === 'review' && p.proof_url)?.proof_url || payer.payments?.find((p: any) => p.status === 'approved' && p.proof_url)?.proof_url;
+                        const proofUrl = payer.proof_image;
 
                         return (
                             <div
