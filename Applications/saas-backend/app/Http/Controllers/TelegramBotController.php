@@ -23,42 +23,37 @@ class TelegramBotController extends Controller
 
             $from = $data['from'] ?? 'Desconocido';
             $subject = $data['subject'] ?? 'Sin Asunto';
-            $text = $data['text'] ?? ($data['html'] ?? null);
-            $emailId = $data['email_id'] ?? null;
+            $htmlVersion = $data['html'] ?? null;
+            $textVersion = $data['text'] ?? null;
 
-            // Si no tenemos el texto pero tenemos un email_id, lo pedimos a Resend
-            if (!$text && $emailId) {
-                try {
-                    $resend = \Resend::client(env('RESEND_API_KEY'));
-                    $email = $resend->emails->receiving->get($emailId);
-                    $text = $email->text ?? ($email->html ?? null);
-                    $from = $email->from ?? $from;
-                    $subject = $email->subject ?? $subject;
-                }
-                catch (\Exception $e) {
-                    Log::error('Error recuperando email desde Resend API: ' . $e->getMessage());
-                }
+            // Priorizamos HTML si existe para conservar links limpios, pero lo filtramos para Telegram
+            if ($htmlVersion) {
+                // Telegram solo permite ciertos tags. Limpiamos el resto pero dejamos links y negritas.
+                $cleanText = strip_tags($htmlVersion, '<b><i><a><u>');
+                // Limitamos longitud para evitar errores de Telegram (max 4096 chars)
+                $trimmedText = mb_substr($cleanText, 0, 3500);
+            } else {
+                $trimmedText = htmlspecialchars(mb_substr($textVersion ?? '', 0, 3500));
             }
-
-            $text = $text ? strip_tags($text) : "(sin cuerpo — email_id: {$emailId})";
 
             $token = config('services.telegram.bot_token');
             $chatId = config('services.telegram.admin_id');
 
             if (!$token || !$chatId) {
-                Log::error('Telegram Token o Admin ID no configurado en .env');
+                Log::error('Telegram Token o Admin ID no configurado en services.php');
                 return response()->json(['status' => 'config_error']);
             }
 
             $message = "📧 <b>Nuevo Correo Recibido</b>\n\n";
             $message .= "👤 <b>De:</b> " . htmlspecialchars($from) . "\n";
             $message .= "📌 <b>Asunto:</b> " . htmlspecialchars($subject) . "\n\n";
-            $message .= "<pre>" . htmlspecialchars(substr($text, 0, 3000)) . "</pre>\n\n";
+            $message .= $trimmedText . "\n\n";
             $message .= "<i>_Responde a este mensaje para contestar el correo._</i>";
 
-            Log::info('Enviando a Telegram Bot (Resend Inbound)', [
+            Log::info('Enviando a Telegram Bot (Visual Refined)', [
                 'token_prefix' => substr($token, 0, 10),
-                'chat_id' => $chatId
+                'chat_id' => $chatId,
+                'has_html' => !empty($htmlVersion)
             ]);
 
             $response = Http::post("https://api.telegram.org/bot{$token}/sendMessage", [
