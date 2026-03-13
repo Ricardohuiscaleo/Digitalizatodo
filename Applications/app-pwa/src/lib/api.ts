@@ -362,6 +362,7 @@ export async function updateLogo(tenantId: string, token: string, file: File) {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
                 'X-Tenant-Id': tenantId,
             },
             body: formData,
