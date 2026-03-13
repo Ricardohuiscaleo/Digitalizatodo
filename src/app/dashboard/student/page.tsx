@@ -413,12 +413,20 @@ export default function StudentDashboard() {
                         >
                             {/* Student header */}
                             <div className="flex items-start gap-4 relative z-10">
-                                <div className="w-16 h-16 rounded-3xl overflow-hidden bg-zinc-50 border border-zinc-100 shadow-sm shrink-0 relative group">
+                                <div 
+                                    className="w-16 h-16 rounded-3xl overflow-hidden bg-zinc-100 border border-zinc-200 shadow-sm shrink-0 relative group cursor-pointer hover:border-orange-200 transition-all"
+                                    onClick={() => {
+                                        photoInputRef.current?.setAttribute('data-student-id', student.id);
+                                        photoInputRef.current?.click();
+                                    }}
+                                >
                                     {uploadingPhotoFor === student.id ? (
-                                        <div className="absolute inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center z-20">
-                                            <Loader2 className="animate-spin text-zinc-400" size={20} />
+                                        <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] flex flex-col items-center justify-center z-20 animate-in fade-in duration-200">
+                                            <Loader2 className="animate-spin text-orange-500" size={18} />
+                                            <span className="text-[7px] font-black text-orange-600 uppercase mt-1 tracking-tighter">Procesando</span>
                                         </div>
                                     ) : null}
+                                    
                                     {student.photo ? (
                                         <img src={student.photo} alt={student.name} className="w-full h-full object-cover" />
                                     ) : (
@@ -427,18 +435,13 @@ export default function StudentDashboard() {
                                         </div>
                                     )}
                                     
-                                    {/* Botón flotante para subir foto */}
-                                    <button 
-                                        className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 text-white"
-                                        onClick={() => {
-                                            // Hack simple para abrir el file dialog pasando el ID en el data-student-id momentáneamente
-                                            photoInputRef.current?.setAttribute('data-student-id', student.id);
-                                            photoInputRef.current?.click();
-                                        }}
-                                        title="Cambiar Foto"
-                                    >
-                                        <Camera className="w-6 h-6" />
-                                    </button>
+                                    {/* Botón flotante de cámara (Siempre visible pero sutil) */}
+                                    <div className="absolute bottom-1 right-1 w-6 h-6 bg-white rounded-full shadow-md border border-zinc-100 flex items-center justify-center text-zinc-400 group-hover:text-orange-500 group-hover:scale-110 transition-all z-10">
+                                        <Camera className="w-3.5 h-3.5" />
+                                    </div>
+                                    
+                                    {/* Overlay al pasar el mouse */}
+                                    <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h3 className="text-lg font-black text-zinc-900 mb-1 truncate">{student.name}</h3>
