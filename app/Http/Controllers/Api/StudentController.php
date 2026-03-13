@@ -96,8 +96,8 @@ class StudentController extends Controller
                 $filename = "student_{$student->id}_" . time() . ".webp";
                 $s3Path = "tenants/{$tenantId}/students/{$filename}";
 
-                // Subir a S3 el archivo optimizado
-                $uploaded = Storage::disk('s3')->put($s3Path, file_get_contents($optimizedPath), 'public');
+                // Subir a S3 el archivo optimizado (sin ACL 'public' para evitar error)
+                $uploaded = Storage::disk('s3')->put($s3Path, file_get_contents($optimizedPath));
                 
                 // Limpiar archivo temporal
                 unlink($optimizedPath);

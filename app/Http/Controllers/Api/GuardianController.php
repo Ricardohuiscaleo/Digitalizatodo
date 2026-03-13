@@ -151,8 +151,8 @@ class GuardianController extends Controller
                 $filename = Str::uuid() . '.webp';
                 $s3Path = 'digitalizatodo/' . $tenantId . '/logo/' . $filename;
                 
-                // Subir a S3
-                Storage::disk('s3')->put($s3Path, file_get_contents($optimizedPath), 'public');
+                // Subir a S3 (sin ACL 'public' para evitar error)
+                Storage::disk('s3')->put($s3Path, file_get_contents($optimizedPath));
                 
                 // Limpiar temporal
                 unlink($optimizedPath);
