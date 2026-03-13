@@ -196,4 +196,55 @@ class GuardianController extends Controller
 
         return response()->json(['message' => 'Datos bancarios guardados correctamente.', 'bank_info' => $validated]);
     }
+
+    /**
+     * Update authenticated guardian photo.
+     * POST /api/{tenant}/me/photo
+     */
+    public function updatePhoto(Request $request)
+    {
+        $tenant = app('currentTenant');
+        $tenantId = $tenant->id;
+        $guardian = auth()->user();
+
+        if (!$guardian instanceof Guardian) {
+            return response()->json(['error' => 'Usuario no autorizado'], 401);
+        }
+
+        $request->validate([
+            'photo' => 'required|image|max:20480', // Hasta 20MB
+        ]);
+
+        if ($request->hasFile('photo')) {
+            $file = $request->file('photo');
+            
+            try {
+                // Optimizar a un tamaño manejable para avatares (400x400)
+                $optimizedPath = $this->imageService->optimize($file, 400, 400, 85);
+                
+                $filename = Str::uuid() . '.webp';
+                $s3Path = 'digitalizatodo/' . $tenantId . '/guardians/' . $filename;
+                
+                // Subir a S3
+                Storage::disk('s3')->put($s3Path, file_get_contents($optimizedPath));
+                
+                // Limpiar temporal
+                unlink($optimizedPath);
+
+                $bucket = env('AWS_BUCKET', env('S3_BUCKET'));
+                $region = env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1'));
+                $url = "https://{$bucket}.s3.{$region}.amazonaws.com/{$s3Path}";
+                
+                $guardian->update(['photo' => $url]);
+
+                return response()->json(['message' => 'Foto de perfil actualizada', 'photo_url' => $url]);
+
+            } catch (\Exception $e) {
+                \Log::error("Error optimizando foto de apoderado: " . $e->getMessage());
+                return response()->json(['error' => 'Error al procesar la imagen: ' . $e->getMessage()], 500);
+            }
+        }
+
+        return response()->json(['message' => 'No se subió ningún archivo'], 400);
+    }
 }

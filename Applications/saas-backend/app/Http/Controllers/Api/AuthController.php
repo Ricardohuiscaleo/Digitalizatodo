@@ -148,7 +148,7 @@ class AuthController extends Controller
                 'total_due' => $guardian->total_due,
                 'payment_history' => $allEnrollmentIds->isNotEmpty() ? \App\Models\Payment::whereIn('enrollment_id', $allEnrollmentIds)
                     ->whereIn('status', ['approved', 'pending_review'])
-                    ->orderByDesc('paid_at')
+                    ->orderByDesc('updated_at')
                     ->limit(10)
                     ->get()
                     ->map(fn($p) => [

@@ -42,20 +42,11 @@ export default function BottomNav({ activeSection, setActiveSection, primaryColo
                                 <Icon className="w-6 h-6" strokeWidth={isActive ? 2.5 : 2} />
                             </div>
                             <span
-                                className={`text-[10px] font-black uppercase tracking-widest transition-all ${
-                                    isActive ? "opacity-100" : "opacity-0"
-                                }`}
+                                className="text-[10px] font-black uppercase tracking-widest transition-all"
                                 style={isActive ? { color: primaryColor } : {}}
                             >
                                 {item.label}
                             </span>
-                            
-                            {isActive && (
-                                <div 
-                                    className="absolute -top-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
-                                    style={{ backgroundColor: primaryColor }}
-                                />
-                            )}
                         </button>
                     );
                 })}

@@ -102,6 +102,13 @@ class PaymentResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\ImageColumn::make('enrollment.student.guardians.photo')
+                    ->label('Titular')
+                    ->circular()
+                    ->disk('s3')
+                    ->visibility('public')
+                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->enrollment?->student?->guardians?->first()?->name ?? 'U') . '&color=F97316&background=FFF7ED')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('enrollment.student.name')
                     ->label('Alumno')
                     ->searchable()
