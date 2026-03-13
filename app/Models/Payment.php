@@ -57,7 +57,7 @@ class Payment extends Model
 
     public function scopeProofUploaded($query)
     {
-        return $query->where('status', 'proof_uploaded');
+        return $query->where('status', 'pending_review');
     }
 
     public function scopeOverdue($query)
