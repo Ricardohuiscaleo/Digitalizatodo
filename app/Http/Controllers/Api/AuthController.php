@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -19,6 +20,7 @@ class AuthController extends Controller
         $credentials = $request->validate([
             'email' => 'required|email',
             'password' => 'required|string',
+            'remember' => 'nullable|boolean',
         ]);
 
         /** @var \App\Models\Tenant $tenant */
@@ -54,8 +56,18 @@ class AuthController extends Controller
             $tokenPrefix = ($userType === 'staff') ? 'staff-' : 'portal-';
             $token = $user->createToken($tokenPrefix . $tenant->id)->plainTextToken;
 
+            // Manejo de "Recordar sesión"
+            $rememberToken = null;
+            if ($request->boolean('remember')) {
+                $rememberToken = Str::random(60);
+                $user->forceFill([
+                    'remember_token' => $rememberToken,
+                ])->save();
+            }
+
             return response()->json([
                 'token' => $token,
+                'remember_token' => $rememberToken,
                 'user_type' => $userType,
                 'user' => $user->only('id', 'name', 'email', 'phone'),
                 'tenant' => $tenant->only('id', 'slug', 'name', 'primary_color', 'logo'),
