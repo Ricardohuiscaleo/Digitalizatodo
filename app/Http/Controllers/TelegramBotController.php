@@ -36,8 +36,8 @@ class TelegramBotController extends Controller
                 $html = str_ireplace(['</p>', '</div>', '</li>', '</h1>', '</h2>', '</h3>', '</h4>', '</h5>', '</h6>', '</tr>'], "\n\n", $html);
                 $html = str_ireplace(['<li>', '<td>'], "  • ", $html); // Viñetas para listas y celdas
                 
-                // 3. Limpiar tags manteniendo SOLO los soportados oficialmente por Telegram (según lista del usuario)
-                $allowedTags = '<b><strong><i><em><u><ins><s><strike><del><a><code><pre>';
+                // 3. Limpiar tags manteniendo SOLO los soportados oficialmente por Telegram
+                $allowedTags = '<b><strong><i><em><u><ins><s><strike><del><a><code><pre><tg-spoiler>';
                 $cleanText = strip_tags($html, $allowedTags);
                 
                 // 4. Decodificar entidades HTML y limpiar el exceso de espacios horizontales
