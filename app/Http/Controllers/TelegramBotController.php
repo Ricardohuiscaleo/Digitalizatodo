@@ -28,20 +28,21 @@ class TelegramBotController extends Controller
 
             // Priorizamos HTML si existe para conservar links limpios, pero lo filtramos para Telegram
             if ($htmlVersion) {
-                $html = $htmlVersion;
-                // Reemplazos explícitos para asegurar saltos de línea
-                $html = str_ireplace(['<br>', '<br/>', '<br />'], "\n", $html);
-                $html = str_ireplace(['</p>', '</div>', '</li>', '</h1>', '</h2>', '</h3>', '</h4>', '</h5>', '</h6>'], "\n\n", $html);
-                $html = str_ireplace(['<p>', '<div>', '<li>', '<h1>', '<h2>', '<h3>', '<h4>', '<h5>', '<h6>'], "\n", $html);
+                // 1. Convertimos quiebres de línea a placeholders temporales
+                $html = str_ireplace(['<br>', '<br/>', '<br />'], ' __NL__ ', $htmlVersion);
+                $html = str_ireplace(['</p>', '</div>', '</li>', '</h1>', '</h2>', '</h3>', '</h4>', '</h5>', '</h6>'], ' __NL____NL__ ', $html);
                 
-                // Limpiamos tags no permitidos por Telegram
+                // 2. Limpiamos todos los tags excepto los de Telegram
                 $cleanText = strip_tags($html, '<b><i><a><u>');
                 
-                // Decodificar entidades HTML y limpiar espacios horizontales excesivos
+                // 3. Decodificamos entidades HTML (como &nbsp;)
                 $cleanText = html_entity_decode($cleanText);
-                $cleanText = preg_replace('/[ \t]+/', ' ', $cleanText);
                 
-                // Normalizar saltos de línea (máximo 2 seguidos para no alargar demasiado)
+                // 4. Transformamos los placeholders en saltos de línea reales
+                $cleanText = str_replace(' __NL__ ', "\n", $cleanText);
+                
+                // 5. Limpiamos exceso de espacios y saltos de línea
+                $cleanText = preg_replace('/[ \t]+/', ' ', $cleanText);
                 $cleanText = preg_replace("/\n\s*\n+/", "\n\n", $cleanText);
                 
                 $trimmedText = trim($cleanText);
