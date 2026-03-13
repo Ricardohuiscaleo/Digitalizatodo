@@ -36,8 +36,10 @@ Route::get('industries', [\App\Http\Controllers\Api\IndustryController::class , 
 
 // ── Public API Endpoints (Chat & Contact) ──────────────────────────────────────────
 Route::post('w/resend-inbound', [TelegramBotController::class , 'handleResendInbound']);
+Route::post('webhooks/resend-inbound', [TelegramBotController::class , 'handleResendInbound']);
 Route::post('w/telegram', [TelegramBotController::class , 'handleTelegramWebhook']);
 Route::post('w/coolify-deploy', [TelegramBotController::class , 'handleCoolifyDeploy']);
+Route::post('webhooks/coolify-deploy', [TelegramBotController::class , 'handleCoolifyDeploy']);
 Route::post('w/contact', [TelegramBotController::class , 'handleContactForm']);
 Route::group(['prefix' => 'w/chat'], function() {
     Route::post('send', [TelegramBotController::class , 'handleChatSend']);
