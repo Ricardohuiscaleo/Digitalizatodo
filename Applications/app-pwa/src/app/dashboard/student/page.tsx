@@ -342,11 +342,17 @@ export default function StudentDashboard() {
             {/* Header Mini */}
             <div className="flex items-center justify-between mb-4">
                 <div>
-                    <h1 className="text-2xl font-black text-zinc-900">Hola, {guardian.name.split(' ')[0]}</h1>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-600">Bienvenido de vuelta</p>
+                    <h1 className="text-2xl font-black text-zinc-900 leading-tight">Hola, {guardian.name.split(' ')[0]}</h1>
+                    <p className="text-[11px] font-bold text-zinc-500 mt-1">Bienvenid@ gestiona tu asistencia y pagos 😊.</p>
                 </div>
-                <div className="w-12 h-12 bg-white rounded-2xl border border-zinc-100 shadow-sm flex items-center justify-center overflow-hidden">
-                    {branding?.logo ? <img src={branding.logo} className="w-8 h-8 object-contain" /> : <User className="text-zinc-300" />}
+                <div className="w-14 h-14 bg-white rounded-full border border-zinc-100 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                    {branding?.logo ? (
+                        <div className="w-full h-full flex items-center justify-center p-1">
+                            <img src={branding.logo} className="w-full h-full object-contain rounded-full" />
+                        </div>
+                    ) : (
+                        <User className="text-zinc-300 w-7 h-7" />
+                    )}
                 </div>
             </div>
 
@@ -377,8 +383,11 @@ export default function StudentDashboard() {
 
             {/* Mis Alumnos Cards */}
             <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Mis Alumnos</h3>
+                <div className="flex items-center gap-2 mb-1">
+                    <div className="w-1 h-4 bg-orange-500 rounded-full" />
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.1em] text-zinc-400">
+                        Registrar asistencia {new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })} {new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase()}
+                    </h3>
                 </div>
                 {students.map((student: any) => (
                     <div
@@ -412,14 +421,22 @@ export default function StudentDashboard() {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h4 className="font-black text-zinc-900 truncate">{student.name}</h4>
-                                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{student.category}</p>
+                                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider mb-1">{student.category}</p>
+                                <p className="text-[8px] font-black text-orange-500 uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity">
+                                    Click en el QR para asistir 👉🏻
+                                </p>
                             </div>
-                            <button 
-                                onClick={() => setActiveScanner(student.id)}
-                                className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-zinc-200 active:scale-90 transition-all"
-                            >
-                                <QrCode size={20} className="text-orange-400" />
-                            </button>
+                            <div className="flex items-center gap-3">
+                                <span className="hidden leading-tight max-w-[80px] text-[8px] font-black text-zinc-400 uppercase tracking-tighter text-right">
+                                    Haz click aquí para abrir lector QR de asistencia 👉🏻
+                                </span>
+                                <button 
+                                    onClick={() => setActiveScanner(student.id)}
+                                    className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-zinc-200 active:scale-90 transition-all shrink-0 relative group/qr"
+                                >
+                                    <QrCode size={20} className="text-orange-400 group-hover/qr:scale-110 transition-transform" />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 ))}
