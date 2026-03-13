@@ -242,7 +242,9 @@ export default function StudentDashboard() {
     
     // Subida de foto de perfil
     const photoInputRef = useRef<HTMLInputElement>(null);
+    const bulkFileInputRef = useRef<HTMLInputElement>(null);
     const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
+    const [selectedPayments, setSelectedPayments] = useState<string[]>([]);
 
     const refreshData = async () => {
         const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
@@ -283,6 +285,42 @@ export default function StudentDashboard() {
             } else {
                 alert("No se pudo subir el comprobante. Por favor intenta de nuevo.");
             }
+        } finally {
+            setUploadingPayment(null);
+        }
+    };
+
+    const handleBulkUploadProof = async (file: File) => {
+        if (selectedPayments.length === 0) return;
+        setUploadingPayment("bulk");
+        const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
+        const tenantId = localStorage.getItem("tenant_id");
+        if (!token || !tenantId) return;
+
+        const formData = new FormData();
+        formData.append("proof", file);
+        selectedPayments.forEach(id => formData.append("payment_ids[]", id));
+
+        try {
+            const API = process.env.NEXT_PUBLIC_API_URL || "https://admin.digitalizatodo.cl/api";
+            const tenantSlug = localStorage.getItem("tenant_slug");
+            const res = await fetch(`${API}/${tenantSlug}/payments/bulk-upload-proof`, {
+                method: "POST",
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                },
+                body: formData
+            });
+            if (res.ok) {
+                setUploadSuccess("bulk");
+                setSelectedPayments([]);
+                setTimeout(() => { setUploadSuccess(null); refreshData(); }, 2000);
+            } else {
+                alert("Error al subir comprobante masivo.");
+            }
+        } catch (e) {
+            console.error("Bulk upload error", e);
         } finally {
             setUploadingPayment(null);
         }
@@ -504,16 +542,36 @@ export default function StudentDashboard() {
 
             {/* Pendientes */}
             <div className="space-y-3">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-2">Pendientes</h3>
+                <div className="flex items-center justify-between ml-2">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Pendientes</h3>
+                    {selectedPayments.length > 0 && (
+                        <button 
+                            onClick={() => bulkFileInputRef.current?.click()}
+                            disabled={uploadingPayment === "bulk"}
+                            className="bg-orange-500 text-white text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg shadow-orange-200 animate-in zoom-in duration-200 flex items-center gap-2"
+                        >
+                            {uploadingPayment === "bulk" ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
+                            Pagar {selectedPayments.length} Seleccionados
+                        </button>
+                    )}
+                </div>
                 {students.flatMap((s: any) => s.payments || []).map((payment: any) => (
                     <PaymentRow
                         key={payment.id}
                         payment={payment}
                         primaryColor={primaryColor}
                         uploading={uploadingPayment === String(payment.id)}
-                        uploadSuccess={uploadSuccess === String(payment.id)}
+                        uploadSuccess={uploadSuccess === String(payment.id) || (uploadSuccess === "bulk" && selectedPayments.includes(String(payment.id)))}
                         onUpload={(file) => handleUploadProof(String(payment.id), file)}
                         onViewProof={(url) => setProofModalUrl(url)}
+                        isSelected={selectedPayments.includes(String(payment.id))}
+                        onToggleSelect={() => {
+                            setSelectedPayments(prev => 
+                                prev.includes(String(payment.id)) 
+                                    ? prev.filter(id => id !== String(payment.id))
+                                    : [...prev, String(payment.id)]
+                            );
+                        }}
                     />
                 ))}
                 {students.every((s: any) => (s.payments || []).length === 0) && (
@@ -522,6 +580,18 @@ export default function StudentDashboard() {
                     </div>
                 )}
             </div>
+            
+            <input 
+                type="file"
+                ref={bulkFileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleBulkUploadProof(file);
+                    if (e.target) e.target.value = "";
+                }}
+            />
 
             {/* Historial */}
             {paymentHistory.length > 0 && (
@@ -672,6 +742,8 @@ function PaymentRow({
     uploadSuccess,
     onUpload,
     onViewProof,
+    isSelected,
+    onToggleSelect,
 }: {
     payment: any;
     primaryColor: string;
@@ -679,21 +751,34 @@ function PaymentRow({
     uploadSuccess: boolean;
     onUpload: (file: File) => void;
     onViewProof: (url: string) => void;
+    isSelected: boolean;
+    onToggleSelect: () => void;
 }) {
     const fileRef = useRef<HTMLInputElement>(null);
 
     const statusConfig: Record<string, { label: string; color: string }> = {
         pending: { label: "Pendiente", color: "text-red-500 bg-red-50 border-red-200" },
-        proof_uploaded: { label: "En Revisión", color: "text-yellow-600 bg-yellow-50 border-yellow-200" },
+        pending_review: { label: "En Revisión", color: "text-yellow-600 bg-yellow-50 border-yellow-200" },
         approved: { label: "Pagado", color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
     };
     const sc = statusConfig[payment.status] || statusConfig.pending;
 
     return (
-        <div className="bg-white border border-zinc-100 rounded-2xl px-5 py-4 flex items-center justify-between gap-3 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex-1 min-w-0">
-                <p className="text-sm font-black text-zinc-900">${Number(payment.amount).toLocaleString("es-CL")}</p>
-                <p className="text-[10px] text-zinc-400 font-bold truncate">Vence: {payment.due_date || "—"}</p>
+        <div className={`bg-white border ${isSelected ? 'border-orange-500 shadow-orange-50' : 'border-zinc-100'} rounded-2xl px-5 py-4 flex items-center justify-between gap-3 shadow-sm hover:shadow-md transition-all relative overflow-hidden group/pay`}>
+            {isSelected && <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-500" />}
+            
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+                {payment.status === "pending" && (
+                    <div onClick={onToggleSelect} className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                        isSelected ? 'bg-orange-500 border-orange-500' : 'border-zinc-200 hover:border-zinc-400'
+                    }`}>
+                        {isSelected && <Check size={12} className="text-white" />}
+                    </div>
+                )}
+                <div className="min-w-0">
+                    <p className="text-sm font-black text-zinc-900">${Number(payment.amount).toLocaleString("es-CL")}</p>
+                    <p className="text-[10px] text-zinc-400 font-bold truncate">Vence: {payment.due_date || "—"}</p>
+                </div>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
