@@ -130,7 +130,7 @@ class PaymentResource extends Resource
                     ->color(fn (string $state): string => match ($state) {
                         'approved' => 'success',
                         'pending' => 'warning',
-                        'proof_uploaded' => 'info',
+                        'pending_review' => 'info',
                         'rejected' => 'danger',
                         'overdue' => 'danger',
                         default => 'gray',
@@ -152,7 +152,7 @@ class PaymentResource extends Resource
                     ->label('Estado')
                     ->options([
                         'pending' => 'Pendiente',
-                        'proof_uploaded' => 'Comprobante Subido',
+                        'pending_review' => 'Comprobante Subido',
                         'approved' => 'Aprobado',
                         'rejected' => 'Rechazado',
                         'overdue' => 'Moroso',

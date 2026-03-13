@@ -39,7 +39,7 @@ Route::post('w/resend-inbound', [TelegramBotController::class , 'handleResendInb
 Route::post('w/telegram', [TelegramBotController::class , 'handleTelegramWebhook']);
 Route::post('w/coolify-deploy', [TelegramBotController::class , 'handleCoolifyDeploy']);
 Route::post('w/contact', [TelegramBotController::class , 'handleContactForm']);
-Route::prefix('w/chat')->group(function() {
+Route::group(['prefix' => 'w/chat'], function() {
     Route::post('send', [TelegramBotController::class , 'handleChatSend']);
     Route::post('media-push', [TelegramBotController::class , 'handleChatUpload']);
     Route::get('messages', [TelegramBotController::class , 'getChatMessages']);
@@ -54,7 +54,7 @@ Route::get('w/clear-cache', function() {
     return "Cache Cleared";
 });
 
-Route::middleware([ResolveTenantFromPath::class])->prefix('{tenant}')->group(function () {
+Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tenant}'], function () {
     // Info del tenant
     Route::get('info', [TenantDiscoveryController::class , 'show']);
 
