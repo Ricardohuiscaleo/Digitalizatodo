@@ -143,7 +143,7 @@ class StudentRegistrationController extends Controller
                     // 3. Crear primer pago pendiente (Aplicando descuento dinámico)
                     $amount = $plan->price;
                     if ($appliesDiscount) {
-                        $amount = $amount * (1 - ($discountPct / 100));
+                        $amount = round($amount * (1 - ($discountPct / 100)));
                     }
 
                     Payment::create([
