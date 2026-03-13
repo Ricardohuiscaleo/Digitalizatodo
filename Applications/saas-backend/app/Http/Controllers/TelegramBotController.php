@@ -441,6 +441,14 @@ class TelegramBotController extends Controller
                 ob_end_clean();
             }
 
+            // Forzar headers para evitar buffering en proxies (Nginx/Coolify)
+            if (!headers_sent()) {
+                header('Content-Type: text/event-stream');
+                header('Cache-Control: no-cache');
+                header('Connection: keep-alive');
+                header('X-Accel-Buffering: no'); // Crítico para Nginx
+            }
+
             try {
                 // Cache Buster / Padding para móviles
                 echo ":" . str_repeat(" ", 2048) . "\n";

@@ -102,27 +102,38 @@ const FloatingChat = () => {
         if (isOpen) setUnreadCount(0);
     }, [isOpen]);
 
-    // SSE Integration
+    // SSE & Polling Integration
     useEffect(() => {
         if (!sessionId) return;
         const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://admin.digitalizatodo.cl';
-        const eventSource = new EventSource(`${API_BASE}/api/w/chat/stream?session_id=${sessionId}&t=${Date.now()}`);
+        let eventSource: EventSource | null = null;
+        let pollInterval: any = null;
 
-        eventSource.addEventListener('new-message', (event: any) => {
-            try {
-                const newMsg = JSON.parse(event.data);
-                setMessages(prev => {
-                    if (prev.find(m => m.id === newMsg.id)) return prev;
-                    if (!isOpen && newMsg.sender === 'admin') {
-                        setUnreadCount(c => c + 1);
-                        playNotification();
-                    }
-                    return [...prev, newMsg];
-                });
-            } catch (err) {}
-        });
+        const setupSSE = () => {
+            eventSource = new EventSource(`${API_BASE}/api/w/chat/stream?session_id=${sessionId}&t=${Date.now()}`);
+            
+            eventSource.addEventListener('new-message', (event: any) => {
+                try {
+                    const newMsg = JSON.parse(event.data);
+                    setMessages(prev => {
+                        if (prev.find(m => m.id === newMsg.id)) return prev;
+                        if (!isOpen && newMsg.sender === 'admin') {
+                            setUnreadCount(c => c + 1);
+                            playNotification();
+                        }
+                        return [...prev, newMsg];
+                    });
+                } catch (err) {}
+            });
 
-        const fetchInitial = async () => {
+            eventSource.onerror = () => {
+                console.warn("SSE connection error, falling back to polling");
+                if (eventSource) eventSource.close();
+                startPolling();
+            };
+        };
+
+        const fetchMessages = async () => {
             try {
                 const response = await fetch(`${API_BASE}/api/w/chat/messages?session_id=${sessionId}&t=${Date.now()}`);
                 if (response.ok) {
@@ -131,14 +142,33 @@ const FloatingChat = () => {
                         setMessages(prev => {
                             const existingIds = new Set(prev.map(m => m.id));
                             const newOnly = data.filter((m: any) => !existingIds.has(m.id));
+                            if (newOnly.length === 0) return prev;
+                            
+                            // Si hay mensajes nuevos de admin fuera del lag, notificar
+                            const hasAdminMsg = newOnly.some((m: any) => m.sender === 'admin');
+                            if (!isOpen && hasAdminMsg) {
+                                setUnreadCount(c => c + 1);
+                                playNotification();
+                            }
                             return [...prev, ...newOnly];
                         });
                     }
                 }
             } catch (e) {}
         };
-        fetchInitial();
-        return () => eventSource.close();
+
+        const startPolling = () => {
+            if (pollInterval) return;
+            pollInterval = setInterval(fetchMessages, 4000); // Polling cada 4s (Seguro para móvil)
+        };
+
+        setupSSE();
+        fetchMessages(); // Carga inicial
+
+        return () => {
+            if (eventSource) eventSource.close();
+            if (pollInterval) clearInterval(pollInterval);
+        };
     }, [sessionId, isOpen]);
 
     const handleFileUpload = async (e: any, type: string = 'file', blob?: Blob) => {
