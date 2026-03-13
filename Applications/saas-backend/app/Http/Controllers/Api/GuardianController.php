@@ -86,6 +86,11 @@ class GuardianController extends Controller
                 ];
             });
 
+        \Log::info("Payers fetch for tenant $tenantId: " . count($guardians) . " found.");
+        foreach ($guardians as $g) {
+            \Log::info("Payer ID: {$g['id']}, Name: {$g['name']}, Status: {$g['status']}");
+        }
+
         return response()->json(['payers' => $guardians]);
     }
 
