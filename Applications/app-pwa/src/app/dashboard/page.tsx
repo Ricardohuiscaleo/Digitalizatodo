@@ -371,14 +371,18 @@ export default function App() {
                         <div className="relative z-10">
                             <h2 className="text-sm font-medium opacity-90 mb-1 leading-none uppercase tracking-widest text-[10px]">Total Alumnos Participantes</h2>
                             <p className="text-4xl font-black mb-4 tracking-tighter">{totalStudents}</p>
-                            <div className="flex justify-between items-center text-[11px] bg-white/20 rounded-xl p-4 backdrop-blur-sm font-black uppercase tracking-widest">
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle2 size={16} className="text-green-300 border-none" />
+                            <div className="grid grid-cols-3 gap-2 text-[10px] bg-white/20 rounded-xl p-3 backdrop-blur-sm font-black uppercase tracking-tight text-center">
+                                <div className="flex flex-col items-center gap-1">
+                                    <CheckCircle2 size={14} className="text-green-300 border-none" />
                                     <span>{paidStudents} Pagados</span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <XCircle size={16} className="text-red-300 border-none" />
-                                    <span>{pendingStudents} Pendientes</span>
+                                <div className="flex flex-col items-center gap-1 border-x border-white/10 px-1">
+                                    <RefreshCw size={14} className="text-amber-300 border-none animate-spin-slow" />
+                                    <span>{allStudents.filter(s => s.payerStatus === 'review').length} Por Aprobar</span>
+                                </div>
+                                <div className="flex flex-col items-center gap-1">
+                                    <XCircle size={14} className="text-red-300 border-none" />
+                                    <span>{allStudents.filter(s => s.payerStatus === 'pending').length} Pendientes</span>
                                 </div>
                             </div>
                             {isDemo && <p className="text-[10px] font-black uppercase text-center mt-4 text-white/50 tracking-[0.3em]">MODO DEMO ACTIVO</p>}
@@ -640,7 +644,7 @@ export default function App() {
     const renderPayments = () => {
         const filteredPayers = payers.filter(p => {
             if (paymentFilter === 'paid') return p.status === 'paid';
-            if (paymentFilter === 'pending') return p.status === 'pending';
+            if (paymentFilter === 'pending') return p.status === 'pending' || p.status === 'review';
             return true;
         }).filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -708,7 +712,15 @@ export default function App() {
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            {!isPaid && (
+                                            {isPaid ? null : payer.status === 'review' ? (
+                                                <button
+                                                    onClick={() => handlePaymentApprove(payer.id)}
+                                                    className="px-5 py-2 rounded-xl bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all shadow-md shadow-amber-100 flex items-center gap-2"
+                                                >
+                                                    <RefreshCw size={12} className="animate-spin-slow" />
+                                                    Aprobar
+                                                </button>
+                                            ) : (
                                                 <button
                                                     onClick={() => handlePaymentApprove(payer.id)}
                                                     className="px-5 py-2 rounded-xl bg-zinc-950 text-white text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-md shadow-zinc-100"
