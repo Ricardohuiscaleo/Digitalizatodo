@@ -259,24 +259,6 @@ export default function App() {
         setPrices(p => ({ ...p, [field]: num }));
     };
 
-    const calculatePrice = (payer: any) => {
-        let total = 0;
-        payer.enrolledStudents.forEach((student: any) => {
-            const cat = student.category?.toLowerCase();
-            total += (cat === 'adult' || cat === 'adults') ? prices.adult : prices.kids;
-        });
-
-        const numEnrollments = payer.enrolledStudents.length;
-        let hasDiscount = false;
-
-        if (numEnrollments >= prices.discountThreshold && prices.discountThreshold > 0 && prices.discountPercentage > 0) {
-            total = total * (1 - prices.discountPercentage / 100);
-            hasDiscount = true;
-        }
-
-        return { amount: total, hasDiscount, numEnrollments };
-    };
-
     // --- ACCIONES ---
 
     const handleLoadDemo = () => {
@@ -676,6 +658,15 @@ export default function App() {
             return true;
         }).filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
+        const getPayerRealStats = (payer: any) => {
+            const reviewAmount = payer.payments?.filter((p: any) => p.status === 'review').reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
+            const pendingAmount = payer.payments?.filter((p: any) => p.status === 'pending' || p.status === 'overdue').reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
+            const hasReview = reviewAmount > 0;
+            const numEnrollments = payer.enrolledStudents.length;
+            const displayAmount = (hasReview || (paymentFilter === 'pending' && reviewAmount > 0)) ? reviewAmount : (pendingAmount || 0);
+            return { displayAmount, reviewAmount, pendingAmount, numEnrollments, hasReview };
+        };
+
         return (
             <div className="space-y-4 px-4">
                 <div className="flex gap-2 bg-white p-2 rounded-2xl shadow-sm border border-zinc-100 overflow-x-auto hide-scrollbar">
@@ -705,7 +696,7 @@ export default function App() {
                         </thead>
                         <tbody className="divide-y divide-zinc-50">
                             {filteredPayers.map(payer => {
-                                const { amount, hasDiscount, numEnrollments } = calculatePrice(payer);
+                                const { displayAmount, numEnrollments, hasReview } = getPayerRealStats(payer);
                                 const isPaid = payer.status === 'paid';
                                 return (
                                     <tr key={payer.id} className="hover:bg-zinc-50/50 transition-colors">
@@ -720,8 +711,10 @@ export default function App() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col">
-                                                <span className="text-sm font-black text-indigo-600">{formatMoney(amount)}</span>
-                                                {hasDiscount && <span className="text-[8px] text-emerald-600 font-black uppercase tracking-widest">Con Descuento</span>}
+                                                <span className="text-sm font-black text-zinc-950">{formatMoney(displayAmount)}</span>
+                                                {hasReview && (payer.payments?.some((p: any) => p.status === 'pending') ?? false) && (
+                                                    <span className="text-[8px] text-rose-500 font-black uppercase tracking-widest">Tiene Deuda</span>
+                                                )}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
@@ -767,9 +760,11 @@ export default function App() {
                 {/* VISTA MOBILE: LISTA DE TARJETAS */}
                 <div className="space-y-3 pb-6">
                     {filteredPayers.map(payer => {
-                        const { amount, hasDiscount, numEnrollments } = calculatePrice(payer);
+                        const { displayAmount, reviewAmount, pendingAmount, numEnrollments } = getPayerRealStats(payer);
                         const isPaid = payer.status === 'paid';
                         const isExpanded = expandedPayerId === payer.id;
+                        const hasReview = payer.payments?.some((p: any) => p.status === 'review');
+                        const proofUrl = payer.payments?.find((p: any) => p.status === 'review')?.proof_url;
 
                         return (
                             <div
@@ -799,8 +794,12 @@ export default function App() {
                                         </div>
 
                                         <div className="flex items-center gap-2 mt-2">
-                                            <span className="font-black text-zinc-950 text-base tracking-tighter">{formatMoney(amount)}</span>
-                                            {hasDiscount && <span className="text-[8px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-lg font-black uppercase tracking-widest">Descuento</span>}
+                                            <span className="font-black text-zinc-950 text-base tracking-tighter">
+                                                {formatMoney(displayAmount)}
+                                            </span>
+                                            {hasReview && pendingAmount > 0 && (
+                                                <span className="text-[8px] bg-rose-50 text-rose-500 px-2 py-0.5 rounded-lg font-black uppercase tracking-widest">+ {formatMoney(pendingAmount)} Pendiente</span>
+                                            )}
                                         </div>
                                     </div>
 
@@ -811,9 +810,9 @@ export default function App() {
                                             </div>
                                         ) : payer.status === 'review' ? (
                                             <div className="flex items-center gap-1.5">
-                                                {payer.proof_image && (
+                                                {proofUrl && (
                                                     <button
-                                                        onClick={(e) => { e.stopPropagation(); setProofModalUrl(payer.proof_image); }}
+                                                        onClick={(e) => { e.stopPropagation(); setProofModalUrl(proofUrl); }}
                                                         className="w-12 h-14 bg-white border-2 border-zinc-100 text-zinc-400 rounded-2xl flex items-center justify-center hover:bg-zinc-50 active:scale-95 transition-all shadow-sm"
                                                     >
                                                         <Eye size={20} />
@@ -847,41 +846,32 @@ export default function App() {
                                             )}
                                         </div>
                                         <div className="space-y-2.5">
-                                            {payer.enrolledStudents.map((s: any) => {
-                                                const catPrice = s.category === 'adults' ? prices.adult : prices.kids;
-                                                return (
-                                                    <div key={s.id} className="flex items-center justify-between bg-white p-4 rounded-2xl border border-zinc-100 shadow-sm">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="relative">
-                                                                <img src={s.photo} className="w-10 h-10 rounded-full object-cover" />
-                                                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
-                                                            </div>
-                                                            <div className="flex flex-col">
-                                                                <span className="text-xs font-black uppercase text-zinc-900 leading-none">{s.name}</span>
-                                                                <span className="text-[8px] text-zinc-400 font-bold uppercase mt-1">Marzo 2026 • {s.category || vocab.cat1}</span>
+                                            {payer.payments?.map((payment: any) => (
+                                                <div key={payment.id} className="flex items-center justify-between bg-white p-4 rounded-2xl border border-zinc-100 shadow-sm">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="relative">
+                                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-xs ${payment.status === 'review' ? 'bg-amber-500 text-white' : 'bg-rose-50 text-rose-500'}`}>
+                                                                {payment.status === 'review' ? <RefreshCw size={16} className="animate-spin-slow" /> : <Clock size={16} />}
                                                             </div>
                                                         </div>
-                                                        <div className="text-right flex flex-col items-end">
-                                                            <span className="text-xs font-black text-zinc-900">{formatMoney(catPrice)}</span>
-                                                            {s.label && (
-                                                                <span className={`text-[7px] font-black px-2 py-0.5 rounded-lg uppercase mt-1 ${getBeltColor(s.label)}`}>{s.label}</span>
-                                                            )}
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs font-black uppercase text-zinc-900 leading-none">{payment.student_name}</span>
+                                                            <span className="text-[8px] text-zinc-400 font-bold uppercase mt-1">Vence: {payment.due_date} • {payment.status === 'review' ? 'En Revisión' : 'Por Pagar'}</span>
                                                         </div>
                                                     </div>
-                                                );
-                                            })}
-
-                                            {hasDiscount && (
-                                                <div className="flex justify-between items-center bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100/50 border-dashed">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center">
-                                                            <Plus size={12} className="text-white rotate-45" />
-                                                        </div>
-                                                        <span className="text-[10px] font-black uppercase text-emerald-700">Descuento de Grupo</span>
+                                                    <div className="text-right flex flex-col items-end gap-1">
+                                                        <span className="text-xs font-black text-zinc-900">{formatMoney(payment.amount)}</span>
+                                                        {payment.status === 'review' && payment.proof_url && (
+                                                            <button 
+                                                                onClick={(e) => { e.stopPropagation(); setProofModalUrl(payment.proof_url); }}
+                                                                className="text-[7px] font-black bg-zinc-950 text-white px-2 py-1 rounded-lg uppercase flex items-center gap-1"
+                                                            >
+                                                                <Eye size={8} /> Ver Boucher
+                                                            </button>
+                                                        )}
                                                     </div>
-                                                    <span className="text-xs font-black text-emerald-600">-{prices.discountPercentage}%</span>
                                                 </div>
-                                            )}
+                                            ))}
                                         </div>
                                     </div>
                                 )}
