@@ -769,8 +769,12 @@ export default function App() {
                         return (
                             <div
                                 key={payer.id}
-                                className={`bg-white rounded-[2rem] shadow-sm border transition-all duration-200 overflow-hidden ${isExpanded ? 'border-zinc-300 ring-1 ring-zinc-100 mb-6' : 'border-zinc-100'
-                                    }`}
+                                className={`bg-white rounded-[2rem] shadow-sm border transition-all duration-200 overflow-hidden ${
+                                    isExpanded ? 'border-zinc-300 ring-1 ring-zinc-100 mb-6' : 
+                                    isPaid ? 'border-emerald-100 bg-emerald-50/10' : 
+                                    payer.status === 'review' ? 'border-amber-100 bg-amber-50/10' : 
+                                    'border-rose-100 bg-rose-50/10'
+                                }`}
                             >
                                 <div className="p-5 flex items-center gap-4 cursor-pointer" onClick={() => setExpandedPayerId(isExpanded ? null : payer.id)}>
                                     <div className="relative">
@@ -850,9 +854,18 @@ export default function App() {
                                                 <div key={payment.id} className="flex items-center justify-between bg-white p-4 rounded-2xl border border-zinc-100 shadow-sm">
                                                     <div className="flex items-center gap-3">
                                                         <div className="relative">
-                                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-xs ${payment.status === 'review' ? 'bg-amber-500 text-white' : 'bg-rose-50 text-rose-500'}`}>
-                                                                {payment.status === 'review' ? <RefreshCw size={16} className="animate-spin-slow" /> : <Clock size={16} />}
-                                                            </div>
+                                                            {payment.student_photo ? (
+                                                                <img src={payment.student_photo} className="w-10 h-10 rounded-full object-cover shadow-sm" />
+                                                            ) : (
+                                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-xs ${payment.status === 'review' ? 'bg-amber-500 text-white' : 'bg-rose-50 text-rose-500'}`}>
+                                                                    {payment.status === 'review' ? <RefreshCw size={16} className="animate-spin-slow" /> : <Clock size={16} />}
+                                                                </div>
+                                                            )}
+                                                            {payment.status === 'review' && (
+                                                                <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full border-2 border-white flex items-center justify-center shadow-sm">
+                                                                    <RefreshCw size={8} className="text-white animate-spin-slow" />
+                                                                </div>
+                                                            )}
                                                         </div>
                                                         <div className="flex flex-col">
                                                             <span className="text-xs font-black uppercase text-zinc-900 leading-none">{payment.student_name}</span>
@@ -864,9 +877,9 @@ export default function App() {
                                                         {payment.status === 'review' && payment.proof_url && (
                                                             <button 
                                                                 onClick={(e) => { e.stopPropagation(); setProofModalUrl(payment.proof_url); }}
-                                                                className="text-[7px] font-black bg-zinc-950 text-white px-2 py-1 rounded-lg uppercase flex items-center gap-1"
+                                                                className="text-[7px] font-black bg-zinc-950 text-white px-3 py-1.5 rounded-lg uppercase flex items-center gap-1 shadow-md active:scale-95 transition-all"
                                                             >
-                                                                <Eye size={8} /> Ver Boucher
+                                                                <Eye size={10} /> Ver Boucher
                                                             </button>
                                                         )}
                                                     </div>
