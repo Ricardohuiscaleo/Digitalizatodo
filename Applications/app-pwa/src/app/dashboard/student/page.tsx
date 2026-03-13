@@ -15,11 +15,17 @@ import {
     X,
     Copy,
     Check,
-    Camera
+    Camera,
+    CreditCard,
+    Settings,
+    ChevronRight,
+    MapPin
 } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
 import { getProfile, markAttendanceViaQR } from "@/lib/api";
 import jsQR from "jsqr";
+import BottomNav, { NavSection } from "@/components/Navigation/BottomNav";
+import StudentCalendar from "@/components/Calendar/StudentCalendar";
 
 /* ─── QR Camera Scanner ─── */
 function StudentQRScanner({
@@ -56,14 +62,14 @@ function StudentQRScanner({
             
             if (type === 'success') {
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, ctx.currentTime);     // A5
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
                 gain.gain.setValueAtTime(0.5, ctx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
                 osc.start(ctx.currentTime);
                 osc.stop(ctx.currentTime + 0.1);
             } else {
                 osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, ctx.currentTime);     // Low note
+                osc.frequency.setValueAtTime(150, ctx.currentTime);
                 gain.gain.setValueAtTime(0.5, ctx.currentTime);
                 gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.3);
                 osc.start(ctx.currentTime);
@@ -142,13 +148,11 @@ function StudentQRScanner({
                     <div className="relative rounded-3xl overflow-hidden border-2 border-white/10 aspect-square">
                         <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
                         <canvas ref={canvasRef} className="hidden" />
-                        {/* Viewfinder corners */}
                         <div className="absolute inset-0 pointer-events-none">
                             <div className="absolute top-4 left-4 w-10 h-10 border-l-4 border-t-4 border-white/60 rounded-tl-lg" />
                             <div className="absolute top-4 right-4 w-10 h-10 border-r-4 border-t-4 border-white/60 rounded-tr-lg" />
                             <div className="absolute bottom-4 left-4 w-10 h-10 border-l-4 border-b-4 border-white/60 rounded-bl-lg" />
                             <div className="absolute bottom-4 right-4 w-10 h-10 border-r-4 border-b-4 border-white/60 rounded-br-lg" />
-                            {/* Scanning line */}
                             <div className="absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-white to-transparent opacity-60 animate-[scan_2s_ease-in-out_infinite]" style={{ top: "50%" }} />
                         </div>
                     </div>
@@ -219,7 +223,6 @@ function ProofModal({ url, onClose }: { url: string; onClose: () => void }) {
                 <div className="rounded-3xl overflow-hidden border border-white/10">
                     <img src={url} alt="Comprobante de pago" className="w-full object-contain max-h-[70vh]" />
                 </div>
-                <p className="text-center text-xs text-gray-500 mt-3">Comprobante de transferencia</p>
             </div>
         </div>
     );
@@ -230,6 +233,7 @@ export default function StudentDashboard() {
     const { branding } = useBranding();
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [activeSection, setActiveSection] = useState<NavSection>("home");
     const [activeScanner, setActiveScanner] = useState<string | null>(null);
     const [uploadingPayment, setUploadingPayment] = useState<string | null>(null);
     const [proofModalUrl, setProofModalUrl] = useState<string | null>(null);
@@ -277,8 +281,6 @@ export default function StudentDashboard() {
                 setUploadSuccess(paymentId);
                 setTimeout(() => { setUploadSuccess(null); refreshData(); }, 2000);
             } else {
-                const err = await res.text();
-                console.error("Error subiendo comprobante:", err);
                 alert("No se pudo subir el comprobante. Por favor intenta de nuevo.");
             }
         } finally {
@@ -297,7 +299,7 @@ export default function StudentDashboard() {
 
         try {
             const API = process.env.NEXT_PUBLIC_API_URL || "https://admin.digitalizatodo.cl/api";
-            const tenantSlug = localStorage.getItem("tenant_slug") || tenantId; // Fallback a ID si no hay slug
+            const tenantSlug = localStorage.getItem("tenant_slug") || tenantId;
             const res = await fetch(`${API}/${tenantSlug}/students/${studentId}/photo`, {
                 method: "POST",
                 headers: { 
@@ -307,248 +309,317 @@ export default function StudentDashboard() {
                 body: formData,
             });
             if (res.ok) {
-                alert("¡Foto actualizada con éxito!");
                 refreshData();
             } else {
                 const err = await res.text();
-                console.error("Error subiendo foto:", err);
                 alert(`Error al subir la foto: ${err.substring(0, 100)}`);
             }
         } catch (error) {
-            console.error("Upload error:", error);
             alert("Error de conexión al subir foto.");
         } finally {
             setUploadingPhotoFor(null);
         }
     };
 
-    const primaryColor = branding?.primaryColor || "#a855f7";
+    const primaryColor = branding?.primaryColor || "#f97316";
 
     if (loading) return (
-        <div className="flex min-h-screen items-center justify-center bg-orange-50">
+        <div className="flex min-h-screen items-center justify-center bg-stone-50">
             <Loader2 className="w-6 h-6 text-orange-600 animate-spin" />
         </div>
     );
 
-    const guardian = data?.guardian || { name: "Usuario" };
+    const guardian = data?.guardian || { name: "Usuario", email: "", phone: "" };
     const students = data?.students || [];
     const paymentHistory = data?.payment_history || [];
     const bankInfo = data?.bank_info;
+    const totalDue = data?.total_due || 0;
 
-    return (
-        <div className="max-w-7xl mx-auto min-h-screen bg-stone-50 text-zinc-900 pb-32 md:pb-12 md:px-8">
-            <div className="md:grid md:grid-cols-12 md:gap-8 md:mt-8">
-                
-                {/* Columna Izquierda (Fija en PC): Perfil y Deuda */}
-                <div className="md:col-span-4 md:sticky md:top-8 md:self-start space-y-6">
-                    {/* Header */}
-                    <div className="p-6 md:p-0 md:bg-white md:rounded-[2rem] md:shadow-sm md:border md:border-zinc-100 md:p-6 transition-all pt-12 md:pt-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center border border-zinc-200 shadow-sm shrink-0">
-                                    <User className="w-6 h-6 text-orange-500" />
-                                </div>
-                                <div>
-                                    <h1 className="text-xl font-bold tracking-tight text-zinc-800 break-words line-clamp-2">Hola, {guardian.name.split(' ')[0]}</h1>
-                                    <p className="text-xs text-orange-600/80 uppercase tracking-widest font-black">Portal del Apoderado</p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => { localStorage.clear(); window.location.href = "/login"; }}
-                                className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-zinc-200 shadow-sm hover:bg-red-50 hover:border-red-200 transition-all text-zinc-400 hover:text-red-500 shrink-0"
-                            >
-                                <LogOut className="w-5 h-5" />
-                            </button>
-                        </div>
-                    </div>
+    /* ─── Sections Rendering ─── */
 
-                    {/* Deuda banner */}
-                    {data?.total_due > 0 && (
-                        <div className="mx-4 md:mx-0 bg-gradient-to-br from-red-50 to-orange-50 border border-red-100/50 rounded-3xl p-5 shadow-sm animate-in fade-in duration-200 relative overflow-hidden">
-                            <div className="relative z-10">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-1">Saldo Pendiente</p>
-                                <p className="text-3xl font-black text-red-950">${Number(data.total_due).toLocaleString("es-CL")}</p>
-                                {bankInfo && (
-                                    <div className="mt-4 pt-4 border-t border-red-200/50">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <p className="text-[10px] font-black uppercase text-red-600/70">Datos para transferencia</p>
-                                            <button
-                                                onClick={() => {
-                                                    const text = `Banco: ${bankInfo.bank_name}\nTipo: ${bankInfo.account_type}\nCta: ${bankInfo.account_number}\nTitular: ${bankInfo.holder_name}\nRUT: ${bankInfo.holder_rut}`;
-                                                    navigator.clipboard.writeText(text);
-                                                    setCopiedBank(true);
-                                                    setTimeout(() => setCopiedBank(false), 2000);
-                                                }}
-                                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all shadow-sm ${
-                                                    copiedBank ? 'bg-emerald-500 text-white border border-emerald-600' : 'bg-white text-zinc-600 hover:bg-zinc-50 border border-zinc-200'
-                                                }`}
-                                            >
-                                                {copiedBank ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                                                {copiedBank ? 'Copiado' : 'Copiar info'}
-                                            </button>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-xs text-red-950/70 font-bold break-words">{bankInfo.bank_name} · {bankInfo.account_type}</p>
-                                            <p className="text-sm font-black text-red-950 break-all">Cta: {bankInfo.account_number}</p>
-                                            <p className="text-xs text-red-950/60 font-medium break-words">{bankInfo.holder_name} · RUT: {bankInfo.holder_rut}</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-red-500/5 rounded-full blur-2xl pointer-events-none" />
-                        </div>
-                    )}
+    const renderHome = () => (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* Header Mini */}
+            <div className="flex items-center justify-between mb-4">
+                <div>
+                    <h1 className="text-2xl font-black text-zinc-900">Hola, {guardian.name.split(' ')[0]}</h1>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-600">Bienvenido de vuelta</p>
                 </div>
-
-                {/* Columna Derecha (Scroll fluído en PC): Alumnos e Historial */}
-                <div className="md:col-span-8 space-y-8 mt-8 md:mt-0">
-                    {/* Alumnos */}
-                    <div className="space-y-6 px-4 md:px-0">
-                        <h2 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Mis Alumnos</h2>
-
-                    {students.map((student: any) => (
-                        <div
-                            key={student.id}
-                            className="bg-white border border-zinc-100 rounded-[2.5rem] p-6 shadow-sm relative overflow-hidden transition-all hover:shadow-md"
-                        >
-                            {/* Student header */}
-                            <div className="flex items-start gap-4 relative z-10">
-                                <div 
-                                    className="w-16 h-16 rounded-3xl overflow-hidden bg-zinc-100 border border-zinc-200 shadow-sm shrink-0 relative group cursor-pointer hover:border-orange-200 transition-all"
-                                    onClick={() => {
-                                        photoInputRef.current?.setAttribute('data-student-id', student.id);
-                                        photoInputRef.current?.click();
-                                    }}
-                                >
-                                    {uploadingPhotoFor === student.id ? (
-                                        <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] flex flex-col items-center justify-center z-20 animate-in fade-in duration-200">
-                                            <Loader2 className="animate-spin text-orange-500" size={18} />
-                                            <span className="text-[7px] font-black text-orange-600 uppercase mt-1 tracking-tighter">Procesando</span>
-                                        </div>
-                                    ) : null}
-                                    
-                                    {student.photo ? (
-                                        <img src={student.photo} alt={student.name} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-2xl font-black text-zinc-300">
-                                            {student.name[0]}
-                                        </div>
-                                    )}
-                                    
-                                    {/* Botón flotante de cámara (Siempre visible pero sutil) */}
-                                    <div className="absolute bottom-1 right-1 w-6 h-6 bg-white rounded-full shadow-md border border-zinc-100 flex items-center justify-center text-zinc-400 group-hover:text-orange-500 group-hover:scale-110 transition-all z-10">
-                                        <Camera className="w-3.5 h-3.5" />
-                                    </div>
-                                    
-                                    {/* Overlay al pasar el mouse */}
-                                    <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="text-lg font-black text-zinc-900 mb-1 truncate">{student.name}</h3>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <span className="text-[10px] bg-zinc-100 py-1 px-2 rounded-full border border-zinc-200 text-zinc-500 uppercase font-black tracking-wider">
-                                            {student.category}
-                                        </span>
-                                        {student.belt_rank && (
-                                            <span className="text-[10px] bg-zinc-100 py-1 px-2 rounded-full border border-zinc-200 text-zinc-500 uppercase font-black tracking-wider shadow-sm">
-                                                🥋 {student.belt_rank}
-                                            </span>
-                                        )}
-                                        {student.pending_payments > 0 && (
-                                            <span className="text-[10px] bg-red-50 py-1 px-2 rounded-full border border-red-200 text-red-600 uppercase font-black tracking-wider flex items-center gap-1 shadow-sm">
-                                                <AlertCircle className="w-3 h-3" />
-                                                {student.pending_payments} pendiente{student.pending_payments > 1 ? "s" : ""}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Attendance quick */}
-                            <div className="mt-5 grid grid-cols-2 gap-3">
-                                <div className="bg-orange-50/50 rounded-2xl p-3 border border-orange-100">
-                                    <div className="flex items-center gap-2 mb-2 text-orange-600">
-                                        <Calendar className="w-4 h-4" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">Última Clase</span>
-                                    </div>
-                                    {student.recent_attendance?.[0] ? (
-                                        <p className="text-xs font-bold text-zinc-900">
-                                            {student.recent_attendance[0].status === "present" ? "✅ Presente" : "❌ Ausente"}
-                                            <span className="block text-[10px] text-zinc-500 font-bold mt-0.5">{student.recent_attendance[0].date}</span>
-                                        </p>
-                                    ) : (
-                                        <p className="text-[10px] text-zinc-400 font-bold italic">Sin registros</p>
-                                    )}
-                                </div>
-                                <div className="bg-orange-50/50 rounded-2xl p-3 border border-orange-100">
-                                    <div className="flex items-center gap-2 mb-2 text-orange-600">
-                                        <CheckCircle2 className="w-4 h-4" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">Asistencias</span>
-                                    </div>
-                                    <p className="text-lg font-black text-zinc-900 leading-none">{student.attendance_count}</p>
-                                    <p className="text-[9px] font-bold text-zinc-500 mt-1 uppercase tracking-widest">clases total</p>
-                                </div>
-                            </div>
-
-                            {/* QR Button */}
-                            <button
-                                onClick={() => setActiveScanner(student.id)}
-                                className="mt-4 w-full h-14 bg-zinc-950 text-white rounded-2xl flex items-center justify-center gap-3 text-xs font-black uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-md shadow-zinc-200 active:scale-95"
-                            >
-                                <QrCode className="w-5 h-5 text-orange-400" />
-                                Registrar Ingreso QR
-                            </button>
-
-                            {/* Payments for this student */}
-                            {student.payments && student.payments.length > 0 && (
-                                <div className="mt-5 space-y-2">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Mensualidades</p>
-                                    {student.payments.map((payment: any) => (
-                                        <PaymentRow
-                                            key={payment.id}
-                                            payment={payment}
-                                            primaryColor={primaryColor}
-                                            uploading={uploadingPayment === String(payment.id)}
-                                            uploadSuccess={uploadSuccess === String(payment.id)}
-                                            onUpload={(file) => handleUploadProof(String(payment.id), file)}
-                                            onViewProof={(url) => setProofModalUrl(url)}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-
-                            <div className="absolute top-0 right-0 w-32 h-32 opacity-10 blur-3xl pointer-events-none rounded-full" style={{ backgroundColor: primaryColor }} />
-                        </div>
-                    ))}
-                </div>
-
-                {/* Payment History */}
-                {paymentHistory.length > 0 && (
-                    <div className="mt-8 space-y-3">
-                        <h2 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Historial de Pagos</h2>
-                        {paymentHistory.map((p: any) => (
-                            <div key={p.id} className="flex items-center justify-between bg-white border border-zinc-100 rounded-2xl px-4 py-3 shadow-sm hover:shadow-md transition-shadow">
-                                <div>
-                                    <p className="text-sm font-black text-zinc-900">${Number(p.amount).toLocaleString("es-CL")}</p>
-                                    <p className="text-[10px] text-zinc-400 font-bold">{p.paid_at || p.due_date}</p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    {p.status === "approved" && <span className="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full px-2 py-0.5 font-black uppercase shadow-sm">Pagado</span>}
-                                    {p.status === "pending_review" && <span className="text-[10px] bg-yellow-50 text-yellow-600 border border-yellow-200 rounded-full px-2 py-0.5 font-black uppercase shadow-sm">En Revisión</span>}
-                                    {p.proof_url && (
-                                        <button onClick={() => setProofModalUrl(p.proof_url)} className="text-zinc-400 hover:text-zinc-600 transition-colors p-1 bg-zinc-50 rounded-full border border-zinc-200">
-                                            <Eye className="w-4 h-4" />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
+                <div className="w-12 h-12 bg-white rounded-2xl border border-zinc-100 shadow-sm flex items-center justify-center overflow-hidden">
+                    {branding?.logo ? <img src={branding.logo} className="w-8 h-8 object-contain" /> : <User className="text-zinc-300" />}
                 </div>
             </div>
 
-            {/* Hidden Photo Input */}
+            {/* Deuda / Status Card */}
+            {totalDue > 0 ? (
+                <div className="bg-gradient-to-br from-red-500 to-orange-600 rounded-[2.5rem] p-6 text-white shadow-xl shadow-red-500/20 relative overflow-hidden group">
+                    <div className="relative z-10">
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Saldo pendiente</p>
+                        <h2 className="text-4xl font-black mb-4">${Number(totalDue).toLocaleString("es-CL")}</h2>
+                        <button 
+                            onClick={() => setActiveSection("payments")}
+                            className="bg-white/20 backdrop-blur-md border border-white/30 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-white/30 transition-all flex items-center gap-2"
+                        >
+                            Pagar ahora <ChevronRight size={14} />
+                        </button>
+                    </div>
+                    <CreditCard className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10 -rotate-12 group-hover:scale-110 transition-transform duration-700" />
+                </div>
+            ) : (
+                <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-[2.5rem] p-6 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden">
+                    <div className="relative z-10">
+                        <CheckCircle2 className="w-8 h-8 mb-2" />
+                        <h2 className="text-xl font-black">¡Estás al día!</h2>
+                        <p className="text-xs opacity-80 mt-1">No tienes mensualidades pendientes.</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Mis Alumnos Cards */}
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Mis Alumnos</h3>
+                </div>
+                {students.map((student: any) => (
+                    <div
+                        key={student.id}
+                        className="bg-white border border-zinc-100 rounded-[2.5rem] p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition-all active:scale-[0.98]"
+                    >
+                        <div className="flex items-center gap-4 relative z-10">
+                            <div 
+                                className="w-16 h-16 rounded-3xl overflow-hidden bg-zinc-100 border border-zinc-200 shadow-sm shrink-0 relative cursor-pointer"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    photoInputRef.current?.setAttribute('data-student-id', student.id);
+                                    photoInputRef.current?.click();
+                                }}
+                            >
+                                {uploadingPhotoFor === student.id ? (
+                                    <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] flex flex-col items-center justify-center z-20">
+                                        <Loader2 className="animate-spin text-orange-500" size={18} />
+                                    </div>
+                                ) : null}
+                                {student.photo ? (
+                                    <img src={student.photo} alt={student.name} className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-2xl font-black text-zinc-300">
+                                        {student.name[0]}
+                                    </div>
+                                )}
+                                <div className="absolute bottom-1 right-1 w-5 h-5 bg-white rounded-full shadow-md flex items-center justify-center text-zinc-400 group-hover:text-orange-500 transition-all">
+                                    <Camera className="w-3 h-3" />
+                                </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h4 className="font-black text-zinc-900 truncate">{student.name}</h4>
+                                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{student.category}</p>
+                            </div>
+                            <button 
+                                onClick={() => setActiveScanner(student.id)}
+                                className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-zinc-200 active:scale-90 transition-all"
+                            >
+                                <QrCode size={20} className="text-orange-400" />
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+
+    const renderCalendar = () => (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 className="text-2xl font-black text-zinc-900">Asistencia</h2>
+            <div className="space-y-6">
+                {students.map((student: any) => (
+                    <div key={student.id} className="space-y-3">
+                        <div className="flex items-center gap-3 ml-2">
+                             <div className="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600">
+                                <User size={16} />
+                             </div>
+                             <span className="text-sm font-black text-zinc-900">{student.name}</span>
+                        </div>
+                        <StudentCalendar 
+                            attendance={student.recent_attendance || []} 
+                            primaryColor={primaryColor} 
+                        />
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+
+    const renderPayments = () => (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 className="text-2xl font-black text-zinc-900">Pagos</h2>
+            
+            {/* Metodos de pago / Banco */}
+            {bankInfo && (
+                <div className="bg-zinc-900 text-white rounded-[2.5rem] p-6 shadow-xl relative overflow-hidden">
+                    <div className="relative z-10">
+                        <div className="flex justify-between items-start mb-4">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-orange-400">Datos Transferencia</p>
+                            <button
+                                onClick={() => {
+                                    const text = `Banco: ${bankInfo.bank_name}\nCta: ${bankInfo.account_number}\nTitular: ${bankInfo.holder_name}\nRUT: ${bankInfo.holder_rut}`;
+                                    navigator.clipboard.writeText(text);
+                                    setCopiedBank(true);
+                                    setTimeout(() => setCopiedBank(false), 2000);
+                                }}
+                                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2 ${
+                                    copiedBank ? 'bg-emerald-500' : 'bg-white/10 hover:bg-white/20'
+                                }`}
+                            >
+                                {copiedBank ? <Check size={12} /> : <Copy size={12} />}
+                                {copiedBank ? 'Copiado' : 'Copiar'}
+                            </button>
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-lg font-black">{bankInfo.bank_name}</p>
+                            <p className="text-sm opacity-60">{bankInfo.account_type}</p>
+                            <p className="text-2xl font-mono font-black tracking-wider">{bankInfo.account_number}</p>
+                            <p className="text-xs opacity-60">{bankInfo.holder_name} · {bankInfo.holder_rut}</p>
+                        </div>
+                    </div>
+                    <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl" />
+                </div>
+            )}
+
+            {/* Pendientes */}
+            <div className="space-y-3">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-2">Pendientes</h3>
+                {students.flatMap((s: any) => s.payments || []).map((payment: any) => (
+                    <PaymentRow
+                        key={payment.id}
+                        payment={payment}
+                        primaryColor={primaryColor}
+                        uploading={uploadingPayment === String(payment.id)}
+                        uploadSuccess={uploadSuccess === String(payment.id)}
+                        onUpload={(file) => handleUploadProof(String(payment.id), file)}
+                        onViewProof={(url) => setProofModalUrl(url)}
+                    />
+                ))}
+                {students.every((s: any) => (s.payments || []).length === 0) && (
+                    <div className="bg-white border border-dashed border-zinc-200 rounded-[2rem] p-8 text-center">
+                        <p className="text-sm text-zinc-400 font-bold italic">No hay pagos pendientes</p>
+                    </div>
+                )}
+            </div>
+
+            {/* Historial */}
+            {paymentHistory.length > 0 && (
+                <div className="space-y-3">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-2">Historial</h3>
+                    {paymentHistory.map((p: any) => (
+                        <div key={p.id} className="flex items-center justify-between bg-white border border-zinc-100 rounded-2xl px-5 py-4 shadow-sm">
+                            <div>
+                                <p className="text-sm font-black text-zinc-900">${Number(p.amount).toLocaleString("es-CL")}</p>
+                                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{p.paid_at || p.due_date}</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                                    p.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-yellow-50 text-yellow-600 border-yellow-100'
+                                }`}>
+                                    {p.status === 'approved' ? 'Pagado' : 'En Revisión'}
+                                </span>
+                                {p.proof_url && (
+                                    <button onClick={() => setProofModalUrl(p.proof_url)} className="text-zinc-300 hover:text-orange-500 transition-colors">
+                                        <Eye size={18} />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+
+    const renderProfile = () => (
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 className="text-2xl font-black text-zinc-900">Mi Perfil</h2>
+            
+            <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-8 text-center shadow-sm">
+                <div className="w-24 h-24 bg-stone-100 rounded-[2.5rem] mx-auto mb-4 flex items-center justify-center border border-zinc-100 text-zinc-300">
+                    <User size={40} />
+                </div>
+                <h3 className="text-xl font-black text-zinc-900">{guardian.name}</h3>
+                <p className="text-sm text-zinc-400 font-bold">{guardian.email}</p>
+            </div>
+
+            <div className="space-y-4">
+                <div className="bg-white border border-zinc-100 rounded-3xl p-2">
+                    <button className="w-full flex items-center justify-between p-4 hover:bg-stone-50 rounded-2xl transition-all group">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400 group-hover:text-orange-500 transition-colors">
+                                <User size={20} />
+                            </div>
+                            <span className="font-black text-sm text-zinc-700">Editar Perfil</span>
+                        </div>
+                        <ChevronRight size={18} className="text-zinc-300" />
+                    </button>
+                    <div className="h-px bg-zinc-50 mx-4" />
+                    <button className="w-full flex items-center justify-between p-4 hover:bg-stone-50 rounded-2xl transition-all group">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400 group-hover:text-orange-500 transition-colors">
+                                <MapPin size={20} />
+                            </div>
+                            <span className="font-black text-sm text-zinc-700">Mi Academia</span>
+                        </div>
+                        <ChevronRight size={18} className="text-zinc-300" />
+                    </button>
+                    <div className="h-px bg-zinc-50 mx-4" />
+                    <button className="w-full flex items-center justify-between p-4 hover:bg-stone-50 rounded-2xl transition-all group">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400 group-hover:text-orange-500 transition-colors">
+                                <Settings size={20} />
+                            </div>
+                            <span className="font-black text-sm text-zinc-700">Ajustes</span>
+                        </div>
+                        <ChevronRight size={18} className="text-zinc-300" />
+                    </button>
+                </div>
+
+                <button
+                    onClick={() => { localStorage.clear(); window.location.href = "/login"; }}
+                    className="w-full h-16 bg-red-50 text-red-600 rounded-3xl flex items-center justify-center gap-3 text-xs font-black uppercase tracking-[0.2em] hover:bg-red-100 transition-all active:scale-[0.98]"
+                >
+                    <LogOut size={18} />
+                    Cerrar Sesión
+                </button>
+            </div>
+
+            <div className="pt-8 text-center">
+                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Digitaliza Todo © 2026</p>
+                <p className="text-[8px] font-bold text-zinc-200 mt-1 uppercase">v2.4.0 optimized</p>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="min-h-screen bg-stone-50 text-zinc-900 pb-32 md:pb-12 px-5 md:px-8 max-w-lg mx-auto md:max-w-7xl pt-8">
+            <div className="hidden md:block">
+                {/* Mantener vista Desktop clásica o similar si se desea, por ahora enfocamos en Mobile como pidió el usuario */}
+                <div className="text-center py-20">
+                    <p className="text-zinc-400">Vista Desktop en construcción. Por favor usa un dispositivo móvil o redimensiona tu navegador.</p>
+                </div>
+            </div>
+
+            {/* Mobile View Sections */}
+            <div className="md:hidden">
+                {activeSection === "home" && renderHome()}
+                {activeSection === "calendar" && renderCalendar()}
+                {activeSection === "payments" && renderPayments()}
+                {activeSection === "profile" && renderProfile()}
+            </div>
+
+            {/* Shared Components */}
+            <BottomNav 
+                activeSection={activeSection} 
+                setActiveSection={setActiveSection} 
+                primaryColor={primaryColor} 
+            />
+
             <input 
                 type="file" 
                 ref={photoInputRef}
@@ -557,14 +628,11 @@ export default function StudentDashboard() {
                 onChange={(e) => {
                     const file = e.target.files?.[0];
                     const studentId = photoInputRef.current?.getAttribute('data-student-id');
-                    if (file && studentId) {
-                        handleUploadPhoto(studentId, file);
-                    }
-                    if (photoInputRef.current) photoInputRef.current.value = ""; // reset
+                    if (file && studentId) handleUploadPhoto(studentId, file);
+                    if (photoInputRef.current) photoInputRef.current.value = "";
                 }}
             />
 
-            {/* QR Scanner modal */}
             {activeScanner && (
                 <StudentQRScanner
                     studentId={activeScanner}
@@ -574,7 +642,6 @@ export default function StudentDashboard() {
                 />
             )}
 
-            {/* Proof image modal */}
             {proofModalUrl && <ProofModal url={proofModalUrl} onClose={() => setProofModalUrl(null)} />}
         </div>
     );
@@ -600,13 +667,13 @@ function PaymentRow({
 
     const statusConfig: Record<string, { label: string; color: string }> = {
         pending: { label: "Pendiente", color: "text-red-500 bg-red-50 border-red-200" },
-        pending_review: { label: "En Revisión", color: "text-yellow-600 bg-yellow-50 border-yellow-200" },
+        proof_uploaded: { label: "En Revisión", color: "text-yellow-600 bg-yellow-50 border-yellow-200" },
         approved: { label: "Pagado", color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
     };
     const sc = statusConfig[payment.status] || statusConfig.pending;
 
     return (
-        <div className="bg-white border border-zinc-100 rounded-2xl px-4 py-3 flex items-center justify-between gap-3 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow">
+        <div className="bg-white border border-zinc-100 rounded-2xl px-5 py-4 flex items-center justify-between gap-3 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex-1 min-w-0">
                 <p className="text-sm font-black text-zinc-900">${Number(payment.amount).toLocaleString("es-CL")}</p>
                 <p className="text-[10px] text-zinc-400 font-bold truncate">Vence: {payment.due_date || "—"}</p>
@@ -616,7 +683,7 @@ function PaymentRow({
                 <span className={`text-[9px] border rounded-full px-2 py-0.5 font-black uppercase shadow-sm ${sc.color}`}>{sc.label}</span>
 
                 {uploadSuccess && (
-                    <span className="text-emerald-500"><CheckCircle2 className="w-5 h-5" /></span>
+                    <span className="text-emerald-500 animate-in zoom-in duration-300"><CheckCircle2 className="w-6 h-6" /></span>
                 )}
 
                 {payment.status === "pending" && !uploadSuccess && (
@@ -631,30 +698,20 @@ function PaymentRow({
                         <button
                             onClick={() => fileRef.current?.click()}
                             disabled={uploading}
-                            className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider bg-orange-50 text-orange-600 border border-orange-200 rounded-xl px-3 py-1.5 hover:bg-orange-100 transition-all disabled:opacity-50 shadow-sm"
+                            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider bg-zinc-900 text-white rounded-xl px-4 py-2 hover:bg-zinc-800 transition-all disabled:opacity-50"
                         >
                             {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
-                            {uploading ? "..." : "Comprobante"}
+                            {uploading ? "..." : "Pagar"}
                         </button>
                     </>
                 )}
 
-                {payment.status === "pending_review" && payment.proof_url && (
+                {payment.proof_image && (
                     <button
-                        onClick={() => onViewProof(payment.proof_url)}
-                        className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider bg-zinc-50 border border-zinc-200 text-zinc-500 rounded-xl px-3 py-1.5 hover:bg-zinc-100 transition-all shadow-sm"
+                        onClick={() => onViewProof(payment.proof_image)}
+                        className="w-10 h-10 flex items-center justify-center bg-stone-50 border border-zinc-100 text-zinc-400 rounded-xl hover:text-orange-500 transition-all"
                     >
-                        <Eye className="w-3 h-3" />
-                        Ver
-                    </button>
-                )}
-
-                {payment.status === "approved" && payment.proof_url && (
-                    <button
-                        onClick={() => onViewProof(payment.proof_url)}
-                        className="text-zinc-400 hover:text-zinc-600 transition-colors p-1 bg-zinc-50 rounded-full border border-zinc-200"
-                    >
-                        <Eye className="w-4 h-4" />
+                        <Eye className="w-5 h-5" />
                     </button>
                 )}
             </div>
