@@ -46,14 +46,17 @@ class GuardianController extends Controller
                 'discount_percentage' => 15
             ];
 
+            $latestReview = null;
             foreach ($students as $student) {
-                $hasReview = \App\Models\Payment::where('tenant_id', $student->tenant_id)
+                $reviewPayment = \App\Models\Payment::where('tenant_id', $student->tenant_id)
                     ->whereIn('enrollment_id', $student->enrollments->pluck('id'))
                     ->where('status', 'pending_review')
-                    ->exists();
+                    ->latest()
+                    ->first();
 
-                if ($hasReview) {
+                if ($reviewPayment) {
                     $status = 'review';
+                    $latestReview = $reviewPayment;
                     break;
                 }
 
@@ -67,23 +70,25 @@ class GuardianController extends Controller
                 }
             }
 
+            $s3BaseUrl = 'https://' . config('services.s3.bucket', 'digitalizatodo') . '.s3.' . config('services.s3.region', 'us-east-1') . '.amazonaws.com/';
+
             return [
-            'id' => $guardian->id,
-            'name' => $guardian->name,
-            'photo' => $guardian->photo ? (str_starts_with($guardian->photo, 'http') ? $guardian->photo : 'https://' . env('AWS_BUCKET', env('S3_BUCKET', 'digitalizatodo')) . '.s3.' . env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1')) . '.amazonaws.com/' . $guardian->photo) : "https://i.pravatar.cc/150?u=" . $guardian->id,
-            'status' => $status,
-            'pricing' => $pricing,
-            'enrolledStudents' => $students->map(function ($s) {
+                'id' => $guardian->id,
+                'name' => $guardian->name,
+                'photo' => $guardian->photo ? (str_starts_with($guardian->photo, 'http') ? $guardian->photo : $s3BaseUrl . $guardian->photo) : "https://i.pravatar.cc/150?u=" . $guardian->id,
+                'status' => $status,
+                'proof_image' => $latestReview ? (str_starts_with($latestReview->proof_image, 'http') ? $latestReview->proof_image : $s3BaseUrl . $latestReview->proof_image) : null,
+                'pricing' => $pricing,
+                'enrolledStudents' => $students->map(function ($s) use ($s3BaseUrl) {
                     return [
-                    'id' => $s->id,
-                    'name' => $s->name,
-                    'category' => $s->category,
-                    'photo' => $s->photo ? (str_starts_with($s->photo, 'http') ? $s->photo : 'https://' . env('AWS_BUCKET', env('S3_BUCKET', 'digitalizatodo')) . '.s3.' . env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1')) . '.amazonaws.com/' . $s->photo) : "https://i.pravatar.cc/150?img=" . $s->id,
-                    'label' => $s->belt_rank ?? '',
+                        'id' => $s->id,
+                        'name' => $s->name,
+                        'category' => $s->category,
+                        'photo' => $s->photo ? (str_starts_with($s->photo, 'http') ? $s->photo : $s3BaseUrl . $s->photo) : "https://i.pravatar.cc/150?img=" . $s->id,
+                        'label' => $s->belt_rank ?? '',
                     ];
-                }
-                ),
-                ];
+                }),
+            ];
             });
 
         return response()->json(['payers' => $guardians]);

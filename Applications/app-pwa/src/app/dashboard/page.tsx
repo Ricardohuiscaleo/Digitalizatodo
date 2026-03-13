@@ -20,7 +20,12 @@ import {
     Plus,
     Loader2,
     ClipboardPaste,
-    QrCode
+    QrCode,
+    Eye,
+    X,
+    Clock,
+    UserCheck,
+    Check
 } from 'lucide-react';
 import { useBranding } from "@/context/BrandingContext";
 import {
@@ -37,6 +42,28 @@ import {
     resumeSession,
     updateBankInfo
 } from "@/lib/api";
+
+/* ─── Proof Modal Component ─── */
+function ProofModal({ url, onClose }: { url: string; onClose: () => void }) {
+    return (
+        <div 
+            className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4 animate-in fade-in duration-200"
+            onClick={onClose}
+        >
+            <div className="relative max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+                <button 
+                    onClick={onClose}
+                    className="absolute -top-12 -right-0 z-10 w-10 h-10 bg-white/10 border border-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-all"
+                >
+                    <X size={20} />
+                </button>
+                <div className="rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
+                    <img src={url} alt="Comprobante" className="w-full object-contain max-h-[85vh]" />
+                </div>
+            </div>
+        </div>
+    );
+}
 
 export default function App() {
     const { branding, setBranding } = useBranding();
@@ -92,6 +119,7 @@ export default function App() {
     const [regPageCode, setRegPageCode] = useState<string | null>(null);
     const [generatingPage, setGeneratingPage] = useState(false);
     const [showQRModal, setShowQRModal] = useState(false);
+    const [proofModalUrl, setProofModalUrl] = useState<string | null>(null);
 
     useEffect(() => {
         const t = setInterval(() => setNow(new Date()), 60000);
@@ -655,7 +683,7 @@ export default function App() {
                         <button
                             key={f}
                             onClick={() => setPaymentFilter(f)}
-                            className={`px-5 py-3 rounded-xl text-[10px] font-black uppercase whitespace-nowrap transition-colors ${paymentFilter === f ? 'bg-zinc-950 text-white shadow-md' : 'text-zinc-400'
+                            className={`px-5 py-3 rounded-xl text-[10px] font-black uppercase whitespace-nowrap transition-colors ${paymentFilter === f ? 'bg-zinc-950 text-white shadow-md' : 'text-zinc-400 bg-white border border-zinc-100'
                                 }`}
                         >
                             {f === 'all' ? 'Ver Todos' : f === 'pending' ? 'Pendientes' : 'Al Día'}
@@ -737,7 +765,7 @@ export default function App() {
                 </div>
 
                 {/* VISTA MOBILE: LISTA DE TARJETAS */}
-                <div className="space-y-3 pb-6 md:hidden">
+                <div className="space-y-3 pb-6">
                     {filteredPayers.map(payer => {
                         const { amount, hasDiscount, numEnrollments } = calculatePrice(payer);
                         const isPaid = payer.status === 'paid';
@@ -751,7 +779,7 @@ export default function App() {
                             >
                                 <div className="p-5 flex items-center gap-4 cursor-pointer" onClick={() => setExpandedPayerId(isExpanded ? null : payer.id)}>
                                     <div className="relative">
-                                        <img src={payer.photo} className="w-16 h-16 rounded-full object-cover shadow-sm" />
+                                        <img src={payer.photo} className="w-16 h-16 rounded-full object-cover shadow-sm grayscale-[0.3]" />
                                         <div className="absolute -bottom-2 -right-2 bg-zinc-950 text-white text-[8px] font-black px-1.5 py-0.5 rounded border-2 border-white uppercase">Titular</div>
                                     </div>
 
@@ -767,31 +795,41 @@ export default function App() {
                                                     <img key={s.id} src={s.photo} className="w-6 h-6 rounded-full border-2 border-white object-cover shadow-sm" />
                                                 ))}
                                             </div>
-                                            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">{numEnrollments} Inscritos</span>
+                                            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest leading-none mt-0.5">{numEnrollments} {vocab.memberLabel}s</span>
                                         </div>
 
                                         <div className="flex items-center gap-2 mt-2">
-                                            <span className="font-black text-indigo-600 text-base tracking-tighter">{formatMoney(amount)}</span>
+                                            <span className="font-black text-zinc-950 text-base tracking-tighter">{formatMoney(amount)}</span>
                                             {hasDiscount && <span className="text-[8px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-lg font-black uppercase tracking-widest">Descuento</span>}
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center">
+                                    <div className="flex items-center gap-2">
                                         {isPaid ? (
                                             <div className="bg-emerald-500 rounded-2xl p-2.5 shadow-lg shadow-emerald-100">
                                                 <CheckCircle2 size={24} className="text-white" />
                                             </div>
                                         ) : payer.status === 'review' ? (
-                                            <button
-                                                className="bg-amber-50 hover:bg-amber-100 text-amber-600 px-5 py-3 rounded-2xl text-[10px] font-black uppercase shadow-sm border border-amber-100 transition-all active:scale-95 flex flex-col items-center"
-                                                onClick={(e) => { e.stopPropagation(); handlePaymentApprove(payer.id); }}
-                                            >
-                                                <RefreshCw size={14} className="mb-1 animate-spin-slow" />
-                                                <span>Aprobar</span>
-                                            </button>
+                                            <div className="flex items-center gap-1.5">
+                                                {payer.proof_image && (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setProofModalUrl(payer.proof_image); }}
+                                                        className="w-12 h-14 bg-white border-2 border-zinc-100 text-zinc-400 rounded-2xl flex items-center justify-center hover:bg-zinc-50 active:scale-95 transition-all shadow-sm"
+                                                    >
+                                                        <Eye size={20} />
+                                                    </button>
+                                                )}
+                                                <button
+                                                    className="bg-amber-500 text-white px-5 py-3 h-14 rounded-2xl text-[10px] font-black uppercase shadow-lg shadow-amber-100 transition-all active:scale-95 flex flex-col items-center justify-center"
+                                                    onClick={(e) => { e.stopPropagation(); handlePaymentApprove(payer.id); }}
+                                                >
+                                                    <RefreshCw size={14} className="mb-0.5 animate-spin-slow" />
+                                                    <span>Aprobar</span>
+                                                </button>
+                                            </div>
                                         ) : (
                                             <button
-                                                className="bg-rose-50 hover:bg-rose-100 text-rose-600 px-5 py-3 rounded-2xl text-[10px] font-black uppercase shadow-sm border border-rose-100 transition-all active:scale-95"
+                                                className="bg-white border-2 border-rose-100 text-rose-500 px-5 py-4 rounded-2xl text-[10px] font-black uppercase shadow-sm transition-all active:scale-95"
                                                 onClick={(e) => { e.stopPropagation(); handlePaymentApprove(payer.id); }}
                                             >
                                                 Pagar
@@ -801,22 +839,49 @@ export default function App() {
                                 </div>
 
                                 {isExpanded && (
-                                    <div className="px-6 pb-6 pt-4 bg-zinc-50 border-t border-zinc-100 animate-in slide-in-from-top-4 duration-300">
-                                        <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-4">Detalle de Participantes:</p>
+                                    <div className="px-6 pb-6 pt-4 bg-zinc-50 border-t border-zinc-100 animate-in slide-in-from-top-2 duration-300">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]">Desglose del Pago:</p>
+                                            {payer.status === 'review' && (
+                                                <span className="text-[8px] font-black bg-amber-50 text-amber-600 px-2 py-1 rounded-full uppercase">Esperando Validación</span>
+                                            )}
+                                        </div>
                                         <div className="space-y-2.5">
-                                            {payer.enrolledStudents.map((s: any) => (
-                                                <div key={s.id} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-zinc-100 shadow-sm">
-                                                    <div className="flex items-center gap-3">
-                                                        <img src={s.photo} className="w-10 h-10 rounded-full object-cover" />
-                                                        <span className="text-xs font-black uppercase text-zinc-800">{s.name}</span>
+                                            {payer.enrolledStudents.map((s: any) => {
+                                                const catPrice = s.category === 'adults' ? prices.adult : prices.kids;
+                                                return (
+                                                    <div key={s.id} className="flex items-center justify-between bg-white p-4 rounded-2xl border border-zinc-100 shadow-sm">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="relative">
+                                                                <img src={s.photo} className="w-10 h-10 rounded-full object-cover" />
+                                                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-xs font-black uppercase text-zinc-900 leading-none">{s.name}</span>
+                                                                <span className="text-[8px] text-zinc-400 font-bold uppercase mt-1">Marzo 2026 • {s.category || vocab.cat1}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right flex flex-col items-end">
+                                                            <span className="text-xs font-black text-zinc-900">{formatMoney(catPrice)}</span>
+                                                            {s.label && (
+                                                                <span className={`text-[7px] font-black px-2 py-0.5 rounded-lg uppercase mt-1 ${getBeltColor(s.label)}`}>{s.label}</span>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                    {s.label && branding?.industry === 'martial_arts' ? (
-                                                        <span className={`text-[8px] font-black px-3 py-1.5 rounded-xl uppercase ${getBeltColor(s.label)}`}>{s.label}</span>
-                                                    ) : (
-                                                        <span className="text-[8px] font-black px-3 py-1.5 rounded-xl uppercase bg-zinc-50 text-zinc-400">{s.category || vocab.cat1}</span>
-                                                    )}
+                                                );
+                                            })}
+
+                                            {hasDiscount && (
+                                                <div className="flex justify-between items-center bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100/50 border-dashed">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center">
+                                                            <Plus size={12} className="text-white rotate-45" />
+                                                        </div>
+                                                        <span className="text-[10px] font-black uppercase text-emerald-700">Descuento de Grupo</span>
+                                                    </div>
+                                                    <span className="text-xs font-black text-emerald-600">-{prices.discountPercentage}%</span>
                                                 </div>
-                                            ))}
+                                            )}
                                         </div>
                                     </div>
                                 )}
