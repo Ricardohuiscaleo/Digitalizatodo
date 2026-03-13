@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
+use App\Models\Enrollment;
 use App\Services\PaymentService;
+use App\Services\ImageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -12,85 +14,104 @@ use Illuminate\Support\Facades\Storage;
 class PaymentController extends Controller
 {
     protected $paymentService;
+    protected $imageService;
 
-    public function __construct(PaymentService $paymentService)
+    public function __construct(PaymentService $paymentService, ImageService $imageService)
     {
         $this->paymentService = $paymentService;
+        $this->imageService = $imageService;
     }
 
     /**
      * Lista los pagos pendientes del tutor/alumnos.
-     * GET /api/{tenant}/payments
      */
     public function index(Request $request): JsonResponse
     {
         $guardian = $request->user();
+        if (!$guardian || $guardian->role !== 'guardian') {
+            return response()->json(['message' => 'No autorizado.'], 403);
+        }
 
-        $payments = Payment::whereIn('enrollment_id', $guardian->students->flatMap->enrollments->pluck('id'))
+        $studentIds = $guardian->students->pluck('id');
+        $enrollmentIds = Enrollment::whereIn('student_id', $studentIds)->pluck('id');
+
+        $payments = Payment::whereIn('enrollment_id', $enrollmentIds)
             ->where('status', 'pending')
-            ->with('enrollment.student')
-            ->orderBy('due_date')
+            ->orderBy('due_date', 'asc')
             ->get();
 
         return response()->json([
-            'payments' => $payments->map(fn($p) => [
-                'id'         => $p->id,
-                'student'    => $p->enrollment->student->name,
-                'amount'     => $p->amount,
-                'due_date'   => $p->due_date->format('Y-m-d'),
-                'is_overdue' => $p->is_overdue,
-            ]),
-            'total_due' => $guardian->total_due,
+            'payments' => $payments,
+            'total_due' => $payments->sum('amount')
         ]);
     }
 
     /**
-     * Sube el comprobante de transferencia para un pago.
-     * POST /api/{tenant}/payments/{payment}/upload-proof
+     * Upload payment proof.
      */
     public function uploadProof(Request $request, $tenant, Payment $payment): JsonResponse
     {
         $guardian = $request->user();
-        $tenant = app('currentTenant');
+        
+        // Verificar que el pago pertenece a un alumno del apoderado
+        $studentIds = $guardian->students->pluck('id');
+        $isOwner = Enrollment::whereIn('student_id', $studentIds)
+            ->where('id', $payment->enrollment_id)
+            ->exists();
 
-        // Verificar que el pago pertenezca al guardian autenticado
-        $allowedEnrollments = $guardian->students->flatMap->enrollments->pluck('id')->toArray();
-        if (!in_array($payment->enrollment_id, $allowedEnrollments)) {
+        if (!$isOwner) {
             return response()->json(['message' => 'No autorizado.'], 403);
         }
 
-        $request->validate(['proof' => 'required|image|max:12288']);
+        // Aceptamos archivos hasta 50MB para ser procesados
+        $request->validate(['proof' => 'required|image|max:51200']);
 
-        $file = $request->file('proof');
-        $ext  = $file->getClientOriginalExtension();
-        $path = "digitalizatodo/{$tenant->id}/proofs/{$payment->id}.{$ext}";
+        if ($request->hasFile('proof')) {
+            $file = $request->file('proof');
+            $tenant = app('currentTenant');
+            $tenantId = $tenant->id;
 
-        // Subir a S3
-        $uploaded = Storage::disk('s3')->put($path, file_get_contents($file->getRealPath()), 'public');
+            try {
+                // Optimizar y convertir a WebP
+                $optimizedPath = $this->imageService->optimize($file);
+                
+                $filename = "proof_{$payment->id}_" . time() . ".webp";
+                $s3Path = "tenants/{$tenantId}/payments/{$filename}";
 
-        if (!$uploaded) {
-            return response()->json(['message' => 'Error al subir la imagen.'], 500);
+                // Subir a S3 el archivo optimizado
+                $uploaded = Storage::disk('s3')->put($s3Path, file_get_contents($optimizedPath), 'public');
+                
+                // Limpiar archivo temporal
+                unlink($optimizedPath);
+
+                if ($uploaded) {
+                    $url = Storage::disk('s3')->url($s3Path);
+
+                    $payment->update([
+                        'proof_image' => $url,
+                        'status' => 'proof_uploaded'
+                    ]);
+
+                    return response()->json([
+                        'message' => 'Comprobante optimizado y subido correctamente.',
+                        'proof_url' => $url,
+                        'status' => 'proof_uploaded'
+                    ]);
+                }
+
+                return response()->json(['error' => 'Error al guardar en el almacenamiento'], 500);
+
+            } catch (\Exception $e) {
+                \Log::error("Error optimizando comprobante: " . $e->getMessage());
+                return response()->json(['error' => 'Error al procesar el comprobante: ' . $e->getMessage()], 500);
+            }
         }
 
-        $url = "https://" . env('AWS_BUCKET', env('S3_BUCKET')) . ".s3."
-             . env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1'))
-             . ".amazonaws.com/{$path}";
-
-        $payment->update([
-            'proof_image' => $url,
-            'status'      => 'pending_review',
-        ]);
-
-        return response()->json([
-            'message'   => 'Comprobante subido correctamente.',
-            'proof_url' => $url,
-            'status'    => 'pending_review',
-        ]);
+        return response()->json(['error' => 'No se recibió ningún archivo'], 400);
     }
 
     /**
      * Inicia un proceso de pago (gateway).
-     * POST /api/{tenant}/payments/{payment}/pay
      */
     public function initiatePayment(Request $request, $tenant, Payment $payment): JsonResponse
     {

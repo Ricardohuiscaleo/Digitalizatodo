@@ -9,6 +9,13 @@ use Illuminate\Support\Facades\Storage;
 
 class StudentController extends Controller
 {
+    protected $imageService;
+
+    public function __construct(\App\Services\ImageService $imageService)
+    {
+        $this->imageService = $imageService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -19,7 +26,7 @@ class StudentController extends Controller
 
         // Si es apoderado, filtramos por sus alumnos. (simplificado: asume Auth->user() => guardian asociado)
         $user = $request->user();
-        if ($user->role === 'guardian') {
+        if ($user && $user->role === 'guardian') {
             $studentIds = \App\Models\GuardianStudent::where('guardian_id', $user->id)->pluck('student_id');
             $query = Student::where('tenant_id', $tenantId)->whereIn('id', $studentIds);
         } else {
@@ -57,8 +64,9 @@ class StudentController extends Controller
      */
     public function uploadPhoto(Request $request, $tenant, $id)
     {
+        // Sin límites rígidos, aceptamos archivos grandes (ej: 50MB) para procesar en el servidor
         $request->validate([
-            'photo' => 'required|image|mimes:jpeg,png,jpg,webp|max:12288', // Max 12MB para fotos de alta resolución
+            'photo' => 'required|image|mimes:jpeg,png,jpg,webp,heic|max:51200', 
         ]);
 
         $tenant = app('currentTenant');
@@ -68,7 +76,7 @@ class StudentController extends Controller
 
         // Security check for Guardian
         $user = $request->user();
-        if ($user->role === 'guardian') {
+        if ($user && $user->role === 'guardian') {
             $isAssociated = \App\Models\GuardianStudent::where('guardian_id', $user->id)
                 ->where('student_id', $student->id)
                 ->exists();
@@ -80,23 +88,39 @@ class StudentController extends Controller
 
         if ($request->hasFile('photo')) {
             $file = $request->file('photo');
-            $extension = $file->getClientOriginalExtension();
-            $filename = "student_{$student->id}_" . time() . ".{$extension}";
-
-            // Subir a S3
-            $path = $file->storeAs("tenants/{$tenantId}/students", $filename, 's3');
             
-            // Generar URL CloudFront si está configurada, o por defecto con S3 public url
-            $url = Storage::disk('s3')->url($path);
+            try {
+                // Optimizar y convertir a WebP
+                $optimizedPath = $this->imageService->optimize($file);
+                
+                $filename = "student_{$student->id}_" . time() . ".webp";
+                $s3Path = "tenants/{$tenantId}/students/{$filename}";
 
-            // Actualizar modelo
-            $student->photo = $url;
-            $student->save();
+                // Subir a S3 el archivo optimizado
+                $uploaded = Storage::disk('s3')->put($s3Path, file_get_contents($optimizedPath), 'public');
+                
+                // Limpiar archivo temporal
+                unlink($optimizedPath);
 
-            return response()->json([
-                'message' => 'Foto actualizada correctamente',
-                'photo_url' => $url
-            ]);
+                if ($uploaded) {
+                    $url = Storage::disk('s3')->url($s3Path);
+
+                    // Actualizar modelo
+                    $student->photo = $url;
+                    $student->save();
+
+                    return response()->json([
+                        'message' => 'Foto optimizada y actualizada correctamente',
+                        'photo_url' => $url
+                    ]);
+                }
+                
+                return response()->json(['error' => 'Error al guardar en almacenamiento'], 500);
+
+            } catch (\Exception $e) {
+                \Log::error("Error optimizando imagen: " . $e->getMessage());
+                return response()->json(['error' => 'Error al procesar la imagen: ' . $e->getMessage()], 500);
+            }
         }
 
         return response()->json(['error' => 'No se recibió ninguna imagen'], 400);
