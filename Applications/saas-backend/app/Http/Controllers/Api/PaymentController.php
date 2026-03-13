@@ -59,7 +59,7 @@ class PaymentController extends Controller
             return response()->json(['message' => 'No autorizado.'], 403);
         }
 
-        $request->validate(['proof' => 'required|image|max:8192']);
+        $request->validate(['proof' => 'required|image|max:12288']);
 
         $file = $request->file('proof');
         $ext  = $file->getClientOriginalExtension();
