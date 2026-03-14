@@ -1809,7 +1809,7 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers }
                                 )}
                                 
                                 {/* Overlay de luz scanner */}
-                                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-400/10 to-transparent h-full w-full pointer-events-none animate-scan line-scan" />
+                                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-400/10 to-transparent h-full w-full pointer-events-none line-scan-animation" />
                             </div>
                             
                             <div className="w-full space-y-3">
@@ -1832,14 +1832,14 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers }
                     </>
                 )}
             </div>
-            <style jsx>{`
-                .line-scan {
-                    animation: scan 3s linear infinite;
-                    border-top: 2px solid rgba(16, 185, 129, 0.4);
-                }
-                @keyframes scan {
+            <style>{`
+                @keyframes scanLine {
                     0% { transform: translateY(-100%); }
                     100% { transform: translateY(100%); }
+                }
+                .line-scan-animation {
+                    animation: scanLine 3s linear infinite;
+                    border-top: 2px solid rgba(16, 185, 129, 0.4);
                 }
             `}</style>
         </div>
