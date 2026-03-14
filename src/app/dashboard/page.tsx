@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { getEcho } from '@/lib/echo';
 import { QRCodeCanvas } from 'qrcode.react';
 import {
     Users,
@@ -123,23 +124,6 @@ export default function App() {
     const [showQRModal, setShowQRModal] = useState(false);
     const [proofModalUrl, setProofModalUrl] = useState<string | null>(null);
 
-    useEffect(() => {
-        const t = setInterval(() => setNow(new Date()), 60000);
-        return () => clearInterval(t);
-    }, []);
-
-    const tabs = ['dashboard', 'attendance', 'payments', 'settings'];
-
-    const changeTab = (newTab: string) => {
-        const currentIndex = tabs.indexOf(activeTab);
-        const newIndex = tabs.indexOf(newTab);
-        setTabDirection(newIndex > currentIndex ? 1 : -1);
-        setActiveTab(newTab);
-        if (newTab === 'settings' && !regPageCode) {
-            getRegistrationPageCode(user?.tenant_slug ?? '', token ?? '').then(r => { if (r?.code) setRegPageCode(r.code); });
-        }
-    };
-
     // --- PERSISTENCE & DATA FETCHING ---
 
     const refreshPayers = useCallback(async (customToken?: string, slug?: string) => {
@@ -167,6 +151,66 @@ export default function App() {
             setAttendance(currentAttendance);
         }
     }, [token, paymentFilter, selectedMonth, selectedYear]);
+
+    useEffect(() => {
+        const t = setInterval(() => setNow(new Date()), 60000);
+        return () => clearInterval(t);
+    }, []);
+
+    // POLLLING REAL-TIME PARA ASISTENCIA (Solo cuando el QR está abierto)
+    // Se mantiene como fallback si no hay credenciales de Pusher
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (showQRModal && !process.env.NEXT_PUBLIC_PUSHER_KEY) {
+            interval = setInterval(() => {
+                refreshPayers();
+            }, 5000);
+        }
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [showQRModal, refreshPayers]);
+
+    // REAL-TIME DE VERDAD CON WEBSOCKETS (LARAVEL REVERB)
+    useEffect(() => {
+        const key = process.env.NEXT_PUBLIC_REVERB_APP_KEY;
+        
+        if (!key || !branding?.slug) return;
+
+        const echo = getEcho();
+        if (!echo) return;
+
+        const channel = echo.channel(`attendance.${branding.slug}`);
+        
+        channel.listen('.student.checked-in', (data: { studentId: string | number }) => {
+            console.log('Real-time check-in received:', data);
+            // Actualizar asistencia localmente de forma optimista
+            setAttendance(prev => {
+                const next = new Set(prev);
+                next.add(String(data.studentId));
+                return next;
+            });
+            // También refrescar datos para asegurar consistencia (estados, etc)
+            refreshPayers();
+        });
+
+        return () => {
+            echo.leaveChannel(`attendance.${branding.slug}`);
+        };
+    }, [branding?.slug, refreshPayers]);
+
+    const tabs = ['dashboard', 'attendance', 'payments', 'settings'];
+
+    const changeTab = (newTab: string) => {
+        const currentIndex = tabs.indexOf(activeTab);
+        const newIndex = tabs.indexOf(newTab);
+        setTabDirection(newIndex > currentIndex ? 1 : -1);
+        setActiveTab(newTab);
+        if (newTab === 'settings' && !regPageCode) {
+            getRegistrationPageCode(user?.tenant_slug ?? '', token ?? '').then(r => { if (r?.code) setRegPageCode(r.code); });
+        }
+    };
+
 
     useEffect(() => {
         const init = async () => {
@@ -624,9 +668,16 @@ export default function App() {
                                         </td>
                                         <td className="px-6 py-4">
                                             {isPresent ? (
-                                                <div className="flex items-center gap-2 text-emerald-600">
-                                                    <CheckCircle2 size={16} />
-                                                    <span className="text-[10px] font-black uppercase tracking-widest">Presente</span>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex items-center gap-2 text-emerald-600">
+                                                        <CheckCircle2 size={16} />
+                                                        <span className="text-[10px] font-black uppercase tracking-widest">Presente</span>
+                                                    </div>
+                                                    {student.method === 'qr' && (
+                                                        <span className="bg-amber-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-lg flex items-center gap-1 animate-in zoom-in-50">
+                                                            <QrCode size={10} /> QR
+                                                        </span>
+                                                    )}
                                                 </div>
                                             ) : (
                                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Ausente</span>
@@ -665,8 +716,13 @@ export default function App() {
                                             className={`w-16 h-16 rounded-full object-cover transition-all ${isPresent ? 'ring-4 ring-emerald-400' : ''}`}
                                         />
                                         {isPresent && (
-                                            <div className="absolute -bottom-2 -right-2 bg-emerald-500 rounded-full p-1 border-2 border-emerald-50">
-                                                <CheckCircle2 className="text-white" size={14} />
+                                            <div className="absolute -bottom-2 -right-2 bg-emerald-500 rounded-full p-1 border-2 border-emerald-50 shadow-lg">
+                                                {student.method === 'qr' ? <QrCode size={14} className="text-white" /> : <CheckCircle2 className="text-white" size={14} />}
+                                            </div>
+                                        )}
+                                        {isPresent && student.method === 'qr' && (
+                                            <div className="absolute -top-1 -right-1 bg-amber-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full shadow-sm animate-pulse uppercase tracking-tighter">
+                                                QR
                                             </div>
                                         )}
                                     </div>
