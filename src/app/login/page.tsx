@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useBranding } from "@/context/BrandingContext";
 import { identifyTenant, login } from "@/lib/api";
-import { Loader2, RefreshCw, ArrowLeft } from "lucide-react";
+import { Loader2, RefreshCw, ArrowLeft, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const { setBranding, isLoading } = useBranding();
@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tenant, setTenant] = useState<any>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,15 +143,24 @@ export default function LoginPage() {
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-zinc-500">Contraseña</label>
-                <input
-                  type="password"
-                  required
-                  autoFocus
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 focus:ring-2 ring-zinc-900 outline-none transition-all"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    autoFocus
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full h-11 bg-zinc-50 rounded-xl px-4 pr-11 text-sm text-zinc-900 placeholder:text-zinc-300 focus:ring-2 ring-zinc-900 outline-none transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-900 transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input

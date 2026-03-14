@@ -26,7 +26,12 @@ import {
     X,
     Clock,
     UserCheck,
-    Check
+    Check,
+    Sparkles,
+    Edit2,
+    Save,
+    Calendar,
+    DollarSign
 } from 'lucide-react';
 import { useBranding } from "@/context/BrandingContext";
 import {
@@ -46,6 +51,103 @@ import {
 } from "@/lib/api";
 
 /* ─── Proof Modal Component ─── */
+/* ─── Payment Action Modal ─── */
+/* ─── Payment Action Modal ─── */
+function PaymentActionModal({ payer, onConfirm, onCancel, primaryColor, formatMoney }: { payer: any; onConfirm: () => void; onCancel: () => void; primaryColor: string; formatMoney: (n: number) => string }) {
+    const pendingDetails = payer.payments?.filter((p: any) => p.status === 'review' || p.status === 'pending' || p.status === 'overdue') || [];
+    const totalAmount = pendingDetails.reduce((acc: number, p: any) => acc + p.amount, 0);
+
+    return (
+        <div className="fixed inset-0 z-[200] bg-zinc-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={onCancel}>
+            <div className="bg-zinc-50 rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] border border-white/20 animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+                
+                {/* Header: Perfil del Titular */}
+                <div className="relative pt-8 pb-6 px-6 bg-white border-b border-zinc-100">
+                    <div className="flex flex-col items-center text-center">
+                        <div className="relative mb-3">
+                            <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-zinc-50 shadow-md">
+                                <img src={payer.photo} className="w-full h-full object-cover" alt={payer.name} />
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1.5 rounded-full border-4 border-white shadow-sm">
+                                <CheckCircle2 size={14} />
+                            </div>
+                        </div>
+                        <h3 className="text-base font-black uppercase text-zinc-900 leading-tight mb-1">{payer.name}</h3>
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 text-[9px] font-black text-zinc-500 uppercase tracking-widest">
+                            <Users size={10} /> Titular de Cuenta
+                        </div>
+                    </div>
+                </div>
+
+                {/* Body: Detalle de Alumnos */}
+                <div className="p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                        <div className="h-[1px] flex-1 bg-zinc-200"></div>
+                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] px-2">Detalle de Cobro</span>
+                        <div className="h-[1px] flex-1 bg-zinc-200"></div>
+                    </div>
+
+                    <div className="space-y-2 mb-8 max-h-[35vh] overflow-y-auto pr-1 custom-scrollbar">
+                        {pendingDetails.length > 0 ? pendingDetails.map((item: any, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between p-3 rounded-2xl bg-white border border-zinc-100 shadow-sm transition-all hover:border-zinc-200">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl overflow-hidden bg-zinc-50 border border-zinc-100 shrink-0">
+                                        <img src={item.student_photo || 'https://i.pravatar.cc/100'} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[11px] font-black uppercase text-zinc-800 leading-tight mb-0.5">{item.student_name}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${item.category === 'kids' ? 'bg-sky-50 text-sky-600' : 'bg-zinc-100 text-zinc-600'}`}>
+                                                {item.category === 'kids' ? 'Infantil' : 'Adulto'}
+                                            </span>
+                                            <span className="text-[8px] text-zinc-400 font-bold uppercase">{item.due_date}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <span className="text-sm font-black text-zinc-900 tracking-tighter">{formatMoney(item.amount)}</span>
+                            </div>
+                        )) : (
+                            <div className="py-8 text-center flex flex-col items-center gap-2">
+                                <Sparkles className="text-zinc-200" size={32} />
+                                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Todo al día</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer con Total y Botones */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between px-2">
+                            <span className="text-xs font-black text-zinc-400 uppercase tracking-widest">Total Recibido</span>
+                            <span className="text-2xl font-black text-zinc-950 tracking-tighter">{formatMoney(totalAmount)}</span>
+                        </div>
+
+                        <div className="flex flex-col gap-2 pt-2">
+                            <button 
+                                onClick={onConfirm}
+                                style={{ backgroundColor: primaryColor }}
+                                className="group relative w-full py-4 rounded-2xl text-white font-black text-[12px] uppercase tracking-widest shadow-xl shadow-zinc-200 overflow-hidden active:scale-95 transition-all"
+                            >
+                                <div className="relative z-10 flex items-center justify-center gap-3">
+                                    <DollarSign size={20} className="transition-transform group-hover:scale-110" />
+                                    <span>Confirmar Pago</span>
+                                </div>
+                                <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            </button>
+                            
+                            <button 
+                                onClick={onCancel}
+                                className="w-full py-3 text-zinc-400 font-black text-[9px] uppercase tracking-widest hover:text-zinc-600 active:scale-95 transition-all text-center"
+                            >
+                                Volver al Dashboard
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function ProofModal({ url, onClose }: { url: string; onClose: () => void }) {
     return (
         <div 
@@ -78,7 +180,7 @@ export default function App() {
         verde: 'bg-green-500 text-white',
         azul: 'bg-blue-500 text-white',
         rojo: 'bg-red-500 text-white',
-        negro: 'bg-zinc-950 text-white',
+        negro: 'bg-zinc-800 text-white shadow-sm',
         cafe: 'bg-amber-800 text-white',
         marron: 'bg-amber-800 text-white',
     };
@@ -124,6 +226,7 @@ export default function App() {
     const [generatingPage, setGeneratingPage] = useState(false);
     const [showQRModal, setShowQRModal] = useState(false);
     const [proofModalUrl, setProofModalUrl] = useState<string | null>(null);
+    const [paymentActionPayer, setPaymentActionPayer] = useState<any>(null);
 
     // --- PERSISTENCE & DATA FETCHING ---
 
@@ -250,13 +353,34 @@ export default function App() {
                 return;
             }
 
-            setToken(storedToken);
+            setToken(storedToken!);
 
-            const [profile, payersData, attendanceHistoryData]: [any, any, any] = await Promise.all([
-                getProfile(tenantSlug, storedToken),
-                getPayers(tenantSlug, storedToken, { month: selectedMonth, year: selectedYear, history: paymentFilter === 'history' }),
-                getAttendanceHistory(tenantSlug, storedToken)
+            let [profile, payersData, attendanceHistoryData]: [any, any, any] = await Promise.all([
+                getProfile(tenantSlug, storedToken!),
+                getPayers(tenantSlug, storedToken!, { month: selectedMonth, year: selectedYear, history: paymentFilter === 'history' }),
+                getAttendanceHistory(tenantSlug, storedToken!)
             ]);
+
+            // Si el token falló (ej: expiró) pero tenemos un remember_token, intentamos recuperar la sesión una vez
+            if (!profile) {
+                const rememberToken = localStorage.getItem("remember_token");
+                if (rememberToken && tenantSlug) {
+                    const resumed = await resumeSession(tenantSlug, rememberToken);
+                    if (resumed?.token) {
+                        const newToken = resumed.token;
+                        const key = resumed.user_type === 'staff' ? 'staff_token' : 'auth_token';
+                        localStorage.setItem(key, newToken);
+                        setToken(newToken);
+                        
+                        // Re-intentamos las peticiones con el nuevo token
+                        [profile, payersData, attendanceHistoryData] = await Promise.all([
+                            getProfile(tenantSlug, newToken),
+                            getPayers(tenantSlug, newToken, { month: selectedMonth, year: selectedYear, history: paymentFilter === 'history' }),
+                            getAttendanceHistory(tenantSlug, newToken)
+                        ]);
+                    }
+                }
+            }
 
             if (profile) {
                 if (profile.user_type === 'guardian') {
@@ -398,20 +522,24 @@ export default function App() {
         }
     };
 
-    const handlePaymentApprove = async (payerId: string) => {
+    const handlePaymentApprove = (payerId: string) => {
+        const payer = payers.find(p => p.id === payerId);
+        if (payer) setPaymentActionPayer(payer);
+    };
+
+    const handleConfirmPayment = async () => {
+        if (!paymentActionPayer) return;
+        const payerId = paymentActionPayer.id;
+
         if (isDemo) {
             setPayers(payers.map(p => p.id === payerId ? { ...p, status: 'paid' } : p));
+            setPaymentActionPayer(null);
             return;
         }
 
-        const payer = payers.find(p => p.id === payerId);
-        const hasReview = payer?.status === 'review';
-        const message = hasReview 
-            ? `¿Aprobar TODOS los pagos en revisión de "${payer.name}"?`
-            : `¿Confirmar pago manual para "${payer?.name}"?`;
-
-        if (token && (user?.tenant_slug || user?.tenant_id) && confirm(message)) {
+        if (token && (user?.tenant_slug || user?.tenant_id)) {
             await approvePayment(user.tenant_slug || user.tenant_id, token, payerId);
+            setPaymentActionPayer(null);
             refreshPayers();
         }
     };
@@ -476,37 +604,42 @@ export default function App() {
         return (
             <div className="space-y-6 text-zinc-950">
                 {/* Dashboard Summary - Sistema de Tarjetas Premium */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-                    <div className="bg-white rounded-[2.2rem] p-4 md:p-5 border border-zinc-100 shadow-sm flex flex-col justify-between">
-                        <Users className="text-zinc-300 mb-2" size={20} />
-                        <div>
-                            <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1">Total</p>
-                            <p className="text-2xl font-black text-zinc-950 tracking-tighter">{totalStudents}</p>
+                {/* Dashboard Summary - Sistema de Tarjetas Premium Horizontal Grid 2x2 */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                    {/* Total */}
+                    <div className="bg-white rounded-[1.8rem] px-4 py-3 border border-zinc-100 shadow-sm flex items-center justify-between min-h-[75px]">
+                        <div className="flex flex-col gap-1.5 shrink-0">
+                            <Users style={{ color: branding?.primaryColor || '#6366f1' }} size={22} strokeWidth={2.5} />
+                            <p className="text-[7.5px] font-black text-zinc-400 uppercase tracking-widest leading-none">Total</p>
                         </div>
+                        <p className="text-2xl font-black text-zinc-950 tracking-tighter leading-none shrink-0">{totalStudents}</p>
                     </div>
 
-                    <div className="bg-emerald-100/70 rounded-[2.2rem] p-4 md:p-5 border border-emerald-200 shadow-sm flex flex-col justify-between">
-                        <CheckCircle2 className="text-emerald-600 mb-2" size={20} />
-                        <div>
-                            <p className="text-[9px] font-black text-emerald-700/60 uppercase tracking-widest leading-none mb-1">Pagados</p>
-                            <p className="text-2xl font-black text-emerald-700 tracking-tighter">{paidStudents}</p>
+                    {/* Pagados */}
+                    <div className="bg-emerald-50/40 rounded-[1.8rem] px-4 py-3 border border-emerald-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
+                        <div className="flex flex-col gap-1.5 shrink-0">
+                            <CheckCircle2 className="text-emerald-600" size={26} strokeWidth={2.5} />
+                            <p className="text-[7.5px] font-black text-emerald-600/60 uppercase tracking-widest leading-none">Pagados</p>
                         </div>
+                        <p className="text-2xl font-black text-emerald-700 tracking-tighter leading-none shrink-0">{paidStudents}</p>
                     </div>
 
-                    <div className="bg-amber-100/70 rounded-[2.2rem] p-4 md:p-5 border border-amber-200 shadow-sm flex flex-col justify-between">
-                        <RefreshCw className="text-amber-600 mb-2 animate-spin-slow" size={20} />
-                        <div>
-                            <p className="text-[9px] font-black text-amber-700/60 uppercase tracking-widest leading-none mb-1">En Revisión</p>
-                            <p className="text-2xl font-black text-amber-700 tracking-tighter">{allStudents.filter(s => s.payerStatus === 'review').length}</p>
+                    {/* Revisión */}
+                    <div className="bg-amber-50/40 rounded-[1.8rem] px-4 py-3 border border-amber-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
+                        <div className="flex flex-col gap-1.5 shrink-0">
+                            <RefreshCw className="text-amber-600 animate-spin-slow" size={24} strokeWidth={2.5} />
+                            <p className="text-[7.5px] font-black text-amber-600/60 uppercase tracking-widest leading-none">Revisión</p>
                         </div>
+                        <p className="text-2xl font-black text-amber-700 tracking-tighter leading-none shrink-0">{allStudents.filter(s => s.payerStatus === 'review').length}</p>
                     </div>
 
-                    <div className="bg-rose-100/70 rounded-[2.2rem] p-4 md:p-5 border border-rose-200 shadow-sm flex flex-col justify-between">
-                        <XCircle className="text-rose-600 mb-2" size={20} />
-                        <div>
-                            <p className="text-[9px] font-black text-rose-700/60 uppercase tracking-widest leading-none mb-1">Pendientes</p>
-                            <p className="text-2xl font-black text-rose-700 tracking-tighter">{allStudents.filter(s => s.payerStatus === 'pending').length}</p>
+                    {/* Deuda */}
+                    <div className="bg-rose-50/40 rounded-[1.8rem] px-4 py-3 border border-rose-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
+                        <div className="flex flex-col gap-1.5 shrink-0">
+                            <XCircle className="text-rose-600" size={24} strokeWidth={2.5} />
+                            <p className="text-[7.5px] font-black text-rose-600/60 uppercase tracking-widest leading-none">Deuda</p>
                         </div>
+                        <p className="text-2xl font-black text-rose-700 tracking-tighter leading-none shrink-0">{allStudents.filter(s => s.payerStatus === 'pending').length}</p>
                     </div>
                 </div>
 
@@ -566,11 +699,11 @@ export default function App() {
                         {totalPages > 1 && (
                             <div className="flex items-center gap-3">
                                 <button disabled={historyPage === 0} onClick={() => setHistoryPage(p => p - 1)} className="w-9 h-9 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center disabled:opacity-30 active:scale-95 transition-all hover:bg-zinc-100">
-                                    <ChevronUp size={16} className="text-zinc-500" />
+                                    <ChevronUp size={18} className="text-zinc-500" />
                                 </button>
                                 <span className="text-[10px] font-black text-zinc-400 tracking-widest">{historyPage + 1} / {totalPages}</span>
                                 <button disabled={historyPage >= totalPages - 1} onClick={() => setHistoryPage(p => p + 1)} className="w-9 h-9 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center disabled:opacity-30 active:scale-95 transition-all hover:bg-zinc-100">
-                                    <ChevronDown size={16} className="text-zinc-500" />
+                                    <ChevronDown size={18} className="text-zinc-500" />
                                 </button>
                             </div>
                         )}
@@ -642,14 +775,14 @@ export default function App() {
         const presentCount = allStudents.filter(s => attendance.has(s.id)).length;
 
         return (
-            <div className="space-y-4 px-4 pb-32">
+            <div className="space-y-4 px-0 pb-32">
                 {/* Buscador Neumórfico con Profundidad */}
                 <div className="relative group focus-within:scale-[1.01] transition-all duration-300">
                     <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 group-focus-within:text-zinc-950 text-zinc-300 transition-colors z-10" size={20} />
                     <input
                         type="text"
                         placeholder="Buscar participante..."
-                        className="w-full bg-white pl-16 pr-6 py-5 rounded-[2.5rem] text-base font-black text-zinc-950 placeholder:text-zinc-300 placeholder:font-black placeholder:uppercase placeholder:tracking-widest focus:outline-none transition-all duration-300 shadow-[10px_10px_20px_#e5e5e5,-10px_-10px_20px_#ffffff] focus:shadow-[inset_5px_5px_10px_#e5e5e5,inset_-5px_-5px_10px_#ffffff] border-none"
+                        className="w-full bg-white pl-16 pr-6 py-3 rounded-[2.5rem] text-base font-black text-zinc-950 placeholder:text-zinc-300 placeholder:font-black placeholder:uppercase placeholder:tracking-widest focus:outline-none transition-all duration-300 shadow-[8px_8px_16px_#e5e5e5,-8px_-8px_16px_#ffffff] focus:shadow-[inset_4px_4px_8px_#e5e5e5,inset_-4px_-4px_8px_#ffffff] border-2 border-zinc-100 focus:border-zinc-300"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -657,10 +790,11 @@ export default function App() {
 
                 <button
                     onClick={() => setShowQRModal(true)}
-                    className="w-full bg-zinc-950 hover:bg-zinc-800 text-white rounded-2xl p-4 flex items-center justify-center gap-3 shadow-md transition-all active:scale-95"
+                    style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
+                    className="w-full text-white rounded-2xl p-4 flex items-center justify-center gap-3 shadow-md border-b-4 border-black/20 transition-all active:scale-95 active:border-b-0"
                 >
-                    <QrCode size={20} className="text-emerald-400" />
-                    <span className="text-[11px] font-black uppercase tracking-widest text-white">Modo Escáner: Mostrar QR Dinámico</span>
+                    <QrCode size={20} className="text-white" />
+                    <span className="text-[11px] font-black uppercase tracking-widest text-white">ACTIVAR ASISTENCIA DINÁMICA QR</span>
                 </button>
 
                 {/* VISTA DESKTOP: TABLA */}
@@ -696,12 +830,12 @@ export default function App() {
                                             {isPresent ? (
                                                 <div className="flex items-center gap-2">
                                                     <div className="flex items-center gap-2 text-emerald-600">
-                                                        <CheckCircle2 size={16} />
+                                                        <CheckCircle2 size={18} />
                                                         <span className="text-[10px] font-black uppercase tracking-widest">Presente</span>
                                                     </div>
                                                     {student.method === 'qr' && (
                                                         <span className="bg-amber-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-lg flex items-center gap-1 animate-in zoom-in-50">
-                                                            <QrCode size={10} /> QR
+                                                            <QrCode size={12} /> QR
                                                         </span>
                                                     )}
                                                 </div>
@@ -743,7 +877,7 @@ export default function App() {
                                         />
                                         {isPresent && (
                                             <div className="absolute -bottom-2 -right-2 bg-emerald-500 rounded-full p-1 border-2 border-emerald-50 shadow-lg">
-                                                {student.method === 'qr' ? <QrCode size={14} className="text-white" /> : <CheckCircle2 className="text-white" size={14} />}
+                                                {student.method === 'qr' ? <QrCode size={16} className="text-white" /> : <CheckCircle2 className="text-white" size={16} />}
                                             </div>
                                         )}
                                         {isPresent && student.method === 'qr' && (
@@ -795,7 +929,7 @@ export default function App() {
         const years = [new Date().getFullYear(), new Date().getFullYear() - 1];
 
         return (
-            <div className="space-y-6 px-4 pb-24">
+            <div className="space-y-6 px-0 pb-24">
                 {/* Tabs Selector Premium (Neumorphic Style) */}
                 <div className="flex bg-zinc-100 p-1.5 rounded-[2.2rem] gap-1 shadow-inner">
                     {['pending', 'history'].map((f) => (
@@ -826,30 +960,29 @@ export default function App() {
                                         onClick={() => setSelectedMonth(idx + 1)}
                                         className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${
                                             selectedMonth === idx + 1 
-                                            ? "bg-zinc-950 text-white shadow-lg" 
+                                            ? "text-white shadow-lg" 
                                             : "bg-zinc-50 text-zinc-400 hover:bg-zinc-100"
                                         }`}
+                                        style={selectedMonth === idx + 1 ? { backgroundColor: branding?.primaryColor || '#6366f1' } : {}}
                                     >
                                         {m}
                                     </button>
                                 ))}
                             </div>
                             <div className="flex items-center justify-between border-t border-zinc-50 pt-3">
-                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Seleccionar Año</span>
-                                <div className="flex gap-2">
-                                    {years.map(y => (
-                                        <button
-                                            key={y}
-                                            onClick={() => setSelectedYear(y)}
-                                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${
-                                                selectedYear === y 
-                                                ? "bg-zinc-950 text-white shadow-sm" 
-                                                : "bg-zinc-50 text-zinc-400 hover:bg-zinc-100"
-                                            }`}
-                                        >
-                                            {y}
-                                        </button>
-                                    ))}
+                                <div className="flex items-center gap-2">
+                                    <Calendar size={14} className="text-zinc-400" />
+                                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Año de Gestión:</span>
+                                </div>
+                                <div className="relative">
+                                    <select 
+                                        value={selectedYear} 
+                                        onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                                        className="appearance-none bg-zinc-50 border border-zinc-100 rounded-lg pl-3 pr-8 py-1 text-[10px] font-black text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-200"
+                                    >
+                                        {years.map(y => <option key={y} value={y}>{y}</option>)}
+                                    </select>
+                                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={12} />
                                 </div>
                             </div>
                         </div>
@@ -898,7 +1031,7 @@ export default function App() {
                                                 </span>
                                             ) : payer.status === 'review' || (paymentFilter === 'history' && reviewAmount > 0) ? (
                                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest">
-                                                    <RefreshCw size={12} className="animate-spin-slow" /> {paymentFilter === 'history' ? 'Revisiones' : 'Por Aprobar'}
+                                                    <RefreshCw size={14} className="animate-spin-slow" /> {paymentFilter === 'history' ? 'Revisiones' : 'Por Aprobar'}
                                                 </span>
                                             ) : (
                                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-widest">
@@ -931,7 +1064,8 @@ export default function App() {
                                                 ) : (
                                                     <button
                                                         onClick={() => handlePaymentApprove(payer.id)}
-                                                        className="px-5 py-2 rounded-xl bg-zinc-950 text-white text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-md shadow-zinc-100"
+                                                        style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
+                                                        className="px-5 py-2 rounded-xl text-white text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-md"
                                                     >
                                                         Pagar
                                                     </button>
@@ -967,7 +1101,7 @@ export default function App() {
                                 <div className="p-4 flex items-center gap-3 cursor-pointer" onClick={() => setExpandedPayerId(isExpanded ? null : payer.id)}>
                                     <div className="relative shrink-0">
                                         <img src={payer.photo} className="w-14 h-14 rounded-full object-cover shadow-sm grayscale-[0.3]" />
-                                        <div className="absolute -bottom-1.5 -right-1 bg-zinc-950 text-white text-[7px] font-black px-1 py-0.5 rounded border border-white uppercase">Titular</div>
+                                        <div className="absolute -bottom-1.5 -right-1 text-white text-[7px] font-black px-1 py-0.5 rounded border border-white uppercase" style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}>Titular</div>
                                     </div>
 
                                     <div className="flex-1 min-w-0">
@@ -985,40 +1119,42 @@ export default function App() {
                                             <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest leading-none">{numEnrollments} {vocab.memberLabel}s</span>
                                         </div>
 
-                                        <div className="flex items-center gap-2 mt-1.5">
-                                            <span className="font-black text-zinc-950 text-sm tracking-tighter">
+                                        <div className="flex items-center gap-2 mt-1.5 overflow-x-auto hide-scrollbar">
+                                            <span className="font-black text-zinc-950 text-sm tracking-tighter shrink-0">
                                                 {formatMoney(displayAmount)}
                                             </span>
-                                            {hasReview && pendingAmount > 0 && (
-                                                <span className="text-[7px] bg-rose-50 text-rose-500 px-1.5 py-0.5 rounded-md font-black uppercase tracking-widest">+ {formatMoney(pendingAmount)}</span>
+                                            {!isPaid && !(payer.status === 'review' || reviewAmount > 0) && (
+                                                <span className="text-[7px] font-black text-rose-600 uppercase tracking-widest whitespace-nowrap px-1.5 py-0.5 rounded bg-rose-50 border border-rose-100">
+                                                    Deuda pendiente
+                                                </span>
+                                            )}
+                                            {(payer.status === 'review' || reviewAmount > 0) && !isPaid && (
+                                                <span className="text-[7px] font-black text-amber-600 uppercase tracking-widest whitespace-nowrap px-1.5 py-0.5 rounded bg-amber-50 border border-amber-100">
+                                                    Por validar
+                                                </span>
+                                            )}
+                                            {isPaid && (
+                                                <span className="text-[7px] font-black text-emerald-600 uppercase tracking-widest whitespace-nowrap px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-100">
+                                                    Pagado
+                                                </span>
                                             )}
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center gap-2 shrink-0">
                                         {isPaid ? (
-                                            <div className="bg-emerald-500 rounded-2xl p-2 shadow-lg shadow-emerald-100">
-                                                <CheckCircle2 size={20} className="text-white" />
+                                            <div className="bg-emerald-500 rounded-xl p-1.5 shadow-sm">
+                                                <CheckCircle2 size={16} className="text-white" />
                                             </div>
                                         ) : (payer.status === 'review' || reviewAmount > 0) ? (
-                                            <div className="flex items-center gap-1">
-                                                {proofUrl && (
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); setProofModalUrl(proofUrl); }}
-                                                        className="w-12 h-14 bg-white border-2 border-zinc-100 text-zinc-400 rounded-2xl flex items-center justify-center hover:bg-zinc-50 active:scale-95 transition-all shadow-sm"
-                                                    >
-                                                        <Eye size={20} />
-                                                    </button>
-                                                )}
-                                                    <button
-                                                        className="bg-amber-500 text-white px-4 py-2 h-11 rounded-xl text-[9px] font-black uppercase shadow-lg shadow-amber-100 transition-all active:scale-95 flex flex-col items-center justify-center min-w-[70px]"
-                                                        onClick={(e) => { e.stopPropagation(); handlePaymentApprove(payer.id); }}
-                                                    >
-                                                        <RefreshCw size={12} className="mb-0.5 animate-spin-slow" />
-                                                        <span>Aprobar</span>
-                                                    </button>
-                                                </div>
-                                            ) : null}
+                                            <div className="bg-amber-500 rounded-xl p-1.5 shadow-sm">
+                                                <RefreshCw size={16} className="text-white" />
+                                            </div>
+                                        ) : (
+                                            <div className="w-8 h-8 rounded-xl bg-zinc-100 border border-zinc-200 flex items-center justify-center">
+                                                <Clock size={14} className="text-zinc-400" />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -1030,7 +1166,7 @@ export default function App() {
                                                 <span className="text-[8px] font-black bg-amber-50 text-amber-600 px-2 py-1 rounded-full uppercase">Esperando Validación</span>
                                             )}
                                         </div>
-                                        <div className="space-y-2">
+                                        <div className="space-y-2 mb-4">
                                             {payer.payments?.map((payment: any) => (
                                                 <div key={payment.id} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-zinc-100 shadow-sm">
                                                     <div className="flex items-center gap-3">
@@ -1039,7 +1175,7 @@ export default function App() {
                                                                 <img src={payment.student_photo} className="w-10 h-10 rounded-full object-cover shadow-sm" />
                                                             ) : (
                                                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-xs ${payment.status === 'review' ? 'bg-amber-500 text-white' : 'bg-rose-50 text-rose-500'}`}>
-                                                                    {payment.status === 'review' ? <RefreshCw size={16} className="animate-spin-slow" /> : <Clock size={16} />}
+                                                                    {payment.status === 'review' ? <RefreshCw size={14} className="animate-spin-slow" /> : <Clock size={14} />}
                                                                 </div>
                                                             )}
                                                             {payment.status === 'review' && (
@@ -1064,7 +1200,8 @@ export default function App() {
                                                         {(payment.status === 'review' || payment.status === 'approved') && payment.proof_url && (
                                                             <button 
                                                                 onClick={(e) => { e.stopPropagation(); setProofModalUrl(payment.proof_url); }}
-                                                                className="text-[7px] font-black bg-zinc-950 text-white px-3 py-1.5 rounded-lg uppercase flex items-center gap-1 shadow-md active:scale-95 transition-all"
+                                                                style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
+                                                                className="text-[7px] font-black text-white px-3 py-1.5 rounded-lg uppercase flex items-center gap-1 shadow-md active:scale-95 transition-all"
                                                             >
                                                                 <Eye size={10} /> Ver Boucher
                                                             </button>
@@ -1073,6 +1210,37 @@ export default function App() {
                                                 </div>
                                             ))}
                                         </div>
+
+                                        {/* ACCIONES DEL PIE - Solo si no está pagado */}
+                                        {!isPaid && (
+                                            <div className="flex gap-2 pt-3 border-t border-zinc-200/60">
+                                                {proofUrl && (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setProofModalUrl(proofUrl); }}
+                                                        className="flex-1 h-12 bg-white border-2 border-zinc-200 text-zinc-500 rounded-xl flex items-center justify-center gap-2 hover:bg-zinc-50 active:scale-95 transition-all shadow-sm font-black text-[9px] uppercase tracking-widest"
+                                                    >
+                                                        <Eye size={18} /> Ver Comprobante
+                                                    </button>
+                                                )}
+                                                <button
+                                                    className="flex-[2] h-12 text-white rounded-xl text-[10px] font-black uppercase shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+                                                    style={{ backgroundColor: (payer.status === 'review' || reviewAmount > 0) ? '#f59e0b' : (branding?.primaryColor || '#6366f1') }}
+                                                    onClick={(e) => { e.stopPropagation(); handlePaymentApprove(payer.id); }}
+                                                >
+                                                    {(payer.status === 'review' || reviewAmount > 0) ? (
+                                                        <>
+                                                            <RefreshCw size={18} className="animate-spin-slow" />
+                                                            <span>Aprobar Pago</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <DollarSign size={18} />
+                                                            <span>Marcar como Pagado</span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -1084,9 +1252,8 @@ export default function App() {
     };
 
     const renderSettings = () => {
-
         return (
-            <div className="space-y-3 px-4 pb-24">
+            <div className="space-y-3 px-0 pb-10">
                 {/* BRANDING */}
                 <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-zinc-100 flex items-center gap-3">
                     <div className="relative shrink-0">
@@ -1134,17 +1301,21 @@ export default function App() {
                     ) : (
                         <button onClick={async () => { setGeneratingPage(true); const r = await generateRegistrationPage(user.tenant_slug || user.tenant_id, token ?? ''); setGeneratingPage(false); if (r?.code) setRegPageCode(r.code); }}
                             disabled={generatingPage}
-                            className="w-full h-9 bg-zinc-950 text-white text-[9px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-40">
-                            {generatingPage ? <Loader2 className="animate-spin" size={12} /> : '✦ Generar página de registro'}
+                            style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
+                            className="w-full h-9 text-white text-[9px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-40">
+                            {generatingPage ? <Loader2 className="animate-spin" size={12} /> : <><Sparkles size={12} /> Generar página de registro</>}
                         </button>
                     )}
                 </div>
 
                 {/* PRECIOS + DESCUENTO en una sola tarjeta */}
                 <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden">
-                    <div className="px-4 py-2 border-b border-zinc-50 flex items-center gap-2">
-                        <CreditCard size={12} className="text-zinc-400" />
-                        <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Mensualidad</span>
+                    <div className="px-4 py-2 border-b border-zinc-50 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <CreditCard size={14} style={{ color: branding?.primaryColor || '#6366f1' }} />
+                            <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Configurar Mensualidad</span>
+                        </div>
+                        <Edit2 size={10} className="text-zinc-300" />
                     </div>
                     <div className="divide-y divide-zinc-50">
                         {[{ label: vocab.cat1, field: 'kids' as const }, { label: vocab.cat2, field: 'adult' as const }].map(({ label, field }) => (
@@ -1167,8 +1338,10 @@ export default function App() {
                     </div>
                 </div>
 
-                <button onClick={handleSavePrices} className="w-full bg-zinc-950 text-white font-black py-4 rounded-2xl active:scale-95 transition-all text-[10px] uppercase tracking-widest">
-                    Guardar Configuración de Precios
+                <button onClick={handleSavePrices} 
+                    style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
+                    className="w-full text-white font-black py-4 rounded-2xl active:scale-95 transition-all text-[10px] uppercase tracking-widest flex items-center justify-center gap-2">
+                    <Save size={16} /> Guardar Configuración de Precios
                 </button>
 
                 {/* DATOS DE TRANSFERENCIA */}
@@ -1176,7 +1349,7 @@ export default function App() {
                 <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden mt-6">
                     <div className="px-4 py-3 border-b border-zinc-50 flex items-center justify-between">
                         <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
-                            <CreditCard size={12} /> Datos Bancarios
+                            <CreditCard size={14} style={{ color: branding?.primaryColor || '#6366f1' }} /> Datos Bancarios <Edit2 size={10} className="ml-1 text-zinc-300" />
                         </span>
                         <button
                             onClick={async () => {
@@ -1275,7 +1448,7 @@ export default function App() {
                             }}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-full text-[9px] font-black uppercase tracking-widest transition-all active:scale-95"
                         >
-                            <ClipboardPaste size={10} /> Pegar Copiado
+                            <ClipboardPaste size={14} /> Pegar Copiado
                         </button>
                     </div>
                     <div className="divide-y divide-zinc-50">
@@ -1307,8 +1480,19 @@ export default function App() {
                     Guardar Datos Bancarios
                 </button>
 
-                <button className="w-full text-rose-400 font-black py-3 rounded-2xl hover:bg-rose-50 uppercase tracking-widest text-[8px] transition-all" onClick={() => { localStorage.clear(); window.location.href = "/"; }}>
-                    <LogOut className="inline-block mr-1.5" size={12} /> Cerrar Sesión Staff
+                <button 
+                    className="w-full text-rose-400 font-black py-4 rounded-2xl hover:bg-rose-50 uppercase tracking-widest text-[9px] transition-all flex items-center justify-center gap-2 border border-rose-100" 
+                    onClick={() => { 
+                        // Logout selectivo: limpiamos tokens pero preservamos el contexto visual de la academia
+                        const slug = localStorage.getItem("tenant_slug");
+                        const branding = localStorage.getItem("tenant_branding");
+                        localStorage.clear(); 
+                        if (slug) localStorage.setItem("tenant_slug", slug);
+                        if (branding) localStorage.setItem("tenant_branding", branding);
+                        window.location.href = "/"; 
+                    }}
+                >
+                    <LogOut size={16} /> Cerrar Sesión Staff
                 </button>
             </div>
         );
@@ -1324,7 +1508,7 @@ export default function App() {
     return (
         <div className="flex flex-col h-screen bg-white font-sans relative overflow-hidden text-zinc-950">
             {/* HEADER DINÁMICO - Oculto en Desktop ya que se integra en el Content */}
-            <header className="bg-white px-5 py-6 flex items-center justify-between sticky top-0 z-50 border-b border-zinc-50 shrink-0 md:hidden">
+            <header className="bg-white px-2 py-3 flex items-center justify-between sticky top-0 z-50 border-b border-zinc-50 shrink-0 md:hidden">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full overflow-hidden border border-zinc-100 shadow-sm">
                         {branding?.logo ? (
@@ -1341,12 +1525,12 @@ export default function App() {
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-2.5 shrink-0 bg-zinc-50 pl-3 pr-1 py-1 rounded-full border border-zinc-100">
+                <div className="flex items-center gap-2.5 shrink-0 bg-white pl-3 pr-1 py-1 rounded-full border border-zinc-100 shadow-sm">
                     <div className="flex flex-col items-end">
                         <span className="text-[10px] font-black text-zinc-900 leading-none truncate max-w-[80px]">{user?.name?.split(' ')[0] || 'Admin'}</span>
-                        <span className="text-[7px] font-black uppercase tracking-[0.2em] mt-0.5" style={{ color: branding?.primaryColor || '#6366f1' }}>Admin</span>
+                        <span className="text-[7px] font-black uppercase tracking-[0.2em] mt-0.5" style={{ color: branding?.primaryColor || '#6366f1' }}>Staff</span>
                     </div>
-                    <div className="w-8 h-8 flex items-center justify-center shrink-0 rounded-full overflow-hidden border border-zinc-200">
+                    <div className="w-8 h-8 flex items-center justify-center shrink-0 rounded-full overflow-hidden border-2" style={{ borderColor: branding?.primaryColor || '#6366f1' }}>
                         <img src="/DLogo-v2.webp" className="w-full h-full object-cover" alt="D" />
                     </div>
                 </div>
@@ -1370,10 +1554,10 @@ export default function App() {
                     </div>
 
                     <nav className="flex flex-col gap-2">
-                        <SidebarButton icon={LayoutDashboard} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} />
-                        <SidebarButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} />
-                        <SidebarButton icon={CreditCard} label="Pagos" active={activeTab === 'payments'} onClick={() => changeTab('payments')} />
-                        <SidebarButton icon={Settings} label="Ajustes" active={activeTab === 'settings'} onClick={() => changeTab('settings')} />
+                        <SidebarButton icon={LayoutDashboard} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} primaryColor={branding?.primaryColor} />
+                        <SidebarButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} />
+                        <SidebarButton icon={CreditCard} label="Pagos" active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} />
+                        <SidebarButton icon={Settings} label="Ajustes" active={activeTab === 'settings'} onClick={() => changeTab('settings')} primaryColor={branding?.primaryColor} />
                     </nav>
 
                     <div className="mt-auto pt-6 border-t border-zinc-50 flex items-center gap-3">
@@ -1416,6 +1600,7 @@ export default function App() {
                     authToken={token ?? ''} 
                     onClose={() => setShowQRModal(false)}
                     primaryColor={branding?.primaryColor || '#a855f7'}
+                    payers={payers}
                 />
             )}
 
@@ -1424,6 +1609,17 @@ export default function App() {
                 <ProofModal 
                     url={proofModalUrl} 
                     onClose={() => setProofModalUrl(null)} 
+                />
+            )}
+
+            {/* MODAL DE ACCIÓN DE PAGO */}
+            {paymentActionPayer && (
+                <PaymentActionModal 
+                    payer={paymentActionPayer} 
+                    onConfirm={handleConfirmPayment} 
+                    onCancel={() => setPaymentActionPayer(null)} 
+                    primaryColor={branding?.primaryColor || '#6366f1'}
+                    formatMoney={formatMoney}
                 />
             )}
 
@@ -1444,9 +1640,11 @@ export default function App() {
     );
 }
 
-function SidebarButton({ icon: Icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) {
+function SidebarButton({ icon: Icon, label, active, onClick, primaryColor }: { icon: any, label: string, active: boolean, onClick: () => void, primaryColor?: string }) {
     return (
-        <button onClick={onClick} className={`flex items- center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 w-full group ${active ? 'bg-zinc-950 text-white shadow-lg' : 'text-zinc-400 hover:bg-zinc-50 hover:text-zinc-600'}`}>
+        <button onClick={onClick} 
+            style={active ? { backgroundColor: primaryColor || '#6366f1' } : {}}
+            className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 w-full group ${active ? 'text-white shadow-lg' : 'text-zinc-400 hover:bg-zinc-50 hover:text-zinc-600'}`}>
             <Icon size={20} strokeWidth={active ? 3 : 2} className={`transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`} />
             <span className="text-[11px] font-black uppercase tracking-widest">{label}</span>
         </button>
@@ -1457,26 +1655,28 @@ function TabButton({ icon: Icon, label, active, onClick, primaryColor = '#000' }
     return (
         <button 
             onClick={onClick} 
-            className={`flex flex-col items-center gap-1 transition-all duration-200 ${active ? '' : 'text-zinc-300 hover:text-zinc-400'}`}
+            className={`flex flex-col items-center gap-1 transition-all duration-200 ${active ? '' : 'text-zinc-400 hover:text-zinc-600'}`}
             style={active ? { color: primaryColor } : {}}
         >
             <div 
                 className={`p-2 transition-all duration-300 ${active ? 'rounded-2xl shadow-sm' : 'bg-transparent'}`}
                 style={active ? { backgroundColor: `${primaryColor}15` } : {}}
             >
-                <Icon size={22} strokeWidth={active ? 3 : 2} />
+                <Icon size={22} strokeWidth={active ? 3 : 2.5} />
             </div>
             <span className={`text-[7px] font-black uppercase tracking-[0.2em] transition-all ${active ? 'opacity-100' : 'opacity-60'}`}>{label}</span>
         </button>
     );
 }
 
-function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor }: { onClose: () => void; tenantSlug: string; authToken: string; primaryColor: string }) {
+function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers }: { onClose: () => void; tenantSlug: string; authToken: string; primaryColor: string; payers: any[] }) {
     const [qrData, setQrData] = useState<string | null>(null);
     const [timeLeft, setTimeLeft] = useState(30);
     const [loading, setLoading] = useState(true);
+    const [detectedStudent, setDetectedStudent] = useState<any>(null);
 
     const fetchToken = useCallback(async () => {
+        if (detectedStudent) return; // Pausar si hay alguien detectado
         try {
             setLoading(true);
             const API = process.env.NEXT_PUBLIC_API_URL || "https://admin.digitalizatodo.cl/api";
@@ -1500,14 +1700,14 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor }: { onCl
         } finally {
             setLoading(false);
         }
-    }, [tenantSlug, authToken]);
+    }, [tenantSlug, authToken, detectedStudent]);
 
     useEffect(() => {
         fetchToken();
     }, [fetchToken]);
 
     useEffect(() => {
-        if (loading) return;
+        if (loading || detectedStudent) return;
         if (timeLeft <= 0) {
             fetchToken();
             return;
@@ -1517,52 +1717,130 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor }: { onCl
             setTimeLeft(prev => prev - 1);
         }, 1000);
         return () => clearTimeout(t);
-    }, [timeLeft, loading, fetchToken]);
+    }, [timeLeft, loading, fetchToken, detectedStudent]);
+
+    // Escuchar ingresos en tiempo real dentro del modal
+    useEffect(() => {
+        const echo = getEcho();
+        if (!echo || !tenantSlug) return;
+
+        const channel = echo.channel(`attendance.${tenantSlug}`);
+        channel.listen('.student.checked-in', (data: { studentId: string | number }) => {
+            console.log('Modal received check-in:', data);
+            // Buscar estudiante en la lista de payers
+            const student = payers.flatMap(p => p.enrolledStudents || []).find(s => String(s.id) === String(data.studentId));
+            if (student) {
+                setDetectedStudent(student);
+                // Feedback háptico si es móvil
+                if (window.navigator?.vibrate) window.navigator.vibrate(200);
+            }
+        });
+
+        return () => {
+            echo.leaveChannel(`attendance.${tenantSlug}`);
+        };
+    }, [tenantSlug, payers]);
 
     const progressPercent = (timeLeft / 30) * 100;
 
     return (
-        <div className="fixed inset-0 z-[100] bg-zinc-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden shadow-2xl scale-in-center">
-                <div className="p-6 text-center relative border-b border-zinc-100">
-                    <button onClick={onClose} className="absolute right-4 top-4 p-2 bg-zinc-50 rounded-full text-zinc-400 hover:text-zinc-600 transition-colors active:scale-95">
-                        <XCircle size={24} />
-                    </button>
-                    <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
-                        <QrCode size={24} />
-                    </div>
-                    <h2 className="text-xl font-black text-zinc-900 leading-tight">Registrar Ingreso</h2>
-                    <p className="text-[10px] uppercase font-bold tracking-widest text-zinc-400 mt-1">Acerca la cámara del apoderado</p>
-                </div>
+        <div className="fixed inset-0 z-[100] bg-zinc-900/90 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
+            <div className="bg-white rounded-[2.5rem] w-full max-w-sm overflow-hidden shadow-2xl scale-in-center border-2 border-white/20">
                 
-                <div className="p-8 flex flex-col items-center">
-                    <div className="relative p-4 bg-white rounded-3xl shadow-[0_0_20px_rgba(0,0,0,0.05)] border border-zinc-100 mb-6 flex items-center justify-center">
-                        {qrData ? (
-                            <QRCodeCanvas value={qrData} size={200} level="H" includeMargin={false} fgColor={primaryColor} />
-                        ) : (
-                            <div className="w-[200px] h-[200px] flex items-center justify-center bg-zinc-50 rounded-xl">
-                                <Loader2 className="animate-spin text-zinc-300" size={32} />
+                {detectedStudent ? (
+                    <div className="p-8 text-center animate-in zoom-in-95 duration-300">
+                        <div className="relative mx-auto w-32 h-32 mb-6">
+                            <div className="absolute inset-0 bg-emerald-500 animate-ping opacity-20 rounded-full"></div>
+                            <div className="relative w-full h-full rounded-full border-4 border-emerald-500 overflow-hidden bg-zinc-100 shadow-xl">
+                                {detectedStudent.photo ? (
+                                    <img src={detectedStudent.photo} className="w-full h-full object-cover" alt={detectedStudent.name} />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-zinc-300">
+                                        <User size={48} />
+                                    </div>
+                                )}
                             </div>
-                        )}
+                            <div className="absolute -right-2 -bottom-2 w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg border-4 border-white">
+                                <Check size={20} />
+                            </div>
+                        </div>
+
+                        <h2 className="text-3xl font-black text-zinc-950 tracking-tighter mb-1 uppercase">¡Bienvenid@!</h2>
+                        <p className="text-xl font-bold text-emerald-600 mb-6">{detectedStudent.name}</p>
+
+                        <div className="bg-emerald-50 rounded-2xl p-4 mb-8 border border-emerald-100">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Asistencia Registrada</p>
+                            <p className="text-xs font-bold text-emerald-800 mt-1">
+                                {new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })} • Dojo Arica
+                            </p>
+                        </div>
+
+                        <button
+                            onClick={() => { setDetectedStudent(null); fetchToken(); }}
+                            style={{ backgroundColor: primaryColor }}
+                            className="w-full py-4 rounded-2xl text-white font-black text-sm uppercase tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
+                        >
+                            <RefreshCw size={18} />
+                            Continuar
+                        </button>
+                    </div>
+                ) : (
+                    <>
+                        <div className="p-6 text-center relative border-b border-zinc-100 bg-zinc-50/50">
+                            <button onClick={onClose} className="absolute right-4 top-4 p-2 bg-white rounded-full text-zinc-400 hover:text-zinc-600 shadow-sm transition-all active:scale-95 border border-zinc-100">
+                                <XCircle size={24} />
+                            </button>
+                            <div className="w-12 h-12 bg-white text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-md border border-zinc-100">
+                                <QrCode size={24} className="animate-pulse" />
+                            </div>
+                            <h2 className="text-xl font-black text-zinc-900 leading-tight">Punto de Marcación</h2>
+                            <p className="text-[10px] uppercase font-bold tracking-widest text-zinc-400 mt-1">Escanea el código para ingresar</p>
+                        </div>
                         
-                        {/* Indicador visual del tiempo (Overlay) */}
-                        <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none border-4 border-transparent transition-all duration-1000" style={{ borderColor: timeLeft <= 5 ? 'rgba(239,68,68,0.3)' : 'transparent' }} />
-                    </div>
-                    
-                    <div className="w-full space-y-2">
-                        <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-zinc-500">
-                            <span>Actualizando en:</span>
-                            <span className={timeLeft <= 5 ? "text-red-500" : ""}>{timeLeft}s</span>
+                        <div className="p-8 flex flex-col items-center">
+                            <div className="relative p-6 bg-white rounded-3xl shadow-xl border border-zinc-100 mb-8 flex items-center justify-center group overflow-hidden">
+                                {qrData ? (
+                                    <QRCodeCanvas value={qrData} size={200} level="H" includeMargin={false} fgColor={primaryColor} />
+                                ) : (
+                                    <div className="w-[200px] h-[200px] flex items-center justify-center bg-zinc-50 rounded-xl">
+                                        <Loader2 className="animate-spin text-zinc-300" size={32} />
+                                    </div>
+                                )}
+                                
+                                {/* Overlay de luz scanner */}
+                                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-400/10 to-transparent h-full w-full pointer-events-none animate-scan line-scan" />
+                            </div>
+                            
+                            <div className="w-full space-y-3">
+                                <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-zinc-500 px-1">
+                                    <span className="flex items-center gap-1.5"><RefreshCw size={10} className={loading ? "animate-spin" : ""} /> Código Dinámico</span>
+                                    <span className={timeLeft <= 5 ? "text-red-500 font-black animate-pulse" : "font-black"}>{timeLeft}s</span>
+                                </div>
+                                <div className="h-2 w-full bg-zinc-100 rounded-full overflow-hidden">
+                                    <div 
+                                        className={`h-full transition-all duration-1000 ease-linear rounded-full ${timeLeft <= 5 ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-emerald-500'}`}
+                                        style={{ width: `${progressPercent}%` }}
+                                    />
+                                </div>
+                            </div>
+
+                            <p className="mt-8 text-[9px] text-zinc-400 font-bold uppercase tracking-widest text-center leading-relaxed">
+                                El código se actualiza automáticamente<br/>por seguridad cada 30 segundos.
+                            </p>
                         </div>
-                        <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
-                            <div 
-                                className={`h-full transition-all duration-1000 ease-linear rounded-full ${timeLeft <= 5 ? 'bg-red-500' : 'bg-emerald-500'}`}
-                                style={{ width: `${progressPercent}%` }}
-                            />
-                        </div>
-                    </div>
-                </div>
+                    </>
+                )}
             </div>
+            <style jsx>{`
+                .line-scan {
+                    animation: scan 3s linear infinite;
+                    border-top: 2px solid rgba(16, 185, 129, 0.4);
+                }
+                @keyframes scan {
+                    0% { transform: translateY(-100%); }
+                    100% { transform: translateY(100%); }
+                }
+            `}</style>
         </div>
     );
 }
