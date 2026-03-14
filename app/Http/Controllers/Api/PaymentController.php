@@ -88,6 +88,8 @@ class PaymentController extends Controller
                         'status' => 'pending_review'
                     ]);
 
+                    event(new \App\Events\PaymentStatusUpdated($guardian->id, 'pending_review', $tenant->slug));
+
                     return response()->json([
                         'message' => 'Comprobante optimizado y subido correctamente.',
                         'proof_url' => $url,
@@ -167,6 +169,8 @@ class PaymentController extends Controller
                         'status' => 'pending_review'
                     ]);
                 }
+
+                event(new \App\Events\PaymentStatusUpdated($guardian->id, 'pending_review', $tenant->slug));
 
                 return response()->json([
                     'message' => 'Comprobante subido y aplicado a ' . $validPayments->count() . ' pagos.',
