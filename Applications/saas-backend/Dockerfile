@@ -46,7 +46,7 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
 
-EXPOSE 80
+EXPOSE 80 8080
 
 COPY docker/start.sh /start.sh
 RUN chmod +x /start.sh
