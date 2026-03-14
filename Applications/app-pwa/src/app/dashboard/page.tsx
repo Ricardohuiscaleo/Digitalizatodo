@@ -1313,29 +1313,29 @@ export default function App() {
     return (
         <div className="flex flex-col h-screen bg-white font-sans relative overflow-hidden text-zinc-950">
             {/* HEADER DINÁMICO - Oculto en Desktop ya que se integra en el Content */}
-            <header className="bg-white px-8 py-8 flex items-center justify-between sticky top-0 z-50 border-none shrink-0 md:hidden">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 flex items-center justify-center shrink-0 rounded-full overflow-hidden border-2 border-zinc-100">
+            <header className="bg-white px-5 py-6 flex items-center justify-between sticky top-0 z-50 border-b border-zinc-50 shrink-0 md:hidden">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full overflow-hidden border border-zinc-100 shadow-sm">
                         {branding?.logo ? (
                             <img src={branding.logo} className="w-full h-full object-cover" alt="L" />
                         ) : (
-                            <span className="font-black text-2xl uppercase tracking-tighter text-zinc-950">{branding?.name?.[0] || 'D'}</span>
+                            <span className="font-black text-xl uppercase tracking-tighter text-zinc-950">{branding?.name?.[0] || 'D'}</span>
                         )}
                     </div>
                     <div className="flex flex-col">
-                        <h1 className="text-xl font-black uppercase tracking-tighter text-zinc-950 leading-none">{branding?.name || 'Academy'}</h1>
-                        <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">{activeTab === 'dashboard' ? 'Resumen' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? 'Pagos' : 'Ajustes'}</span>
-                            {isDemo && <span className="bg-emerald-500/10 text-emerald-600 text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest">DEMO</span>}
+                        <h1 className="text-lg font-black uppercase tracking-tighter text-zinc-950 leading-none">{branding?.name || 'Academy'}</h1>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">{activeTab === 'dashboard' ? 'Resumen' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? 'Pagos' : 'Ajustes'}</span>
+                            {isDemo && <span className="bg-emerald-500/10 text-emerald-600 text-[6px] font-black px-1 py-0.5 rounded uppercase tracking-widest">DEMO</span>}
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2.5 shrink-0 bg-zinc-50 pl-3 pr-1 py-1 rounded-full border border-zinc-100">
                     <div className="flex flex-col items-end">
-                        <span className="text-xs font-black text-zinc-950 leading-none">{user?.name || 'Admin'}</span>
-                        <span className="text-[9px] font-bold text-indigo-500 uppercase tracking-widest">Admin</span>
+                        <span className="text-[10px] font-black text-zinc-900 leading-none truncate max-w-[80px]">{user?.name?.split(' ')[0] || 'Admin'}</span>
+                        <span className="text-[7px] font-black text-indigo-500 uppercase tracking-[0.2em] mt-0.5">Admin</span>
                     </div>
-                    <div className="w-12 h-12 flex items-center justify-center shrink-0 rounded-full overflow-hidden border-2 border-zinc-100">
+                    <div className="w-8 h-8 flex items-center justify-center shrink-0 rounded-full overflow-hidden border border-zinc-200">
                         <img src="/DLogo-v2.webp" className="w-full h-full object-cover" alt="D" />
                     </div>
                 </div>
@@ -1380,8 +1380,8 @@ export default function App() {
                 </aside>
 
                 {/* CONTENIDO PRINCIPAL */}
-                <main className="flex-1 overflow-y-auto pb-32 md:pb-8 hide-scrollbar relative bg-zinc-50/30">
-                    <div className="max-w-6xl mx-auto py-4 md:py-8 px-4 md:px-8">
+                <main className="flex-1 overflow-y-auto pb-28 md:pb-8 hide-scrollbar relative bg-white">
+                    <div className="max-w-6xl mx-auto py-2 md:py-8 px-2 md:px-8">
                         <div key={activeTab} className="w-full animate-in fade-in duration-150">
                             <div className="hidden md:flex justify-between items-center mb-8">
                                 <h2 className="text-2xl font-black uppercase tracking-tighter text-zinc-950">
@@ -1417,7 +1417,7 @@ export default function App() {
             )}
 
             {/* NAV CON ESTILO PREMIUM - Solo visible en Mobile */}
-            <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 pt-3 pb-8 px-10 flex justify-between items-center h-24 z-50 md:hidden text-zinc-950">
+            <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-50 pt-3 pb-8 px-6 flex justify-between items-center h-22 z-50 md:hidden text-zinc-950">
                 <TabButton icon={LayoutDashboard} label="Inicio" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} />
                 <TabButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} />
                 <TabButton icon={CreditCard} label="Pagos" active={activeTab === 'payments'} onClick={() => changeTab('payments')} />
@@ -1444,12 +1444,11 @@ function SidebarButton({ icon: Icon, label, active, onClick }: { icon: any, labe
 
 function TabButton({ icon: Icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) {
     return (
-        <button onClick={onClick} className={`flex flex-col items-center gap-1.5 transition-all duration-300 relative ${active ? 'text-zinc-950 scale-110' : 'text-zinc-300 hover:text-zinc-400'}`}>
-            <div className={`p-2 rounded-2xl transition-all duration-500 ${active ? 'bg-zinc-50 shadow-inner' : 'bg-transparent'}`}>
-                <Icon size={24} strokeWidth={active ? 3 : 2} />
+        <button onClick={onClick} className={`flex flex-col items-center gap-1 transition-all duration-200 ${active ? 'text-zinc-950' : 'text-zinc-300 hover:text-zinc-400'}`}>
+            <div className={`p-2 transition-all duration-300 ${active ? 'bg-zinc-50 rounded-2xl' : 'bg-transparent'}`}>
+                <Icon size={22} strokeWidth={active ? 3 : 2} />
             </div>
-            <span className="text-[8px] font-black uppercase tracking-[0.2em]">{label}</span>
-            {active && <div className="absolute -bottom-2 w-1 h-1 bg-zinc-950 rounded-full" />}
+            <span className={`text-[7px] font-black uppercase tracking-[0.2em] transition-all ${active ? 'opacity-100' : 'opacity-60'}`}>{label}</span>
         </button>
     );
 }
