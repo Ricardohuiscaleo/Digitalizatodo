@@ -643,12 +643,13 @@ export default function App() {
 
         return (
             <div className="space-y-4 px-4 pb-32">
-                <div className="relative">
-                    <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 text-zinc-400" size={20} />
+                {/* Buscador Neumórfico con Profundidad */}
+                <div className="relative group focus-within:scale-[1.01] transition-all duration-300">
+                    <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 group-focus-within:text-zinc-950 text-zinc-300 transition-colors z-10" size={20} />
                     <input
                         type="text"
                         placeholder="Buscar participante..."
-                        className="w-full bg-zinc-50 pl-14 pr-6 py-5 rounded-2xl shadow-sm border border-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-950 text-base font-bold text-zinc-950"
+                        className="w-full bg-white pl-16 pr-6 py-5 rounded-[2.5rem] text-base font-black text-zinc-950 placeholder:text-zinc-300 placeholder:font-black placeholder:uppercase placeholder:tracking-widest focus:outline-none transition-all duration-300 shadow-[10px_10px_20px_#e5e5e5,-10px_-10px_20px_#ffffff] focus:shadow-[inset_5px_5px_10px_#e5e5e5,inset_-5px_-5px_10px_#ffffff] border-none"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
