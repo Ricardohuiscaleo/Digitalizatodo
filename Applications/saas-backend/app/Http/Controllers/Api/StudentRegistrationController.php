@@ -201,6 +201,8 @@ class StudentRegistrationController extends Controller
                     Log::error("Error enviando notificación telegram registro alumno: " . $e->getMessage());
                 }
 
+                event(new \App\Events\StudentRegistered($studentCount, $guardian->name, $tenant->slug));
+
                 return response()->json([
                     'message' => '¡Registro exitoso! Ya puedes iniciar sesión.',
                     'guardian_id' => $guardian->id,

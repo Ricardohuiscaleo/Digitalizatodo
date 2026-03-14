@@ -34,10 +34,8 @@ export default function BottomNav({ activeSection, setActiveSection, primaryColo
                             }`}
                         >
                             <div
-                                className={`p-2 rounded-2xl transition-all ${
-                                    isActive ? "bg-stone-100 text-stone-900" : ""
-                                }`}
-                                style={isActive ? { color: primaryColor, backgroundColor: `${primaryColor}10` } : {}}
+                                className="p-2 transition-all"
+                                style={isActive ? { color: primaryColor } : {}}
                             >
                                 <Icon className="w-6 h-6" strokeWidth={isActive ? 2.5 : 2} />
                             </div>

@@ -185,18 +185,32 @@ export default function App() {
         
         channel.listen('.student.checked-in', (data: { studentId: string | number }) => {
             console.log('Real-time check-in received:', data);
-            // Actualizar asistencia localmente de forma optimista
             setAttendance(prev => {
                 const next = new Set(prev);
                 next.add(String(data.studentId));
                 return next;
             });
-            // También refrescar datos para asegurar consistencia (estados, etc)
+            refreshPayers();
+        });
+
+        // Pagos Real-Time
+        const paymentsChannel = echo.channel(`payments.${branding.slug}`);
+        paymentsChannel.listen('.payment.updated', (data: any) => {
+            console.log('Real-time payment update received:', data);
+            refreshPayers();
+        });
+
+        // Registros Real-Time
+        const dashboardChannel = echo.channel(`dashboard.${branding.slug}`);
+        dashboardChannel.listen('.student.registered', (data: any) => {
+            console.log('Real-time registration received:', data);
             refreshPayers();
         });
 
         return () => {
             echo.leaveChannel(`attendance.${branding.slug}`);
+            echo.leaveChannel(`payments.${branding.slug}`);
+            echo.leaveChannel(`dashboard.${branding.slug}`);
         };
     }, [branding?.slug, refreshPayers]);
 
@@ -460,31 +474,44 @@ export default function App() {
         const pagedDates = historyDates.slice(historyPage * PAGE_SIZE, (historyPage + 1) * PAGE_SIZE);
 
         return (
-            <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-gradient-to-r from-indigo-600 to-violet-600 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
-                        <div className="relative z-10">
-                            <h2 className="text-sm font-medium opacity-90 mb-1 leading-none uppercase tracking-widest text-[10px]">Total Alumnos Participantes</h2>
-                            <p className="text-4xl font-black mb-4 tracking-tighter">{totalStudents}</p>
-                            <div className="grid grid-cols-3 gap-2 text-[10px] bg-white/20 rounded-xl p-3 backdrop-blur-sm font-black uppercase tracking-tight text-center">
-                                <div className="flex flex-col items-center gap-1">
-                                    <CheckCircle2 size={14} className="text-green-300 border-none" />
-                                    <span>{paidStudents} Pagados</span>
-                                </div>
-                                <div className="flex flex-col items-center gap-1 border-x border-white/10 px-1">
-                                    <RefreshCw size={14} className="text-amber-300 border-none animate-spin-slow" />
-                                    <span>{allStudents.filter(s => s.payerStatus === 'review').length} Por Aprobar</span>
-                                </div>
-                                <div className="flex flex-col items-center gap-1">
-                                    <XCircle size={14} className="text-red-300 border-none" />
-                                    <span>{allStudents.filter(s => s.payerStatus === 'pending').length} Pendientes</span>
-                                </div>
-                            </div>
-                            {isDemo && <p className="text-[10px] font-black uppercase text-center mt-4 text-white/50 tracking-[0.3em]">MODO DEMO ACTIVO</p>}
+            <div className="space-y-6 text-zinc-950">
+                {/* Dashboard Summary - Sistema de Tarjetas Premium */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="bg-white rounded-3xl p-5 border border-zinc-100 shadow-sm flex flex-col justify-between">
+                        <Users className="text-zinc-300 mb-2" size={20} />
+                        <div>
+                            <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1">Total</p>
+                            <p className="text-2xl font-black text-zinc-950 tracking-tighter">{totalStudents}</p>
                         </div>
-                        <div className="absolute -right-6 -top-6 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl"></div>
                     </div>
 
+                    <div className="bg-emerald-50/50 rounded-3xl p-5 border border-emerald-100 shadow-sm flex flex-col justify-between">
+                        <CheckCircle2 className="text-emerald-500 mb-2" size={20} />
+                        <div>
+                            <p className="text-[9px] font-black text-emerald-600/60 uppercase tracking-widest leading-none mb-1">Pagados</p>
+                            <p className="text-2xl font-black text-emerald-600 tracking-tighter">{paidStudents}</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-amber-50/50 rounded-3xl p-5 border border-amber-100 shadow-sm flex flex-col justify-between">
+                        <RefreshCw className="text-amber-500 mb-2 animate-spin-slow" size={20} />
+                        <div>
+                            <p className="text-[9px] font-black text-amber-600/60 uppercase tracking-widest leading-none mb-1">En Revisión</p>
+                            <p className="text-2xl font-black text-amber-600 tracking-tighter">{allStudents.filter(s => s.payerStatus === 'review').length}</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-rose-50/50 rounded-3xl p-5 border border-rose-100 shadow-sm flex flex-col justify-between">
+                        <XCircle className="text-rose-500 mb-2" size={20} />
+                        <div>
+                            <p className="text-[9px] font-black text-rose-600/60 uppercase tracking-widest leading-none mb-1">Pendientes</p>
+                            <p className="text-2xl font-black text-rose-600 tracking-tighter">{allStudents.filter(s => s.payerStatus === 'pending').length}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Tarjeta de Asistencia Hoy */}
                     <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100 flex flex-col justify-between">
                         <div className="flex justify-between items-start mb-4">
                             <div>

@@ -162,6 +162,8 @@ class GuardianController extends Controller
                 ->update(['status' => 'approved', 'paid_at' => now()]);
         }
 
+        event(new \App\Events\PaymentStatusUpdated($guardian->id, 'approved', $tenant->slug));
+
         return response()->json(['message' => 'Pagos aprobados correctamente']);
     }
 
