@@ -31,7 +31,8 @@ import {
     Edit2,
     Save,
     Calendar,
-    DollarSign
+    DollarSign,
+    User
 } from 'lucide-react';
 import { useBranding } from "@/context/BrandingContext";
 import {
