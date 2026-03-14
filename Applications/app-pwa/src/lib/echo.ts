@@ -28,8 +28,8 @@ export const getEcho = () => {
     broadcaster: 'reverb',
     key: key,
     wsHost: host,
-    wsPort: parseInt(port),
-    wssPort: parseInt(port),
+    wsPort: scheme === 'https' ? 443 : parseInt(port),
+    wssPort: scheme === 'https' ? 443 : parseInt(port),
     forceTLS: scheme === 'https',
     enabledTransports: ['ws', 'wss'],
   });
