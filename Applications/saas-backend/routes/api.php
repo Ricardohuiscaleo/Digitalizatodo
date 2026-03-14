@@ -94,6 +94,7 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
             // Asistencia (solo teachers/admins - Escritura)
             Route::middleware('role:teacher,admin,owner')->group(function () {
                     Route::post('attendance', [AttendanceController::class , 'store']);
+                    Route::delete('attendance/{student_id}', [AttendanceController::class , 'destroy']);
                     Route::get('attendance/qr-token', [AttendanceQRController::class , 'generate']);
 
                     // Gestión de Cuentas (Payers)

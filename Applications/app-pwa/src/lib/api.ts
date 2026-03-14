@@ -263,6 +263,24 @@ export async function storeAttendance(tenantId: string, token: string, data: { s
     }
 }
 
+export async function deleteAttendance(tenantId: string, token: string, studentId: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/attendance/${studentId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'X-Tenant-Id': tenantId,
+            },
+        });
+
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error deleting attendance:', error);
+        return { message: 'Error de conexión' };
+    }
+}
+
 export async function getAttendanceQR(tenantId: string, token: string) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/attendance/generate-qr`, {

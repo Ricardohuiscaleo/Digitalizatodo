@@ -40,14 +40,14 @@ class AttendanceController extends Controller
 
         return response()->json([
             'attendance' => $attendances->map(fn($a) => [
-        'id' => $a->id,
-        'student_id' => $a->student_id,
-        'student' => $a->student ? ['id' => $a->student->id, 'name' => $a->student->name, 'photo' => $a->student->photo] : null,
-        'date' => $a->date instanceof \Carbon\Carbon ? $a->date->format('Y-m-d') : $a->date,
-        'status' => $a->status,
-        'created_at' => $a->created_at,
-        'notes' => $a->notes,
-        ]),
+                'id' => $a->id,
+                'student_id' => $a->student_id,
+                'student' => $a->student ? ['id' => $a->student->id, 'name' => $a->student->name, 'photo' => $a->student->photo] : null,
+                'date' => $a->date instanceof \Carbon\Carbon ? $a->date->format('Y-m-d') : $a->date,
+                'status' => $a->status,
+                'created_at' => $a->created_at,
+                'notes' => $a->notes,
+            ]),
         ]);
     }
 
@@ -66,15 +66,15 @@ class AttendanceController extends Controller
         ]);
 
         $attendance = Attendance::updateOrCreate(
-        [
-            'tenant_id' => $tenantId,
-            'student_id' => $request->student_id,
-            'date' => now()->format('Y-m-d'),
-        ],
-        [
-            'status' => $request->status,
-            'notes' => $request->notes,
-        ]
+            [
+                'tenant_id' => $tenantId,
+                'student_id' => $request->student_id,
+                'date' => now()->format('Y-m-d'),
+            ],
+            [
+                'status' => $request->status,
+                'notes' => $request->notes,
+            ]
         );
 
         return response()->json([
@@ -111,16 +111,16 @@ class AttendanceController extends Controller
         }
 
         $attendance = Attendance::updateOrCreate(
-        [
-            'tenant_id' => $tenant->id,
-            'student_id' => $student->id,
-            'date' => now()->format('Y-m-d'),
-        ],
-        [
-            'status' => 'present',
-            'notes' => 'Registrado vía QR por el usuario',
-            'registration_method' => 'qr',
-        ]
+            [
+                'tenant_id' => $tenant->id,
+                'student_id' => $student->id,
+                'date' => now()->format('Y-m-d'),
+            ],
+            [
+                'status' => 'present',
+                'notes' => 'Registrado vía QR por el usuario',
+                'registration_method' => 'qr',
+            ]
         );
 
         // Disparar evento de Broadcasting para Real-Time
@@ -129,6 +129,30 @@ class AttendanceController extends Controller
         return response()->json([
             'message' => '¡Asistencia registrada con éxito!',
             'attendance' => $attendance
+        ]);
+    }
+
+    /**
+     * Elimina la asistencia de hoy de un estudiante específico.
+     * DELETE /api/{tenant}/attendance/{student_id}
+     */
+    public function destroy(Request $request, $tenant, $studentId): JsonResponse
+    {
+        $tenantModel = app('currentTenant');
+        
+        $attendance = Attendance::where('tenant_id', $tenantModel->id)
+            ->where('student_id', $studentId)
+            ->where('date', now()->format('Y-m-d'))
+            ->first();
+
+        if (!$attendance) {
+            return response()->json(['message' => 'No se encontró asistencia para hoy'], 404);
+        }
+
+        $attendance->delete();
+
+        return response()->json([
+            'message' => 'Asistencia eliminada correctamente'
         ]);
     }
 }

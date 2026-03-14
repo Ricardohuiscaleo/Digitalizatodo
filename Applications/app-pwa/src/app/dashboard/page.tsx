@@ -41,7 +41,8 @@ import {
     deleteRegistrationPage,
     getAttendanceHistory,
     resumeSession,
-    updateBankInfo
+    updateBankInfo,
+    deleteAttendance
 } from "@/lib/api";
 
 /* ─── Proof Modal Component ─── */
@@ -368,7 +369,6 @@ export default function App() {
 
     const toggleAttendance = async (studentId: string) => {
         const isPresent = attendance.has(studentId);
-        const newStatus = isPresent ? 'absent' : 'present';
 
         const newAttendance = new Set(attendance);
         if (isPresent) newAttendance.delete(studentId);
@@ -376,7 +376,11 @@ export default function App() {
         setAttendance(newAttendance);
 
         if (!isDemo && token && (user?.tenant_slug || user?.tenant_id)) {
-            await storeAttendance(user.tenant_slug || user.tenant_id, token, { student_id: studentId, status: newStatus });
+            if (isPresent) {
+                await deleteAttendance(user.tenant_slug || user.tenant_id, token, studentId);
+            } else {
+                await storeAttendance(user.tenant_slug || user.tenant_id, token, { student_id: studentId, status: 'present' });
+            }
         }
     };
 
@@ -508,16 +512,13 @@ export default function App() {
                                             alt={s.name}
                                         />
                                     ))}
+                                    </div>
                                 </div>
-                                <button onClick={() => changeTab('attendance')} className="w-full py-4 rounded-2xl bg-zinc-950 text-white text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-zinc-200">
-                                    Registrar Asistencia 👇
-                                </button>
+                            ) : (
+                            <div className="flex items-center justify-center gap-3 py-6 px-4 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200 w-full group transition-all">
+                                <CalendarCheck size={20} className="text-zinc-300 shrink-0" />
+                                <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">Sin registros hoy</p>
                             </div>
-                        ) : (
-                            <button onClick={() => changeTab('attendance')} className="flex items-center justify-center gap-3 py-6 px-4 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200 w-full group transition-all hover:bg-zinc-100">
-                                <CalendarCheck size={20} className="text-zinc-300 shrink-0 group-hover:scale-110 transition-transform" />
-                                <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">Sin registros · Empezar Ahora</p>
-                            </button>
                         )}
                     </div>
                 </div>
@@ -591,14 +592,7 @@ export default function App() {
                                                         )}
                                                     </div>
                                                 )}
-
                                                 <div className="flex items-center gap-2 ml-auto">
-                                                    <button
-                                                        onClick={() => changeTab('attendance')}
-                                                        className="h-9 px-4 rounded-xl bg-white border border-zinc-200 text-zinc-600 text-[9px] font-black uppercase tracking-widest hover:bg-zinc-950 hover:text-white hover:border-zinc-950 transition-all active:scale-95"
-                                                    >
-                                                        Registrar
-                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
