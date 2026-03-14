@@ -119,8 +119,12 @@ class AttendanceController extends Controller
         [
             'status' => 'present',
             'notes' => 'Registrado vía QR por el usuario',
+            'registration_method' => 'qr',
         ]
         );
+
+        // Disparar evento de Broadcasting para Real-Time
+        event(new \App\Events\StudentCheckedIn($student->id, $tenant->slug));
 
         return response()->json([
             'message' => '¡Asistencia registrada con éxito!',
