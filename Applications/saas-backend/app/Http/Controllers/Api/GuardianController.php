@@ -40,6 +40,9 @@ class GuardianController extends Controller
                 } else {
                     $query->whereIn('status', ['pending', 'pending_review', 'overdue']);
                 }
+            }, 'students.attendances' => function ($query) use ($tenantId) {
+                $query->where('tenant_id', $tenantId)
+                      ->where('date', now()->format('Y-m-d'));
             }])
             ->get()
             ->map(function ($guardian) use ($tenantId) {
@@ -105,16 +108,19 @@ class GuardianController extends Controller
                 'payments' => $activePayments,
                 'pricing' => $pricing,
                 'enrolledStudents' => $students->map(function ($s) use ($s3BaseUrl) {
+                    $todayAttendance = $s->attendances->first();
                     return [
                         'id' => $s->id,
                         'name' => $s->name,
                         'category' => $s->category,
                         'photo' => $s->photo ? (str_starts_with($s->photo, 'http') ? $s->photo : $s3BaseUrl . $s->photo) : "https://i.pravatar.cc/150?img=" . $s->id,
                         'label' => $s->belt_rank ?? '',
+                        'today_status' => $todayAttendance ? $todayAttendance->status : 'absent',
+                        'method' => $todayAttendance ? $todayAttendance->registration_method : 'manual',
                     ];
                 }),
             ];
-            });
+        });
 
         return response()->json(['payers' => $guardians]);
     }
