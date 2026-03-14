@@ -25,6 +25,13 @@ AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-}"
 AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-${S3_REGION:-us-east-1}}"
 AWS_BUCKET="${AWS_BUCKET:-${S3_BUCKET:-}}"
 AWS_URL="${AWS_URL:-${S3_URL:-}}"
+REVERB_APP_ID="${REVERB_APP_ID:-diedimtyjfxaurcuejrt}"
+REVERB_APP_KEY="${REVERB_APP_KEY:-diedimtyjfxaurcuejrt}"
+REVERB_APP_SECRET="${REVERB_APP_SECRET:-diedimtyjfxaurcuejrt}"
+REVERB_HOST="${REVERB_HOST:-admin.digitalizatodo.cl}"
+REVERB_PORT="${REVERB_PORT:-8080}"
+REVERB_SCHEME="${REVERB_SCHEME:-https}"
+BROADCAST_CONNECTION=reverb
 EOF
 
 # Asegurar que si es SQLite, el archivo exista
@@ -77,6 +84,9 @@ echo "==> Storage link..."
 php artisan storage:link 2>/dev/null || true
 
 mkdir -p /var/log/supervisor /var/log/nginx /tmp/client_body /tmp/proxy_temp /tmp/fastcgi_temp
+
+echo "==> Iniciando Laravel Reverb en background (Puerto 8080)..."
+php artisan reverb:start --host=0.0.0.0 --port=8080 > /dev/null 2>&1 &
 
 echo "==> Iniciando Nginx + PHP-FPM..."
 exec /usr/bin/supervisord -c /etc/supervisord.conf
