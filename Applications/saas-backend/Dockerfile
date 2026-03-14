@@ -3,6 +3,13 @@ FROM php:8.4-fpm AS production
 
 WORKDIR /var/www/html
 
+# Traefik Labels para Reverb (WebSockets)
+LABEL traefik.http.routers.reverb.rule="Host(`admin.digitalizatodo.cl`) && PathPrefix(`/app`)"
+LABEL traefik.http.routers.reverb.entryPoints="https"
+LABEL traefik.http.routers.reverb.service="reverb"
+LABEL traefik.http.routers.reverb.tls="true"
+LABEL traefik.http.services.reverb.loadbalancer.server.port="8080"
+
 # Herramientas del sistema + extensiones PHP
 RUN apt-get update && apt-get install -y \
     nginx supervisor curl zip unzip git \
