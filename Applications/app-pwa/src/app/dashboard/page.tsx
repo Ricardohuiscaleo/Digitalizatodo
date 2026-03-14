@@ -485,27 +485,27 @@ export default function App() {
                         </div>
                     </div>
 
-                    <div className="bg-emerald-50/50 rounded-[2.2rem] p-4 md:p-5 border border-emerald-100 shadow-sm flex flex-col justify-between">
-                        <CheckCircle2 className="text-emerald-500 mb-2" size={20} />
+                    <div className="bg-emerald-100/70 rounded-[2.2rem] p-4 md:p-5 border border-emerald-200 shadow-sm flex flex-col justify-between">
+                        <CheckCircle2 className="text-emerald-600 mb-2" size={20} />
                         <div>
-                            <p className="text-[9px] font-black text-emerald-600/60 uppercase tracking-widest leading-none mb-1">Pagados</p>
-                            <p className="text-2xl font-black text-emerald-600 tracking-tighter">{paidStudents}</p>
+                            <p className="text-[9px] font-black text-emerald-700/60 uppercase tracking-widest leading-none mb-1">Pagados</p>
+                            <p className="text-2xl font-black text-emerald-700 tracking-tighter">{paidStudents}</p>
                         </div>
                     </div>
 
-                    <div className="bg-amber-50/50 rounded-[2.2rem] p-4 md:p-5 border border-amber-100 shadow-sm flex flex-col justify-between">
-                        <RefreshCw className="text-amber-500 mb-2 animate-spin-slow" size={20} />
+                    <div className="bg-amber-100/70 rounded-[2.2rem] p-4 md:p-5 border border-amber-200 shadow-sm flex flex-col justify-between">
+                        <RefreshCw className="text-amber-600 mb-2 animate-spin-slow" size={20} />
                         <div>
-                            <p className="text-[9px] font-black text-amber-600/60 uppercase tracking-widest leading-none mb-1">En Revisión</p>
-                            <p className="text-2xl font-black text-amber-600 tracking-tighter">{allStudents.filter(s => s.payerStatus === 'review').length}</p>
+                            <p className="text-[9px] font-black text-amber-700/60 uppercase tracking-widest leading-none mb-1">En Revisión</p>
+                            <p className="text-2xl font-black text-amber-700 tracking-tighter">{allStudents.filter(s => s.payerStatus === 'review').length}</p>
                         </div>
                     </div>
 
-                    <div className="bg-rose-50/50 rounded-[2.2rem] p-4 md:p-5 border border-rose-100 shadow-sm flex flex-col justify-between">
-                        <XCircle className="text-rose-500 mb-2" size={20} />
+                    <div className="bg-rose-100/70 rounded-[2.2rem] p-4 md:p-5 border border-rose-200 shadow-sm flex flex-col justify-between">
+                        <XCircle className="text-rose-600 mb-2" size={20} />
                         <div>
-                            <p className="text-[9px] font-black text-rose-600/60 uppercase tracking-widest leading-none mb-1">Pendientes</p>
-                            <p className="text-2xl font-black text-rose-600 tracking-tighter">{allStudents.filter(s => s.payerStatus === 'pending').length}</p>
+                            <p className="text-[9px] font-black text-rose-700/60 uppercase tracking-widest leading-none mb-1">Pendientes</p>
+                            <p className="text-2xl font-black text-rose-700 tracking-tighter">{allStudents.filter(s => s.payerStatus === 'pending').length}</p>
                         </div>
                     </div>
                 </div>
@@ -516,14 +516,20 @@ export default function App() {
                         <div className="flex justify-between items-start mb-4">
                             <div>
                                 <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2 uppercase tracking-tighter">
-                                    <CalendarCheck className="text-indigo-500" size={18} />
+                                    <CalendarCheck style={{ color: branding?.primaryColor || '#6366f1' }} size={18} />
                                     Asistencia Hoy
                                 </h3>
                                 <p className="text-[10px] text-zinc-400 font-bold mt-1 uppercase tracking-widest">
                                     {now.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'short' })}
                                 </p>
                             </div>
-                            <span className="bg-indigo-50 text-indigo-600 px-4 py-1.5 rounded-full text-xs font-black">
+                            <span 
+                                className="px-4 py-1.5 rounded-full text-xs font-black transition-colors"
+                                style={{ 
+                                    backgroundColor: `${branding?.primaryColor || '#6366f1'}15`,
+                                    color: branding?.primaryColor || '#6366f1' 
+                                }}
+                            >
                                 {presentToday} / {totalStudents}
                             </span>
                         </div>
@@ -588,13 +594,13 @@ export default function App() {
                                         <div className="flex items-center justify-between gap-3">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-2xl bg-zinc-50 border border-zinc-100 flex flex-col items-center justify-center shrink-0 shadow-sm">
-                                                    <span className="text-[7px] font-black uppercase text-indigo-500 leading-none mb-0.5">{dateObj.toLocaleDateString('es-CL', { month: 'short' })}</span>
+                                                    <span className="text-[7px] font-black uppercase leading-none mb-0.5" style={{ color: branding?.primaryColor || '#6366f1' }}>{dateObj.toLocaleDateString('es-CL', { month: 'short' })}</span>
                                                     <span className="text-sm font-black text-zinc-900 leading-none">{dateObj.getDate()}</span>
                                                 </div>
                                                 <div>
                                                     <p className="text-[10px] font-black text-zinc-800 uppercase tracking-widest leading-none">{dateStr}</p>
                                                     <div className="flex items-center gap-2 mt-1">
-                                                        <span className="inline-flex items-center gap-1 text-indigo-600 text-[8px] font-black uppercase">
+                                                        <span className="inline-flex items-center gap-1 text-[8px] font-black uppercase" style={{ color: branding?.primaryColor || '#6366f1' }}>
                                                             {presentCount} presentes
                                                         </span>
                                                         {records[0]?.created_at && (
@@ -1292,7 +1298,11 @@ export default function App() {
                         ))}
                     </div>
                 </div>
-                <button onClick={handleSaveBankInfo} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-2xl active:scale-95 transition-all text-[10px] uppercase tracking-widest">
+                <button 
+                    onClick={handleSaveBankInfo} 
+                    className="w-full text-white font-black py-4 rounded-2xl active:scale-95 transition-all text-[10px] uppercase tracking-widest shadow-lg"
+                    style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
+                >
                     Guardar Datos Bancarios
                 </button>
 
@@ -1305,7 +1315,7 @@ export default function App() {
 
     if (loading) return (
         <div className="h-screen flex flex-col items-center justify-center p-12 bg-white text-zinc-950">
-            <RefreshCw className="animate-spin mb-6 text-indigo-600" size={32} />
+            <RefreshCw className="animate-spin mb-6" style={{ color: branding?.primaryColor || '#6366f1' }} size={32} />
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400">Sincronizando Sistema</p>
         </div>
     );
@@ -1325,7 +1335,7 @@ export default function App() {
                     <div className="flex flex-col">
                         <h1 className="text-lg font-black uppercase tracking-tighter text-zinc-950 leading-none">{branding?.name || 'Academy'}</h1>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">{activeTab === 'dashboard' ? 'Resumen' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? 'Pagos' : 'Ajustes'}</span>
+                            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: branding?.primaryColor || '#6366f1' }}>{activeTab === 'dashboard' ? 'Resumen' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? 'Pagos' : 'Ajustes'}</span>
                             {isDemo && <span className="bg-emerald-500/10 text-emerald-600 text-[6px] font-black px-1 py-0.5 rounded uppercase tracking-widest">DEMO</span>}
                         </div>
                     </div>
@@ -1333,7 +1343,7 @@ export default function App() {
                 <div className="flex items-center gap-2.5 shrink-0 bg-zinc-50 pl-3 pr-1 py-1 rounded-full border border-zinc-100">
                     <div className="flex flex-col items-end">
                         <span className="text-[10px] font-black text-zinc-900 leading-none truncate max-w-[80px]">{user?.name?.split(' ')[0] || 'Admin'}</span>
-                        <span className="text-[7px] font-black text-indigo-500 uppercase tracking-[0.2em] mt-0.5">Admin</span>
+                        <span className="text-[7px] font-black uppercase tracking-[0.2em] mt-0.5" style={{ color: branding?.primaryColor || '#6366f1' }}>Admin</span>
                     </div>
                     <div className="w-8 h-8 flex items-center justify-center shrink-0 rounded-full overflow-hidden border border-zinc-200">
                         <img src="/DLogo-v2.webp" className="w-full h-full object-cover" alt="D" />
@@ -1354,7 +1364,7 @@ export default function App() {
                         </div>
                         <div className="min-w-0">
                             <h2 className="text-sm font-black uppercase tracking-tighter text-zinc-950 truncate leading-none">{branding?.name || 'Academy'}</h2>
-                            <p className="text-[8px] font-black text-indigo-600 uppercase tracking-widest mt-1">Software de Gestión</p>
+                            <p className="text-[8px] font-black uppercase tracking-widest mt-1" style={{ color: branding?.primaryColor || '#6366f1' }}>Software de Gestión</p>
                         </div>
                     </div>
 
@@ -1418,10 +1428,10 @@ export default function App() {
 
             {/* NAV CON ESTILO PREMIUM - Solo visible en Mobile */}
             <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-50 pt-3 pb-8 px-6 flex justify-between items-center h-22 z-50 md:hidden text-zinc-950">
-                <TabButton icon={LayoutDashboard} label="Inicio" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} />
-                <TabButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} />
-                <TabButton icon={CreditCard} label="Pagos" active={activeTab === 'payments'} onClick={() => changeTab('payments')} />
-                <TabButton icon={Settings} label="Ajustes" active={activeTab === 'settings'} onClick={() => changeTab('settings')} />
+                <TabButton icon={LayoutDashboard} label="Inicio" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} primaryColor={branding?.primaryColor} />
+                <TabButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} />
+                <TabButton icon={CreditCard} label="Pagos" active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} />
+                <TabButton icon={Settings} label="Ajustes" active={activeTab === 'settings'} onClick={() => changeTab('settings')} primaryColor={branding?.primaryColor} />
             </nav>
 
             <style dangerouslySetInnerHTML={{
@@ -1442,10 +1452,17 @@ function SidebarButton({ icon: Icon, label, active, onClick }: { icon: any, labe
     );
 }
 
-function TabButton({ icon: Icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) {
+function TabButton({ icon: Icon, label, active, onClick, primaryColor = '#000' }: { icon: any, label: string, active: boolean, onClick: () => void, primaryColor?: string }) {
     return (
-        <button onClick={onClick} className={`flex flex-col items-center gap-1 transition-all duration-200 ${active ? 'text-zinc-950' : 'text-zinc-300 hover:text-zinc-400'}`}>
-            <div className={`p-2 transition-all duration-300 ${active ? 'bg-zinc-50 rounded-2xl' : 'bg-transparent'}`}>
+        <button 
+            onClick={onClick} 
+            className={`flex flex-col items-center gap-1 transition-all duration-200 ${active ? '' : 'text-zinc-300 hover:text-zinc-400'}`}
+            style={active ? { color: primaryColor } : {}}
+        >
+            <div 
+                className={`p-2 transition-all duration-300 ${active ? 'rounded-2xl shadow-sm' : 'bg-transparent'}`}
+                style={active ? { backgroundColor: `${primaryColor}15` } : {}}
+            >
                 <Icon size={22} strokeWidth={active ? 3 : 2} />
             </div>
             <span className={`text-[7px] font-black uppercase tracking-[0.2em] transition-all ${active ? 'opacity-100' : 'opacity-60'}`}>{label}</span>
