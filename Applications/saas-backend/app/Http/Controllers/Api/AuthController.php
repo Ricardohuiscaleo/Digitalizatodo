@@ -176,6 +176,46 @@ class AuthController extends Controller
     }
 
     /**
+     * POST /api/{tenant}/auth/resume
+     */
+    public function resume(Request $request): JsonResponse
+    {
+        $credentials = $request->validate([
+            'remember_token' => 'required|string',
+        ]);
+
+        $tenant = app('currentTenant');
+
+        // Intentamos buscar en Staff (User)
+        $user = User::where('remember_token', $credentials['remember_token'])
+            ->where('tenant_id', $tenant->id)
+            ->first();
+        $userType = 'staff';
+
+        if (!$user) {
+            // Si no está en Staff, buscamos en Guardians
+            $user = Guardian::where('remember_token', $credentials['remember_token'])
+                ->where('tenant_id', $tenant->id)
+                ->where('active', true)
+                ->first();
+            $userType = 'guardian';
+        }
+
+        if (!$user) {
+            return response()->json(['message' => 'Token de persistencia inválido o expirado.'], 401);
+        }
+
+        // Generamos un nuevo token de acceso (Sanctum)
+        $tokenPrefix = ($userType === 'staff') ? 'staff-' : 'portal-';
+        $token = $user->createToken($tokenPrefix . $tenant->id)->plainTextToken;
+
+        return response()->json([
+            'token' => $token,
+            'user_type' => $userType,
+        ]);
+    }
+
+    /**
      * POST /api/{tenant}/auth/register (para onboarding)
      */
     public function register(Request $request): JsonResponse

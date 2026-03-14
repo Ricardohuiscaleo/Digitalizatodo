@@ -70,6 +70,7 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
             // ── Autenticación (pública) ────────────────────────────────────────
             Route::post('login', [AuthController::class , 'login']);
             Route::post('register', [AuthController::class , 'register']);
+            Route::post('resume', [AuthController::class , 'resume']);
         }
         );
 

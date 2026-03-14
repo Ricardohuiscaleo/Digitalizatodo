@@ -50,6 +50,17 @@ export default function RootLayout({
       >
         <BrandingProvider>
           {children}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                if ('serviceWorker' in navigator) {
+                  window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js');
+                  });
+                }
+              `,
+            }}
+          />
         </BrandingProvider>
       </body>
     </html>
