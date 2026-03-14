@@ -476,8 +476,8 @@ export default function App() {
         return (
             <div className="space-y-6 text-zinc-950">
                 {/* Dashboard Summary - Sistema de Tarjetas Premium */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="bg-white rounded-3xl p-5 border border-zinc-100 shadow-sm flex flex-col justify-between">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+                    <div className="bg-white rounded-[2.2rem] p-4 md:p-5 border border-zinc-100 shadow-sm flex flex-col justify-between">
                         <Users className="text-zinc-300 mb-2" size={20} />
                         <div>
                             <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1">Total</p>
@@ -485,7 +485,7 @@ export default function App() {
                         </div>
                     </div>
 
-                    <div className="bg-emerald-50/50 rounded-3xl p-5 border border-emerald-100 shadow-sm flex flex-col justify-between">
+                    <div className="bg-emerald-50/50 rounded-[2.2rem] p-4 md:p-5 border border-emerald-100 shadow-sm flex flex-col justify-between">
                         <CheckCircle2 className="text-emerald-500 mb-2" size={20} />
                         <div>
                             <p className="text-[9px] font-black text-emerald-600/60 uppercase tracking-widest leading-none mb-1">Pagados</p>
@@ -493,7 +493,7 @@ export default function App() {
                         </div>
                     </div>
 
-                    <div className="bg-amber-50/50 rounded-3xl p-5 border border-amber-100 shadow-sm flex flex-col justify-between">
+                    <div className="bg-amber-50/50 rounded-[2.2rem] p-4 md:p-5 border border-amber-100 shadow-sm flex flex-col justify-between">
                         <RefreshCw className="text-amber-500 mb-2 animate-spin-slow" size={20} />
                         <div>
                             <p className="text-[9px] font-black text-amber-600/60 uppercase tracking-widest leading-none mb-1">En Revisión</p>
@@ -501,7 +501,7 @@ export default function App() {
                         </div>
                     </div>
 
-                    <div className="bg-rose-50/50 rounded-3xl p-5 border border-rose-100 shadow-sm flex flex-col justify-between">
+                    <div className="bg-rose-50/50 rounded-[2.2rem] p-4 md:p-5 border border-rose-100 shadow-sm flex flex-col justify-between">
                         <XCircle className="text-rose-500 mb-2" size={20} />
                         <div>
                             <p className="text-[9px] font-black text-rose-600/60 uppercase tracking-widest leading-none mb-1">Pendientes</p>
@@ -584,43 +584,41 @@ export default function App() {
                                 const students = records.filter(r => r.status === 'present' && r.student);
 
                                 return (
-                                    <div key={date} className="bg-zinc-50/50 hover:bg-zinc-50 rounded-2xl p-4 border border-zinc-100 transition-colors">
-                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-xl bg-white border border-zinc-100 flex flex-col items-center justify-center shrink-0 shadow-sm">
-                                                    <span className="text-[8px] font-black uppercase text-indigo-500 leading-none mb-1">{dateObj.toLocaleDateString('es-CL', { month: 'short' })}</span>
-                                                    <span className="text-lg font-black text-zinc-900 leading-none">{dateObj.getDate()}</span>
+                                    <div key={date} className="bg-white hover:bg-zinc-50 rounded-[2rem] p-3 border border-zinc-100 transition-all active:scale-[0.98]">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-2xl bg-zinc-50 border border-zinc-100 flex flex-col items-center justify-center shrink-0 shadow-sm">
+                                                    <span className="text-[7px] font-black uppercase text-indigo-500 leading-none mb-0.5">{dateObj.toLocaleDateString('es-CL', { month: 'short' })}</span>
+                                                    <span className="text-sm font-black text-zinc-900 leading-none">{dateObj.getDate()}</span>
                                                 </div>
                                                 <div>
-                                                    <p className="text-[11px] font-black text-zinc-800 uppercase tracking-widest leading-none">{dateStr}</p>
-                                                    <div className="flex items-center gap-3 mt-1">
-                                                        <span className="inline-flex items-center gap-1 text-indigo-600 text-[9px] font-black uppercase">
+                                                    <p className="text-[10px] font-black text-zinc-800 uppercase tracking-widest leading-none">{dateStr}</p>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <span className="inline-flex items-center gap-1 text-indigo-600 text-[8px] font-black uppercase">
                                                             {presentCount} presentes
                                                         </span>
                                                         {records[0]?.created_at && (
-                                                            <span className="text-[9px] text-zinc-400 font-bold">
-                                                                🕐 {new Date(records[0].created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+                                                            <span className="text-[8px] text-zinc-400 font-bold opacity-60">
+                                                                {new Date(records[0].created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
                                                             </span>
                                                         )}
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-2">
                                                 {students.length > 0 && (
-                                                    <div className="flex -space-x-2 overflow-hidden px-2">
-                                                        {students.slice(0, 10).map((r: any) => (
-                                                            <img key={r.id} src={r.student?.photo} className="h-8 w-8 rounded-full border-2 border-white object-cover shrink-0 shadow-sm" alt={r.student?.name} />
+                                                    <div className="flex -space-x-1.5 overflow-hidden">
+                                                        {students.slice(0, 5).map((r: any) => (
+                                                            <img key={r.id} src={r.student?.photo} className="h-7 w-7 rounded-full border-2 border-white object-cover shrink-0 shadow-sm" alt={r.student?.name} />
                                                         ))}
-                                                        {students.length > 10 && (
-                                                            <div className="h-8 w-8 rounded-full border-2 border-white bg-zinc-200 flex items-center justify-center shrink-0">
-                                                                <span className="text-[8px] font-black text-zinc-500">+{students.length - 10}</span>
+                                                        {students.length > 5 && (
+                                                            <div className="h-7 w-7 rounded-full border-2 border-white bg-zinc-100 flex items-center justify-center shrink-0">
+                                                                <span className="text-[7px] font-black text-zinc-500">+{students.length - 5}</span>
                                                             </div>
                                                         )}
                                                     </div>
                                                 )}
-                                                <div className="flex items-center gap-2 ml-auto">
-                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -952,51 +950,51 @@ export default function App() {
                         return (
                             <div
                                 key={payer.id}
-                                className={`bg-white rounded-[2rem] shadow-sm border transition-all duration-200 overflow-hidden ${
+                                className={`bg-white rounded-[2.2rem] shadow-sm border transition-all duration-150 overflow-hidden ${
                                     isExpanded ? 'border-zinc-300 ring-1 ring-zinc-100 mb-6' : 
-                                    isPaid ? 'border-emerald-100 bg-emerald-50/10' : 
-                                    (payer.status === 'review' || reviewAmount > 0) ? 'border-amber-100 bg-amber-50/10' : 
-                                    'border-rose-100 bg-rose-50/10'
+                                    isPaid ? 'border-emerald-300 bg-emerald-100 shadow-emerald-50' : 
+                                    (payer.status === 'review' || reviewAmount > 0) ? 'border-amber-300 bg-amber-100 shadow-amber-50' : 
+                                    'border-rose-300 bg-rose-100 shadow-rose-50'
                                 }`}
                             >
-                                <div className="p-5 flex items-center gap-4 cursor-pointer" onClick={() => setExpandedPayerId(isExpanded ? null : payer.id)}>
-                                    <div className="relative">
-                                        <img src={payer.photo} className="w-16 h-16 rounded-full object-cover shadow-sm grayscale-[0.3]" />
-                                        <div className="absolute -bottom-2 -right-2 bg-zinc-950 text-white text-[8px] font-black px-1.5 py-0.5 rounded border-2 border-white uppercase">Titular</div>
+                                <div className="p-4 flex items-center gap-3 cursor-pointer" onClick={() => setExpandedPayerId(isExpanded ? null : payer.id)}>
+                                    <div className="relative shrink-0">
+                                        <img src={payer.photo} className="w-14 h-14 rounded-full object-cover shadow-sm grayscale-[0.3]" />
+                                        <div className="absolute -bottom-1.5 -right-1 bg-zinc-950 text-white text-[7px] font-black px-1 py-0.5 rounded border border-white uppercase">Titular</div>
                                     </div>
 
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-start">
-                                            <h4 className="font-black text-zinc-900 text-sm uppercase truncate pr-4 leading-tight">{payer.name}</h4>
-                                            {isExpanded ? <ChevronUp size={20} className="text-zinc-300" /> : <ChevronDown size={20} className="text-zinc-300" />}
+                                            <h4 className="font-black text-zinc-900 text-[13px] uppercase truncate pr-2 leading-tight">{payer.name}</h4>
+                                            {isExpanded ? <ChevronUp size={18} className="text-zinc-300" /> : <ChevronDown size={18} className="text-zinc-300" />}
+                                        </div>
+
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <div className="flex -space-x-1.5">
+                                                {payer.enrolledStudents.slice(0, 3).map((s: any) => (
+                                                    <img key={s.id} src={s.photo} className="w-5 h-5 rounded-full border-2 border-white object-cover shadow-sm" />
+                                                ))}
+                                            </div>
+                                            <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest leading-none">{numEnrollments} {vocab.memberLabel}s</span>
                                         </div>
 
                                         <div className="flex items-center gap-2 mt-1.5">
-                                            <div className="flex -space-x-2">
-                                                {payer.enrolledStudents.slice(0, 3).map((s: any) => (
-                                                    <img key={s.id} src={s.photo} className="w-6 h-6 rounded-full border-2 border-white object-cover shadow-sm" />
-                                                ))}
-                                            </div>
-                                            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest leading-none mt-0.5">{numEnrollments} {vocab.memberLabel}s</span>
-                                        </div>
-
-                                        <div className="flex items-center gap-2 mt-2">
-                                            <span className="font-black text-zinc-950 text-base tracking-tighter">
+                                            <span className="font-black text-zinc-950 text-sm tracking-tighter">
                                                 {formatMoney(displayAmount)}
                                             </span>
                                             {hasReview && pendingAmount > 0 && (
-                                                <span className="text-[8px] bg-rose-50 text-rose-500 px-2 py-0.5 rounded-lg font-black uppercase tracking-widest">+ {formatMoney(pendingAmount)} Pendiente</span>
+                                                <span className="text-[7px] bg-rose-50 text-rose-500 px-1.5 py-0.5 rounded-md font-black uppercase tracking-widest">+ {formatMoney(pendingAmount)}</span>
                                             )}
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1.5">
                                         {isPaid ? (
-                                            <div className="bg-emerald-500 rounded-2xl p-2.5 shadow-lg shadow-emerald-100">
-                                                <CheckCircle2 size={24} className="text-white" />
+                                            <div className="bg-emerald-500 rounded-2xl p-2 shadow-lg shadow-emerald-100">
+                                                <CheckCircle2 size={20} className="text-white" />
                                             </div>
                                         ) : (payer.status === 'review' || reviewAmount > 0) ? (
-                                            <div className="flex items-center gap-1.5">
+                                            <div className="flex items-center gap-1">
                                                 {proofUrl && (
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); setProofModalUrl(proofUrl); }}
@@ -1005,36 +1003,29 @@ export default function App() {
                                                         <Eye size={20} />
                                                     </button>
                                                 )}
-                                                <button
-                                                    className="bg-amber-500 text-white px-5 py-3 h-14 rounded-2xl text-[10px] font-black uppercase shadow-lg shadow-amber-100 transition-all active:scale-95 flex flex-col items-center justify-center"
-                                                    onClick={(e) => { e.stopPropagation(); handlePaymentApprove(payer.id); }}
-                                                >
-                                                    <RefreshCw size={14} className="mb-0.5 animate-spin-slow" />
-                                                    <span>Aprobar</span>
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <button
-                                                className="bg-white border-2 border-rose-100 text-rose-500 px-5 py-4 rounded-2xl text-[10px] font-black uppercase shadow-sm transition-all active:scale-95"
-                                                onClick={(e) => { e.stopPropagation(); handlePaymentApprove(payer.id); }}
-                                            >
-                                                Pagar
-                                            </button>
-                                        )}
+                                                    <button
+                                                        className="bg-amber-500 text-white px-4 py-2 h-11 rounded-xl text-[9px] font-black uppercase shadow-lg shadow-amber-100 transition-all active:scale-95 flex flex-col items-center justify-center min-w-[70px]"
+                                                        onClick={(e) => { e.stopPropagation(); handlePaymentApprove(payer.id); }}
+                                                    >
+                                                        <RefreshCw size={12} className="mb-0.5 animate-spin-slow" />
+                                                        <span>Aprobar</span>
+                                                    </button>
+                                                </div>
+                                            ) : null}
                                     </div>
                                 </div>
 
                                 {isExpanded && (
-                                    <div className="px-6 pb-6 pt-4 bg-zinc-50 border-t border-zinc-100 animate-in slide-in-from-top-2 duration-300">
-                                        <div className="flex justify-between items-center mb-4">
+                                    <div className="px-4 pb-5 pt-4 bg-zinc-50 border-t border-zinc-100 animate-in slide-in-from-top-2 duration-150">
+                                        <div className="flex justify-between items-center mb-3">
                                             <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]">Desglose del Pago:</p>
                                             {payer.status === 'review' && (
                                                 <span className="text-[8px] font-black bg-amber-50 text-amber-600 px-2 py-1 rounded-full uppercase">Esperando Validación</span>
                                             )}
                                         </div>
-                                        <div className="space-y-2.5">
+                                        <div className="space-y-2">
                                             {payer.payments?.map((payment: any) => (
-                                                <div key={payment.id} className="flex items-center justify-between bg-white p-4 rounded-2xl border border-zinc-100 shadow-sm">
+                                                <div key={payment.id} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-zinc-100 shadow-sm">
                                                     <div className="flex items-center gap-3">
                                                         <div className="relative">
                                                             {payment.student_photo ? (

@@ -29,8 +29,8 @@ export default function BottomNav({ activeSection, setActiveSection, primaryColo
                         <button
                             key={item.id}
                             onClick={() => setActiveSection(item.id)}
-                            className={`flex flex-col items-center gap-1 transition-all duration-300 relative ${
-                                isActive ? "scale-110" : "scale-100 opacity-40 hover:opacity-100"
+                            className={`flex flex-col items-center gap-0.5 transition-all duration-150 ${
+                                isActive ? "opacity-100" : "opacity-30 hover:opacity-100"
                             }`}
                         >
                             <div
