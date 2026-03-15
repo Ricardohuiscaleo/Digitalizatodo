@@ -15,14 +15,18 @@ class StudentCheckedIn implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $studentId;
+    public $studentName;
+    public $studentPhoto;
     public $tenantSlug;
 
     /**
      * Create a new event instance.
      */
-    public function __construct($studentId, $tenantSlug)
+    public function __construct($studentId, $studentName, $studentPhoto, $tenantSlug)
     {
         $this->studentId = $studentId;
+        $this->studentName = $studentName;
+        $this->studentPhoto = $studentPhoto;
         $this->tenantSlug = $tenantSlug;
     }
 

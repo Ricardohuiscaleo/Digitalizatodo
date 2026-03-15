@@ -24,19 +24,19 @@ class AttendanceQRController extends Controller
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
-        // Generamos un bloque de tiempo de 2 minutos (120 segundos)
-        $timeBlock = floor(time() / 120);
+        // Generamos un bloque de tiempo de 1 minuto (60 segundos)
+        $timeBlock = floor(time() / 60);
         $secret = config('app.key');
         
         // El payload es simplemente el ID del tenant asociado a este bloque de tiempo
         $hashString = "tenant:{$tenant->id}|block:{$timeBlock}|secret:{$secret}";
         $token = substr(hash('sha256', $hashString), 0, 16);
 
-        // Retornamos el token, y cuántos segundos le quedan de validez a ESTE ciclo de 120s
-        $expiresIn = 120 - (time() % 120);
+        // Retornamos el token, y cuántos segundos le quedan de validez a ESTE ciclo de 60s
+        $expiresIn = 60 - (time() % 60);
 
-        // Guardamos en caché por la duración del ciclo de 2 min + 13 min de gracia = 15 minutos total (900s).
-        \Illuminate\Support\Facades\Cache::put("totp_qr_{$token}", $tenant->id, 900);
+        // Guardamos en caché por la duración del ciclo de 1 min + 4 min de gracia = 5 minutos total (300s).
+        \Illuminate\Support\Facades\Cache::put("totp_qr_{$token}", $tenant->id, 300);
 
         Log::debug(" [DEBUG-QR] GENERACION ", [
             'tenant_id' => $tenant->id,
@@ -60,7 +60,7 @@ class AttendanceQRController extends Controller
     public static function isValidForTenant($token, $tenantId)
     {
         $secret = config('app.key');
-        $currentBlock = floor(time() / 120);
+        $currentBlock = floor(time() / 60);
         
         Log::debug(" [DEBUG-QR] VALIDACION ", [
             'received_token' => $token,
@@ -70,7 +70,7 @@ class AttendanceQRController extends Controller
             'key_snippet' => substr($secret, 0, 10) . '...'
         ]);
 
-        // Ventana de tiempo: actual y 4 anteriores (10 minutos total de validez)
+        // Ventana de tiempo: actual y 4 anteriores (5 minutos total de validez)
         for ($i = 0; $i <= 4; $i++) {
             $block = $currentBlock - $i;
             $hashString = "tenant:{$tenantId}|block:{$block}|secret:{$secret}";
