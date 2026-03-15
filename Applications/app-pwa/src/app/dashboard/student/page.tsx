@@ -866,7 +866,7 @@ export default function StudentDashboard() {
                 </div>
             </div>
 
-            <div className="min-h-screen bg-stone-50 text-zinc-900 pb-32 md:pb-12 px-5 md:px-8 max-w-lg mx-auto md:max-w-7xl pt-8 lg:hidden">
+            <div className="min-h-screen bg-stone-50 text-zinc-900 pb-32 md:pb-12 px-2 md:px-8 max-w-lg mx-auto md:max-w-7xl pt-8 lg:hidden">
             {/* Dashboard Sections - Mobile Responsive */}
             <div className="animate-in fade-in duration-500">
                 {activeSection === "home" && renderHome()}
