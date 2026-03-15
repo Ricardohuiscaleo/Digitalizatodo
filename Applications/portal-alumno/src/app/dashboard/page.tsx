@@ -302,21 +302,30 @@ export default function DashboardPage() {
 
     return (
         <div className="flex flex-col h-screen bg-zinc-50 font-sans sm:max-w-md sm:mx-auto relative overflow-hidden">
-            <header className="bg-white px-5 py-4 flex items-center justify-between sticky top-0 z-40 border-b border-zinc-100 shrink-0">
+            <header className="bg-white px-2 py-3 flex items-center justify-between sticky top-0 z-50 border-b border-zinc-50 shrink-0">
                 <div className="flex items-center gap-3">
-                    {branding?.logo ? (
-                        <img src={branding.logo} className="w-9 h-9 rounded-full object-cover border border-zinc-100" alt="logo" />
-                    ) : (
-                        <div className="w-9 h-9 bg-zinc-950 rounded-full flex items-center justify-center">
-                            <span className="text-white font-black text-xs">{branding?.name?.[0] || 'D'}</span>
-                        </div>
-                    )}
-                    <h1 className="text-sm font-black text-zinc-900 uppercase tracking-tighter">
-                        {activeTab === 'home' ? 'Inicio' : activeTab === 'payments' ? 'Mis Pagos' : 'Mi Perfil'}
-                    </h1>
+                    <div className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full overflow-hidden border border-zinc-100 shadow-sm">
+                        {branding?.logo ? (
+                            <img src={branding.logo} className="w-full h-full object-cover" alt="L" />
+                        ) : (
+                            <span className="font-black text-xl uppercase tracking-tighter text-zinc-950">{branding?.name?.[0] || 'D'}</span>
+                        )}
+                    </div>
+                    <div className="flex flex-col">
+                        <h1 className="text-lg font-black uppercase tracking-tighter text-zinc-950 leading-none">{branding?.name || 'Academy'}</h1>
+                        <span className="text-[9px] font-black uppercase tracking-widest mt-0.5" style={{ color: branding?.primaryColor || '#6366f1' }}>
+                            {activeTab === 'home' ? 'Inicio' : activeTab === 'payments' ? 'Mis Pagos' : 'Mi Perfil'}
+                        </span>
+                    </div>
                 </div>
-                <div className="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center font-black text-indigo-400">
-                    {guardian.name[0]}
+                <div className="flex items-center gap-2.5 shrink-0 bg-white pl-3 pr-1 py-1 rounded-full border border-zinc-100 shadow-sm">
+                    <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-black text-zinc-900 leading-none truncate max-w-[80px]">{guardian.name.split(' ')[0]}</span>
+                        <span className="text-[7px] font-black uppercase tracking-[0.2em] mt-0.5" style={{ color: branding?.primaryColor || '#6366f1' }}>Apoderado</span>
+                    </div>
+                    <div className="w-8 h-8 flex items-center justify-center shrink-0 rounded-full overflow-hidden border-2" style={{ borderColor: branding?.primaryColor || '#6366f1' }}>
+                        <span className="font-black text-sm" style={{ color: branding?.primaryColor || '#6366f1' }}>{guardian.name[0]}</span>
+                    </div>
                 </div>
             </header>
 
