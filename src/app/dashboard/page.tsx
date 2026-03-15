@@ -1685,6 +1685,16 @@ export default function App() {
                 />
             )}
 
+            {/* Modal de Detalle de Historial */}
+            {selectedHistoryDate && (
+                <HistoryDetailModal 
+                    date={selectedHistoryDate}
+                    records={attendanceHistory.filter((r: any) => (r.date || r.created_at?.split('T')[0]) === selectedHistoryDate)}
+                    branding={branding}
+                    onClose={() => setSelectedHistoryDate(null)}
+                />
+            )}
+
             {/* MODAL DE ACCIÓN DE PAGO */}
             {paymentActionPayer && (
                 <PaymentActionModal 
