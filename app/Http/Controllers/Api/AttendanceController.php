@@ -72,6 +72,8 @@ class AttendanceController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        $student = \App\Models\Student::find($request->student_id);
+
         $attendance = Attendance::updateOrCreate(
             [
                 'tenant_id' => $tenantId,
@@ -83,6 +85,17 @@ class AttendanceController extends Controller
                 'notes' => $request->notes,
             ]
         );
+
+        try {
+            event(new \App\Events\StudentCheckedIn(
+                $student->id,
+                $student->name ?? '',
+                $student->photo ?? '',
+                $tenant->slug
+            ));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Broadcast checked-in failed', ['error' => $e->getMessage()]);
+        }
 
         return response()->json([
             'message' => 'Asistencia registrada correctamente',
