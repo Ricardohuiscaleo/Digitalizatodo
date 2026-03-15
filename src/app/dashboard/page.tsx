@@ -154,9 +154,52 @@ function HistoryDetailModal({ date, records, branding, onClose }: { date: string
     const dateObj = new Date(date + 'T12:00:00');
     const dateStr = dateObj.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
 
+    // Lógica de Swipe
+    const [dragY, setDragY] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+    const startY = useRef(0);
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        startY.current = e.touches[0].pageY;
+        setIsDragging(true);
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        const currentY = e.touches[0].pageY;
+        const deltaY = currentY - startY.current;
+        if (deltaY > 0) setDragY(deltaY);
+    };
+
+    const handleTouchEnd = () => {
+        setIsDragging(false);
+        if (dragY > 100) {
+            onClose();
+        } else {
+            setDragY(0);
+        }
+    };
+
     return (
-        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in duration-200" onClick={onClose}>
-            <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] md:rounded-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
+        <div 
+            className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in duration-200" 
+            onClick={onClose}
+        >
+            <div 
+                className={`bg-white w-full max-w-lg rounded-t-[2.5rem] md:rounded-[2.5rem] p-6 shadow-2xl ${!isDragging ? 'transition-all duration-300' : ''}`}
+                style={{ 
+                    transform: `translateY(${dragY}px)`,
+                    opacity: 1 - dragY / 400 
+                }}
+                onClick={e => e.stopPropagation()}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+            >
+                {/* Handle para Swipe en Mobile */}
+                <div className="flex justify-center mb-4 md:hidden">
+                    <div className="w-12 h-1.5 bg-zinc-200 rounded-full" />
+                </div>
+
                 <div className="flex justify-between items-center mb-6">
                     <div>
                         <h2 className="text-xl font-black text-zinc-900 uppercase tracking-tighter leading-none">{dateStr}</h2>
@@ -1669,7 +1712,7 @@ export default function App() {
             {/* QR DINAMICO MODAL */}
             {showQRModal && (
                 <DynamicQRModal 
-                    tenantSlug={user?.tenant_slug ?? ''} 
+                    tenantSlug={branding.slug ?? ''} 
                     authToken={token ?? ''} 
                     onClose={() => setShowQRModal(false)}
                     primaryColor={branding?.primaryColor || '#a855f7'}
