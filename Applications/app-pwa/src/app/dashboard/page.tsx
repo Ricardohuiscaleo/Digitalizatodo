@@ -840,7 +840,7 @@ export default function App() {
                                                     </div>
                                                     {student.method === 'qr' && (
                                                         <span className="bg-emerald-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-lg flex items-center gap-1">
-                                                            <Check size={10} />
+                                                            <QrCode size={10} />
                                                         </span>
                                                     )}
                                                 </div>
@@ -882,7 +882,7 @@ export default function App() {
                                         />
                                         {isPresent && (
                                             <div className="absolute -bottom-2 -right-2 bg-emerald-500 rounded-full p-1 border-2 border-emerald-50 shadow-lg">
-                                                <CheckCircle2 className="text-white" size={16} />
+                                                {student.method === 'qr' ? <QrCode size={16} className="text-white" /> : <CheckCircle2 className="text-white" size={16} />}
                                             </div>
                                         )}
                                         {/* QR badge removed */}
