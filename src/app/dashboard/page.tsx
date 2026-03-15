@@ -1694,7 +1694,7 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers }
             const data = await res.json();
             if (data.token) {
                 setQrData(data.token);
-                setTimeLeft(data.expires_in || 30);
+                setTimeLeft(data.expires_in || 120);
             }
         } catch (error) {
             console.error("Error fetching QR token:", error);
@@ -1742,7 +1742,7 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers }
         };
     }, [tenantSlug, payers]);
 
-    const progressPercent = (timeLeft / 30) * 100;
+    const progressPercent = (timeLeft / 120) * 100;
 
     return (
         <div className="fixed inset-0 z-[100] bg-zinc-900/90 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -1826,7 +1826,7 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers }
                             </div>
 
                             <p className="mt-8 text-[9px] text-zinc-400 font-bold uppercase tracking-widest text-center leading-relaxed">
-                                El código se actualiza automáticamente<br/>por seguridad cada 30 segundos.
+                                El código se actualiza automáticamente<br/>por seguridad cada 2 minutos.
                             </p>
                         </div>
                     </>
