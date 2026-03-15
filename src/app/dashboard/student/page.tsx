@@ -599,9 +599,15 @@ export default function StudentDashboard() {
                             <div className="flex-1 min-w-0">
                                 <h4 className="font-black text-zinc-900 truncate">{student.name}</h4>
                                 <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider mb-2">{student.category}</p>
-                                <p className="text-[8px] font-black text-indigo-500 uppercase tracking-tighter flex items-center gap-1.5 bg-indigo-50/50 w-fit px-2 py-1 rounded-full border border-indigo-100/50">
-                                    Click en el QR para registrar tu asistencia 👉🏻
-                                </p>
+                                {isPresentToday ? (
+                                    <p className="text-[8px] font-black text-emerald-600 uppercase tracking-tighter flex items-center gap-1.5 bg-emerald-50 w-fit px-2 py-1 rounded-full border border-emerald-200">
+                                        <CheckCircle2 size={10} /> Presente
+                                    </p>
+                                ) : (
+                                    <p className="text-[8px] font-black text-indigo-500 uppercase tracking-tighter flex items-center gap-1.5 bg-indigo-50/50 w-fit px-2 py-1 rounded-full border border-indigo-100/50">
+                                        Registra tu asistencia 👉🏻
+                                    </p>
+                                )}
                             </div>
                             <div className="flex items-center gap-3">
                                 <button 
