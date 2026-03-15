@@ -453,13 +453,13 @@ export default function StudentDashboard() {
                     <h1 className="text-2xl font-black text-zinc-900 leading-tight">Hola, {guardian.name.split(' ')[0]}</h1>
                     <p className="text-[11px] font-bold text-zinc-500 mt-1">Bienvenid@ gestiona tu asistencia y pagos 😊.</p>
                 </div>
-                <div className="w-14 h-14 bg-white rounded-full border border-zinc-100 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                <div className="w-14 h-14 bg-white rounded-full border-2 border-zinc-50 shadow-md flex items-center justify-center overflow-hidden shrink-0 relative p-0.5">
                     {branding?.logo ? (
-                        <div className="w-full h-full flex items-center justify-center p-1">
-                            <img src={branding.logo} className="w-full h-full object-contain rounded-full" />
-                        </div>
+                        <img src={branding.logo} className="w-full h-full object-cover rounded-full" />
                     ) : (
-                        <User className="text-zinc-300 w-7 h-7" />
+                        <div className="w-full h-full bg-zinc-50 flex items-center justify-center">
+                            <User className="text-zinc-200 w-6 h-6" />
+                        </div>
                     )}
                 </div>
             </div>
@@ -504,7 +504,7 @@ export default function StudentDashboard() {
                     >
                         <div className="flex items-center gap-4 relative z-10">
                             <div 
-                                className="w-16 h-16 rounded-3xl overflow-hidden bg-zinc-100 border border-zinc-200 shadow-sm shrink-0 relative cursor-pointer"
+                                className="w-16 h-16 rounded-full overflow-hidden bg-zinc-100 border-2 border-zinc-50 shadow-md shrink-0 relative cursor-pointer"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     profileFileInputRef.current?.setAttribute('data-student-id', student.id);
@@ -519,12 +519,12 @@ export default function StudentDashboard() {
                                 {student.photo ? (
                                     <img src={student.photo} alt={student.name} className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-2xl font-black text-zinc-300">
+                                    <div className="w-full h-full flex items-center justify-center text-2xl font-black text-zinc-200">
                                         {student.name[0]}
                                     </div>
                                 )}
-                                <div className="absolute bottom-1 right-1 w-5 h-5 bg-white rounded-full shadow-md flex items-center justify-center text-zinc-400 group-hover:text-orange-500 transition-all">
-                                    <Camera className="w-3 h-3" />
+                                <div className="absolute bottom-0 right-0 w-6 h-6 bg-white rounded-full shadow-lg flex items-center justify-center text-zinc-400 border border-zinc-100">
+                                    <Camera className="w-3.5 h-3.5" />
                                 </div>
                             </div>
                             <div className="flex-1 min-w-0">
