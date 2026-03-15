@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useBranding } from "@/context/BrandingContext";
-import { getProfile, getPayments, uploadProof } from "@/lib/api";
-import { Home, CreditCard, User, Upload, CheckCircle2, AlertCircle, Clock, Award, FileText, LogOut } from "lucide-react";
+import { getProfile, getPayments, uploadProof, getAttendanceHistory } from "@/lib/api";
+import { Home, CreditCard, User, Upload, CheckCircle2, AlertCircle, Clock, Award, FileText, LogOut, CalendarCheck } from "lucide-react";
 
 const beltColors: Record<string, string> = {
     blanco: 'bg-white border border-zinc-300',
@@ -38,18 +38,23 @@ export default function DashboardPage() {
     const [activeTab, setActiveTab] = useState('home');
     const [showModal, setShowModal] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [todayAttendance, setTodayAttendance] = useState<any[]>([]);
 
     useEffect(() => {
         const token = localStorage.getItem("student_token");
         const tenantId = localStorage.getItem("tenant_id");
         if (!token || !tenantId) { window.location.href = "/"; return; }
 
-        Promise.all([getProfile(tenantId, token), getPayments(tenantId, token)]).then(([profile, paymentsData]) => {
+        Promise.all([getProfile(tenantId, token), getPayments(tenantId, token), getAttendanceHistory(tenantId, token)]).then(([profile, paymentsData, attendanceData]) => {
             if (!profile || profile.user_type !== 'guardian') {
                 localStorage.clear(); window.location.href = "/"; return;
             }
             setData(profile);
             setPayments(paymentsData?.payments || []);
+            // Filtrar asistencia de hoy
+            const today = new Date().toISOString().split('T')[0];
+            const allRecords = attendanceData?.attendance || [];
+            setTodayAttendance(allRecords.filter((r: any) => (r.date || r.created_at?.split('T')[0]) === today && r.status === 'present'));
             if (profile.tenant && !branding?.name) {
                 setBranding({ id: String(profile.tenant.id), name: profile.tenant.name, industry: profile.tenant.industry, logo: profile.tenant.logo, primaryColor: profile.tenant.primary_color });
             }
@@ -111,6 +116,54 @@ export default function DashboardPage() {
                     )}
                 </div>
                 <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl" />
+            </div>
+
+            {/* Actividad Hoy */}
+            <div className="bg-white rounded-3xl p-5 shadow-sm border border-zinc-100">
+                <h3 className="font-black text-zinc-800 text-sm uppercase tracking-widest flex items-center gap-2 mb-3 px-1">
+                    <CalendarCheck className="text-emerald-500" size={16} /> Actividad Hoy
+                </h3>
+                {todayAttendance.length > 0 ? (
+                    <div className="space-y-2">
+                        {students.map((s: any) => {
+                            const record = todayAttendance.find((r: any) => String(r.student_id || r.student?.id) === String(s.id));
+                            return (
+                                <div key={s.id} className={`flex items-center gap-3 p-3 rounded-2xl border ${record ? 'bg-emerald-50 border-emerald-100' : 'bg-zinc-50 border-zinc-100'}`}>
+                                    {s.photo ? (
+                                        <img src={s.photo} alt={s.name} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" />
+                                    ) : (
+                                        <div className="w-10 h-10 rounded-full bg-zinc-200 flex items-center justify-center font-black text-zinc-400">{s.name[0]}</div>
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                        <p className={`text-[11px] font-black uppercase truncate leading-none ${record ? 'text-emerald-900' : 'text-zinc-400'}`}>{s.name}</p>
+                                        <p className="text-[9px] font-bold uppercase tracking-widest mt-1">
+                                            {record ? (
+                                                <span className="text-emerald-600">Presente • {new Date(record.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>
+                                            ) : (
+                                                <span className="text-zinc-300">Sin registro</span>
+                                            )}
+                                        </p>
+                                    </div>
+                                    {record && (
+                                        <div className="bg-emerald-500 p-1.5 rounded-xl shrink-0">
+                                            <CheckCircle2 size={14} className="text-white" />
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                        <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest text-center pt-1">
+                            {todayAttendance.length} registro{todayAttendance.length !== 1 ? 's' : ''} hoy
+                        </p>
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center gap-2 py-6 px-4 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">
+                        <p className="text-zinc-500 text-[11px] font-black uppercase tracking-widest">
+                            {new Date().toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        </p>
+                        <p className="text-zinc-300 text-[10px] font-black uppercase tracking-widest">Sin registros hoy</p>
+                    </div>
+                )}
             </div>
 
             {/* Progreso en el Tatami */}
