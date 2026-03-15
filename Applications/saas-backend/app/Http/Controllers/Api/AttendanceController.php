@@ -7,6 +7,7 @@ use App\Models\Attendance;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Api\AttendanceQRController;
 
 class AttendanceController extends Controller
 {
