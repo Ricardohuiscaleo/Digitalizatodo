@@ -1672,7 +1672,7 @@ function TabButton({ icon: Icon, label, active, onClick, primaryColor = '#000' }
 
 function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers }: { onClose: () => void; tenantSlug: string; authToken: string; primaryColor: string; payers: any[] }) {
     const [qrData, setQrData] = useState<string | null>(null);
-    const [timeLeft, setTimeLeft] = useState(30);
+    const [timeLeft, setTimeLeft] = useState(120);
     const [loading, setLoading] = useState(true);
     const [detectedStudent, setDetectedStudent] = useState<any>(null);
 
