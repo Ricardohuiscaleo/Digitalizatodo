@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { CheckCircle2, ArrowRight, Loader2, AlertCircle, RefreshCw, Sparkles, Building2, User, Mail, Lock, Briefcase } from "lucide-react";
+import { CheckCircle2, ArrowRight, Loader2, AlertCircle, RefreshCw, Sparkles, Building2, User, Globe, ShieldCheck } from "lucide-react";
 import { registerTenant, getIndustries } from "@/lib/api";
 
 export default function OnboardingPage() {
@@ -10,6 +10,7 @@ export default function OnboardingPage() {
     const [industries, setIndustries] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+    const [step, setStep] = useState(1); // 1: Negocio, 2: Admin
     const [formData, setFormData] = useState({
         tenant_name: "",
         tenant_slug: "",
@@ -60,6 +61,11 @@ export default function OnboardingPage() {
 
     const handleSubmit = async (e: any) => {
         e.preventDefault();
+        if (step === 1) {
+            setStep(2);
+            return;
+        }
+        
         setIsLoading(true);
         setError(null);
         if (formData.password !== formData.password_confirmation) {
@@ -87,145 +93,183 @@ export default function OnboardingPage() {
     if (success) return (
         <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6 text-white font-sans">
             <div className="text-center space-y-8 max-w-sm animate-in fade-in zoom-in duration-500">
-                <div className="h-24 w-24 bg-indigo-600 rounded-[2rem] mx-auto flex items-center justify-center shadow-2xl shadow-indigo-500/20 relative">
+                <div className="h-24 w-24 bg-indigo-600 rounded-full mx-auto flex items-center justify-center shadow-2xl shadow-indigo-500/20 relative">
                     <CheckCircle2 size={48} className="text-white" />
                 </div>
                 <div className="space-y-2">
-                    <h1 className="text-4xl font-black uppercase tracking-tighter italic">¡Éxito Total!</h1>
-                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-[0.2em]">Empresa <span className="text-white">{formData.tenant_name}</span> lista.</p>
+                    <h1 className="text-4xl font-black uppercase tracking-tighter italic leading-none">¡Bienvenido al <br/> Futuro!</h1>
+                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] mt-4">Academia <span className="text-white">{formData.tenant_name}</span> creada.</p>
                 </div>
                 <button
-                    onClick={() => window.location.href = `/login`}
+                    onClick={() => window.location.href = `/`}
                     className="w-full h-16 bg-white text-zinc-950 font-black rounded-2xl uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all"
                 >
-                    Entrar Ahora <ArrowRight size={18} />
+                    Configurar mi Portal <ArrowRight size={18} />
                 </button>
             </div>
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4 md:p-6 text-zinc-950 font-sans selection:bg-indigo-100">
-            <div className="w-full max-w-lg space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-zinc-950 font-sans">
+            <div className="w-full max-w-[400px] space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
-                <header className="text-center space-y-2">
-                    <div className="inline-flex items-center gap-2 bg-indigo-50 px-3 py-1 rounded-full text-indigo-600 mb-2">
-                        <Sparkles size={12} className="animate-pulse" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Potenciando Negocios</span>
+                <header className="text-center space-y-3">
+                    <div className="flex justify-center mb-2">
+                         <div className="h-14 w-14 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center overflow-hidden">
+                             <img src="/DLogo-v2.webp" className="w-8 h-8 object-contain opacity-80" alt="logo" />
+                         </div>
                     </div>
-                    <h1 className="text-4xl font-black uppercase tracking-tighter text-zinc-900 leading-[0.9]">
-                        Prueba nuestra <br />
-                        <span className="text-indigo-600">plataforma</span>
+                    <div className="inline-flex items-center gap-2 bg-indigo-50 px-3 py-1 rounded-full text-indigo-600">
+                        <Sparkles size={10} className="animate-pulse" />
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">Registro de Academia</span>
+                    </div>
+                    <h1 className="text-3xl font-black uppercase tracking-tighter text-zinc-900 leading-[0.85]">
+                        Crea tu propio <br />
+                        <span className="text-indigo-600">ecosistema SaaS</span>
                     </h1>
-                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mt-1">
-                        SaaS adaptado a tu medida
-                    </p>
                 </header>
 
-                <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-6 md:p-10 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.08)] space-y-6 relative overflow-hidden">
-                    {error && (
-                        <div className="bg-rose-50 text-rose-600 text-[10px] font-black uppercase p-4 rounded-2xl border border-rose-100 flex items-center gap-3 animate-in fade-in zoom-in-95">
-                            <AlertCircle size={14} /> {error}
-                        </div>
-                    )}
+                <div className="relative">
+                    {/* Indicador de pasos */}
+                    <div className="flex gap-2 mb-6 px-1">
+                        <div className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${step >= 1 ? 'bg-indigo-600' : 'bg-zinc-100'}`} />
+                        <div className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${step >= 2 ? 'bg-indigo-600' : 'bg-zinc-100'}`} />
+                    </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Sección Empresa */}
-                            <div className="space-y-4 md:border-r border-zinc-50 md:pr-4">
-                                <label className="text-[10px] font-black text-zinc-300 uppercase tracking-widest flex items-center gap-2">
-                                    <Building2 size={12} /> Datos del Negocio
-                                </label>
+                    <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-8 shadow-sm space-y-6 relative overflow-hidden transition-all duration-500">
+                        {error && (
+                            <div className="bg-rose-50 text-rose-600 text-[10px] font-black uppercase p-4 rounded-2xl border border-rose-100 animate-in shake-in duration-300">
+                                {error}
+                            </div>
+                        )}
 
-                                <div className="space-y-3">
-                                    <div className="relative">
-                                        <input
-                                            name="tenant_name"
-                                            required
-                                            value={formData.tenant_name}
-                                            onChange={handleChange}
-                                            placeholder="Nombre de Empresa"
-                                            className="w-full h-12 bg-zinc-50 border-none rounded-2xl px-5 font-bold text-sm text-zinc-950 focus:ring-2 ring-indigo-500 transition-all outline-none"
-                                        />
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            
+                            {/* PASO 1: DATOS DEL NEGOCIO */}
+                            {step === 1 && (
+                                <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+                                    <div className="flex items-center gap-3 text-zinc-400 mb-2">
+                                        <Building2 size={16} />
+                                        <span className="text-[10px] font-black uppercase tracking-widest italic">Paso 1: Tu Negocio</span>
                                     </div>
 
-                                    <div className="relative">
-                                        <input
-                                            name="tenant_slug"
-                                            required
-                                            value={formData.tenant_slug}
-                                            onChange={handleChange}
-                                            placeholder="slug-url"
-                                            className="w-full h-12 bg-zinc-100 border-none rounded-2xl px-5 font-black text-[11px] text-zinc-400 focus:ring-2 ring-indigo-500 transition-all outline-none"
-                                        />
-                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-20">
-                                            <RefreshCw size={12} />
+                                    <div className="space-y-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Nombre de Empresa</label>
+                                            <input
+                                                name="tenant_name"
+                                                required
+                                                value={formData.tenant_name}
+                                                onChange={handleChange}
+                                                placeholder="Ej: Dojo Master Arica"
+                                                className="w-full h-14 bg-zinc-50 border-none rounded-2xl px-6 font-bold text-sm text-zinc-900 focus:bg-white focus:ring-4 ring-zinc-50 outline-none transition-all"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Identificador Único (Slug)</label>
+                                            <div className="relative">
+                                                <input
+                                                    name="tenant_slug"
+                                                    required
+                                                    value={formData.tenant_slug}
+                                                    onChange={handleChange}
+                                                    placeholder="dojo-master"
+                                                    className="w-full h-14 bg-zinc-100/50 border-none rounded-2xl px-6 pl-12 font-black text-[11px] text-zinc-500 focus:bg-white focus:ring-4 ring-zinc-50 outline-none transition-all"
+                                                />
+                                                <Globe className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-300" size={14} />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Rubro de Actividad</label>
+                                            <select
+                                                name="industry"
+                                                required
+                                                value={formData.industry}
+                                                onChange={handleChange}
+                                                disabled={isLoadingIndustries}
+                                                className="w-full h-14 bg-zinc-50 border-none rounded-2xl px-6 font-black text-[11px] uppercase text-zinc-900 focus:bg-white focus:ring-4 ring-zinc-50 outline-none appearance-none cursor-pointer disabled:opacity-50"
+                                            >
+                                                <option value="" disabled>{isLoadingIndustries ? 'Cargando...' : 'Seleccionar Rubro'}</option>
+                                                {industries.map((ind: any) => (
+                                                    <option key={ind.id} value={ind.id}>{ind.name}</option>
+                                                ))}
+                                            </select>
                                         </div>
                                     </div>
+                                </div>
+                            )}
 
-                                    <div className="relative">
-                                        <select
-                                            name="industry"
-                                            required
-                                            value={formData.industry}
-                                            onChange={handleChange}
-                                            disabled={isLoadingIndustries}
-                                            className="w-full h-12 bg-zinc-50 border-none rounded-2xl px-5 font-black text-[11px] uppercase text-zinc-950 focus:ring-2 ring-indigo-500 transition-all outline-none appearance-none cursor-pointer disabled:opacity-50"
-                                        >
-                                            <option value="" disabled>{isLoadingIndustries ? 'Cargando Rubros...' : 'Seleccionar Rubro'}</option>
-                                            {industries.map((ind: any) => (
-                                                <option key={ind.id} value={ind.id}>{ind.name}</option>
-                                            ))}
-                                        </select>
+                            {/* PASO 2: DATOS DEL ADMIN */}
+                            {step === 2 && (
+                                <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+                                    <div className="flex items-center gap-3 text-zinc-400 mb-2">
+                                        <ShieldCheck size={16} />
+                                        <span className="text-[10px] font-black uppercase tracking-widest italic">Paso 2: Acceso Admin</span>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Tu Nombre</label>
+                                            <input name="user_name" required value={formData.user_name} onChange={handleChange} placeholder="Nombre Apellido" className="w-full h-14 bg-zinc-50 border-none rounded-2xl px-6 font-bold text-sm text-zinc-900 focus:bg-white focus:ring-4 ring-zinc-50 outline-none transition-all" />
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Email Maestro</label>
+                                            <input name="email" type="email" required value={formData.email} onChange={handleChange} placeholder="estemaestro@mail.com" className="w-full h-14 bg-zinc-50 border-none rounded-2xl px-6 font-bold text-sm text-zinc-900 focus:bg-white focus:ring-4 ring-zinc-50 outline-none transition-all" />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Clave</label>
+                                                <input name="password" type="password" required value={formData.password} onChange={handleChange} placeholder="••••" className="w-full h-14 bg-zinc-50 border-none rounded-2xl px-6 font-bold text-sm text-zinc-900 focus:bg-white focus:ring-4 ring-zinc-50 outline-none transition-all" />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Repetir</label>
+                                                <input name="password_confirmation" type="password" required value={formData.password_confirmation} onChange={handleChange} placeholder="••••" className="w-full h-14 bg-zinc-50 border-none rounded-2xl px-6 font-bold text-sm text-zinc-900 focus:bg-white focus:ring-4 ring-zinc-50 outline-none transition-all" />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            )}
 
-                            {/* Sección Usuario */}
-                            <div className="space-y-4">
-                                <label className="text-[10px] font-black text-zinc-300 uppercase tracking-widest flex items-center gap-2">
-                                    <User size={12} /> Administrador
-                                </label>
-
-                                <div className="space-y-3">
-                                    <input name="user_name" required value={formData.user_name} onChange={handleChange} placeholder="Tu Nombre Completo" className="w-full h-12 bg-zinc-50 border-none rounded-2xl px-5 font-bold text-sm text-zinc-950 focus:ring-2 ring-indigo-500 transition-all outline-none" />
-                                    <input name="email" type="email" required value={formData.email} onChange={handleChange} placeholder="Email corporativo" className="w-full h-12 bg-zinc-50 border-none rounded-2xl px-5 font-bold text-sm text-zinc-950 focus:ring-2 ring-indigo-500 transition-all outline-none" />
-
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <input name="password" type="password" required value={formData.password} onChange={handleChange} placeholder="Clave" className="w-full h-12 bg-zinc-50 border-none rounded-2xl px-5 font-bold text-sm text-zinc-950 focus:ring-2 ring-indigo-500 transition-all outline-none" />
-                                        <input name="password_confirmation" type="password" required value={formData.password_confirmation} onChange={handleChange} placeholder="Confirmar" className="w-full h-12 bg-zinc-50 border-none rounded-2xl px-5 font-bold text-sm text-zinc-950 focus:ring-2 ring-indigo-500 transition-all outline-none" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="pt-2 text-center">
-                            <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider mb-4 px-8">
-                                Al registrarte, aceptas que adaptemos esta plataforma <span className="text-zinc-900">exclusivamente</span> para tus necesidades.
-                            </p>
-
-                            <button
-                                type="submit"
-                                disabled={isLoading}
-                                className="w-full h-16 bg-zinc-950 hover:bg-zinc-800 text-white font-black rounded-2xl uppercase tracking-[0.25em] text-[10px] flex items-center justify-center gap-4 shadow-2xl shadow-zinc-200 transition-all active:scale-95 group"
-                            >
-                                {isLoading ? <Loader2 className="animate-spin" size={18} /> : (
-                                    <>Comenzar Despliegue <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" /></>
+                            <div className="pt-2 flex flex-col gap-3">
+                                <button
+                                    type="submit"
+                                    disabled={isLoading}
+                                    className="w-full h-16 bg-zinc-950 hover:bg-zinc-800 text-white font-black rounded-2xl uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-4 shadow-xl active:scale-[0.98] transition-all group"
+                                >
+                                    {isLoading ? <Loader2 className="animate-spin" size={18} /> : (
+                                        <>
+                                            {step === 1 ? 'Siguiente Paso' : 'Crear Mi Academia'} 
+                                            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                                        </>
+                                    )}
+                                </button>
+                                
+                                {step === 2 && (
+                                    <button 
+                                        type="button"
+                                        onClick={() => setStep(1)}
+                                        className="text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-600 transition-colors py-2"
+                                    >
+                                        Volver al Paso 1
+                                    </button>
                                 )}
-                            </button>
-                        </div>
-                    </form>
+                            </div>
+                        </form>
+                    </div>
                 </div>
 
-                <footer className="flex flex-col items-center gap-6">
+                <footer className="text-center space-y-8 pb-10">
                     <p>
-                        <a href="/login" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest hover:text-indigo-600 transition-colors">¿Ya tienes cuenta? Volver</a>
+                        <a href="/" className="text-[10px] font-black text-zinc-300 uppercase tracking-widest hover:text-indigo-600 transition-colors">¿Ya tienes cuenta? Ir al Login</a>
                     </p>
-                    <div className="flex items-center gap-3 opacity-30 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-700">
-                        <img src="/pwa-icon.webp" className="w-8" alt="Logo" />
-                        <div className="h-4 w-px bg-zinc-200" />
-                        <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-[0.3em]">
-                            Digitaliza Todo &copy; 2026 &mdash; The Software Factory
+                    <div className="flex flex-col items-center gap-3 opacity-20">
+                        <p className="text-[7px] font-black text-zinc-500 uppercase tracking-[0.4em]">
+                            Digitaliza Todo Engine &copy; 2026 &mdash; The Software Factory
                         </p>
                     </div>
                 </footer>
