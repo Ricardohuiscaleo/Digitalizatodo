@@ -23,7 +23,7 @@ import {
     MapPin
 } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
-import { getProfile, markAttendanceViaQR } from "@/lib/api";
+import { getProfile, markAttendanceViaQR, resumeSession } from "@/lib/api";
 import jsQR from "jsqr";
 import BottomNav, { NavSection } from "@/components/Navigation/BottomNav";
 import StudentCalendar from "@/components/Calendar/StudentCalendar";
@@ -494,7 +494,7 @@ export default function StudentDashboard() {
                 <div className="flex items-center gap-2 mb-1">
                     <div className="w-1 h-4 bg-orange-500 rounded-full" />
                     <h3 className="text-[11px] font-black uppercase tracking-[0.1em] text-zinc-400">
-                        Registrar asistencia {new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })} {new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase()}
+                        Registrar asistencia {new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </h3>
                 </div>
                 {students.map((student: any) => (
@@ -529,15 +529,12 @@ export default function StudentDashboard() {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h4 className="font-black text-zinc-900 truncate">{student.name}</h4>
-                                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider mb-1">{student.category}</p>
-                                <p className="text-[8px] font-black text-orange-500 uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity">
-                                    Click en el QR para asistir 👉🏻
+                                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider mb-2">{student.category}</p>
+                                <p className="text-[8px] font-black text-indigo-500 uppercase tracking-tighter flex items-center gap-1.5 bg-indigo-50/50 w-fit px-2 py-1 rounded-full border border-indigo-100/50">
+                                    Click en el QR para registrar tu asistencia 👉🏻
                                 </p>
                             </div>
                             <div className="flex items-center gap-3">
-                                <span className="hidden leading-tight max-w-[80px] text-[8px] font-black text-zinc-400 uppercase tracking-tighter text-right">
-                                    Haz click aquí para abrir lector QR de asistencia 👉🏻
-                                </span>
                                 <button 
                                     onClick={() => setActiveScanner(student.id)}
                                     className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-zinc-200 active:scale-90 transition-all shrink-0 relative group/qr"
@@ -552,27 +549,64 @@ export default function StudentDashboard() {
         </div>
     );
 
-    const renderCalendar = () => (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h2 className="text-2xl font-black text-zinc-900">Asistencia</h2>
-            <div className="space-y-6">
-                {students.map((student: any) => (
-                    <div key={student.id} className="space-y-3">
-                        <div className="flex items-center gap-3 ml-2">
-                             <div className="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600">
-                                <User size={16} />
-                             </div>
-                             <span className="text-sm font-black text-zinc-900">{student.name}</span>
+    const renderCalendar = () => {
+        // Combinamos la asistencia de todos los alumnos en un solo array
+        const combinedAttendance = students.flatMap((s: any) => 
+            (s.recent_attendance || []).map((a: any) => ({ 
+                ...a, 
+                studentName: s.name 
+            }))
+        );
+
+        return (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+                <header>
+                    <h2 className="text-2xl font-black text-zinc-900">Mi Calendario</h2>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mt-1">Actividad de todos mis alumnos</p>
+                </header>
+
+                <div className="space-y-8">
+                    <StudentCalendar 
+                        attendance={combinedAttendance} 
+                        primaryColor={primaryColor} 
+                    />
+                    
+                    {/* Guía de Alumnos */}
+                    <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-8 shadow-sm">
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-6 flex items-center gap-2">
+                            <User size={12} /> Alumnos Vinculados
+                        </h3>
+                        <div className="grid grid-cols-1 gap-4">
+                            {students.map((student: any) => (
+                                <div key={student.id} className="flex items-center justify-between p-3 bg-zinc-50 rounded-2xl border border-zinc-100/50">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl overflow-hidden bg-white border border-zinc-100 shadow-sm">
+                                            {student.photo ? (
+                                                <img src={student.photo} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-xs font-black text-zinc-200">
+                                                    {student.name[0]}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className="text-[11px] font-black text-zinc-900">{student.name}</p>
+                                            <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter">{student.category}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-1">
+                                         {(student.recent_attendance || []).filter((a:any) => a.status === 'present').length > 0 && (
+                                             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+                                         )}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                        <StudentCalendar 
-                            attendance={student.recent_attendance || []} 
-                            primaryColor={primaryColor} 
-                        />
                     </div>
-                ))}
+                </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     const renderPayments = () => (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
@@ -800,7 +834,7 @@ export default function StudentDashboard() {
                 </div>
 
                 <button
-                    onClick={() => { localStorage.clear(); window.location.href = "/login"; }}
+                    onClick={() => { localStorage.clear(); window.location.href = "/"; }}
                     className="w-full h-16 bg-red-50 text-red-600 rounded-3xl flex items-center justify-center gap-3 text-xs font-black uppercase tracking-[0.2em] hover:bg-red-100 transition-all active:scale-[0.98]"
                 >
                     <LogOut size={18} />
@@ -836,7 +870,34 @@ export default function StudentDashboard() {
     );
 
     return (
-        <div className="min-h-screen bg-stone-50 text-zinc-900 pb-32 md:pb-12 px-5 md:px-8 max-w-lg mx-auto md:max-w-7xl pt-8">
+        <>
+            {/* Desktop Only Guard (Fintoc Style Inverso) */}
+            <div className="hidden lg:flex fixed inset-0 z-[9999] bg-stone-50 items-center justify-center p-8 text-center animate-in fade-in duration-700">
+                <div className="max-w-md space-y-10">
+                    <div className="flex justify-center">
+                        <div className="h-24 w-24 rounded-[2rem] bg-white border border-zinc-100 flex items-center justify-center overflow-hidden shadow-xl animate-bounce">
+                            <img src="/DLogo-v2.webp" className="w-12 h-12 object-contain" alt="logo" />
+                        </div>
+                    </div>
+                    <div className="space-y-6">
+                        <h1 className="text-5xl font-black text-zinc-900 tracking-tighter uppercase leading-[0.85]">
+                            Ecosistema <br/> <span className="text-indigo-600">Móvil</span>
+                        </h1>
+                        <p className="text-sm font-black text-zinc-400 uppercase tracking-[0.2em] leading-relaxed max-w-[280px] mx-auto">
+                            El portal de apoderados está optimizado para dispositivos móviles.
+                        </p>
+                        <div className="bg-zinc-900 text-white p-6 rounded-[2rem] shadow-2xl space-y-3">
+                             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Paso a seguir</p>
+                             <p className="text-sm font-bold">Por favor, accede desde tu smartphone para una mejor experiencia.</p>
+                        </div>
+                    </div>
+                    <div className="pt-12">
+                        <p className="text-[9px] font-black text-zinc-200 uppercase tracking-[0.5em]">Digitaliza Todo Engine © 2026</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="min-h-screen bg-stone-50 text-zinc-900 pb-32 md:pb-12 px-5 md:px-8 max-w-lg mx-auto md:max-w-7xl pt-8 lg:hidden">
             {/* Dashboard Sections - Mobile Responsive */}
             <div className="animate-in fade-in duration-500">
                 {activeSection === "home" && renderHome()}
@@ -864,6 +925,7 @@ export default function StudentDashboard() {
 
             {proofModalUrl && <ProofModal url={proofModalUrl} onClose={() => setProofModalUrl(null)} />}
         </div>
+        </>
     );
 }
 
