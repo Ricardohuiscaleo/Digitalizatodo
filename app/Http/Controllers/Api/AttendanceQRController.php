@@ -35,8 +35,15 @@ class AttendanceQRController extends Controller
         // Retornamos el token, y cuántos segundos le quedan de validez a ESTE ciclo de 30s
         $expiresIn = 30 - (time() % 30);
 
-        // Guardamos en caché por la duración del ciclo de 30s + 60s de gracia = 90 segundos.
-        \Illuminate\Support\Facades\Cache::put("totp_qr_{$token}", $tenant->id, 90);
+        // Guardamos en caché por la duración del ciclo de 30s + 5 minutos de gracia = 330 segundos total.
+        \Illuminate\Support\Facades\Cache::put("totp_qr_{$token}", $tenant->id, 330);
+
+        Log::info("QR Token Generated", [
+            'token' => $token,
+            'tenant_id' => $tenant->id,
+            'block' => $timeBlock,
+            'expires_in' => $expiresIn
+        ]);
 
         return response()->json([
             'token' => $token,
@@ -53,16 +60,35 @@ class AttendanceQRController extends Controller
         $secret = config('app.key');
         $currentBlock = floor(time() / 30);
         
+        Log::info("QR Validation attempt", [
+            'token' => $token,
+            'tenantId' => $tenantId,
+            'time' => time(),
+            'currentBlock' => $currentBlock
+        ]);
+
         // Ventana de tiempo: actual y anterior (60s total)
         for ($i = 0; $i <= 1; $i++) {
             $block = $currentBlock - $i;
             $hashString = "tenant:{$tenantId}|block:{$block}|secret:{$secret}";
             $expectedToken = substr(hash('sha256', $hashString), 0, 16);
             
+            Log::debug("Checking block", [
+                'block' => $block,
+                'expected' => $expectedToken,
+                'received' => $token
+            ]);
+
             if (hash_equals($expectedToken, $token)) {
+                Log::info("QR Token matched in block", ['block' => $block]);
                 return true;
             }
         }
+
+        Log::warning("QR Token validation failed after checking windows", [
+            'token' => $token,
+            'tenantId' => $tenantId
+        ]);
 
         return false;
     }
