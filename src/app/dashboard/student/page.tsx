@@ -550,12 +550,13 @@ export default function StudentDashboard() {
     );
 
     const renderCalendar = () => {
-        // Combinamos la asistencia de todos los alumnos en un solo array, incluyendo sus fotos
+        // Combinamos la asistencia de todos los alumnos en un solo array, incluyendo sus fotos y categorías
         const combinedAttendance = students.flatMap((s: any) => 
             (s.recent_attendance || []).map((a: any) => ({ 
                 ...a, 
                 studentName: s.name,
-                studentPhoto: s.photo
+                studentPhoto: s.photo,
+                studentCategory: s.category
             }))
         );
 
