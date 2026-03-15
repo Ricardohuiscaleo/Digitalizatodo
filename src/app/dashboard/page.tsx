@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { getEcho } from '@/lib/echo';
+import { getEcho, reconnect } from '@/lib/echo';
 import { QRCodeCanvas } from 'qrcode.react';
 import {
     Users,
@@ -350,103 +350,68 @@ export default function App() {
         return () => clearInterval(t);
     }, []);
 
-    // POLLING REAL-TIME: detectar nuevos check-ins cuando el modal QR está abierto
-    const knownAttendanceRef = useRef<Set<string>>(new Set());
-    const pollInitializedRef = useRef(false);
-    useEffect(() => {
-        if (!showQRModal) {
-            pollInitializedRef.current = false;
-            return;
-        }
-        // Snapshot de quiénes ya están presentes al abrir el modal
-        knownAttendanceRef.current = new Set(attendance);
-        pollInitializedRef.current = true;
-
-        const poll = setInterval(async () => {
-            const slug = localStorage.getItem('tenant_slug')?.trim();
-            const t = token || localStorage.getItem('staff_token') || localStorage.getItem('auth_token');
-            if (!slug || !t) return;
-            const h = await getAttendanceHistory(slug, t);
-            if (!h?.attendance) return;
-            setAttendanceHistory(h.attendance);
-            const today = new Date().toISOString().split('T')[0];
-            const todayRecords = h.attendance.filter((r: any) => (r.date || r.created_at?.split('T')[0]) === today && r.status === 'present');
-            const currentIds = new Set(todayRecords.map((r: any) => String(r.student_id)));
-            // Detectar SOLO los nuevos desde que se abrió el modal
-            for (const id of currentIds) {
-                if (!knownAttendanceRef.current.has(id)) {
-                    const rec = todayRecords.find((r: any) => String(r.student_id) === id);
-                    if (rec?.student) {
-                        setLastCheckedInStudent({
-                            id: rec.student.id,
-                            name: rec.student.name,
-                            photo: rec.student.photo,
-                            _ts: Date.now()
-                        });
-                    }
-                    // Agregar al set conocido para no detectarlo de nuevo
-                    knownAttendanceRef.current.add(id);
-                }
-            }
-            setAttendance(currentIds);
-        }, 3000);
-        return () => clearInterval(poll);
-    }, [showQRModal, token]);
-
     // Estado para estudiante detectado via QR (se pasa al modal)
     const [lastCheckedInStudent, setLastCheckedInStudent] = useState<any>(null);
 
-    // REAL-TIME DE VERDAD CON WEBSOCKETS (LARAVEL REVERB)
-    useEffect(() => {
-        const key = process.env.NEXT_PUBLIC_REVERB_APP_KEY;
-        
-        if (!key || !branding?.slug) return;
+    // Refs estables para usar dentro de callbacks sin causar re-suscripciones
+    const tokenRef = useRef(token);
+    useEffect(() => { tokenRef.current = token; }, [token]);
+    const brandingSlugRef = useRef(branding?.slug);
+    useEffect(() => { brandingSlugRef.current = branding?.slug; }, [branding?.slug]);
 
+    // REAL-TIME WEBSOCKETS (LARAVEL REVERB)
+    // Suscripción única. Pusher-js maneja reconexión automática.
+    // Al volver de background (móvil), forzamos reconexión + refresh.
+    useEffect(() => {
+        if (!branding?.slug) return;
         const echo = getEcho();
         if (!echo) return;
 
-        const channel = echo.channel(`attendance.${branding.slug}`);
-        
-        channel.listen('.student.checked-in', (data: { studentId: string | number; studentName?: string; studentPhoto?: string }) => {
-            console.log('Real-time check-in received:', data);
-            setAttendance(prev => {
-                const next = new Set(prev);
-                next.add(String(data.studentId));
-                return next;
-            });
-            // Notificar al modal QR si está abierto
-            setLastCheckedInStudent({
-                id: data.studentId,
-                name: data.studentName || 'Alumno',
-                photo: data.studentPhoto,
-                _ts: Date.now()
-            });
-            refreshPayers();
-            getAttendanceHistory(branding.slug!, token!).then(h => {
-                if (h?.attendance) setAttendanceHistory(h.attendance);
-            });
-        });
+        const slug = branding.slug;
+        console.log('[WS] Subscribing to channels for:', slug);
 
-        // Pagos Real-Time
-        const paymentsChannel = echo.channel(`payments.${branding.slug}`);
-        paymentsChannel.listen('.payment.updated', (data: any) => {
-            console.log('Real-time payment update received:', data);
-            refreshPayers();
-        });
+        const safeRefresh = () => {
+            const t = tokenRef.current;
+            const s = brandingSlugRef.current;
+            if (!t || !s) return;
+            getPayers(s, t, { month: new Date().getMonth() + 1, year: new Date().getFullYear() })
+                .then(d => { if (d?.payers) setPayers(d.payers); })
+                .catch(() => {});
+            getAttendanceHistory(s, t)
+                .then(h => { if (h?.attendance) setAttendanceHistory(h.attendance); })
+                .catch(() => {});
+        };
 
-        // Registros Real-Time
-        const dashboardChannel = echo.channel(`dashboard.${branding.slug}`);
-        dashboardChannel.listen('.student.registered', (data: any) => {
-            console.log('Real-time registration received:', data);
-            refreshPayers();
-        });
+        echo.channel(`attendance.${slug}`)
+            .listen('.student.checked-in', (data: { studentId: string | number; studentName?: string; studentPhoto?: string }) => {
+                console.log('[WS] ✅ student.checked-in:', data);
+                setAttendance(prev => new Set(prev).add(String(data.studentId)));
+                setLastCheckedInStudent({ id: data.studentId, name: data.studentName || 'Alumno', photo: data.studentPhoto, _ts: Date.now() });
+                safeRefresh();
+            });
+
+        echo.channel(`payments.${slug}`)
+            .listen('.payment.updated', () => { console.log('[WS] payment.updated'); safeRefresh(); });
+        echo.channel(`dashboard.${slug}`)
+            .listen('.student.registered', () => { console.log('[WS] student.registered'); safeRefresh(); });
+
+        // Móvil: cuando la app vuelve de background, reconectar y refrescar
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                console.log('[WS] App visible — reconnecting');
+                reconnect();
+                safeRefresh();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
 
         return () => {
-            echo.leaveChannel(`attendance.${branding.slug}`);
-            echo.leaveChannel(`payments.${branding.slug}`);
-            echo.leaveChannel(`dashboard.${branding.slug}`);
+            document.removeEventListener('visibilitychange', handleVisibility);
+            echo.leaveChannel(`attendance.${slug}`);
+            echo.leaveChannel(`payments.${slug}`);
+            echo.leaveChannel(`dashboard.${slug}`);
         };
-    }, [branding?.slug, refreshPayers, token]);
+    }, [branding?.slug]);
 
     const tabs = ['dashboard', 'attendance', 'payments', 'settings'];
 
