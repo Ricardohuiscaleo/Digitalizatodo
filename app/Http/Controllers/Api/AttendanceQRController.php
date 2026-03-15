@@ -38,11 +38,13 @@ class AttendanceQRController extends Controller
         // Guardamos en caché por la duración del ciclo de 2 min + 13 min de gracia = 15 minutos total (900s).
         \Illuminate\Support\Facades\Cache::put("totp_qr_{$token}", $tenant->id, 900);
 
-        Log::info("QR Token Generated", [
-            'token' => $token,
+        Log::debug(" [DEBUG-QR] GENERACION ", [
             'tenant_id' => $tenant->id,
+            'tenant_slug' => $tenant->slug,
+            'time' => time(),
             'block' => $timeBlock,
-            'expires_in' => $expiresIn
+            'token' => $token,
+            'key_snippet' => substr($secret, 0, 10) . '...'
         ]);
 
         return response()->json([
@@ -60,11 +62,12 @@ class AttendanceQRController extends Controller
         $secret = config('app.key');
         $currentBlock = floor(time() / 120);
         
-        Log::info("QR Validation attempt", [
-            'token' => $token,
-            'tenantId' => $tenantId,
-            'time' => time(),
-            'currentBlock' => $currentBlock
+        Log::debug(" [DEBUG-QR] VALIDACION ", [
+            'received_token' => $token,
+            'looking_for_tenant_id' => $tenantId,
+            'current_time' => time(),
+            'current_block' => $currentBlock,
+            'key_snippet' => substr($secret, 0, 10) . '...'
         ]);
 
         // Ventana de tiempo: actual y 4 anteriores (10 minutos total de validez)
@@ -73,23 +76,13 @@ class AttendanceQRController extends Controller
             $hashString = "tenant:{$tenantId}|block:{$block}|secret:{$secret}";
             $expectedToken = substr(hash('sha256', $hashString), 0, 16);
             
-            Log::debug("Checking block", [
-                'block' => $block,
-                'expected' => $expectedToken,
-                'received' => $token
-            ]);
-
             if (hash_equals($expectedToken, $token)) {
-                Log::info("QR Token matched in block", ['block' => $block]);
+                Log::debug(" [DEBUG-QR] MATCH ENCONTRADO ", ['block' => $block, 'i' => $i]);
                 return true;
             }
         }
 
-        Log::warning("QR Token validation failed after checking windows", [
-            'token' => $token,
-            'tenantId' => $tenantId
-        ]);
-
+        Log::debug(" [DEBUG-QR] FALLO TOTAL VALIDACION ");
         return false;
     }
 
