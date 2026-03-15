@@ -910,13 +910,48 @@ export default function StudentDashboard() {
                 </div>
             </div>
 
-            <div className="min-h-screen bg-stone-50 text-zinc-900 pb-32 md:pb-12 px-2 md:px-8 max-w-lg mx-auto md:max-w-7xl pt-8 lg:hidden">
+            <div className="min-h-screen bg-stone-50 text-zinc-900 pb-32 md:pb-12 max-w-lg mx-auto md:max-w-7xl lg:hidden">
+            {/* Header */}
+            <header className="bg-white px-2 py-3 flex items-center justify-between sticky top-0 z-50 border-b border-zinc-50 shrink-0">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full overflow-hidden border border-zinc-100 shadow-sm">
+                        {branding?.logo ? (
+                            <img src={branding.logo} className="w-full h-full object-cover" alt="L" />
+                        ) : (
+                            <span className="font-black text-xl uppercase tracking-tighter text-zinc-950">{branding?.name?.[0] || 'D'}</span>
+                        )}
+                    </div>
+                    <div className="flex flex-col">
+                        <h1 className="text-lg font-black uppercase tracking-tighter text-zinc-950 leading-none">{branding?.name || 'Academy'}</h1>
+                        <span className="text-[9px] font-black uppercase tracking-widest mt-0.5" style={{ color: primaryColor }}>
+                            {activeSection === 'home' ? 'Inicio' : activeSection === 'calendar' ? 'Asistencia' : activeSection === 'payments' ? 'Pagos' : 'Perfil'}
+                        </span>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2.5 shrink-0 bg-white pl-3 pr-1 py-1 rounded-full border border-zinc-100 shadow-sm">
+                    <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-black text-zinc-900 leading-none truncate max-w-[80px]">{guardian.name.split(' ')[0]}</span>
+                        <span className="text-[7px] font-black uppercase tracking-[0.2em] mt-0.5" style={{ color: primaryColor }}>Apoderado</span>
+                    </div>
+                    <div className="w-8 h-8 flex items-center justify-center shrink-0 rounded-full overflow-hidden border-2" style={{ borderColor: primaryColor }}>
+                        {guardian.photo ? (
+                            <img src={guardian.photo} className="w-full h-full object-cover" alt="" />
+                        ) : (
+                            <span className="font-black text-sm" style={{ color: primaryColor }}>{guardian.name[0]}</span>
+                        )}
+                    </div>
+                </div>
+            </header>
+
+            <div className="px-2 md:px-8 pt-4">
             {/* Dashboard Sections - Mobile Responsive */}
             <div className="animate-in fade-in duration-500">
                 {activeSection === "home" && renderHome()}
                 {activeSection === "calendar" && renderCalendar()}
                 {activeSection === "payments" && renderPayments()}
                 {activeSection === "profile" && renderProfile()}
+            </div>
+
             </div>
 
             {/* Shared Components */}
