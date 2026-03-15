@@ -94,15 +94,14 @@ class AttendanceController extends Controller
         try {
             $tenant = app('currentTenant');
             
+            Log::debug(" [DEBUG-QR] Iniciando verificación ", [
+                'request_all' => $request->all(),
+                'tenant_id' => $tenant->id
+            ]);
+
             $request->validate([
                 'qr_token' => 'required|string',
                 'student_id' => 'required|exists:students,id',
-            ]);
-
-            Log::debug(" [DEBUG-QR] Verificando ", [
-                'token' => $request->qr_token,
-                'student' => $request->student_id,
-                'tenant' => $tenant->id
             ]);
 
             $isValid = AttendanceQRController::isValidForTenant($request->qr_token, $tenant->id);
@@ -121,7 +120,7 @@ class AttendanceController extends Controller
                 ->first();
 
             if (!$student) {
-                return response()->json(['message' => 'Estudiante no encontrado'], 404);
+                return response()->json(['message' => 'Estudiante no pertenece a este tenant o no existe'], 404);
             }
 
             $attendance = Attendance::updateOrCreate(
@@ -137,7 +136,12 @@ class AttendanceController extends Controller
                 ]
             );
 
-            event(new \App\Events\StudentCheckedIn($student->id, $tenant->slug));
+            // Intentar disparar el evento, pero capturar fallo si Reverb no responde
+            try {
+                event(new \App\Events\StudentCheckedIn($student->id, $tenant->slug));
+            } catch (\Throwable $e) {
+                Log::warning("Broadcasting failed but attendance was saved", ['error' => $e->getMessage()]);
+            }
 
             return response()->json([
                 'success' => true,
@@ -145,11 +149,13 @@ class AttendanceController extends Controller
                 'attendance' => $attendance
             ]);
 
-        } catch (\Exception $e) {
-            Log::error("QR_VERIFY_ERROR: " . $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error("QR_FATAL_ERROR: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return response()->json([
-                'message' => 'Error interno del servidor: ' . $e->getMessage(),
-                'error' => $e->getMessage()
+                'error' => true,
+                'message' => 'Error interno del servidor (Throwable): ' . $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
             ], 500);
         }
     }
