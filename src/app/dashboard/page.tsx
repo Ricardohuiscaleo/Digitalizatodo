@@ -621,10 +621,27 @@ export default function App() {
 
     const toggleAttendance = async (studentId: string) => {
         const isPresent = attendance.has(studentId);
+        const student = allStudents.find(s => s.id === studentId);
 
         const newAttendance = new Set(attendance);
-        if (isPresent) newAttendance.delete(studentId);
-        else newAttendance.add(studentId);
+        if (isPresent) {
+            newAttendance.delete(studentId);
+            // Optimistic: remover del historial
+            const today = todayCL();
+            setAttendanceHistory(prev => prev.filter(r => !(String(r.student_id) === String(studentId) && (r.date || r.created_at?.split('T')[0]) === today)));
+        } else {
+            newAttendance.add(studentId);
+            // Optimistic: inyectar en historial
+            setAttendanceHistory(prev => [{
+                id: `local-${Date.now()}`,
+                student_id: studentId,
+                student: { id: studentId, name: student?.name || 'Alumno', photo: student?.photo },
+                date: todayCL(),
+                status: 'present',
+                created_at: new Date().toISOString(),
+                registration_method: 'manual',
+            }, ...prev]);
+        }
         setAttendance(newAttendance);
 
         if (!isDemo && token && (user?.tenant_slug || user?.tenant_id)) {
