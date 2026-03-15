@@ -387,6 +387,17 @@ export default function App() {
                 console.log('[WS] ✅ student.checked-in:', data);
                 setAttendance(prev => new Set(prev).add(String(data.studentId)));
                 setLastCheckedInStudent({ id: data.studentId, name: data.studentName || 'Alumno', photo: data.studentPhoto, _ts: Date.now() });
+                // Optimistic: inyectar registro en historial inmediatamente
+                const now = new Date();
+                setAttendanceHistory(prev => [{
+                    id: `ws-${Date.now()}`,
+                    student_id: data.studentId,
+                    student: { id: data.studentId, name: data.studentName || 'Alumno', photo: data.studentPhoto },
+                    date: now.toISOString().split('T')[0],
+                    status: 'present',
+                    created_at: now.toISOString(),
+                    registration_method: 'qr',
+                }, ...prev]);
                 safeRefresh();
             });
 
