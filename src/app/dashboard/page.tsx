@@ -297,7 +297,7 @@ export default function App() {
             refreshPayers();
             // Actualizar historial en tiempo real
             getAttendanceHistory(branding.slug!, token!).then(h => {
-                if (h) setAttendanceHistory(h);
+                if (h?.attendance) setAttendanceHistory(h.attendance);
             });
         });
 
@@ -320,7 +320,7 @@ export default function App() {
             echo.leaveChannel(`payments.${branding.slug}`);
             echo.leaveChannel(`dashboard.${branding.slug}`);
         };
-    }, [branding?.slug, refreshPayers]);
+    }, [branding?.slug, refreshPayers, token]);
 
     const tabs = ['dashboard', 'attendance', 'payments', 'settings'];
 
