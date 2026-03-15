@@ -787,41 +787,7 @@ export default function App() {
                         )}
                     </div>
 
-                    {/* Tarjeta de Actividad del Día */}
-                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100 flex flex-col justify-between">
-                        <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2 uppercase tracking-tighter mb-4">
-                            <Clock style={{ color: branding?.primaryColor || '#6366f1' }} size={18} />
-                            Actividad
-                        </h3>
-                        {(() => {
-                            const today = now.toISOString().split('T')[0];
-                            const todayRecords = attendanceHistory.filter((r: any) => (r.date || r.created_at?.split('T')[0]) === today && r.status === 'present');
-                            if (todayRecords.length === 0) return (
-                                <div className="flex flex-col items-center justify-center gap-2 py-6 px-4 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">
-                                    <p className="text-zinc-500 text-[11px] font-black uppercase tracking-widest">{now.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
-                                    <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">Sin registros</p>
-                                </div>
-                            );
-                            const lastRecord = todayRecords[todayRecords.length - 1];
-                            return (
-                                <div className="space-y-3">
-                                    <div className="flex items-center gap-3 p-3 bg-emerald-50 rounded-2xl border border-emerald-100">
-                                        <img src={lastRecord.student?.photo} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" alt="" />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-[11px] font-black text-emerald-900 uppercase truncate leading-none">{lastRecord.student?.name}</p>
-                                            <p className="text-[9px] text-emerald-600 font-bold uppercase tracking-widest mt-1">
-                                                Último ingreso • {new Date(lastRecord.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
-                                            </p>
-                                        </div>
-                                        {lastRecord.registration_method === 'qr' && (
-                                            <div className="bg-emerald-500 p-1.5 rounded-xl shrink-0"><QrCode size={12} className="text-white" /></div>
-                                        )}
-                                    </div>
-                                    <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest text-center">{todayRecords.length} registro{todayRecords.length !== 1 ? 's' : ''} hoy</p>
-                                </div>
-                            );
-                        })()}
-                    </div>
+
                 </div>
 
                 {/* HISTORIAL DE ASISTENCIA - RE-ESTILIZADO PARA DESKTOP */}
@@ -1832,6 +1798,7 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers, 
     const [timeLeft, setTimeLeft] = useState(60);
     const [loading, setLoading] = useState(true);
     const [detectedStudent, setDetectedStudent] = useState<any>(null);
+    const currentTokenRef = useRef<string | null>(null);
 
     const fetchToken = useCallback(async () => {
         if (detectedStudent) return;
@@ -1847,6 +1814,7 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers, 
             const data = await res.json();
             if (data.token) {
                 setQrData(data.token);
+                currentTokenRef.current = data.token;
                 setTimeLeft(data.expires_in || 60);
             }
         } catch (error) {
@@ -1873,7 +1841,7 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers, 
         return () => clearTimeout(t);
     }, [timeLeft, loading, fetchToken, detectedStudent]);
 
-    // Recibir estudiante detectado desde el dashboard (listener centralizado)
+    // Recibir estudiante detectado desde el dashboard (WebSocket)
     useEffect(() => {
         if (checkedInStudent) {
             setDetectedStudent(checkedInStudent);
@@ -1881,6 +1849,28 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers, 
             if (window.navigator?.vibrate) window.navigator.vibrate(200);
         }
     }, [checkedInStudent?._ts]);
+
+    // Fallback: verificar si el token fue usado (por si WebSocket falla en móvil)
+    // Consulta ligera cada 3s SOLO mientras el QR está visible
+    useEffect(() => {
+        if (detectedStudent || !qrData) return;
+        const API = process.env.NEXT_PUBLIC_API_URL || "https://admin.digitalizatodo.cl/api";
+        const interval = setInterval(async () => {
+            try {
+                const res = await fetch(`${API}/${tenantSlug}/attendance/qr-status?token=${currentTokenRef.current}`, {
+                    headers: { Authorization: `Bearer ${authToken}` }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.scanned && data.student) {
+                    setDetectedStudent({ id: data.student.id, name: data.student.name, photo: data.student.photo, _ts: Date.now() });
+                    setContinueCountdown(7);
+                    if (window.navigator?.vibrate) window.navigator.vibrate(200);
+                }
+            } catch {}
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [detectedStudent, qrData, tenantSlug, authToken]);
 
     // Auto-continuar después de 7 segundos
     const [continueCountdown, setContinueCountdown] = useState(0);
