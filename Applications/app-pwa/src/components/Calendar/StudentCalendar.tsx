@@ -16,7 +16,6 @@ interface StudentCalendarProps {
 }
 
 export default function StudentCalendar({ attendance, primaryColor = "#f97316" }: StudentCalendarProps) {
-    // Corregimos el "hoy" usando fecha local para evitar saltos de zona horaria (ISO vs Local)
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     
@@ -37,7 +36,6 @@ export default function StudentCalendar({ attendance, primaryColor = "#f97316" }
     const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
     const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
 
-    // Mapeo por fecha
     const attendanceMap = attendance.reduce((acc, rec) => {
         if (!acc[rec.date]) acc[rec.date] = [];
         acc[rec.date].push(rec);
@@ -48,7 +46,6 @@ export default function StudentCalendar({ attendance, primaryColor = "#f97316" }
     const numDays = daysInMonth(year, month);
     const firstDay = firstDayOfMonth(year, month);
 
-    // Padding for first week (Monday as first day)
     for (let i = 0; i < (firstDay === 0 ? 6 : firstDay - 1); i++) {
         days.push(<div key={`empty-${i}`} className="h-10 w-full" />);
     }
@@ -64,18 +61,17 @@ export default function StudentCalendar({ attendance, primaryColor = "#f97316" }
             <button 
                 key={day} 
                 onClick={() => setSelectedDate(dateStr)}
-                className={`h-10 w-full flex flex-col items-center justify-center rounded-xl relative transition-all border ${
+                className={`h-11 w-full flex flex-col items-center justify-center rounded-2xl relative transition-all border ${
                     isSelected 
                         ? "bg-zinc-900 border-zinc-900 text-white shadow-lg z-10 scale-105" 
                         : isToday 
-                            ? "border-indigo-200 bg-indigo-50 text-indigo-700 font-black" 
+                            ? "border-indigo-100 bg-indigo-50/50 text-indigo-700 font-black" 
                             : "border-transparent hover:bg-zinc-50 text-zinc-600"
                 }`}
             >
                 <span className="text-[11px] font-bold">{day}</span>
-                
                 {hasActivity && !isSelected && (
-                    <div className="absolute bottom-1 flex gap-[2px]">
+                    <div className="absolute bottom-1.5 flex gap-[2.5px]">
                         {records.slice(0, 3).map((r, i) => (
                             <div key={i} className={`w-1 h-1 rounded-full ${r.status === 'present' ? 'bg-emerald-400' : 'bg-red-400'}`} />
                         ))}
@@ -88,26 +84,24 @@ export default function StudentCalendar({ attendance, primaryColor = "#f97316" }
     const selectedDayDetails = selectedDate ? attendanceMap[selectedDate] : null;
 
     return (
-        <div className="flex flex-col h-full max-h-[calc(100vh-180px)] space-y-4 overflow-hidden animate-in fade-in duration-500">
-            {/* CALENDARIO COMPACTO */}
-            <div className="bg-white border border-zinc-100 rounded-[2rem] p-4 shadow-sm shrink-0">
-                <div className="flex items-center justify-between mb-4 px-2">
-                    <div>
-                        <h3 className="text-sm font-black text-zinc-900 uppercase tracking-tighter">{monthNames[month]} {year}</h3>
-                    </div>
-                    <div className="flex gap-1">
-                        <button onClick={prevMonth} className="p-1.5 bg-zinc-50 hover:bg-zinc-100 rounded-lg transition-all text-zinc-400">
+        <div className="bg-white border border-zinc-100 rounded-[2.5rem] shadow-sm flex flex-col h-full max-h-[calc(100vh-140px)] overflow-hidden animate-in fade-in duration-500">
+            {/* CALENDARIO SECTION */}
+            <div className="p-6 pb-4 shrink-0">
+                <div className="flex items-center justify-between mb-6 px-1">
+                    <h3 className="text-base font-black text-zinc-900 uppercase tracking-tighter">{monthNames[month]} {year}</h3>
+                    <div className="flex gap-1.5">
+                        <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center bg-zinc-50 hover:bg-zinc-100 rounded-xl transition-all text-zinc-400">
                             <ChevronLeft size={16} />
                         </button>
-                        <button onClick={nextMonth} className="p-1.5 bg-zinc-50 hover:bg-zinc-100 rounded-lg transition-all text-zinc-400">
+                        <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center bg-zinc-50 hover:bg-zinc-100 rounded-xl transition-all text-zinc-400">
                             <ChevronRight size={16} />
                         </button>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                <div className="grid grid-cols-7 gap-1 text-center mb-3">
                     {["L", "M", "M", "J", "V", "S", "D"].map((d, i) => (
-                        <span key={i} className="text-[9px] font-black text-zinc-300 uppercase">{d}</span>
+                        <span key={i} className="text-[9px] font-black text-zinc-300 uppercase tracking-widest">{d}</span>
                     ))}
                 </div>
 
@@ -116,55 +110,69 @@ export default function StudentCalendar({ attendance, primaryColor = "#f97316" }
                 </div>
             </div>
 
-            {/* DETALLES DEL DÍA SELECCIONADO */}
-            <div className="flex-1 bg-white border border-zinc-100 rounded-[2rem] p-5 shadow-sm overflow-y-auto min-h-0 relative">
-                <div className="sticky top-0 bg-white pb-3 z-10 flex items-center justify-between border-b border-zinc-50 mb-4">
-                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
-                        {selectedDate === today ? "Estado de Hoy" : `Detalle: ${selectedDate?.split('-').reverse().join('/')}`}
-                    </h4>
+            {/* SEPARADOR ELEGANTE */}
+            <div className="px-8 shrink-0">
+                <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-zinc-100 to-transparent rounded-full" />
+            </div>
+
+            {/* DETALLES SECTION (SCROLLABLE) */}
+            <div className="flex-1 overflow-y-auto min-h-0 px-6 py-5">
+                <div className="flex items-center justify-between mb-5 sticky top-0 bg-white/95 backdrop-blur-sm pb-2 z-10 transition-all">
+                    <div className="flex flex-col">
+                        <p className="text-[8px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1">Actividad del día</p>
+                        <h4 className="text-xs font-black text-zinc-900 uppercase tracking-tight">
+                            {selectedDate === today ? "Hoy, " : ""}{selectedDate?.split('-').reverse().join('/')}
+                        </h4>
+                    </div>
                     {selectedDayDetails && (
-                        <span className="text-[9px] font-bold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full">
-                            {selectedDayDetails.filter(r => r.status === 'present').length} Presentes
-                        </span>
+                        <div className="flex items-center gap-1.5 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
+                            <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-[9px] font-black text-emerald-600 uppercase">
+                                {selectedDayDetails.filter(r => r.status === 'present').length} Presentes
+                            </span>
+                        </div>
                     )}
                 </div>
 
                 <div className="space-y-3">
                     {selectedDayDetails && selectedDayDetails.length > 0 ? (
                         selectedDayDetails.map((rec, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-3 bg-zinc-50/50 rounded-2xl border border-zinc-50">
+                            <div key={idx} className="flex items-center justify-between p-3.5 bg-zinc-50/50 rounded-[1.5rem] border border-zinc-100/50 group transition-all">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-xl bg-white border border-zinc-100 flex items-center justify-center overflow-hidden">
+                                    <div className="w-10 h-10 rounded-full border-2 border-white shadow-sm overflow-hidden bg-white shrink-0">
                                         {rec.studentPhoto ? (
                                             <img src={rec.studentPhoto} className="w-full h-full object-cover" />
                                         ) : (
-                                            <div className="font-black text-xs text-zinc-200">{rec.studentName[0]}</div>
+                                            <div className="w-full h-full flex items-center justify-center font-black text-xs text-zinc-200">{rec.studentName[0]}</div>
                                         )}
                                     </div>
-                                    <span className="text-[11px] font-black text-zinc-800">{rec.studentName}</span>
+                                    <div className="flex flex-col">
+                                        <span className="text-[11px] font-black text-zinc-800 leading-none">{rec.studentName}</span>
+                                        <span className="text-[8px] font-bold text-zinc-400 uppercase mt-1">Socio Activo</span>
+                                    </div>
                                 </div>
-                                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border ${
+                                <div className={`flex items-center gap-2 px-3 py-2 rounded-2xl border transition-all ${
                                     rec.status === 'present' 
-                                        ? 'bg-emerald-50 border-emerald-100 text-emerald-600' 
-                                        : 'bg-red-50 border-red-100 text-red-500'
+                                        ? 'bg-emerald-50/50 border-emerald-100/50 text-emerald-600 shadow-sm shadow-emerald-50' 
+                                        : 'bg-red-50/50 border-red-100/50 text-red-500'
                                 }`}>
-                                    {rec.status === 'present' ? <CircleCheck size={12} /> : <CircleX size={12} />}
-                                    <span className="text-[9px] font-black uppercase">{rec.status === 'present' ? 'Presente' : 'Ausente'}</span>
+                                    {rec.status === 'present' ? <CircleCheck size={14} /> : <CircleX size={14} />}
+                                    <span className="text-[9px] font-black uppercase tracking-tighter">{rec.status === 'present' ? 'Presente' : 'Ausente'}</span>
                                 </div>
                             </div>
                         ))
                     ) : (
-                        <div className="py-8 text-center space-y-2">
-                            <div className="w-10 h-10 bg-zinc-50 rounded-full flex items-center justify-center mx-auto text-zinc-200">
-                                <User size={20} />
+                        <div className="py-12 text-center flex flex-col items-center gap-3">
+                            <div className="w-12 h-12 bg-zinc-50 rounded-full flex items-center justify-center text-zinc-200">
+                                <User size={24} />
                             </div>
-                            <p className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest italic">No hay registros para este día</p>
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-black text-zinc-300 uppercase tracking-[0.2em]">Sin registros</p>
+                                <p className="text-[8px] font-bold text-zinc-200 uppercase">No hay actividad para esta fecha</p>
+                            </div>
                         </div>
                     )}
                 </div>
-                
-                {/* Visual indicator of the bottom to ensure no content is hidden */}
-                <div className="h-4" />
             </div>
         </div>
     );
