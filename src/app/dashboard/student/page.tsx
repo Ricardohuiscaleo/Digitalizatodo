@@ -101,9 +101,9 @@ function StudentQRScanner({
             stopCamera();
             setStatus("loading");
             const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-            const tenantId = localStorage.getItem("tenant_id");
-            if (token && tenantId) {
-                markAttendanceViaQR(tenantId, token, code.data, studentId).then((res) => {
+            const tenantSlug = localStorage.getItem("tenant_slug");
+            if (token && tenantSlug) {
+                markAttendanceViaQR(tenantSlug, token, code.data, studentId).then((res) => {
                     if (res?.attendance) {
                         playBeep('success');
                         setStatus("success");
