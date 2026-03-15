@@ -28,6 +28,7 @@ import { getProfile, markAttendanceViaQR, resumeSession } from "@/lib/api";
 import jsQR from "jsqr";
 import BottomNav, { NavSection } from "@/components/Navigation/BottomNav";
 import StudentCalendar from "@/components/Calendar/StudentCalendar";
+import { getEcho } from "@/lib/echo";
 
 /* ─── QR Camera Scanner ─── */
 function StudentQRScanner({
@@ -247,11 +248,11 @@ export default function StudentDashboard() {
     const bulkFileInputRef = useRef<HTMLInputElement>(null);
     const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
     const [studentPhotoLoadingId, setStudentPhotoLoadingId] = useState<string | null>(null);
-    const [selectedStudentForPhoto, setSelectedStudentForPhoto] = useState<string | null>(null);
+    const studentForPhotoRef = useRef<string | null>(null);
     const [selectedPayments, setSelectedPayments] = useState<string[]>([]);
     const [paymentTab, setPaymentTab] = useState<"pending" | "history">("pending");
 
-    const refreshData = async () => {
+    const refreshData = useCallback(async () => {
         let token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
         const tenantSlug = localStorage.getItem("tenant_slug");
         
@@ -294,11 +295,39 @@ export default function StudentDashboard() {
             // Si después de intentar reanudar sigue sin haber perfil, al login
             window.location.href = "/";
         }
-    };
+    }, [resumeSession, getProfile]);
+
+    // REAL-TIME CON WEBSOCKETS (LARAVEL REVERB)
+    useEffect(() => {
+        const key = process.env.NEXT_PUBLIC_REVERB_APP_KEY;
+        if (!key || !branding?.slug) return;
+
+        const echo = getEcho();
+        if (!echo) return;
+
+        // Canal de Asistencia
+        const attChannel = echo.channel(`attendance.${branding.slug}`);
+        attChannel.listen('.student.checked-in', (data: any) => {
+            console.log('Real-time check-in received:', data);
+            refreshData();
+        });
+
+        // Canal de Pagos (Vital para el apoderado: ver aprobación en segundos)
+        const payChannel = echo.channel(`payments.${branding.slug}`);
+        payChannel.listen('.payment.updated', (data: any) => {
+            console.log('Real-time payment update received:', data);
+            refreshData();
+        });
+
+        return () => {
+            echo.leaveChannel(`attendance.${branding.slug}`);
+            echo.leaveChannel(`payments.${branding.slug}`);
+        };
+    }, [branding?.slug, refreshData]);
 
     useEffect(() => {
         refreshData().then(() => setLoading(false));
-    }, []);
+    }, [refreshData]);
 
     const handleUploadProof = async (paymentId: string, file: File) => {
         setUploadingPayment(paymentId);
@@ -533,18 +562,13 @@ export default function StudentDashboard() {
                         className="bg-white border border-zinc-100 rounded-[2.5rem] p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition-all"
                     >
                         <div className="flex items-center gap-4 relative z-10">
-                            <div 
-                                className="w-16 h-16 rounded-full overflow-hidden bg-zinc-100 border-2 border-zinc-50 shadow-md shrink-0 relative cursor-pointer z-30 active:scale-90 transition-transform"
+                            <button 
+                                type="button"
+                                className="w-16 h-16 rounded-full overflow-hidden bg-zinc-100 border-2 border-zinc-50 shadow-md shrink-0 relative cursor-pointer z-30 active:scale-95 transition-transform touch-none"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    e.preventDefault();
-                                    setSelectedStudentForPhoto(student.id);
-                                    // Pequeño delay para asegurar que el estado se procese en dispositivos lentos
-                                    setTimeout(() => {
-                                        if (profileFileInputRef.current) {
-                                            profileFileInputRef.current.click();
-                                        }
-                                    }, 50);
+                                    studentForPhotoRef.current = student.id;
+                                    profileFileInputRef.current?.click();
                                 }}
                             >
                                 {(isUploadingPhoto && !studentPhotoLoadingId) || studentPhotoLoadingId === student.id ? (
@@ -562,7 +586,7 @@ export default function StudentDashboard() {
                                 <div className="absolute bottom-0 right-0 w-6 h-6 bg-white rounded-full shadow-lg flex items-center justify-center text-zinc-400 border border-zinc-100 z-10">
                                     <Camera className="w-3.5 h-3.5" />
                                 </div>
-                            </div>
+                            </button>
                             <div className="flex-1 min-w-0">
                                 <h4 className="font-black text-zinc-900 truncate">{student.name}</h4>
                                 <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider mb-2">{student.category}</p>
@@ -855,24 +879,6 @@ export default function StudentDashboard() {
                 <p className="text-[8px] font-bold text-zinc-200 mt-1 uppercase">v2.4.0 optimized</p>
             </div>
 
-            <input 
-                type="file"
-                ref={profileFileInputRef}
-                className="hidden"
-                accept="image/*"
-                onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                        if (selectedStudentForPhoto) {
-                            handleUploadPhoto(selectedStudentForPhoto, file);
-                        } else {
-                            handleProfilePhotoUpload(file);
-                        }
-                    }
-                    setSelectedStudentForPhoto(null);
-                    if (e.target) e.target.value = "";
-                }}
-            />
         </div>
     );
 
@@ -931,6 +937,27 @@ export default function StudentDashboard() {
             )}
 
             {proofModalUrl && <ProofModal url={proofModalUrl} onClose={() => setProofModalUrl(null)} />}
+
+            {/* Global File Input for Photos */}
+            <input 
+                type="file"
+                ref={profileFileInputRef}
+                style={{ opacity: 0, position: 'absolute', pointerEvents: 'none', width: 0, height: 0 }}
+                accept="image/*"
+                onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                        const sId = studentForPhotoRef.current;
+                        if (sId) {
+                            handleUploadPhoto(sId, file);
+                        } else {
+                            handleProfilePhotoUpload(file);
+                        }
+                    }
+                    studentForPhotoRef.current = null;
+                    if (e.target) e.target.value = "";
+                }}
+            />
         </div>
         </>
     );
