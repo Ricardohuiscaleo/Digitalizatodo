@@ -138,7 +138,12 @@ class AttendanceController extends Controller
 
             // Intentar disparar el evento, pero capturar fallo si Reverb no responde
             try {
-                event(new \App\Events\StudentCheckedIn($student->id, $tenant->slug));
+                event(new \App\Events\StudentCheckedIn(
+                    $student->id, 
+                    $student->name, 
+                    $student->photo, 
+                    $tenant->slug
+                ));
             } catch (\Throwable $e) {
                 Log::warning("Broadcasting failed but attendance was saved", ['error' => $e->getMessage()]);
             }
