@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useBranding } from "@/context/BrandingContext";
 import { identifyTenant, login } from "@/lib/api";
 import { Loader2, RefreshCw, ArrowLeft, Eye, EyeOff } from "lucide-react";
@@ -16,6 +16,19 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [tenant, setTenant] = useState<any>(null);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Auto-redirección si ya hay sesión
+  useEffect(() => {
+    const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
+    const rememberToken = localStorage.getItem("remember_token");
+    const tenantSlug = localStorage.getItem("tenant_slug");
+
+    if ((token || rememberToken) && tenantSlug) {
+      // Si tenemos token o remember, dejamos que el dashboard maneje la sesión
+      const isStaff = !!localStorage.getItem("staff_token");
+      window.location.href = isStaff ? "/dashboard" : "/dashboard/student";
+    }
+  }, []);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
