@@ -564,12 +564,6 @@ export default function StudentDashboard() {
                         key={student.id}
                         className={`bg-white rounded-[2.5rem] p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition-all border-2 ${isPresentToday ? 'border-emerald-400 shadow-emerald-50' : 'border-zinc-100'}`}
                     >
-                        {isPresentToday && (
-                            <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-emerald-500 text-white px-3 py-1 rounded-full shadow-sm">
-                                <CheckCircle2 size={12} />
-                                <span className="text-[8px] font-black uppercase tracking-widest">Presente</span>
-                            </div>
-                        )}
                         <div className="flex items-center gap-4 relative z-10">
                             <button 
                                 type="button"
@@ -615,9 +609,9 @@ export default function StudentDashboard() {
                                         e.stopPropagation();
                                         setActiveScanner(student.id);
                                     }}
-                                    className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-zinc-200 active:scale-90 transition-all shrink-0 relative group/qr z-20"
+                                    className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center shadow-lg shadow-zinc-200 active:scale-90 transition-all shrink-0 relative group/qr z-20 border border-zinc-300"
                                 >
-                                    <QrCode size={20} className="text-orange-400 group-hover/qr:scale-110 transition-transform" />
+                                    <QrCode size={28} className="text-orange-400 group-hover/qr:scale-110 transition-transform" />
                                 </button>
                             </div>
                         </div>
