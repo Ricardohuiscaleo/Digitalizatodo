@@ -26,8 +26,8 @@ export default function TenantEntryPage() {
                     logo: tenant.logo,
                     primaryColor: tenant.primary_color
                 });
-                // Redirigir al login ya con el branding cargado
-                router.replace("/login");
+                // Redirigir al login raíz ya con el branding cargado
+                router.replace("/");
             } else {
                 // Si no existe, al home genérico
                 router.replace("/");
