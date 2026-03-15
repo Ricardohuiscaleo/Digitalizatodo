@@ -249,11 +249,47 @@ export default function StudentDashboard() {
     const [paymentTab, setPaymentTab] = useState<"pending" | "history">("pending");
 
     const refreshData = async () => {
-        const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-        const tenantId = localStorage.getItem("tenant_id");
-        if (token && tenantId) {
-            const profile = await getProfile(tenantId, token);
-            if (profile) setData(profile);
+        let token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
+        const tenantSlug = localStorage.getItem("tenant_slug");
+        
+        if (!token && tenantSlug) {
+            const rememberToken = localStorage.getItem("remember_token");
+            if (rememberToken) {
+                const resumed = await resumeSession(tenantSlug, rememberToken);
+                if (resumed?.token) {
+                    token = resumed.token;
+                    const key = resumed.user_type === 'staff' ? 'staff_token' : 'auth_token';
+                    localStorage.setItem(key, token!);
+                }
+            }
+        }
+
+        if (!token || !tenantSlug) {
+            window.location.href = "/";
+            return;
+        }
+
+        let profile = await getProfile(tenantSlug, token);
+
+        // Si el token falló (ej: expiró) intentamos recuperar con remember_token
+        if (!profile) {
+            const rememberToken = localStorage.getItem("remember_token");
+            if (rememberToken && tenantSlug) {
+                const resumed = await resumeSession(tenantSlug, rememberToken);
+                if (resumed?.token) {
+                    const newToken = resumed.token;
+                    const key = resumed.user_type === 'staff' ? 'staff_token' : 'auth_token';
+                    localStorage.setItem(key, newToken);
+                    profile = await getProfile(tenantSlug, newToken);
+                }
+            }
+        }
+
+        if (profile) {
+            setData(profile);
+        } else {
+            // Si después de intentar reanudar sigue sin haber perfil, al login
+            window.location.href = "/";
         }
     };
 
