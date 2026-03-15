@@ -20,7 +20,8 @@ import {
     Settings,
     ShieldCheck,
     ChevronRight,
-    MapPin
+    MapPin,
+    RefreshCw
 } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
 import { getProfile, markAttendanceViaQR, resumeSession } from "@/lib/api";
@@ -246,6 +247,7 @@ export default function StudentDashboard() {
     const bulkFileInputRef = useRef<HTMLInputElement>(null);
     const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
     const [studentPhotoLoadingId, setStudentPhotoLoadingId] = useState<string | null>(null);
+    const [selectedStudentForPhoto, setSelectedStudentForPhoto] = useState<string | null>(null);
     const [selectedPayments, setSelectedPayments] = useState<string[]>([]);
     const [paymentTab, setPaymentTab] = useState<"pending" | "history">("pending");
 
@@ -472,12 +474,12 @@ export default function StudentDashboard() {
             {/* Deuda / Status Card (Sistema de 3 Colores) */}
             {totalDue > 0 ? (
                 hasPendingReview ? (
-                    /* ESTADO 2: EN REVISIÓN (INDIGO) */
-                    <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[2.5rem] p-6 text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden group">
+                    /* ESTADO 2: EN REVISIÓN (AMARILLO/NARANJA) */
+                    <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-[2.5rem] p-6 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden group">
                         <div className="relative z-10">
                             <div className="flex items-center gap-2 mb-1">
                                 <RefreshCw size={12} className="animate-spin" />
-                                <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Pago en revisión</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest opacity-90">Pago en revisión</p>
                             </div>
                             <h2 className="text-4xl font-black mb-4">${Number(totalDue).toLocaleString("es-CL")}</h2>
                             <button 
@@ -528,14 +530,21 @@ export default function StudentDashboard() {
                 {students.map((student: any) => (
                     <div
                         key={student.id}
-                        className="bg-white border border-zinc-100 rounded-[2.5rem] p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition-all active:scale-[0.98]"
+                        className="bg-white border border-zinc-100 rounded-[2.5rem] p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition-all"
                     >
                         <div className="flex items-center gap-4 relative z-10">
                             <div 
-                                className="w-16 h-16 rounded-full overflow-hidden bg-zinc-100 border-2 border-zinc-50 shadow-md shrink-0 relative cursor-pointer"
-                                onClick={() => {
-                                    profileFileInputRef.current?.setAttribute('data-student-id', student.id);
-                                    profileFileInputRef.current?.click();
+                                className="w-16 h-16 rounded-full overflow-hidden bg-zinc-100 border-2 border-zinc-50 shadow-md shrink-0 relative cursor-pointer z-30 active:scale-90 transition-transform"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    setSelectedStudentForPhoto(student.id);
+                                    // Pequeño delay para asegurar que el estado se procese en dispositivos lentos
+                                    setTimeout(() => {
+                                        if (profileFileInputRef.current) {
+                                            profileFileInputRef.current.click();
+                                        }
+                                    }, 50);
                                 }}
                             >
                                 {(isUploadingPhoto && !studentPhotoLoadingId) || studentPhotoLoadingId === student.id ? (
@@ -563,8 +572,11 @@ export default function StudentDashboard() {
                             </div>
                             <div className="flex items-center gap-3">
                                 <button 
-                                    onClick={() => setActiveScanner(student.id)}
-                                    className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-zinc-200 active:scale-90 transition-all shrink-0 relative group/qr"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveScanner(student.id);
+                                    }}
+                                    className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-zinc-200 active:scale-90 transition-all shrink-0 relative group/qr z-20"
                                 >
                                     <QrCode size={20} className="text-orange-400 group-hover/qr:scale-110 transition-transform" />
                                 </button>
@@ -850,15 +862,14 @@ export default function StudentDashboard() {
                 accept="image/*"
                 onChange={(e) => {
                     const file = e.target.files?.[0];
-                    const studentId = e.target.getAttribute('data-student-id');
                     if (file) {
-                        if (studentId) {
-                            handleUploadPhoto(studentId, file);
-                            e.target.removeAttribute('data-student-id');
+                        if (selectedStudentForPhoto) {
+                            handleUploadPhoto(selectedStudentForPhoto, file);
                         } else {
                             handleProfilePhotoUpload(file);
                         }
                     }
+                    setSelectedStudentForPhoto(null);
                     if (e.target) e.target.value = "";
                 }}
             />
