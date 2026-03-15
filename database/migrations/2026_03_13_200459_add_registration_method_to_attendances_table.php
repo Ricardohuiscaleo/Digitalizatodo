@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('attendances', function (Blueprint $table) {
-            $table->string('registration_method')->default('manual')->after('status');
-        });
+        if (!Schema::hasColumn('attendances', 'registration_method')) {
+            Schema::table('attendances', function (Blueprint $table) {
+                $table->string('registration_method')->default('manual')->after('status');
+            });
+        }
     }
 
     public function down(): void
