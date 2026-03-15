@@ -245,6 +245,7 @@ export default function StudentDashboard() {
     const profileFileInputRef = useRef<HTMLInputElement>(null);
     const bulkFileInputRef = useRef<HTMLInputElement>(null);
     const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+    const [studentPhotoLoadingId, setStudentPhotoLoadingId] = useState<string | null>(null);
     const [selectedPayments, setSelectedPayments] = useState<string[]>([]);
     const [paymentTab, setPaymentTab] = useState<"pending" | "history">("pending");
 
@@ -397,7 +398,7 @@ export default function StudentDashboard() {
     };
 
     const handleUploadPhoto = async (studentId: string, file: File) => {
-        setIsUploadingPhoto(true);
+        setStudentPhotoLoadingId(studentId);
         const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
         const tenantId = localStorage.getItem("tenant_id");
         if (!token || !tenantId) return;
@@ -425,7 +426,7 @@ export default function StudentDashboard() {
         } catch (error) {
             alert("Error de conexión al subir foto.");
         } finally {
-            setIsUploadingPhoto(false);
+            setStudentPhotoLoadingId(null);
         }
     };
 
@@ -505,13 +506,12 @@ export default function StudentDashboard() {
                         <div className="flex items-center gap-4 relative z-10">
                             <div 
                                 className="w-16 h-16 rounded-full overflow-hidden bg-zinc-100 border-2 border-zinc-50 shadow-md shrink-0 relative cursor-pointer"
-                                onClick={(e) => {
-                                    e.stopPropagation();
+                                onClick={() => {
                                     profileFileInputRef.current?.setAttribute('data-student-id', student.id);
                                     profileFileInputRef.current?.click();
                                 }}
                             >
-                                {isUploadingPhoto ? (
+                                {(isUploadingPhoto && !studentPhotoLoadingId) || studentPhotoLoadingId === student.id ? (
                                     <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] flex flex-col items-center justify-center z-20">
                                         <Loader2 className="animate-spin text-orange-500" size={18} />
                                     </div>
@@ -523,7 +523,7 @@ export default function StudentDashboard() {
                                         {student.name[0]}
                                     </div>
                                 )}
-                                <div className="absolute bottom-0 right-0 w-6 h-6 bg-white rounded-full shadow-lg flex items-center justify-center text-zinc-400 border border-zinc-100">
+                                <div className="absolute bottom-0 right-0 w-6 h-6 bg-white rounded-full shadow-lg flex items-center justify-center text-zinc-400 border border-zinc-100 z-10">
                                     <Camera className="w-3.5 h-3.5" />
                                 </div>
                             </div>
