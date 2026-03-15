@@ -29,7 +29,7 @@ import jsQR from "jsqr";
 import BottomNav, { NavSection } from "@/components/Navigation/BottomNav";
 import { todayCL } from "@/lib/utils";
 import StudentCalendar from "@/components/Calendar/StudentCalendar";
-import { getEcho } from "@/lib/echo";
+import { getEcho, reconnect } from "@/lib/echo";
 
 /* ─── QR Camera Scanner ─── */
 function StudentQRScanner({
@@ -252,6 +252,7 @@ export default function StudentDashboard() {
     const studentForPhotoRef = useRef<string | null>(null);
     const [selectedPayments, setSelectedPayments] = useState<string[]>([]);
     const [paymentTab, setPaymentTab] = useState<"pending" | "history">("pending");
+    const refreshDataRef = useRef<() => void>(() => {});
 
     const refreshData = useCallback(async () => {
         let token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
@@ -298,6 +299,9 @@ export default function StudentDashboard() {
         }
     }, [resumeSession, getProfile]);
 
+    // Mantener ref actualizado
+    refreshDataRef.current = refreshData;
+
     // REAL-TIME CON WEBSOCKETS (LARAVEL REVERB)
     useEffect(() => {
         const key = process.env.NEXT_PUBLIC_REVERB_APP_KEY;
@@ -310,25 +314,35 @@ export default function StudentDashboard() {
         const attChannel = echo.channel(`attendance.${branding.slug}`);
         attChannel.listen('.student.checked-in', (data: any) => {
             console.log('Real-time check-in received:', data);
-            refreshData();
+            refreshDataRef.current();
         });
         attChannel.listen('.student.checked-out', (data: any) => {
             console.log('Real-time check-out received:', data);
-            refreshData();
+            refreshDataRef.current();
         });
 
         // Canal de Pagos (Vital para el apoderado: ver aprobación en segundos)
         const payChannel = echo.channel(`payments.${branding.slug}`);
         payChannel.listen('.payment.updated', (data: any) => {
             console.log('Real-time payment update received:', data);
-            refreshData();
+            refreshDataRef.current();
         });
 
+        // Móvil: reconectar cuando la app vuelve de background
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                reconnect();
+                refreshDataRef.current();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+
         return () => {
+            document.removeEventListener('visibilitychange', handleVisibility);
             echo.leaveChannel(`attendance.${branding.slug}`);
             echo.leaveChannel(`payments.${branding.slug}`);
         };
-    }, [branding?.slug, refreshData]);
+    }, [branding?.slug]);
 
     useEffect(() => {
         refreshData().then(() => setLoading(false));
