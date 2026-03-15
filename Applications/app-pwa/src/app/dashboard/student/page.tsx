@@ -556,15 +556,24 @@ export default function StudentDashboard() {
                         Registrar asistencia {new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </h3>
                 </div>
-                {students.map((student: any) => (
+                {students.map((student: any) => {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const isPresentToday = (student.recent_attendance || []).some((a: any) => a.date === todayStr && a.status === 'present');
+                    return (
                     <div
                         key={student.id}
-                        className="bg-white border border-zinc-100 rounded-[2.5rem] p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition-all"
+                        className={`bg-white rounded-[2.5rem] p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition-all border-2 ${isPresentToday ? 'border-emerald-400 shadow-emerald-50' : 'border-zinc-100'}`}
                     >
+                        {isPresentToday && (
+                            <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-emerald-500 text-white px-3 py-1 rounded-full shadow-sm">
+                                <CheckCircle2 size={12} />
+                                <span className="text-[8px] font-black uppercase tracking-widest">Presente</span>
+                            </div>
+                        )}
                         <div className="flex items-center gap-4 relative z-10">
                             <button 
                                 type="button"
-                                className="w-16 h-16 rounded-full overflow-hidden bg-zinc-100 border-2 border-zinc-50 shadow-md shrink-0 relative cursor-pointer z-30 active:scale-95 transition-transform touch-none"
+                                className={`w-16 h-16 rounded-full overflow-hidden bg-zinc-100 shadow-md shrink-0 relative cursor-pointer z-30 active:scale-95 transition-transform touch-none border-2 ${isPresentToday ? 'border-emerald-400' : 'border-zinc-50'}`}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     studentForPhotoRef.current = student.id;
@@ -607,7 +616,8 @@ export default function StudentDashboard() {
                             </div>
                         </div>
                     </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );
