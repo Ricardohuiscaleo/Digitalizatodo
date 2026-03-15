@@ -91,65 +91,67 @@ class AttendanceController extends Controller
      */
     public function verifyQR(Request $request, $tenantSlug)
     {
-        $tenant = app('currentTenant'); // Usamos el ya resuelto por el middleware
-        
-        $request->validate([
-            'qr_token' => 'required|string',
-            'student_id' => 'required|exists:students,id',
-        ]);
-
-        Log::info("verifyQR called", [
-            'tenant_slug_path' => $tenantSlug,
-            'resolved_tenant_id' => $tenant->id,
-            'student_id' => $request->student_id,
-            'qr_token' => $request->qr_token
-        ]);
-
-        $isValid = AttendanceQRController::isValidForTenant($request->qr_token, $tenant->id);
-        
-        // También chequeamos cache por si acaso (compatibilidad)
-        if (!$isValid) {
-            $cachedTenantId = AttendanceQRController::validateToken($request->qr_token);
-            Log::info("Checking cache fallback", ['cachedTenantId' => $cachedTenantId]);
-            $isValid = ($cachedTenantId == $tenant->id);
-        }
-
-        if (!$isValid) {
-            Log::warning("QR Validation FAILED in verifyQR", [
-                'qr_token' => $request->qr_token,
-                'tenant_id' => $tenant->id
+        try {
+            $tenant = app('currentTenant');
+            
+            $request->validate([
+                'qr_token' => 'required|string',
+                'student_id' => 'required|exists:students,id',
             ]);
-            return response()->json(['message' => 'Código QR inválido o expirado'], 422);
+
+            Log::debug(" [DEBUG-QR] Verificando ", [
+                'token' => $request->qr_token,
+                'student' => $request->student_id,
+                'tenant' => $tenant->id
+            ]);
+
+            $isValid = AttendanceQRController::isValidForTenant($request->qr_token, $tenant->id);
+            
+            if (!$isValid) {
+                $cachedTenantId = AttendanceQRController::validateToken($request->qr_token);
+                $isValid = ($cachedTenantId == $tenant->id);
+            }
+
+            if (!$isValid) {
+                return response()->json(['message' => 'Código QR inválido o expirado'], 422);
+            }
+
+            $student = \App\Models\Student::where('id', $request->student_id)
+                ->where('tenant_id', $tenant->id)
+                ->first();
+
+            if (!$student) {
+                return response()->json(['message' => 'Estudiante no encontrado'], 404);
+            }
+
+            $attendance = Attendance::updateOrCreate(
+                [
+                    'tenant_id' => $tenant->id,
+                    'student_id' => $student->id,
+                    'date' => now()->format('Y-m-d'),
+                ],
+                [
+                    'status' => 'present',
+                    'notes' => 'Registrado vía QR',
+                    'registration_method' => 'qr',
+                ]
+            );
+
+            event(new \App\Events\StudentCheckedIn($student->id, $tenant->slug));
+
+            return response()->json([
+                'success' => true,
+                'message' => '¡Asistencia registrada!',
+                'attendance' => $attendance
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("QR_VERIFY_ERROR: " . $e->getMessage());
+            return response()->json([
+                'message' => 'Error interno del servidor: ' . $e->getMessage(),
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $student = \App\Models\Student::where('id', $request->student_id)
-            ->where('tenant_id', $tenant->id)
-            ->first();
-
-        if (!$student) {
-            return response()->json(['message' => 'Estudiante no encontrado'], 404);
-        }
-
-        $attendance = Attendance::updateOrCreate(
-            [
-                'tenant_id' => $tenant->id,
-                'student_id' => $student->id,
-                'date' => now()->format('Y-m-d'),
-            ],
-            [
-                'status' => 'present',
-                'notes' => 'Registrado vía QR por el usuario',
-                'registration_method' => 'qr',
-            ]
-        );
-
-        // Disparar evento de Broadcasting para Real-Time
-        event(new \App\Events\StudentCheckedIn($student->id, $tenant->slug));
-
-        return response()->json([
-            'message' => '¡Asistencia registrada con éxito!',
-            'attendance' => $attendance
-        ]);
     }
 
     /**
