@@ -184,7 +184,7 @@ class GuardianController extends Controller
             
             try {
                 // Optimizar logo a un máximo de 500x500px para la UI
-                $optimizedPath = $this->imageService->optimize($file, 500, 500, 85);
+                $optimizedPath = $this->imageService->optimize($file, 150, 150, 80);
                 
                 $filename = Str::uuid() . '.webp';
                 $s3Path = 'digitalizatodo/' . $tenantId . '/logo/' . $filename;
@@ -258,7 +258,7 @@ class GuardianController extends Controller
             
             try {
                 // Optimizar a un tamaño manejable para avatares (400x400)
-                $optimizedPath = $this->imageService->optimize($file, 400, 400, 85);
+                $optimizedPath = $this->imageService->optimize($file, 150, 150, 80);
                 
                 $filename = Str::uuid() . '.webp';
                 $s3Path = 'digitalizatodo/' . $tenantId . '/guardians/' . $filename;
