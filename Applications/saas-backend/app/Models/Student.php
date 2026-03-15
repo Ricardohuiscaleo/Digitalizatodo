@@ -44,6 +44,11 @@ class Student extends Model
         return $this->hasMany(Attendance::class);
     }
 
+    public function schedules(): BelongsToMany
+    {
+        return $this->belongsToMany(Schedule::class);
+    }
+
     /**
      * Inscripción activa actual del alumno.
      */

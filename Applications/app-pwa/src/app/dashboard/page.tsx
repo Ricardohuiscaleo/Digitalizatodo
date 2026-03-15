@@ -154,63 +154,64 @@ function HistoryDetailModal({ date, records, branding, onClose }: { date: string
     const dateObj = new Date(date + 'T12:00:00');
     const dateStr = dateObj.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
 
-    // Lógica de Swipe
     const [dragY, setDragY] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const startY = useRef(0);
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    // Bloquear scroll del body mientras el modal está abierto
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = ''; };
+    }, []);
 
     const handleTouchStart = (e: React.TouchEvent) => {
+        // Solo permitir swipe si el contenido scrolleable está en top
+        if (scrollRef.current && scrollRef.current.scrollTop > 0) return;
         startY.current = e.touches[0].pageY;
         setIsDragging(true);
     };
 
     const handleTouchMove = (e: React.TouchEvent) => {
-        const currentY = e.touches[0].pageY;
-        const deltaY = currentY - startY.current;
-        if (deltaY > 0) setDragY(deltaY);
-    };
-
-    const handleTouchEnd = () => {
-        setIsDragging(false);
-        if (dragY > 100) {
-            onClose();
-        } else {
-            setDragY(0);
+        if (!isDragging) return;
+        const deltaY = e.touches[0].pageY - startY.current;
+        if (deltaY > 0) {
+            e.preventDefault();
+            setDragY(deltaY);
         }
     };
 
+    const handleTouchEnd = () => {
+        if (!isDragging) return;
+        setIsDragging(false);
+        if (dragY > 100) onClose();
+        else setDragY(0);
+    };
+
     return (
-        <div 
-            className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in duration-200" 
+        <div
+            className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in duration-200"
             onClick={onClose}
         >
-            <div 
+            <div
                 className={`bg-white w-full max-w-lg rounded-t-[2.5rem] md:rounded-[2.5rem] p-6 shadow-2xl ${!isDragging ? 'transition-all duration-300' : ''}`}
-                style={{ 
-                    transform: `translateY(${dragY}px)`,
-                    opacity: 1 - dragY / 400 
-                }}
+                style={{ transform: `translateY(${dragY}px)`, opacity: 1 - dragY / 400 }}
                 onClick={e => e.stopPropagation()}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
             >
-                {/* Handle para Swipe en Mobile */}
+                {/* Handle swipe */}
                 <div className="flex justify-center mb-4 md:hidden">
                     <div className="w-12 h-1.5 bg-zinc-200 rounded-full" />
                 </div>
 
-                <div className="flex justify-between items-center mb-6">
-                    <div>
-                        <h2 className="text-xl font-black text-zinc-900 uppercase tracking-tighter leading-none">{dateStr}</h2>
-                        <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-1">{records.length} asistentes</p>
-                    </div>
-                    <button onClick={onClose} className="w-10 h-10 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-500 hover:bg-zinc-200 transition-all">
-                        <X size={20} />
-                    </button>
+                <div className="mb-6">
+                    <h2 className="text-xl font-black text-zinc-900 uppercase tracking-tighter leading-none">{dateStr}</h2>
+                    <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-1">{records.length} asistentes</p>
                 </div>
 
-                <div className="max-h-[60vh] overflow-y-auto space-y-3 pr-2 scrollbar-hide">
+                <div ref={scrollRef} className="max-h-[60vh] overflow-y-auto space-y-3 pr-2 scrollbar-hide">
                     {records.map((r: any) => (
                         <div key={r.id} className="flex items-center justify-between p-3 bg-zinc-50 rounded-2xl border border-zinc-100">
                             <div className="flex items-center gap-3">
@@ -230,14 +231,6 @@ function HistoryDetailModal({ date, records, branding, onClose }: { date: string
                         </div>
                     ))}
                 </div>
-
-                <button 
-                    onClick={onClose}
-                    className="w-full mt-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 text-white"
-                    style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
-                >
-                    Cerrar Detalle
-                </button>
             </div>
         </div>
     );
@@ -371,6 +364,9 @@ export default function App() {
         };
     }, [showQRModal, refreshPayers]);
 
+    // Estado para estudiante detectado via QR (se pasa al modal)
+    const [lastCheckedInStudent, setLastCheckedInStudent] = useState<any>(null);
+
     // REAL-TIME DE VERDAD CON WEBSOCKETS (LARAVEL REVERB)
     useEffect(() => {
         const key = process.env.NEXT_PUBLIC_REVERB_APP_KEY;
@@ -382,15 +378,21 @@ export default function App() {
 
         const channel = echo.channel(`attendance.${branding.slug}`);
         
-        channel.listen('.student.checked-in', (data: { studentId: string | number }) => {
+        channel.listen('.student.checked-in', (data: { studentId: string | number; studentName?: string; studentPhoto?: string }) => {
             console.log('Real-time check-in received:', data);
             setAttendance(prev => {
                 const next = new Set(prev);
                 next.add(String(data.studentId));
                 return next;
             });
+            // Notificar al modal QR si está abierto
+            setLastCheckedInStudent({
+                id: data.studentId,
+                name: data.studentName || 'Alumno',
+                photo: data.studentPhoto,
+                _ts: Date.now()
+            });
             refreshPayers();
-            // Actualizar historial en tiempo real
             getAttendanceHistory(branding.slug!, token!).then(h => {
                 if (h?.attendance) setAttendanceHistory(h.attendance);
             });
@@ -1714,9 +1716,11 @@ export default function App() {
                 <DynamicQRModal 
                     tenantSlug={branding?.slug ?? ''} 
                     authToken={token ?? ''} 
-                    onClose={() => setShowQRModal(false)}
+                    onClose={() => { setShowQRModal(false); setLastCheckedInStudent(null); }}
                     primaryColor={branding?.primaryColor || '#a855f7'}
                     payers={payers}
+                    checkedInStudent={lastCheckedInStudent}
+                    onStudentAcknowledged={() => setLastCheckedInStudent(null)}
                 />
             )}
 
@@ -1795,7 +1799,7 @@ function TabButton({ icon: Icon, label, active, onClick, primaryColor = '#000' }
     );
 }
 
-function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers }: { onClose: () => void; tenantSlug: string; authToken: string; primaryColor: string; payers: any[] }) {
+function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers, checkedInStudent, onStudentAcknowledged }: { onClose: () => void; tenantSlug: string; authToken: string; primaryColor: string; payers: any[]; checkedInStudent?: any; onStudentAcknowledged?: () => void }) {
     const [qrData, setQrData] = useState<string | null>(null);
     const [timeLeft, setTimeLeft] = useState(60);
     const [loading, setLoading] = useState(true);
@@ -1841,28 +1845,30 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers }
         return () => clearTimeout(t);
     }, [timeLeft, loading, fetchToken, detectedStudent]);
 
+    // Recibir estudiante detectado desde el dashboard (listener centralizado)
     useEffect(() => {
-        const echo = getEcho();
-        if (!echo || !tenantSlug) return;
-
-        const channel = echo.channel(`attendance.${tenantSlug}`);
-        channel.listen('.student.checked-in', (data: { studentId: string | number, studentName?: string, studentPhoto?: string }) => {
-            console.log('Modal received check-in:', data);
-            
-            // Usamos los datos que vienen directo del evento si existen
-            setDetectedStudent({
-                id: data.studentId,
-                name: data.studentName || "Alumno",
-                photo: data.studentPhoto
-            });
-            
+        if (checkedInStudent) {
+            setDetectedStudent(checkedInStudent);
+            setContinueCountdown(7);
             if (window.navigator?.vibrate) window.navigator.vibrate(200);
-        });
+        }
+    }, [checkedInStudent?._ts]);
 
-        return () => {
-            echo.leaveChannel(`attendance.${tenantSlug}`);
-        };
-    }, [tenantSlug]);
+    // Auto-continuar después de 7 segundos
+    const [continueCountdown, setContinueCountdown] = useState(0);
+    useEffect(() => {
+        if (!detectedStudent || continueCountdown <= 0) return;
+        const t = setTimeout(() => {
+            if (continueCountdown === 1) {
+                setDetectedStudent(null);
+                onStudentAcknowledged?.();
+                fetchToken();
+            } else {
+                setContinueCountdown(prev => prev - 1);
+            }
+        }, 1000);
+        return () => clearTimeout(t);
+    }, [detectedStudent, continueCountdown, fetchToken, onStudentAcknowledged]);
 
     const progressPercent = (timeLeft / 60) * 100;
 
@@ -1898,11 +1904,12 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers }
                         </div>
 
                         <button
-                            onClick={() => { setDetectedStudent(null); fetchToken(); }}
+                            onClick={() => { setDetectedStudent(null); onStudentAcknowledged?.(); setContinueCountdown(0); fetchToken(); }}
+                            className="relative w-full py-4 rounded-2xl text-white font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all overflow-hidden"
                             style={{ backgroundColor: primaryColor }}
-                            className="w-full py-4 rounded-2xl text-white font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
                         >
-                            Continuar
+                            <div className="absolute inset-0 bg-black/15 origin-right transition-transform duration-1000 ease-linear" style={{ transform: `scaleX(${continueCountdown / 7})` }} />
+                            <span className="relative z-10">Siguiente ({continueCountdown}s)</span>
                         </button>
                     </div>
                 ) : (
