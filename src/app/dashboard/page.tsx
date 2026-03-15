@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { getEcho, reconnect } from '@/lib/echo';
+import { todayCL, nowCL } from '@/lib/utils';
 import { QRCodeCanvas } from 'qrcode.react';
 import {
     Users,
@@ -303,12 +304,12 @@ export default function App() {
 
     const [searchTerm, setSearchTerm] = useState('');
     const [paymentFilter, setPaymentFilter] = useState('pending');
-    const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+    const [selectedMonth, setSelectedMonth] = useState(nowCL().getMonth() + 1);
+    const [selectedYear, setSelectedYear] = useState(nowCL().getFullYear());
     const [expandedPayerId, setExpandedPayerId] = useState<string | null>(null);
     const [historyPage, setHistoryPage] = useState(0);
     const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
-    const [now, setNow] = useState(new Date());
+    const [now, setNow] = useState(nowCL());
     const [copied, setCopied] = useState(false);
     const [regPageCode, setRegPageCode] = useState<string | null>(null);
     const [generatingPage, setGeneratingPage] = useState(false);
@@ -346,7 +347,7 @@ export default function App() {
     }, [token, paymentFilter, selectedMonth, selectedYear]);
 
     useEffect(() => {
-        const t = setInterval(() => setNow(new Date()), 60000);
+        const t = setInterval(() => setNow(nowCL()), 60000);
         return () => clearInterval(t);
     }, []);
 
@@ -374,7 +375,7 @@ export default function App() {
             const t = tokenRef.current;
             const s = brandingSlugRef.current;
             if (!t || !s) return;
-            getPayers(s, t, { month: new Date().getMonth() + 1, year: new Date().getFullYear() })
+            getPayers(s, t, { month: nowCL().getMonth() + 1, year: nowCL().getFullYear() })
                 .then(d => { if (d?.payers) setPayers(d.payers); })
                 .catch(() => {});
             getAttendanceHistory(s, t)
@@ -388,16 +389,22 @@ export default function App() {
                 setAttendance(prev => new Set(prev).add(String(data.studentId)));
                 setLastCheckedInStudent({ id: data.studentId, name: data.studentName || 'Alumno', photo: data.studentPhoto, _ts: Date.now() });
                 // Optimistic: inyectar registro en historial inmediatamente
-                const now = new Date();
                 setAttendanceHistory(prev => [{
                     id: `ws-${Date.now()}`,
                     student_id: data.studentId,
                     student: { id: data.studentId, name: data.studentName || 'Alumno', photo: data.studentPhoto },
-                    date: now.toISOString().split('T')[0],
+                    date: todayCL(),
                     status: 'present',
-                    created_at: now.toISOString(),
+                    created_at: new Date().toISOString(),
                     registration_method: 'qr',
                 }, ...prev]);
+                safeRefresh();
+            })
+            .listen('.student.checked-out', (data: { studentId: string | number }) => {
+                console.log('[WS] ❌ student.checked-out:', data);
+                setAttendance(prev => { const next = new Set(prev); next.delete(String(data.studentId)); return next; });
+                const todayStr = todayCL();
+                setAttendanceHistory(prev => prev.filter(r => !(String(r.student_id) === String(data.studentId) && (r.date || r.created_at?.split('T')[0]) === todayStr)));
                 safeRefresh();
             });
 
