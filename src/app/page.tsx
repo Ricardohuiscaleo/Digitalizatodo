@@ -110,7 +110,7 @@ export default function LoginPage() {
 
         {/* Branding Optimizado con TAGS */}
         <div className="flex flex-col items-center gap-3">
-          <div className="h-20 w-20 rounded-[2rem] overflow-hidden flex items-center justify-center transition-all duration-500 shadow-sm border border-zinc-50 bg-white">
+          <div className="h-20 w-20 rounded-full overflow-hidden flex items-center justify-center transition-all duration-500 shadow-sm border border-zinc-50 bg-white">
             {tenant?.logo
               ? <img src={tenant.logo} className="h-full w-full object-contain p-2" />
               : <img src="/DLogo-v2.webp" className="h-full w-full object-contain p-2" />
@@ -165,7 +165,7 @@ export default function LoginPage() {
                       autoFocus
                       value={email}
                       onChange={e => setEmail(e.target.value)}
-                      placeholder="hola@tu-dojo.com"
+                      placeholder="mi@correo.com"
                       className="w-full h-14 bg-zinc-50 rounded-2xl px-6 text-sm font-medium text-zinc-900 placeholder:text-zinc-300 focus:bg-white focus:ring-4 ring-zinc-100 outline-none transition-all"
                     />
                     {isIdentifying && (
