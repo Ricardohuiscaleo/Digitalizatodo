@@ -206,10 +206,11 @@ export async function registerStudent(tenantId: string, data: any) {
     }
 }
 
-export async function getAttendanceHistory(tenantId: string, token: string, studentId?: string) {
+export async function getAttendanceHistory(tenantId: string, token: string, studentId?: string, month?: string) {
     try {
         const url = new URL(`${API_URL}/${tenantId}/attendance`);
         if (studentId) url.searchParams.append('student_id', studentId);
+        if (month) url.searchParams.append('month', month);
 
         const response = await fetch(url.toString(), {
             method: 'GET',

@@ -27,6 +27,7 @@ import { useBranding } from "@/context/BrandingContext";
 import { getProfile, markAttendanceViaQR, resumeSession } from "@/lib/api";
 import jsQR from "jsqr";
 import BottomNav, { NavSection } from "@/components/Navigation/BottomNav";
+import { todayCL } from "@/lib/utils";
 import StudentCalendar from "@/components/Calendar/StudentCalendar";
 import { getEcho } from "@/lib/echo";
 
@@ -311,6 +312,10 @@ export default function StudentDashboard() {
             console.log('Real-time check-in received:', data);
             refreshData();
         });
+        attChannel.listen('.student.checked-out', (data: any) => {
+            console.log('Real-time check-out received:', data);
+            refreshData();
+        });
 
         // Canal de Pagos (Vital para el apoderado: ver aprobación en segundos)
         const payChannel = echo.channel(`payments.${branding.slug}`);
@@ -557,7 +562,7 @@ export default function StudentDashboard() {
                     </h3>
                 </div>
                 {students.map((student: any) => {
-                    const todayStr = new Date().toISOString().split('T')[0];
+                    const todayStr = todayCL();
                     const isPresentToday = (student.recent_attendance || []).some((a: any) => a.date === todayStr && a.status === 'present');
                     return (
                     <div
