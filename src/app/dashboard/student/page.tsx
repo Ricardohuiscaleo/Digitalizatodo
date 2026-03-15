@@ -444,6 +444,10 @@ export default function StudentDashboard() {
     const bankInfo = data?.bank_info;
     const totalDue = data?.total_due || 0;
 
+    const hasPendingReview = students.some((s: any) => 
+        (s.payments || []).some((p: any) => p.status === 'pending_review')
+    );
+
     /* ─── Sections Rendering ─── */
 
     const renderHome = () => (
@@ -465,28 +469,51 @@ export default function StudentDashboard() {
                 </div>
             </div>
 
-            {/* Deuda / Status Card */}
+            {/* Deuda / Status Card (Sistema de 3 Colores) */}
             {totalDue > 0 ? (
-                <div className="bg-gradient-to-br from-red-500 to-orange-600 rounded-[2.5rem] p-6 text-white shadow-xl shadow-red-500/20 relative overflow-hidden group">
-                    <div className="relative z-10">
-                        <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Saldo pendiente</p>
-                        <h2 className="text-4xl font-black mb-4">${Number(totalDue).toLocaleString("es-CL")}</h2>
-                        <button 
-                            onClick={() => setActiveSection("payments")}
-                            className="bg-white/20 backdrop-blur-md border border-white/30 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-white/30 transition-all flex items-center gap-2"
-                        >
-                            Pagar ahora <ChevronRight size={14} />
-                        </button>
+                hasPendingReview ? (
+                    /* ESTADO 2: EN REVISIÓN (INDIGO) */
+                    <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[2.5rem] p-6 text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden group">
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-2 mb-1">
+                                <RefreshCw size={12} className="animate-spin" />
+                                <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Pago en revisión</p>
+                            </div>
+                            <h2 className="text-4xl font-black mb-4">${Number(totalDue).toLocaleString("es-CL")}</h2>
+                            <button 
+                                onClick={() => setActiveSection("payments")}
+                                className="bg-white/20 backdrop-blur-md border border-white/30 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-white/30 transition-all flex items-center gap-2"
+                            >
+                                Ver mis pagos <ChevronRight size={14} />
+                            </button>
+                        </div>
+                        <CreditCard className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10 -rotate-12 group-hover:scale-110 transition-transform duration-700" />
                     </div>
-                    <CreditCard className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10 -rotate-12 group-hover:scale-110 transition-transform duration-700" />
-                </div>
+                ) : (
+                    /* ESTADO 1: DEUDA CRÍTICA (ROJO) */
+                    <div className="bg-gradient-to-br from-red-500 to-orange-600 rounded-[2.5rem] p-6 text-white shadow-xl shadow-red-500/20 relative overflow-hidden group">
+                        <div className="relative z-10">
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Saldo pendiente</p>
+                            <h2 className="text-4xl font-black mb-4">${Number(totalDue).toLocaleString("es-CL")}</h2>
+                            <button 
+                                onClick={() => setActiveSection("payments")}
+                                className="bg-white/20 backdrop-blur-md border border-white/30 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-white/30 transition-all flex items-center gap-2"
+                            >
+                                Pagar ahora <ChevronRight size={14} />
+                            </button>
+                        </div>
+                        <CreditCard className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10 -rotate-12 group-hover:scale-110 transition-transform duration-700" />
+                    </div>
+                )
             ) : (
+                /* ESTADO 3: AL DÍA (VERDE) */
                 <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-[2.5rem] p-6 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden">
                     <div className="relative z-10">
                         <CheckCircle2 className="w-8 h-8 mb-2" />
                         <h2 className="text-xl font-black">¡Estás al día!</h2>
                         <p className="text-xs opacity-80 mt-1">No tienes mensualidades pendientes.</p>
                     </div>
+                    <CreditCard className="absolute -right-4 -bottom-4 w-32 h-32 opacity-5 -rotate-12" />
                 </div>
             )}
 
