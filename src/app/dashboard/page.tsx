@@ -149,6 +149,57 @@ function PaymentActionModal({ payer, onConfirm, onCancel, primaryColor, formatMo
     );
 }
 
+function HistoryDetailModal({ date, records, branding, onClose }: { date: string; records: any[]; branding: any; onClose: () => void }) {
+    if (!date) return null;
+    const dateObj = new Date(date + 'T12:00:00');
+    const dateStr = dateObj.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
+
+    return (
+        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in duration-200" onClick={onClose}>
+            <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] md:rounded-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
+                <div className="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 className="text-xl font-black text-zinc-900 uppercase tracking-tighter leading-none">{dateStr}</h2>
+                        <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-1">{records.length} asistentes</p>
+                    </div>
+                    <button onClick={onClose} className="w-10 h-10 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-500 hover:bg-zinc-200 transition-all">
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <div className="max-h-[60vh] overflow-y-auto space-y-3 pr-2 scrollbar-hide">
+                    {records.map((r: any) => (
+                        <div key={r.id} className="flex items-center justify-between p-3 bg-zinc-50 rounded-2xl border border-zinc-100">
+                            <div className="flex items-center gap-3">
+                                <img src={r.student?.photo} className="w-10 h-10 rounded-full object-cover border border-white shadow-sm" alt={r.student?.name} />
+                                <div>
+                                    <p className="text-sm font-black text-zinc-900 uppercase leading-none">{r.student?.name}</p>
+                                    <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest mt-1">
+                                        {r.registration_method === 'qr' ? 'Escaneado' : 'Manual'} • {new Date(r.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                </div>
+                            </div>
+                            {r.registration_method === 'qr' && (
+                                <div className="bg-emerald-500 p-1.5 rounded-xl">
+                                    <QrCode size={14} className="text-white" />
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+                <button 
+                    onClick={onClose}
+                    className="w-full mt-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 text-white"
+                    style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
+                >
+                    Cerrar Detalle
+                </button>
+            </div>
+        </div>
+    );
+}
+
 function ProofModal({ url, onClose }: { url: string; onClose: () => void }) {
     return (
         <div 
@@ -228,6 +279,7 @@ export default function App() {
     const [showQRModal, setShowQRModal] = useState(false);
     const [proofModalUrl, setProofModalUrl] = useState<string | null>(null);
     const [paymentActionPayer, setPaymentActionPayer] = useState<any>(null);
+    const [selectedHistoryDate, setSelectedHistoryDate] = useState<string | null>(null);
 
     // --- PERSISTENCE & DATA FETCHING ---
 
@@ -674,8 +726,8 @@ export default function App() {
 
                         {presentToday > 0 ? (
                             <div className="space-y-4">
-                                <div className="flex -space-x-2 overflow-x-auto pb-1 scrollbar-hide">
-                                    {allStudents.filter(s => attendance.has(s.id)).map(s => (
+                                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                                    {allStudents.filter(s => attendance.has(s.id)).slice(0, 5).map(s => (
                                         <img
                                             key={s.id}
                                             className="inline-block h-10 w-10 rounded-full border-2 border-white shadow-sm object-cover shrink-0"
@@ -683,9 +735,14 @@ export default function App() {
                                             alt={s.name}
                                         />
                                     ))}
-                                    </div>
+                                    {presentToday > 5 && (
+                                        <div className="h-10 w-10 rounded-full bg-zinc-100 border-2 border-white flex items-center justify-center shrink-0 shadow-sm">
+                                            <span className="text-[10px] font-black text-zinc-500">+{presentToday - 5}</span>
+                                        </div>
+                                    )}
                                 </div>
-                            ) : (
+                            </div>
+                        ) : (
                             <div className="flex items-center justify-center gap-3 py-6 px-4 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200 w-full group transition-all">
                                 <CalendarCheck size={20} className="text-zinc-300 shrink-0" />
                                 <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">Sin registros hoy</p>
@@ -728,7 +785,11 @@ export default function App() {
                                 const students = records.filter(r => r.status === 'present' && r.student);
 
                                 return (
-                                    <div key={date} className="bg-white hover:bg-zinc-50 rounded-[2rem] p-3 border border-zinc-100 transition-all active:scale-[0.98]">
+                                    <div 
+                                        key={date} 
+                                        onClick={() => setSelectedHistoryDate(date)}
+                                        className="bg-white hover:bg-zinc-50 rounded-[2rem] p-3 border border-zinc-100 transition-all active:scale-[0.98] cursor-pointer group"
+                                    >
                                         <div className="flex items-center justify-between gap-3">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-2xl bg-zinc-50 border border-zinc-100 flex flex-col items-center justify-center shrink-0 shadow-sm">
@@ -1112,10 +1173,21 @@ export default function App() {
                                         </div>
 
                                         <div className="flex items-center gap-2 mt-1">
-                                            <div className="flex -space-x-1.5">
-                                                {payer.enrolledStudents.slice(0, 3).map((s: any) => (
-                                                    <img key={s.id} src={s.photo} className="w-5 h-5 rounded-full border-2 border-white object-cover shadow-sm" />
+                                            <div className="flex items-center -space-x-3">
+                                                {payer.enrolledStudents.slice(0, 5).map((r: any) => (
+                                                    <img 
+                                                        key={r.id} 
+                                                        src={r.photo} 
+                                                        className="w-8 h-8 rounded-full border-2 border-white object-cover shadow-sm group-hover:translate-y-[-2px] transition-transform" 
+                                                        alt={r.name}
+                                                    />
                                                 ))}
+                                                {payer.enrolledStudents.length > 5 && (
+                                                    <div className="w-8 h-8 rounded-full bg-zinc-100 border-2 border-white flex items-center justify-center shrink-0 shadow-sm z-10">
+                                                        <span className="text-[8px] font-black text-zinc-500">+{payer.enrolledStudents.length - 5}</span>
+                                                    </div>
+                                                )}
+                                                <ChevronRight size={14} className="text-zinc-300 ml-2 group-hover:translate-x-1 transition-transform" />
                                             </div>
                                             <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest leading-none">{numEnrollments} {vocab.memberLabel}s</span>
                                         </div>
