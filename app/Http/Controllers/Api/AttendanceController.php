@@ -96,9 +96,15 @@ class AttendanceController extends Controller
             'student_id' => 'required|exists:students,id',
         ]);
 
-        $tenantId = AttendanceQRController::validateToken($request->qr_token);
+        $isValid = AttendanceQRController::isValidForTenant($request->qr_token, $tenant->id);
+        
+        // También chequeamos cache por si acaso (compatibilidad)
+        if (!$isValid) {
+            $cachedTenantId = AttendanceQRController::validateToken($request->qr_token);
+            $isValid = ($cachedTenantId == $tenant->id);
+        }
 
-        if (!$tenantId || $tenantId != $tenant->id) {
+        if (!$isValid) {
             return response()->json(['message' => 'Código QR inválido o expirado'], 422);
         }
 
