@@ -550,59 +550,27 @@ export default function StudentDashboard() {
     );
 
     const renderCalendar = () => {
-        // Combinamos la asistencia de todos los alumnos en un solo array
+        // Combinamos la asistencia de todos los alumnos en un solo array, incluyendo sus fotos
         const combinedAttendance = students.flatMap((s: any) => 
             (s.recent_attendance || []).map((a: any) => ({ 
                 ...a, 
-                studentName: s.name 
+                studentName: s.name,
+                studentPhoto: s.photo
             }))
         );
 
         return (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-                <header>
-                    <h2 className="text-2xl font-black text-zinc-900">Mi Calendario</h2>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mt-1">Actividad de todos mis alumnos</p>
+            <div className="h-[calc(100vh-120px)] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
+                <header className="mb-4 shrink-0 px-1">
+                    <h2 className="text-2xl font-black text-zinc-900">Asistencia</h2>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mt-1">Actividad de todos tus alumnos</p>
                 </header>
 
-                <div className="space-y-8">
+                <div className="flex-1 min-h-0">
                     <StudentCalendar 
                         attendance={combinedAttendance} 
                         primaryColor={primaryColor} 
                     />
-                    
-                    {/* Guía de Alumnos */}
-                    <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-8 shadow-sm">
-                        <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-6 flex items-center gap-2">
-                            <User size={12} /> Alumnos Vinculados
-                        </h3>
-                        <div className="grid grid-cols-1 gap-4">
-                            {students.map((student: any) => (
-                                <div key={student.id} className="flex items-center justify-between p-3 bg-zinc-50 rounded-2xl border border-zinc-100/50">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl overflow-hidden bg-white border border-zinc-100 shadow-sm">
-                                            {student.photo ? (
-                                                <img src={student.photo} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-xs font-black text-zinc-200">
-                                                    {student.name[0]}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <p className="text-[11px] font-black text-zinc-900">{student.name}</p>
-                                            <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter">{student.category}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-1">
-                                         {(student.recent_attendance || []).filter((a:any) => a.status === 'present').length > 0 && (
-                                             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-                                         )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </div>
             </div>
         );
