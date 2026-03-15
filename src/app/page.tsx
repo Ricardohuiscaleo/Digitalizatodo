@@ -108,13 +108,18 @@ export default function LoginPage() {
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-[360px] space-y-8 animate-in fade-in duration-300">
 
-        {/* Branding Optimizado con TAGS */}
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-20 w-20 rounded-full overflow-hidden flex items-center justify-center transition-all duration-500 shadow-sm border border-zinc-50 bg-white">
-            {tenant?.logo
-              ? <img src={tenant.logo} className="h-full w-full object-contain p-2" />
-              : <img src="/DLogo-v2.webp" className="h-full w-full object-contain p-2" />
-            }
+        {/* Branding Optimizado con Efecto Marco Premium */}
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/20 to-orange-500/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            <div className="h-24 w-24 rounded-full p-1 bg-gradient-to-tr from-zinc-100 to-white shadow-xl flex items-center justify-center overflow-hidden transition-all duration-700 hover:scale-105 relative border border-zinc-50">
+                <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden ring-4 ring-white shadow-inner">
+                    {tenant?.logo
+                      ? <img src={tenant.logo} className="h-full w-full object-cover" />
+                      : <img src="/DLogo-v2.webp" className="h-full w-full object-cover" />
+                    }
+                </div>
+            </div>
           </div>
           <div className="text-center">
             <h1 className="text-xl font-black text-zinc-900 tracking-tight">{tenant?.name || "Digitaliza Todo"}</h1>
