@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class AttendanceController extends Controller
 {
@@ -96,15 +97,27 @@ class AttendanceController extends Controller
             'student_id' => 'required|exists:students,id',
         ]);
 
+        Log::info("verifyQR called", [
+            'tenant_slug_path' => $tenantSlug,
+            'resolved_tenant_id' => $tenant->id,
+            'student_id' => $request->student_id,
+            'qr_token' => $request->qr_token
+        ]);
+
         $isValid = AttendanceQRController::isValidForTenant($request->qr_token, $tenant->id);
         
         // También chequeamos cache por si acaso (compatibilidad)
         if (!$isValid) {
             $cachedTenantId = AttendanceQRController::validateToken($request->qr_token);
+            Log::info("Checking cache fallback", ['cachedTenantId' => $cachedTenantId]);
             $isValid = ($cachedTenantId == $tenant->id);
         }
 
         if (!$isValid) {
+            Log::warning("QR Validation FAILED in verifyQR", [
+                'qr_token' => $request->qr_token,
+                'tenant_id' => $tenant->id
+            ]);
             return response()->json(['message' => 'Código QR inválido o expirado'], 422);
         }
 
