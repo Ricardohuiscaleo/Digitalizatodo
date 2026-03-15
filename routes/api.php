@@ -107,6 +107,13 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
                     Route::post('settings/registration-page', [RegistrationPageController::class , 'generate']);
                     Route::get('settings/registration-page', [RegistrationPageController::class , 'getCode']);
                     Route::delete('settings/registration-page', [RegistrationPageController::class , 'deactivate']);
+
+                    // Gestión de Horarios
+                    Route::get('schedules', [\App\Http\Controllers\Api\ScheduleController::class, 'index']);
+                    Route::post('schedules', [\App\Http\Controllers\Api\ScheduleController::class, 'store']);
+                    Route::put('schedules/{id}', [\App\Http\Controllers\Api\ScheduleController::class, 'update']);
+                    Route::delete('schedules/{id}', [\App\Http\Controllers\Api\ScheduleController::class, 'destroy']);
+                    Route::post('schedules/{id}/students', [\App\Http\Controllers\Api\ScheduleController::class, 'assignStudents']);
                 }
                 );
             }
