@@ -91,7 +91,7 @@ class StudentController extends Controller
             
             try {
                 // Optimizar y convertir a WebP
-                $optimizedPath = $this->imageService->optimize($file);
+                $optimizedPath = $this->imageService->optimize($file, 150, 150, 80);
                 
                 $filename = "student_{$student->id}_" . time() . ".webp";
                 $s3Path = "tenants/{$tenantId}/students/{$filename}";
