@@ -1672,12 +1672,12 @@ function TabButton({ icon: Icon, label, active, onClick, primaryColor = '#000' }
 
 function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers }: { onClose: () => void; tenantSlug: string; authToken: string; primaryColor: string; payers: any[] }) {
     const [qrData, setQrData] = useState<string | null>(null);
-    const [timeLeft, setTimeLeft] = useState(120);
+    const [timeLeft, setTimeLeft] = useState(60);
     const [loading, setLoading] = useState(true);
     const [detectedStudent, setDetectedStudent] = useState<any>(null);
 
     const fetchToken = useCallback(async () => {
-        if (detectedStudent) return; // Pausar si hay alguien detectado
+        if (detectedStudent) return;
         try {
             setLoading(true);
             const API = process.env.NEXT_PUBLIC_API_URL || "https://admin.digitalizatodo.cl/api";
@@ -1685,16 +1685,12 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers }
                 headers: { Authorization: `Bearer ${authToken}` }
             });
             
-            if (!res.ok) {
-                const errorText = await res.text();
-                console.error("Server error response:", errorText);
-                return;
-            }
+            if (!res.ok) return;
 
             const data = await res.json();
             if (data.token) {
                 setQrData(data.token);
-                setTimeLeft(data.expires_in || 120);
+                setTimeLeft(data.expires_in || 60);
             }
         } catch (error) {
             console.error("Error fetching QR token:", error);
@@ -1720,29 +1716,30 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers }
         return () => clearTimeout(t);
     }, [timeLeft, loading, fetchToken, detectedStudent]);
 
-    // Escuchar ingresos en tiempo real dentro del modal
     useEffect(() => {
         const echo = getEcho();
         if (!echo || !tenantSlug) return;
 
         const channel = echo.channel(`attendance.${tenantSlug}`);
-        channel.listen('.student.checked-in', (data: { studentId: string | number }) => {
+        channel.listen('.student.checked-in', (data: { studentId: string | number, studentName?: string, studentPhoto?: string }) => {
             console.log('Modal received check-in:', data);
-            // Buscar estudiante en la lista de payers
-            const student = payers.flatMap(p => p.enrolledStudents || []).find(s => String(s.id) === String(data.studentId));
-            if (student) {
-                setDetectedStudent(student);
-                // Feedback háptico si es móvil
-                if (window.navigator?.vibrate) window.navigator.vibrate(200);
-            }
+            
+            // Usamos los datos que vienen directo del evento si existen
+            setDetectedStudent({
+                id: data.studentId,
+                name: data.studentName || "Alumno",
+                photo: data.studentPhoto
+            });
+            
+            if (window.navigator?.vibrate) window.navigator.vibrate(200);
         });
 
         return () => {
             echo.leaveChannel(`attendance.${tenantSlug}`);
         };
-    }, [tenantSlug, payers]);
+    }, [tenantSlug]);
 
-    const progressPercent = (timeLeft / 120) * 100;
+    const progressPercent = (timeLeft / 60) * 100;
 
     return (
         <div className="fixed inset-0 z-[100] bg-zinc-900/90 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -1751,7 +1748,6 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers }
                 {detectedStudent ? (
                     <div className="p-8 text-center animate-in zoom-in-95 duration-300">
                         <div className="relative mx-auto w-32 h-32 mb-6">
-                            <div className="absolute inset-0 bg-emerald-500 animate-ping opacity-20 rounded-full"></div>
                             <div className="relative w-full h-full rounded-full border-4 border-emerald-500 overflow-hidden bg-zinc-100 shadow-xl">
                                 {detectedStudent.photo ? (
                                     <img src={detectedStudent.photo} className="w-full h-full object-cover" alt={detectedStudent.name} />
@@ -1766,8 +1762,8 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers }
                             </div>
                         </div>
 
-                        <h2 className="text-3xl font-black text-zinc-950 tracking-tighter mb-1 uppercase">¡Bienvenid@!</h2>
-                        <p className="text-xl font-bold text-emerald-600 mb-6">{detectedStudent.name}</p>
+                        <h2 className="text-2xl font-black text-zinc-950 tracking-tighter mb-1">¡Hola, {detectedStudent.name.split(' ')[0]}!</h2>
+                        <p className="text-xl font-bold text-emerald-600 mb-6">Bienvenid@ 😊</p>
 
                         <div className="bg-emerald-50 rounded-2xl p-4 mb-8 border border-emerald-100">
                             <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Asistencia Registrada</p>
@@ -1779,9 +1775,8 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers }
                         <button
                             onClick={() => { setDetectedStudent(null); fetchToken(); }}
                             style={{ backgroundColor: primaryColor }}
-                            className="w-full py-4 rounded-2xl text-white font-black text-sm uppercase tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
+                            className="w-full py-4 rounded-2xl text-white font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
                         >
-                            <RefreshCw size={18} />
                             Continuar
                         </button>
                     </div>
