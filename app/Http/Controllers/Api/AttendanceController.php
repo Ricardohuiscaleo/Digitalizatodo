@@ -38,6 +38,11 @@ class AttendanceController extends Controller
             $query->where('student_id', $studentId);
         }
 
+        // Filtro por mes: ?month=2025-03
+        if ($month = $request->query('month')) {
+            $query->whereRaw("DATE_FORMAT(date, '%Y-%m') = ?", [$month]);
+        }
+
         $attendances = $query->get();
 
         return response()->json([
@@ -189,7 +194,18 @@ class AttendanceController extends Controller
             return response()->json(['message' => 'No se encontró asistencia para hoy'], 404);
         }
 
+        $student = \App\Models\Student::find($studentId);
         $attendance->delete();
+
+        try {
+            event(new \App\Events\StudentCheckedOut(
+                $studentId,
+                $student?->name ?? '',
+                app('currentTenant')->slug
+            ));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Broadcast checked-out failed', ['error' => $e->getMessage()]);
+        }
 
         return response()->json([
             'message' => 'Asistencia eliminada correctamente'
