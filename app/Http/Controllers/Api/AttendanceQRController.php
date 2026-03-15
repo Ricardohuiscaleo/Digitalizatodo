@@ -24,19 +24,19 @@ class AttendanceQRController extends Controller
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
-        // Generamos un bloque de tiempo de 30 segundos
-        $timeBlock = floor(time() / 30);
+        // Generamos un bloque de tiempo de 2 minutos (120 segundos)
+        $timeBlock = floor(time() / 120);
         $secret = config('app.key');
         
         // El payload es simplemente el ID del tenant asociado a este bloque de tiempo
         $hashString = "tenant:{$tenant->id}|block:{$timeBlock}|secret:{$secret}";
         $token = substr(hash('sha256', $hashString), 0, 16);
 
-        // Retornamos el token, y cuántos segundos le quedan de validez a ESTE ciclo de 30s
-        $expiresIn = 30 - (time() % 30);
+        // Retornamos el token, y cuántos segundos le quedan de validez a ESTE ciclo de 120s
+        $expiresIn = 120 - (time() % 120);
 
-        // Guardamos en caché por la duración del ciclo de 30s + 5 minutos de gracia = 330 segundos total.
-        \Illuminate\Support\Facades\Cache::put("totp_qr_{$token}", $tenant->id, 330);
+        // Guardamos en caché por la duración del ciclo de 2 min + 13 min de gracia = 15 minutos total (900s).
+        \Illuminate\Support\Facades\Cache::put("totp_qr_{$token}", $tenant->id, 900);
 
         Log::info("QR Token Generated", [
             'token' => $token,
@@ -58,7 +58,7 @@ class AttendanceQRController extends Controller
     public static function isValidForTenant($token, $tenantId)
     {
         $secret = config('app.key');
-        $currentBlock = floor(time() / 30);
+        $currentBlock = floor(time() / 120);
         
         Log::info("QR Validation attempt", [
             'token' => $token,
@@ -67,8 +67,8 @@ class AttendanceQRController extends Controller
             'currentBlock' => $currentBlock
         ]);
 
-        // Ventana de tiempo: actual y anterior (60s total)
-        for ($i = 0; $i <= 1; $i++) {
+        // Ventana de tiempo: actual y 4 anteriores (10 minutos total de validez)
+        for ($i = 0; $i <= 4; $i++) {
             $block = $currentBlock - $i;
             $hashString = "tenant:{$tenantId}|block:{$block}|secret:{$secret}";
             $expectedToken = substr(hash('sha256', $hashString), 0, 16);
