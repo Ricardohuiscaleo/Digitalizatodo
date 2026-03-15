@@ -46,38 +46,32 @@ class AttendanceQRController extends Controller
     }
 
     /**
-     * Valida el token del QR escaneado por el alumno.
-     * Permitimos el bloque de tiempo actual Y el inmediatamente anterior por si hay delay de red.
+     * Valida si un token es válido para un tenant específico en la ventana de tiempo actual.
+     */
+    public static function isValidForTenant($token, $tenantId)
+    {
+        $secret = config('app.key');
+        $currentBlock = floor(time() / 30);
+        
+        // Ventana de tiempo: actual y anterior (60s total)
+        for ($i = 0; $i <= 1; $i++) {
+            $block = $currentBlock - $i;
+            $hashString = "tenant:{$tenantId}|block:{$block}|secret:{$secret}";
+            $expectedToken = substr(hash('sha256', $hashString), 0, 16);
+            
+            if (hash_equals($expectedToken, $token)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Mantenemos por compatibilidad para otros usos si existen
      */
     public static function validateToken($token)
     {
-        try {
-            // El token ahora viaja como string directo, sin payload json base64, 
-            // pero para mantener compatibilidad si el frontend aún envía el viejo, verificamos:
-            if (base64_decode($token, true) !== false && is_array(json_decode(base64_decode($token), true))) {
-                // Es el formato viejo, no es válido para este nuevo sistema estricto
-                return false;
-            }
-
-            $secret = config('app.key');
-            $currentBlock = floor(time() / 30);
-            
-            // Verificamos el bloque actual y el bloque anterior (ventana de 60s total)
-            $validBlocks = [$currentBlock, $currentBlock - 1];
-
-            // Dado que el token no contiene el tenant ID explícitamente y necesitamos retornarlo,
-            // pero la relación es 1-1, necesitamos resolver a qué tenant pertenece este token.
-            // Para simplificar y mejorar el perf sin iterar todos los tenants cada escaneo,
-            // guardaremos el tenant_id en caché un par de minutos cuando generamos el QR.
-            
-            // En cambio, usaremos Cache (ya que requerimos retornar el ID del tenant)
-            $tenantId = \Illuminate\Support\Facades\Cache::get("totp_qr_{$token}");
-            
-            return $tenantId;
-
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("Error validando QR TOTP: " . $e->getMessage());
-            return false;
-        }
+        return \Illuminate\Support\Facades\Cache::get("totp_qr_{$token}");
     }
 }
