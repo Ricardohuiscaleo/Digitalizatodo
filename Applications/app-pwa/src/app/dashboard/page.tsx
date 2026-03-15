@@ -1712,7 +1712,7 @@ export default function App() {
             {/* QR DINAMICO MODAL */}
             {showQRModal && (
                 <DynamicQRModal 
-                    tenantSlug={branding.slug ?? ''} 
+                    tenantSlug={branding?.slug ?? ''} 
                     authToken={token ?? ''} 
                     onClose={() => setShowQRModal(false)}
                     primaryColor={branding?.primaryColor || '#a855f7'}
