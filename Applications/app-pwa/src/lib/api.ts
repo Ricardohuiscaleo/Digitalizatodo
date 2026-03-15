@@ -6,7 +6,6 @@ const defaultHeaders = {
 };
 
 async function safeJson(response: Response) {
-    if (!response.ok) return null;
     try {
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") !== -1) {
@@ -15,7 +14,7 @@ async function safeJson(response: Response) {
     } catch (e) {
         console.error("Error parsing JSON:", e);
     }
-    return null;
+    return response.ok ? {} : null;
 }
 
 export async function identifyTenant(email: string) {
