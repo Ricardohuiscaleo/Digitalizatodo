@@ -37,6 +37,8 @@ class AttendanceQRController extends Controller
 
         // Guardamos en caché por la duración del ciclo de 1 min + 4 min de gracia = 5 minutos total (300s).
         \Illuminate\Support\Facades\Cache::put("totp_qr_{$token}", $tenant->id, 300);
+        // Limpiar estado de escaneo previo para este token
+        \Illuminate\Support\Facades\Cache::forget("qr_scanned_{$token}");
 
         Log::debug(" [DEBUG-QR] GENERACION ", [
             'tenant_id' => $tenant->id,
@@ -87,9 +89,25 @@ class AttendanceQRController extends Controller
     }
 
     /**
-     * Mantenemos por compatibilidad para otros usos si existen
+     * Consulta si un token QR fue escaneado.
+     * GET /api/{tenant}/attendance/qr-status?token=xxx
      */
-    public static function validateToken($token)
+    public function status(Request $request, $tenant)
+    {
+        $token = $request->query('token');
+        if (!$token) return response()->json(['scanned' => false]);
+
+        $data = \Illuminate\Support\Facades\Cache::get("qr_scanned_{$token}");
+        if (!$data) return response()->json(['scanned' => false]);
+
+        // Limpiar para que no se repita
+        \Illuminate\Support\Facades\Cache::forget("qr_scanned_{$token}");
+
+        return response()->json([
+            'scanned' => true,
+            'student' => $data,
+        ]);
+    }
     {
         return \Illuminate\Support\Facades\Cache::get("totp_qr_{$token}");
     }

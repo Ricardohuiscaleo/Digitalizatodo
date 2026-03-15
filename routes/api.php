@@ -97,6 +97,7 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
                     Route::post('attendance', [AttendanceController::class , 'store']);
                     Route::delete('attendance/{student_id}', [AttendanceController::class , 'destroy']);
                     Route::get('attendance/qr-token', [AttendanceQRController::class , 'generate']);
+                    Route::get('attendance/qr-status', [AttendanceQRController::class , 'status']);
 
                     // Gestión de Cuentas (Payers)
                     Route::get('payers', [GuardianController::class , 'index']);

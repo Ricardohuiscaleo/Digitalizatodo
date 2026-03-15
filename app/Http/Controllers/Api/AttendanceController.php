@@ -148,6 +148,13 @@ class AttendanceController extends Controller
                 Log::warning("Broadcasting failed but attendance was saved", ['error' => $e->getMessage()]);
             }
 
+            // Guardar en cache para fallback qr-status (por si WebSocket falla)
+            \Illuminate\Support\Facades\Cache::put("qr_scanned_{$request->qr_token}", [
+                'id' => $student->id,
+                'name' => $student->name,
+                'photo' => $student->photo,
+            ], 120);
+
             return response()->json([
                 'success' => true,
                 'message' => '¡Asistencia registrada!',
