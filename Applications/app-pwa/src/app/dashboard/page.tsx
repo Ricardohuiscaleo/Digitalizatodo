@@ -295,6 +295,10 @@ export default function App() {
                 return next;
             });
             refreshPayers();
+            // Actualizar historial en tiempo real
+            getAttendanceHistory(branding.slug!, token!).then(h => {
+                if (h) setAttendanceHistory(h);
+            });
         });
 
         // Pagos Real-Time
@@ -835,8 +839,8 @@ export default function App() {
                                                         <span className="text-[10px] font-black uppercase tracking-widest">Presente</span>
                                                     </div>
                                                     {student.method === 'qr' && (
-                                                        <span className="bg-amber-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-lg flex items-center gap-1 animate-in zoom-in-50">
-                                                            <QrCode size={12} /> QR
+                                                        <span className="bg-emerald-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-lg flex items-center gap-1">
+                                                            <Check size={10} />
                                                         </span>
                                                     )}
                                                 </div>
@@ -878,14 +882,10 @@ export default function App() {
                                         />
                                         {isPresent && (
                                             <div className="absolute -bottom-2 -right-2 bg-emerald-500 rounded-full p-1 border-2 border-emerald-50 shadow-lg">
-                                                {student.method === 'qr' ? <QrCode size={16} className="text-white" /> : <CheckCircle2 className="text-white" size={16} />}
+                                                <CheckCircle2 className="text-white" size={16} />
                                             </div>
                                         )}
-                                        {isPresent && student.method === 'qr' && (
-                                            <div className="absolute -top-1 -right-1 bg-amber-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full shadow-sm animate-pulse uppercase tracking-tighter">
-                                                QR
-                                            </div>
-                                        )}
+                                        {/* QR badge removed */}
                                     </div>
                                     <p className={`font-black text-[9px] text-center leading-tight line-clamp-2 w-full uppercase mt-1 ${isPresent ? 'text-emerald-900' : 'text-zinc-800'}`}>
                                         {student.name.split(' ')[0]}
@@ -1787,7 +1787,7 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers }
                                 <XCircle size={24} />
                             </button>
                             <div className="w-12 h-12 bg-white text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-md border border-zinc-100">
-                                <QrCode size={24} className="animate-pulse" />
+                                <QrCode size={24} />
                             </div>
                             <h2 className="text-xl font-black text-zinc-900 leading-tight">Punto de Marcación</h2>
                             <p className="text-[10px] uppercase font-bold tracking-widest text-zinc-400 mt-1">Escanea el código para ingresar</p>
@@ -1821,7 +1821,7 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers }
                             </div>
 
                             <p className="mt-8 text-[9px] text-zinc-400 font-bold uppercase tracking-widest text-center leading-relaxed">
-                                El código se actualiza automáticamente<br/>por seguridad cada 2 minutos.
+                                El código se actualiza automáticamente<br/>por seguridad cada 1 minuto.
                             </p>
                         </div>
                     </>
