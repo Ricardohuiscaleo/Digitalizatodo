@@ -85,8 +85,7 @@ php artisan storage:link 2>/dev/null || true
 
 mkdir -p /var/log/supervisor /var/log/nginx /tmp/client_body /tmp/proxy_temp /tmp/fastcgi_temp
 
-echo "==> Iniciando Laravel Reverb en background (Puerto 8080)..."
-php artisan reverb:start --host=0.0.0.0 --port=8080 > /dev/null 2>&1 &
+echo "==> Reverb se inicia via supervisord..."
 
-echo "==> Iniciando Nginx + PHP-FPM..."
+echo "==> Iniciando Nginx + PHP-FPM + Reverb..."
 exec /usr/bin/supervisord -c /etc/supervisord.conf
