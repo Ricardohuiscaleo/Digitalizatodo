@@ -452,3 +452,68 @@ export async function getRegistrationPage(code: string) {
         return null;
     }
 }
+
+// ─── Notifications ───────────────────────────────────────────────────────────
+
+export async function getNotifications(tenantId: string, token: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/notifications`, {
+            method: 'GET',
+            cache: 'no-store' as RequestCache,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        return await safeJson(response);
+    } catch {
+        return { unread: 0, notifications: [] };
+    }
+}
+
+export async function markNotificationRead(tenantId: string, token: string, notificationId: number) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/notifications/${notificationId}/read`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        return await safeJson(response);
+    } catch {
+        return null;
+    }
+}
+
+export async function markAllNotificationsRead(tenantId: string, token: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/notifications/read-all`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        return await safeJson(response);
+    } catch {
+        return null;
+    }
+}
+
+// ─── App Updates ─────────────────────────────────────────────────────────────
+
+export async function getAppUpdates(target?: 'staff' | 'student') {
+    try {
+        const url = new URL(`${API_URL}/app-updates`);
+        if (target) url.searchParams.append('target', target);
+        const response = await fetch(url.toString(), {
+            method: 'GET',
+            cache: 'no-store' as RequestCache,
+            headers: defaultHeaders,
+        });
+        return await safeJson(response);
+    } catch {
+        return { latest: null, updates: [] };
+    }
+}
