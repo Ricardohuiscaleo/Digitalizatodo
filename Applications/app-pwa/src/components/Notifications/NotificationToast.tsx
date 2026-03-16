@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Bell, Calendar, CreditCard, Info, X } from "lucide-react";
+import { playNotificationSound } from "@/lib/audio";
 
 interface ToastNotification {
   id: string;
@@ -26,7 +27,7 @@ export default function NotificationToast({ notification, onDismiss, onNavigate 
     if (notification) {
       setVisible(true);
       setExiting(false);
-      try { new Audio('/notification.wav').play().catch(() => {}); } catch {}
+      playNotificationSound();
       const timer = setTimeout(() => dismiss(), 4000);
       return () => clearTimeout(timer);
     }

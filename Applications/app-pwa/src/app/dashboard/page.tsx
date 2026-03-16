@@ -58,6 +58,7 @@ import {
     markNotificationRead,
     getAppUpdates
 } from "@/lib/api";
+import { unlockAudio } from "@/lib/audio";
 
 /* ─── Proof Modal Component ─── */
 /* ─── Payment Action Modal ─── */
@@ -579,6 +580,12 @@ export default function App() {
 
         init();
     }, [setBranding]);
+
+    // Desbloquear AudioContext en primer gesto
+    useEffect(() => {
+        document.addEventListener('click', unlockAudio, { once: true });
+        document.addEventListener('touchstart', unlockAudio, { once: true });
+    }, []);
 
     // Cargar notificaciones y app updates
     useEffect(() => {
