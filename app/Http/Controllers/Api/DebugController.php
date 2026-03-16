@@ -4,113 +4,56 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Cache;
 
 class DebugController extends Controller
 {
     public function index()
     {
-        try {
-            \Illuminate\Support\Facades\Artisan::call('route:clear');
-            \Illuminate\Support\Facades\Artisan::call('config:clear');
-        } catch (\Exception $e) {}
-
         $checks = [
+            'deploy_ver' => 'v102',
             'php_version' => PHP_VERSION,
             'laravel_version' => app()->version(),
             'environment' => app()->environment(),
-            'deploy_ver' => 'v101',
-            'database' => [
-                'connection' => config('database.default'),
-                'host' => config('database.connections.mysql.host'),
-                'database' => config('database.connections.mysql.database'),
-                'username' => config('database.connections.mysql.username'),
-                'port' => config('database.connections.mysql.port'),
+            'broadcast' => [
+                'driver' => config('broadcasting.default'),
+                'reverb_app_id' => config('broadcasting.connections.reverb.app_id'),
+                'reverb_host' => config('reverb.servers.reverb.host', 'not set'),
+                'reverb_port' => config('reverb.servers.reverb.port', 'not set'),
             ],
-            'telegram_debug' => [
-                'last_error' => \Illuminate\Support\Facades\Cache::get('last_telegram_error'),
-                'last_success' => \Illuminate\Support\Facades\Cache::get('last_telegram_success'),
-            ]
+            'database' => $this->checkDatabase(),
         ];
 
-        try {
-            $routes = \Illuminate\Support\Facades\Route::getRoutes();
-            $checks['routes'] = [];
-            foreach ($routes as $route) {
-                if (str_starts_with($route->uri(), 'api/')) {
-                    $checks['routes'][] = [
-                        'methods' => $route->methods(),
-                        'uri' => $route->uri(),
-                        'name' => $route->getName()
-                    ];
-                }
-            }
-            
-            DB::connection()->getPdo();
-            $checks['database']['status'] = 'CONNECTED';
-
-            $tables = DB::select('SHOW TABLES');
-            $checks['database']['tables_count'] = count($tables);
-            $checks['database']['tables'] = array_map(function ($t) {
-                return array_values((array)$t)[0];
-            }, $tables);
-
-            if (Schema::hasTable('tenants')) {
-                $checks['database']['tenants_table'] = 'EXISTS';
-                $checks['database']['tenants_count'] = DB::table('tenants')->count();
-                $checks['database']['sample_tenants'] = DB::table('tenants')->limit(5)->get(['id', 'slug', 'name']);
-
-                // Inspeccionar columnas
-                $columns = DB::select('DESCRIBE tenants');
-                $checks['database']['tenants_columns'] = array_map(function ($col) {
-                    return [
-                    'Field' => $col->Field,
-                    'Type' => $col->Type,
-                    'Key' => $col->Key,
-                    'Extra' => $col->Extra
-                    ];
-                }, $columns);
-            }
-            else {
-                $checks['database']['tenants_table'] = 'MISSING';
-            }
-
-            if (Schema::hasTable('registration_pages')) {
-                $checks['database']['registration_pages_table'] = 'EXISTS';
-            }
-            else {
-                $checks['database']['registration_pages_table'] = 'MISSING';
-            }
-
-            $logPaths = [
-                storage_path('logs/laravel.log'),
-                base_path('storage/logs/laravel.log'),
-                '/var/www/html/storage/logs/laravel.log'
-            ];
-
-            $foundLog = null;
-            foreach ($logPaths as $path) {
-                if (file_exists($path)) {
-                    $foundLog = $path;
-                    break;
-                }
-            }
-
-            if ($foundLog) {
-                $logFile = file($foundLog);
-                $checks['last_logs'] = array_slice($logFile, -50);
-                $checks['log_path'] = $foundLog;
-            }
-            else {
-                $checks['last_logs'] = 'File not found in any standard path';
-            }
-
-        }
-        catch (\Exception $e) {
-            $checks['database']['status'] = 'FAILED';
-            $checks['database']['error'] = $e->getMessage();
+        // Test broadcast: GET /api/debug?emit=concentracao-arica
+        if ($slug = request()->query('emit')) {
+            $checks['broadcast_test'] = $this->testBroadcast($slug);
         }
 
         return response()->json($checks);
+    }
+
+    private function testBroadcast(string $slug): array
+    {
+        try {
+            event(new \App\Events\StudentCheckedIn(999, 'TEST_BROADCAST', null, $slug));
+            return ['status' => 'EMITTED', 'channel' => "attendance.{$slug}", 'event' => 'student.checked-in', 'studentId' => 999];
+        } catch (\Throwable $e) {
+            return ['status' => 'FAILED', 'error' => $e->getMessage(), 'class' => get_class($e)];
+        }
+    }
+
+    private function checkDatabase(): array
+    {
+        try {
+            DB::connection()->getPdo();
+            return [
+                'status' => 'CONNECTED',
+                'host' => config('database.connections.mysql.host'),
+                'database' => config('database.connections.mysql.database'),
+                'tenants' => DB::table('tenants')->count(),
+            ];
+        } catch (\Throwable $e) {
+            return ['status' => 'FAILED', 'error' => $e->getMessage()];
+        }
     }
 }
