@@ -24,7 +24,9 @@ import {
     RefreshCw,
     Bell,
     Sparkles,
-    Trash2
+    Trash2,
+    Minus,
+    ImageIcon
 } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
 import NotificationToast from "@/components/Notifications/NotificationToast";
@@ -214,14 +216,35 @@ function StudentQRScanner({
     );
 }
 
+/* ─── Confirm Dialog ─── */
+function ConfirmDialog({ title, message, onConfirm, onCancel }: { title: string; message: string; onConfirm: () => void; onCancel: () => void }) {
+    return (
+        <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200" onClick={onCancel}>
+            <div className="bg-white rounded-3xl p-6 max-w-xs w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center mx-auto">
+                    <Trash2 className="w-6 h-6 text-red-500" />
+                </div>
+                <div className="text-center">
+                    <h3 className="text-base font-black text-zinc-900">{title}</h3>
+                    <p className="text-xs text-zinc-400 mt-1">{message}</p>
+                </div>
+                <div className="flex gap-2">
+                    <button onClick={onCancel} className="flex-1 h-11 bg-zinc-100 text-zinc-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-zinc-200 transition-all">Cancelar</button>
+                    <button onClick={onConfirm} className="flex-1 h-11 bg-red-500 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-600 transition-all">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 /* ─── Payment Proof Modal ─── */
-function ProofModal({ url, onClose }: { url: string; onClose: () => void }) {
+function ProofModal({ url, canDelete, onClose, onDelete }: { url: string; canDelete: boolean; onClose: () => void; onDelete?: () => void }) {
     return (
         <div
             className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4 animate-in fade-in duration-200"
             onClick={onClose}
         >
-            <div className="relative max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="relative max-w-sm w-full space-y-3" onClick={(e) => e.stopPropagation()}>
                 <button
                     onClick={onClose}
                     className="absolute -top-4 -right-4 z-10 w-9 h-9 bg-white/10 border border-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-all"
@@ -229,7 +252,24 @@ function ProofModal({ url, onClose }: { url: string; onClose: () => void }) {
                     <X className="w-4 h-4" />
                 </button>
                 <div className="rounded-3xl overflow-hidden border border-white/10">
-                    <img src={url} alt="Comprobante de pago" className="w-full object-contain max-h-[70vh]" />
+                    <img src={url} alt="Comprobante de pago" className="w-full object-contain max-h-[60vh]" />
+                </div>
+                {/* Footer con acciones */}
+                <div className="flex gap-2">
+                    {canDelete && onDelete && (
+                        <button
+                            onClick={onDelete}
+                            className="flex-1 h-12 bg-red-500/20 border border-red-500/30 text-red-400 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/30 transition-all"
+                        >
+                            <Trash2 size={14} /> Eliminar comprobante
+                        </button>
+                    )}
+                    <button
+                        onClick={onClose}
+                        className={`${canDelete ? '' : 'flex-1'} h-12 bg-white/10 border border-white/20 text-white rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest hover:bg-white/20 transition-all ${canDelete ? 'flex-1' : 'w-full'}`}
+                    >
+                        Cerrar
+                    </button>
                 </div>
             </div>
         </div>
@@ -244,7 +284,8 @@ export default function StudentDashboard() {
     const [activeSection, setActiveSection] = useState<NavSection>("home");
     const [activeScanner, setActiveScanner] = useState<string | null>(null);
     const [uploadingPayment, setUploadingPayment] = useState<string | null>(null);
-    const [proofModalUrl, setProofModalUrl] = useState<string | null>(null);
+    const [proofModal, setProofModal] = useState<{ url: string; canDelete: boolean; paymentId: string } | null>(null);
+    const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
     const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
     const [copiedBank, setCopiedBank] = useState(false);
     
@@ -427,7 +468,8 @@ export default function StudentDashboard() {
     };
 
     const handleDeleteProof = async (paymentId: string) => {
-        if (!confirm('¿Eliminar este comprobante?')) return;
+        setConfirmDelete(null);
+        setProofModal(null);
         const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
         const slug = localStorage.getItem("tenant_slug");
         if (!token || !slug) return;
@@ -809,8 +851,8 @@ export default function StudentDashboard() {
                                 uploading={uploadingPayment === String(payment.id)}
                                 uploadSuccess={uploadSuccess === String(payment.id) || (uploadSuccess === "bulk" && selectedPayments.includes(String(payment.id)))}
                                 onUpload={(file) => handleUploadProof(String(payment.id), file)}
-                                onViewProof={(url) => setProofModalUrl(url)}
-                                onDeleteProof={() => handleDeleteProof(String(payment.id))}
+                                onViewProof={(url) => setProofModal({ url, canDelete: payment.status !== 'approved', paymentId: String(payment.id) })}
+                                onDeleteProof={() => setConfirmDelete(String(payment.id))}
                                 isSelected={selectedPayments.includes(String(payment.id))}
                                 onToggleSelect={() => {
                                     setSelectedPayments(prev => 
@@ -1161,7 +1203,23 @@ export default function StudentDashboard() {
                 />
             )}
 
-            {proofModalUrl && <ProofModal url={proofModalUrl} onClose={() => setProofModalUrl(null)} />}
+            {proofModal && (
+                <ProofModal
+                    url={proofModal.url}
+                    canDelete={proofModal.canDelete}
+                    onClose={() => setProofModal(null)}
+                    onDelete={() => setConfirmDelete(proofModal.paymentId)}
+                />
+            )}
+
+            {confirmDelete && (
+                <ConfirmDialog
+                    title="¿Eliminar comprobante?"
+                    message="Se eliminará la imagen y el pago volverá a estado pendiente."
+                    onConfirm={() => handleDeleteProof(confirmDelete)}
+                    onCancel={() => setConfirmDelete(null)}
+                />
+            )}
 
             {/* Global File Input for Photos */}
             <input 
@@ -1218,71 +1276,84 @@ function PaymentRow({
         approved: { label: "Pagado", color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
     };
     const sc = statusConfig[payment.status] || statusConfig.pending;
+    const hasProof = !!payment.proof_image;
+    const canDelete = hasProof && payment.status !== 'approved';
 
     return (
-        <div className={`bg-white border ${isSelected ? 'border-orange-500 shadow-orange-50' : 'border-zinc-100'} rounded-2xl px-5 py-4 flex items-center justify-between gap-3 shadow-sm hover:shadow-md transition-all relative overflow-hidden group/pay`}>
+        <div className={`bg-white border ${isSelected ? 'border-orange-500 shadow-orange-50' : 'border-zinc-100'} rounded-2xl p-4 shadow-sm hover:shadow-md transition-all relative overflow-hidden group/pay`}>
             {isSelected && <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-500" />}
             
-            <div className="flex items-center gap-4 flex-1 min-w-0">
-                {payment.status === "pending" && (
-                    <div onClick={onToggleSelect} className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer shrink-0 ${
-                        isSelected ? 'bg-orange-500 border-orange-500' : 'border-zinc-200 hover:border-zinc-400'
-                    }`}>
-                        {isSelected && <Check size={12} className="text-white" />}
+            {/* Fila principal: info + status + acción */}
+            <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {payment.status === "pending" && (
+                        <div onClick={onToggleSelect} className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                            isSelected ? 'bg-orange-500 border-orange-500' : 'border-zinc-200 hover:border-zinc-400'
+                        }`}>
+                            {isSelected && <Check size={12} className="text-white" />}
+                        </div>
+                    )}
+                    <div className="min-w-0">
+                        <p className="text-sm font-black text-zinc-900">${Number(payment.amount).toLocaleString("es-CL")}</p>
+                        <p className="text-[10px] text-zinc-400 font-bold truncate">Vence: {payment.due_date || "—"}</p>
                     </div>
-                )}
-                <div className="min-w-0">
-                    <p className="text-sm font-black text-zinc-900">${Number(payment.amount).toLocaleString("es-CL")}</p>
-                    <p className="text-[10px] text-zinc-400 font-bold truncate">Vence: {payment.due_date || "—"}</p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                    <span className={`text-[9px] border rounded-full px-2 py-0.5 font-black uppercase shadow-sm ${sc.color}`}>{sc.label}</span>
+
+                    {uploadSuccess && (
+                        <span className="text-emerald-500 animate-in zoom-in duration-300"><CheckCircle2 className="w-6 h-6" /></span>
+                    )}
+
+                    {payment.status === "pending" && !uploadSuccess && (
+                        <>
+                            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); }} />
+                            <button
+                                onClick={() => fileRef.current?.click()}
+                                disabled={uploading}
+                                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider bg-zinc-900 text-white rounded-xl px-4 py-2 hover:bg-zinc-800 transition-all disabled:opacity-50"
+                            >
+                                {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                                {uploading ? "..." : "Pagar"}
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-                <span className={`text-[9px] border rounded-full px-2 py-0.5 font-black uppercase shadow-sm ${sc.color}`}>{sc.label}</span>
-
-                {uploadSuccess && (
-                    <span className="text-emerald-500 animate-in zoom-in duration-300"><CheckCircle2 className="w-6 h-6" /></span>
-                )}
-
-                {payment.status === "pending" && !uploadSuccess && (
-                    <>
-                        <input
-                            ref={fileRef}
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); }}
-                        />
-                        <button
-                            onClick={() => fileRef.current?.click()}
-                            disabled={uploading}
-                            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider bg-zinc-900 text-white rounded-xl px-4 py-2 hover:bg-zinc-800 transition-all disabled:opacity-50"
-                        >
-                            {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
-                            {uploading ? "..." : "Pagar"}
-                        </button>
-                    </>
-                )}
-
-                {payment.proof_image && (
-                    <>
-                        <button
-                            onClick={() => onViewProof(payment.proof_image)}
-                            className="w-10 h-10 flex items-center justify-center bg-stone-50 border border-zinc-100 text-zinc-400 rounded-xl hover:text-orange-500 transition-all"
-                        >
-                            <Eye className="w-5 h-5" />
-                        </button>
-                        {payment.status !== 'approved' && (
+            {/* Mini tarjeta de comprobante */}
+            {hasProof && (
+                <div className="mt-3 pt-3 border-t border-zinc-50">
+                    <div className="flex items-center gap-3">
+                        {/* Thumbnail con badge (-) */}
+                        <div className="relative shrink-0">
                             <button
-                                onClick={onDeleteProof}
-                                className="w-10 h-10 flex items-center justify-center bg-red-50 border border-red-100 text-red-400 rounded-xl hover:text-red-600 transition-all"
+                                onClick={() => onViewProof(payment.proof_image)}
+                                className="w-14 h-14 rounded-xl overflow-hidden border border-zinc-100 bg-zinc-50 shadow-sm active:scale-95 transition-transform"
                             >
-                                <Trash2 className="w-4 h-4" />
+                                <img src={payment.proof_image} alt="Comprobante" className="w-full h-full object-cover" />
                             </button>
-                        )}
-                    </>
-                )}
-            </div>
+                            {canDelete && (
+                                <button
+                                    onClick={onDeleteProof}
+                                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md active:scale-90 transition-transform border-2 border-white"
+                                >
+                                    <Minus size={10} strokeWidth={3} />
+                                </button>
+                            )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-black text-zinc-500 flex items-center gap-1">
+                                <ImageIcon size={10} /> Comprobante adjunto
+                            </p>
+                            <p className="text-[9px] text-zinc-300 mt-0.5">
+                                {payment.status === 'approved' ? 'Aprobado ✓' : 'Toca la imagen para ampliar'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
