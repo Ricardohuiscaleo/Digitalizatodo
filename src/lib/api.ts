@@ -36,6 +36,7 @@ export async function getIndustries() {
     try {
         const response = await fetch(`${API_URL}/industries`, {
             method: 'GET',
+            cache: 'no-store' as RequestCache,
             headers: defaultHeaders,
         });
 
@@ -50,6 +51,7 @@ export async function getTenantInfo(slug: string) {
     try {
         const response = await fetch(`${API_URL}/${slug}/info`, {
             method: 'GET',
+            cache: 'no-store' as RequestCache,
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -124,6 +126,7 @@ export async function getProfile(tenantId: string, token: string) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/me`, {
             method: 'GET',
+            cache: 'no-store' as RequestCache,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
@@ -141,6 +144,7 @@ export async function getPayments(tenantId: string, token: string) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/payments`, {
             method: 'GET',
+            cache: 'no-store' as RequestCache,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
@@ -214,6 +218,7 @@ export async function getAttendanceHistory(tenantId: string, token: string, stud
 
         const response = await fetch(url.toString(), {
             method: 'GET',
+            cache: 'no-store' as RequestCache,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
@@ -230,6 +235,7 @@ export async function getStudents(tenantId: string, token: string) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/students`, {
             method: 'GET',
+            cache: 'no-store' as RequestCache,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
@@ -285,6 +291,7 @@ export async function getAttendanceQR(tenantId: string, token: string) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/attendance/generate-qr`, {
             method: 'GET',
+            cache: 'no-store' as RequestCache,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
@@ -327,6 +334,7 @@ export async function getPayers(tenantId: string, token: string, filters?: { mon
 
         const response = await fetch(url.toString(), {
             method: 'GET',
+            cache: 'no-store' as RequestCache,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
