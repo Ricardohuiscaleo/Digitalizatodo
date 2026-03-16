@@ -127,3 +127,4 @@ api/                        # PHP backend for contact forms
 - **Resilient API Layer**: Frontend apps use a `safeJson()` utility that gracefully handles non-JSON responses by returning `null`, preventing application crashes during server errors (e.g. 500s).
 - **Role-based access**: `role:teacher,admin,owner` middleware on write routes; roles stored per-user per-tenant.
 - **Filament panels**: Three separate panels with distinct providers, each scoped to a user role.
+- **Realtime via WebSockets**: Laravel Reverb (port 8080) + Laravel Echo on frontend. Events use `ShouldBroadcastNow` (no queue worker needed). Public channels per tenant (`attendance.{slug}`). Full architecture documented in `realtime.md`.

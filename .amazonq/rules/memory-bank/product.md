@@ -18,6 +18,7 @@ The central API and admin panel. Handles:
 - Authentication with Laravel Sanctum (token-based for APIs)
 - Three Filament panels: Admin (superadmin), Tenant (school admin), Portal (student/guardian)
 - REST API consumed by all frontend apps
+- Realtime broadcasting via Laravel Reverb (WebSockets)
 - Payment processing integration
 - Telegram bot notifications
 - Email via Resend
@@ -62,3 +63,10 @@ Personal portfolio site for the developer.
 - QR-based attendance verification
 - Payment tracking with success/failure flows
 - Telegram bot for notifications
+
+## Realtime Architecture
+- **Server**: Laravel Reverb on port 8080 (managed by supervisord)
+- **Client**: laravel-echo + pusher-js on Next.js frontends
+- **Events**: `ShouldBroadcastNow` (synchronous, no queue worker needed)
+- **Channels**: Public per-tenant (`attendance.{slug}`), Private per-user planned (`private-user.{id}`)
+- **Full documentation**: `.amazonq/rules/memory-bank/realtime.md`
