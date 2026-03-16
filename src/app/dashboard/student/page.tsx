@@ -307,19 +307,27 @@ export default function StudentDashboard() {
     // REAL-TIME CON WEBSOCKETS (LARAVEL REVERB)
     useEffect(() => {
         const key = process.env.NEXT_PUBLIC_REVERB_APP_KEY;
-        if (!key || !branding?.slug) return;
+        if (!key || !branding?.slug) {
+            console.log('[Student WS] Skip: key=', !!key, 'slug=', branding?.slug);
+            return;
+        }
 
         const echo = getEcho();
-        if (!echo) return;
+        if (!echo) {
+            console.log('[Student WS] No echo instance');
+            return;
+        }
+
+        console.log('[Student WS] Subscribing to attendance.' + branding.slug);
 
         // Canal de Asistencia
         const attChannel = echo.channel(`attendance.${branding.slug}`);
         attChannel.listen('.student.checked-in', (data: any) => {
-            console.log('Real-time check-in received:', data);
+            console.log('[Student WS] ✅ checked-in:', data);
             refreshDataRef.current();
         });
         attChannel.listen('.student.checked-out', (data: any) => {
-            console.log('Real-time check-out received:', data);
+            console.log('[Student WS] ❌ checked-out:', data);
             refreshDataRef.current();
         });
 
