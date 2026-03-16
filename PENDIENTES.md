@@ -34,30 +34,28 @@
 
 ## 🔴 Alta Prioridad
 
-### Sistema de Notificaciones In-App
-**Objetivo:** Notificaciones push-like dentro de la PWA sin depender de permisos del navegador.
+### Sistema de Notificaciones In-App ✅ (Backend listo)
+**Estado:** Backend completo, falta frontend.
 
-**Backend:**
-- [ ] Crear modelo `Notification` (user_id, tenant_id, title, body, type, read_at, created_at)
-- [ ] Crear evento `NotificationSent implements ShouldBroadcastNow`
-- [ ] Canal privado: `private-user.{userId}` (requiere auth)
-- [ ] Endpoint `GET /api/{tenant}/notifications` — listar notificaciones
-- [ ] Endpoint `POST /api/{tenant}/notifications/{id}/read` — marcar como leída
-- [ ] Triggers automáticos:
-  - Asistencia registrada → notificar al apoderado
-  - Pago recibido → notificar al apoderado
-  - Pago vencido → notificar al apoderado
+**Backend completado:**
+- [x] Tabla `notifications` creada
+- [x] Modelo `Notification` con scopes
+- [x] Evento `NotificationSent` (ShouldBroadcastNow)
+- [x] Canal: `notifications.{tenantSlug}.{userId}` (público, no requiere auth)
+- [x] `GET /api/{tenant}/notifications` — listar
+- [x] `POST /api/{tenant}/notifications/{id}/read` — marcar leída
+- [x] `POST /api/{tenant}/notifications/read-all` — marcar todas leídas
 
-**Frontend:**
+**Frontend pendiente:**
 - [ ] Componente `NotificationBell` con badge de no leídas
 - [ ] Dropdown/panel de notificaciones
-- [ ] Escuchar canal privado `private-user.{userId}`
-- [ ] Toast/snackbar cuando llega notificación nueva
-- [ ] Persistir en localStorage para offline
+- [ ] Escuchar canal `notifications.{slug}.{userId}`
+- [ ] Toast cuando llega notificación nueva
 
-**Notas:**
-- Canales privados requieren endpoint de auth en Laravel (`/broadcasting/auth`)
-- Ver documentación en `realtime.md` sección "Tipos de Canales"
+**Triggers pendientes (backend):**
+- [ ] Asistencia registrada → notificar al apoderado
+- [ ] Pago recibido → notificar al apoderado
+- [ ] Pago vencido → notificar al apoderado
 
 ---
 
@@ -83,15 +81,14 @@ npm install @zxing/browser @zxing/library
 
 ## 🟡 Media Prioridad
 
-### App Updates / Changelog
-**Objetivo:** Mostrar changelog de actualizaciones en el perfil del usuario.
+### App Updates / Changelog ✅ (Backend listo)
+**Estado:** Backend completo, falta UI frontend.
 
-**Estado actual:**
-- [x] Migración `app_updates` creada (no ejecutada)
-- [x] Modelo `AppUpdate` creado
-- [x] Controller `AppUpdateController` creado
-- [ ] Agregar ruta en `api.php`
-- [ ] Ejecutar migración en producción
+- [x] Tabla `app_updates` creada y poblada con historial
+- [x] Modelo `AppUpdate`
+- [x] `GET /api/app-updates` con filtro `?target=staff|student`
+- [x] Comando `php artisan app:register-update` para deploy scripts
+- [x] Documentación en `.amazonq/rules/memory-bank/deploy.md`
 - [ ] UI en perfil para mostrar changelog
 - [ ] Notificación de "nueva versión disponible" en PWA
 

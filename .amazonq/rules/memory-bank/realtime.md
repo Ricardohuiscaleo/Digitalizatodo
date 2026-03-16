@@ -378,18 +378,19 @@ docker exec -it <container> supervisorctl status
 - **Evento**: `student.checked-out`
 - **Payload**: `{ studentId, studentName, tenantSlug }`
 
+### NotificationSent
+- **Trigger**: Backend crea notificación para usuario
+- **Canal**: `notifications.{tenantSlug}.{userId}` (público)
+- **Evento**: `notification.sent`
+- **Payload**: `{ notificationId, title, body, type, userId, tenantSlug }`
+- **Nota**: Canal público con userId en el nombre (no requiere auth endpoint)
+
 ---
 
 ## Próximos Eventos (Pendientes)
 
-### NotificationSent (Sistema de Notificaciones)
-- **Trigger**: Backend envía notificación a usuario
-- **Canal**: `private-user.{userId}` (canal privado)
-- **Evento**: `notification.sent`
-- **Payload**: `{ id, title, body, type, createdAt }`
-
 ### PaymentReceived
 - **Trigger**: Pago confirmado
-- **Canal**: `attendance.{tenantSlug}` o `private-user.{userId}`
+- **Canal**: `notifications.{tenantSlug}.{userId}`
 - **Evento**: `payment.received`
 - **Payload**: `{ paymentId, studentId, amount, status }`
