@@ -2,36 +2,35 @@
 
 ## Registro de Actualizaciones
 
-Cada deploy significativo debe registrar un update en `app_updates` para que los usuarios vean el changelog.
+Cada deploy significativo registra automáticamente un update en `app_updates` para que los usuarios vean el changelog.
 
-### Opción 1: Comando Artisan (en producción)
+### Flujo Automático (Recomendado)
+
+Crear/actualizar `deploy_update.sql` en la raíz de `saas-backend-repo`:
+
+```sql
+INSERT INTO app_updates (version, title, description, target, published_at, created_at, updated_at)
+SELECT '1.5.0', 'Título del cambio', 'Descripción detallada.', 'all', NOW(), NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM app_updates WHERE version = '1.5.0');
+```
+
+`start.sh` lo ejecuta automáticamente en cada deploy y lo elimina después. El `WHERE NOT EXISTS` previene duplicados si el container se reinicia.
+
+### Desde Amazon Q
+
+Cuando completemos un feature, yo (Amazon Q) creo el `deploy_update.sql` automáticamente antes del commit.
+
+### Comando Artisan (manual, en producción)
 
 ```bash
-php artisan app:register-update "1.4.0" "Sistema de notificaciones" "Notificaciones in-app en tiempo real cuando se registra asistencia o pagos." --target=all
+php artisan app:register-update "1.5.0" "Título" "Descripción" --target=all
 ```
 
 Parámetros:
-- `version`: Semver (1.4.0)
+- `version`: Semver (1.5.0)
 - `title`: Título corto
 - `description`: Descripción del cambio
 - `--target`: `all` | `staff` | `student`
-
-### Opción 2: SQL Directo
-
-```sql
-INSERT INTO app_updates (version, title, description, target, published_at, created_at, updated_at) 
-VALUES ('1.4.0', 'Sistema de notificaciones', 'Notificaciones in-app en tiempo real.', 'all', NOW(), NOW(), NOW());
-```
-
-### Opción 3: Desde Amazon Q (Recomendado)
-
-Cuando completemos un feature, yo (Amazon Q) te daré el INSERT listo:
-
-```sql
--- COPIAR Y EJECUTAR EN DB:
-INSERT INTO app_updates (version, title, description, target, published_at, created_at, updated_at) 
-VALUES ('1.4.0', 'Sistema de notificaciones', 'Notificaciones in-app en tiempo real cuando se registra asistencia o pagos.', 'all', NOW(), NOW(), NOW());
-```
 
 ---
 
