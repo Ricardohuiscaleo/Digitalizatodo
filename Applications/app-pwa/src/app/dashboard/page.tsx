@@ -37,6 +37,7 @@ import {
     Bell
 } from 'lucide-react';
 import { useBranding } from "@/context/BrandingContext";
+import NotificationToast from "@/components/Notifications/NotificationToast";
 import {
     getProfile,
     getPayers,
@@ -53,6 +54,7 @@ import {
     deleteAttendance,
     getNotifications,
     markAllNotificationsRead,
+    markNotificationRead,
     getAppUpdates
 } from "@/lib/api";
 
@@ -325,6 +327,7 @@ export default function App() {
     const [unreadCount, setUnreadCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
     const [appUpdates, setAppUpdates] = useState<any[]>([]);
+    const [toastNotification, setToastNotification] = useState<any>(null);
 
     // --- PERSISTENCE & DATA FETCHING ---
 
@@ -367,6 +370,8 @@ export default function App() {
     useEffect(() => { tokenRef.current = token; }, [token]);
     const brandingSlugRef = useRef(branding?.slug);
     useEffect(() => { brandingSlugRef.current = branding?.slug; }, [branding?.slug]);
+    const userRef = useRef(user);
+    useEffect(() => { userRef.current = user; }, [user]);
 
     // REAL-TIME WEBSOCKETS (LARAVEL REVERB)
     // Suscripción única. Pusher-js maneja reconexión automática.
@@ -421,6 +426,18 @@ export default function App() {
         echo.channel(`dashboard.${slug}`)
             .listen('.student.registered', () => { console.log('[WS] student.registered'); safeRefresh(); });
 
+        // Notificaciones en tiempo real
+        const userId = userRef.current?.id;
+        if (userId) {
+            echo.channel(`notifications.${slug}.${userId}`)
+                .listen('.notification.sent', (data: any) => {
+                    console.log('[WS] 🔔 notification.sent:', data);
+                    setToastNotification({ id: data.notificationId, title: data.title, body: data.body, type: data.type });
+                    setUnreadCount(c => c + 1);
+                    setNotifications(prev => [{ id: data.notificationId, title: data.title, body: data.body, type: data.type, read: false, created_at: 'Ahora' }, ...prev]);
+                });
+        }
+
         // Móvil: cuando la app vuelve de background, reconectar y refrescar
         const handleVisibility = () => {
             if (document.visibilityState === 'visible') {
@@ -436,8 +453,9 @@ export default function App() {
             echo.leaveChannel(`attendance.${slug}`);
             echo.leaveChannel(`payments.${slug}`);
             echo.leaveChannel(`dashboard.${slug}`);
+            if (userRef.current?.id) echo.leaveChannel(`notifications.${slug}.${userRef.current.id}`);
         };
-    }, [branding?.slug]);
+    }, [branding?.slug, user?.id]);
 
     const tabs = ['dashboard', 'attendance', 'payments', 'settings', 'profile'];
 
@@ -1726,8 +1744,11 @@ export default function App() {
                 <LogOut size={18} /> Cerrar Sesión
             </button>
 
-            <div className="pt-4 text-center">
-                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Digitaliza Todo © 2026</p>
+            <div className="pt-6 text-center space-y-1">
+                <a href="https://digitalizatodo.cl" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-600 transition-colors">
+                    DIGITALIZA TODO® 2026
+                </a>
+                <p className="text-[9px] text-zinc-300">Software Factory a la Medida</p>
             </div>
         </div>
     );
@@ -1741,6 +1762,15 @@ export default function App() {
 
     return (
         <div className="flex flex-col h-screen bg-white font-sans relative overflow-hidden text-zinc-950">
+            <NotificationToast
+                notification={toastNotification}
+                onDismiss={() => setToastNotification(null)}
+                onNavigate={(type) => {
+                    if (type === 'attendance') setActiveTab('attendance');
+                    else if (type === 'payment') setActiveTab('payments');
+                    else setActiveTab('profile');
+                }}
+            />
             {/* HEADER DINÁMICO - Oculto en Desktop ya que se integra en el Content */}
             <header className="bg-white px-2 py-3 flex items-center justify-between sticky top-0 z-50 border-b border-zinc-50 shrink-0 md:hidden">
                 <div className="flex items-center gap-3">
@@ -1774,7 +1804,7 @@ export default function App() {
             {/* Notification Dropdown */}
             {showNotifications && (
                 <div className="fixed inset-0 z-[100] md:hidden" onClick={() => setShowNotifications(false)}>
-                    <div className="absolute top-16 right-2 w-80 max-h-96 bg-white rounded-2xl shadow-2xl border border-zinc-100 overflow-hidden" onClick={e => e.stopPropagation()}>
+                    <div className="absolute top-16 right-2 w-80 max-h-96 bg-white rounded-2xl shadow-2xl border border-zinc-100 overflow-hidden animate-in slide-in-from-top-2 fade-in duration-200" onClick={e => e.stopPropagation()}>
                         <div className="p-4 border-b border-zinc-50 flex items-center justify-between">
                             <span className="text-xs font-black uppercase tracking-widest text-zinc-400">Notificaciones</span>
                             {unreadCount > 0 && (
@@ -1789,9 +1819,22 @@ export default function App() {
                         </div>
                         <div className="max-h-72 overflow-y-auto">
                             {notifications.length > 0 ? notifications.map((n: any) => (
-                                <div key={n.id} className={`p-4 border-b border-zinc-50 ${!n.read ? 'bg-blue-50/50' : ''}`}>
+                                <div
+                                    key={n.id}
+                                    onClick={async () => {
+                                        if (!n.read && branding?.slug && token) {
+                                            markNotificationRead(branding.slug, token, n.id);
+                                            setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
+                                            setUnreadCount(c => Math.max(0, c - 1));
+                                        }
+                                        if (n.type === 'attendance') setActiveTab('attendance');
+                                        else if (n.type === 'payment') setActiveTab('payments');
+                                        setShowNotifications(false);
+                                    }}
+                                    className={`p-4 border-b border-zinc-50 cursor-pointer hover:bg-zinc-50 transition-colors ${!n.read ? 'bg-blue-50/50' : ''}`}
+                                >
                                     <div className="flex items-start gap-3">
-                                        <div className={`w-2 h-2 rounded-full mt-1.5 ${!n.read ? 'bg-blue-500' : 'bg-zinc-200'}`} />
+                                        <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${!n.read ? 'bg-blue-500' : 'bg-zinc-200'}`} />
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-bold text-zinc-800 truncate">{n.title}</p>
                                             <p className="text-xs text-zinc-400 mt-0.5 line-clamp-2">{n.body}</p>
