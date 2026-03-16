@@ -34,7 +34,8 @@ import {
     Calendar,
     DollarSign,
     User,
-    Bell
+    Bell,
+    ChevronLeft
 } from 'lucide-react';
 import { useBranding } from "@/context/BrandingContext";
 import NotificationToast from "@/components/Notifications/NotificationToast";
@@ -314,6 +315,8 @@ export default function App() {
     const [selectedYear, setSelectedYear] = useState(nowCL().getFullYear());
     const [expandedPayerId, setExpandedPayerId] = useState<string | null>(null);
     const [historyPage, setHistoryPage] = useState(0);
+    const [historyMonth, setHistoryMonth] = useState(nowCL().getMonth());
+    const [historyYear, setHistoryYear] = useState(nowCL().getFullYear());
     const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
     const [now, setNow] = useState(nowCL());
     const [copied, setCopied] = useState(false);
@@ -760,17 +763,17 @@ export default function App() {
         const pendingStudents = totalStudents - paidStudents;
         const presentToday = attendance.size;
 
-        // Agrupar historial por fecha
+        // Agrupar historial por fecha, filtrado por mes seleccionado
         const historyByDate: Record<string, any[]> = {};
         attendanceHistory.forEach((r: any) => {
             const d = r.date || r.created_at?.split('T')[0] || 'Sin fecha';
-            if (!historyByDate[d]) historyByDate[d] = [];
-            historyByDate[d].push(r);
+            const dateObj = new Date(d + 'T12:00:00');
+            if (dateObj.getMonth() === historyMonth && dateObj.getFullYear() === historyYear) {
+                if (!historyByDate[d]) historyByDate[d] = [];
+                historyByDate[d].push(r);
+            }
         });
         const historyDates = Object.keys(historyByDate).sort((a, b) => b.localeCompare(a));
-        const PAGE_SIZE = 5;
-        const totalPages = Math.ceil(historyDates.length / PAGE_SIZE);
-        const pagedDates = historyDates.slice(historyPage * PAGE_SIZE, (historyPage + 1) * PAGE_SIZE);
 
         return (
             <div className="space-y-6 text-zinc-950">
@@ -872,26 +875,38 @@ export default function App() {
                             <RefreshCw className="text-zinc-400" size={18} />
                             Historial Reciente
                         </h3>
-                        {totalPages > 1 && (
-                            <div className="flex items-center gap-3">
-                                <button disabled={historyPage === 0} onClick={() => setHistoryPage(p => p - 1)} className="w-9 h-9 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center disabled:opacity-30 active:scale-95 transition-all hover:bg-zinc-100">
-                                    <ChevronUp size={18} className="text-zinc-500" />
-                                </button>
-                                <span className="text-[10px] font-black text-zinc-400 tracking-widest">{historyPage + 1} / {totalPages}</span>
-                                <button disabled={historyPage >= totalPages - 1} onClick={() => setHistoryPage(p => p + 1)} className="w-9 h-9 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center disabled:opacity-30 active:scale-95 transition-all hover:bg-zinc-100">
-                                    <ChevronDown size={18} className="text-zinc-500" />
-                                </button>
-                            </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => {
+                                if (historyMonth === 0) { setHistoryMonth(11); setHistoryYear(y => y - 1); }
+                                else setHistoryMonth(m => m - 1);
+                                setHistoryPage(0);
+                            }} className="w-8 h-8 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center active:scale-95 transition-all hover:bg-zinc-100">
+                                <ChevronLeft size={16} className="text-zinc-500" />
+                            </button>
+                            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-wider min-w-[80px] text-center">
+                                {new Date(historyYear, historyMonth).toLocaleDateString('es-CL', { month: 'short', year: 'numeric' })}
+                            </span>
+                            <button onClick={() => {
+                                const now = nowCL();
+                                if (historyMonth === now.getMonth() && historyYear === now.getFullYear()) return;
+                                if (historyMonth === 11) { setHistoryMonth(0); setHistoryYear(y => y + 1); }
+                                else setHistoryMonth(m => m + 1);
+                                setHistoryPage(0);
+                            }} className="w-8 h-8 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center active:scale-95 transition-all hover:bg-zinc-100 disabled:opacity-30"
+                                disabled={historyMonth === nowCL().getMonth() && historyYear === nowCL().getFullYear()}
+                            >
+                                <ChevronRight size={16} className="text-zinc-500" />
+                            </button>
+                        </div>
                     </div>
 
-                    {pagedDates.length === 0 ? (
+                    {historyDates.length === 0 ? (
                         <div className="flex items-center gap-3 py-10 px-4 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200 justify-center">
-                            <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">No hay historial disponible aún</p>
+                            <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">Sin registros este mes</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-1 gap-3">
-                            {pagedDates.map(date => {
+                        <div className="max-h-[320px] overflow-y-auto space-y-3 pr-1">
+                            {historyDates.map(date => {
                                 const records: any[] = historyByDate[date];
                                 const presentCount = records.filter(r => r.status === 'present').length;
                                 const dateObj = new Date(date + 'T12:00:00');
