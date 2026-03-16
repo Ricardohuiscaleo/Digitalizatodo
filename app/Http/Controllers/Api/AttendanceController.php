@@ -97,6 +97,11 @@ class AttendanceController extends Controller
             \Illuminate\Support\Facades\Log::warning('Broadcast checked-in failed', ['error' => $e->getMessage()]);
         }
 
+        // Notificar a cada apoderado del alumno
+        foreach ($student->guardians as $g) {
+            \App\Models\Notification::send($tenantId, $g->id, 'Asistencia registrada', "{$student->name} fue marcado/a presente.", 'attendance', $tenant->slug);
+        }
+
         return response()->json([
             'message' => 'Asistencia registrada correctamente',
             'attendance' => $attendance
@@ -173,6 +178,11 @@ class AttendanceController extends Controller
                 'photo' => $student->photo,
             ], 120);
 
+            // Notificar a staff del tenant
+            foreach ($tenant->users as $staffUser) {
+                \App\Models\Notification::send($tenant->id, $staffUser->id, 'Check-in vía QR', "{$student->name} registró asistencia escaneando QR.", 'attendance', $tenant->slug);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => '¡Asistencia registrada!',
@@ -218,6 +228,13 @@ class AttendanceController extends Controller
             ));
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Broadcast checked-out failed', ['error' => $e->getMessage()]);
+        }
+
+        // Notificar a cada apoderado
+        if ($student) {
+            foreach ($student->guardians as $g) {
+                \App\Models\Notification::send($tenantModel->id, $g->id, 'Asistencia removida', "Se removió la asistencia de {$student->name}.", 'attendance', $tenantModel->slug);
+            }
         }
 
         return response()->json([

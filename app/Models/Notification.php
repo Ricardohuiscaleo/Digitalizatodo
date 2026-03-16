@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Events\NotificationSent;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -23,5 +24,27 @@ class Notification extends Model
     public function scopeForUser($query, int $userId)
     {
         return $query->where('user_id', $userId);
+    }
+
+    /**
+     * Crea una notificación y emite el evento WebSocket.
+     */
+    public static function send(int $tenantId, int $userId, string $title, string $body, string $type, string $tenantSlug): self
+    {
+        $n = self::create([
+            'tenant_id' => $tenantId,
+            'user_id' => $userId,
+            'title' => $title,
+            'body' => $body,
+            'type' => $type,
+        ]);
+
+        try {
+            event(new NotificationSent($n->id, $title, $body, $type, $userId, $tenantSlug));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('NotificationSent broadcast failed', ['error' => $e->getMessage()]);
+        }
+
+        return $n;
     }
 }
