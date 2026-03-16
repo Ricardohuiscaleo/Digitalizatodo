@@ -325,7 +325,6 @@ export default function App() {
     const [unreadCount, setUnreadCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
     const [appUpdates, setAppUpdates] = useState<any[]>([]);
-    const [latestVersion, setLatestVersion] = useState<any>(null);
 
     // --- PERSISTENCE & DATA FETCHING ---
 
@@ -569,7 +568,7 @@ export default function App() {
         });
         getAppUpdates('staff').then(data => {
             if (data?.updates) setAppUpdates(data.updates);
-            if (data?.latest) setLatestVersion(data.latest);
+
         });
     }, [token, branding?.slug]);
 
@@ -1695,10 +1694,9 @@ export default function App() {
                 <div className="flex items-center gap-2 px-1">
                     <Sparkles size={14} className="text-zinc-300" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Actualizaciones</span>
-                    {latestVersion && <span className="text-[8px] font-black bg-zinc-100 text-zinc-500 px-2 py-0.5 rounded-full">v{latestVersion.version}</span>}
                 </div>
-                <div className="space-y-2">
-                    {appUpdates.length > 0 ? appUpdates.slice(0, 8).map((u: any) => (
+                <div className="max-h-[340px] overflow-y-auto space-y-2 pr-1">
+                    {appUpdates.length > 0 ? appUpdates.map((u: any) => (
                         <div key={u.id} className="bg-white border border-zinc-100 rounded-2xl p-4">
                             <div className="flex items-center justify-between mb-1">
                                 <span className="text-[9px] font-black bg-zinc-900 text-white px-2 py-0.5 rounded-full">v{u.version}</span>
