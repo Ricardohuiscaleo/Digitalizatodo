@@ -26,7 +26,8 @@ import {
     Sparkles
 } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
-import { getProfile, markAttendanceViaQR, resumeSession, getNotifications, markAllNotificationsRead, getAppUpdates } from "@/lib/api";
+import NotificationToast from "@/components/Notifications/NotificationToast";
+import { getProfile, markAttendanceViaQR, resumeSession, getNotifications, markAllNotificationsRead, markNotificationRead, getAppUpdates } from "@/lib/api";
 import jsQR from "jsqr";
 import BottomNav, { NavSection } from "@/components/Navigation/BottomNav";
 import { todayCL } from "@/lib/utils";
@@ -259,6 +260,7 @@ export default function StudentDashboard() {
     const [unreadCount, setUnreadCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
     const [appUpdates, setAppUpdates] = useState<any[]>([]);
+    const [toastNotification, setToastNotification] = useState<any>(null);
 
     const refreshData = useCallback(async () => {
         let token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
@@ -344,6 +346,18 @@ export default function StudentDashboard() {
             refreshDataRef.current();
         });
 
+        // Canal de Notificaciones en tiempo real
+        const guardianId = data?.guardian?.id;
+        if (guardianId) {
+            const notifChannel = echo.channel(`notifications.${branding.slug}.${guardianId}`);
+            notifChannel.listen('.notification.sent', (ev: any) => {
+                console.log('[Student WS] 🔔 notification.sent:', ev);
+                setToastNotification({ id: ev.notificationId, title: ev.title, body: ev.body, type: ev.type });
+                setUnreadCount(c => c + 1);
+                setNotifications(prev => [{ id: ev.notificationId, title: ev.title, body: ev.body, type: ev.type, read: false, created_at: 'Ahora' }, ...prev]);
+            });
+        }
+
         // Móvil: reconectar cuando la app vuelve de background
         const handleVisibility = () => {
             if (document.visibilityState === 'visible') {
@@ -357,8 +371,9 @@ export default function StudentDashboard() {
             document.removeEventListener('visibilitychange', handleVisibility);
             echo.leaveChannel(`attendance.${branding.slug}`);
             echo.leaveChannel(`payments.${branding.slug}`);
+            if (data?.guardian?.id) echo.leaveChannel(`notifications.${branding.slug}.${data.guardian.id}`);
         };
-    }, [branding?.slug]);
+    }, [branding?.slug, data?.guardian?.id]);
 
     useEffect(() => {
         refreshData().then(() => setLoading(false));
@@ -970,8 +985,11 @@ export default function StudentDashboard() {
                 </button>
             </div>
 
-            <div className="pt-4 text-center">
-                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Digitaliza Todo © 2026</p>
+            <div className="pt-6 text-center space-y-1">
+                <a href="https://digitalizatodo.cl" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-600 transition-colors">
+                    DIGITALIZA TODO® 2026
+                </a>
+                <p className="text-[9px] text-zinc-300">Software Factory a la Medida</p>
             </div>
 
         </div>
@@ -979,6 +997,15 @@ export default function StudentDashboard() {
 
     return (
         <>
+            <NotificationToast
+                notification={toastNotification}
+                onDismiss={() => setToastNotification(null)}
+                onNavigate={(type) => {
+                    if (type === 'attendance') setActiveSection('calendar');
+                    else if (type === 'payment') setActiveSection('payments');
+                    else setActiveSection('profile');
+                }}
+            />
             {/* Desktop Only Guard (Fintoc Style Inverso) */}
             <div className="hidden lg:flex fixed inset-0 z-[9999] bg-stone-50 items-center justify-center p-8 text-center animate-in fade-in duration-700">
                 <div className="max-w-md space-y-10">
@@ -1000,7 +1027,8 @@ export default function StudentDashboard() {
                         </div>
                     </div>
                     <div className="pt-12">
-                        <p className="text-[9px] font-black text-zinc-200 uppercase tracking-[0.5em]">Digitaliza Todo Engine © 2026</p>
+                        <p className="text-[9px] font-black text-zinc-200 uppercase tracking-[0.5em]">DIGITALIZA TODO® 2026</p>
+                        <p className="text-[8px] text-zinc-200 mt-1">Software Factory a la Medida</p>
                     </div>
                 </div>
             </div>
@@ -1038,7 +1066,7 @@ export default function StudentDashboard() {
             {/* Notification Dropdown */}
             {showNotifications && (
                 <div className="fixed inset-0 z-[100]" onClick={() => setShowNotifications(false)}>
-                    <div className="absolute top-16 right-2 w-80 max-h-96 bg-white rounded-2xl shadow-2xl border border-zinc-100 overflow-hidden" onClick={e => e.stopPropagation()}>
+                    <div className="absolute top-16 right-2 w-80 max-h-96 bg-white rounded-2xl shadow-2xl border border-zinc-100 overflow-hidden animate-in slide-in-from-top-2 fade-in duration-200" onClick={e => e.stopPropagation()}>
                         <div className="p-4 border-b border-zinc-50 flex items-center justify-between">
                             <span className="text-xs font-black uppercase tracking-widest text-zinc-400">Notificaciones</span>
                             {unreadCount > 0 && (
@@ -1055,9 +1083,24 @@ export default function StudentDashboard() {
                         </div>
                         <div className="max-h-72 overflow-y-auto">
                             {notifications.length > 0 ? notifications.map((n: any) => (
-                                <div key={n.id} className={`p-4 border-b border-zinc-50 ${!n.read ? 'bg-blue-50/50' : ''}`}>
+                                <div
+                                    key={n.id}
+                                    onClick={async () => {
+                                        if (!n.read) {
+                                            const tk = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
+                                            const sl = localStorage.getItem("tenant_slug");
+                                            if (tk && sl) markNotificationRead(sl, tk, n.id);
+                                            setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
+                                            setUnreadCount(c => Math.max(0, c - 1));
+                                        }
+                                        if (n.type === 'attendance') setActiveSection('calendar');
+                                        else if (n.type === 'payment') setActiveSection('payments');
+                                        setShowNotifications(false);
+                                    }}
+                                    className={`p-4 border-b border-zinc-50 cursor-pointer hover:bg-zinc-50 transition-colors ${!n.read ? 'bg-blue-50/50' : ''}`}
+                                >
                                     <div className="flex items-start gap-3">
-                                        <div className={`w-2 h-2 rounded-full mt-1.5 ${!n.read ? 'bg-blue-500' : 'bg-zinc-200'}`} />
+                                        <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${!n.read ? 'bg-blue-500' : 'bg-zinc-200'}`} />
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-bold text-zinc-800 truncate">{n.title}</p>
                                             <p className="text-xs text-zinc-400 mt-0.5 line-clamp-2">{n.body}</p>
