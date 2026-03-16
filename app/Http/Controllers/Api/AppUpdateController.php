@@ -11,24 +11,27 @@ class AppUpdateController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $target = $request->query('target'); // staff, student, o null para todos
+        $target = $request->query('target');
 
         $updates = AppUpdate::orderByDesc('published_at')
             ->when($target, fn($q) => $q->where('target', $target)->orWhere('target', 'all'))
             ->limit(20)
-            ->get()
-            ->map(fn($u) => [
-                'id' => $u->id,
-                'version' => $u->version,
-                'title' => $u->title,
-                'description' => $u->description,
-                'target' => $u->target,
-                'published_at' => $u->published_at->format('d M, Y'),
-            ]);
+            ->get();
+
+        $mapped = $updates->map(fn($u) => [
+            'id' => $u->id,
+            'version' => $u->version,
+            'title' => $u->title,
+            'description' => $u->description,
+            'target' => $u->target,
+            'published_at' => $u->published_at?->format('d M, Y') ?? '',
+        ]);
+
+        $first = $updates->first();
 
         return response()->json([
-            'latest' => $updates->first()?->only(['version', 'title']),
-            'updates' => $updates,
+            'latest' => $first ? ['version' => $first->version, 'title' => $first->title] : null,
+            'updates' => $mapped,
         ]);
     }
 }
