@@ -31,6 +31,7 @@ Route::post('register-tenant', [RegisterTenantController::class , 'store']);
 Route::post('identify-tenant', [TenantDiscoveryController::class , 'identify']);
 Route::get('r/{code}', [RegistrationPageController::class , 'show']);
 Route::get('debug', [DebugController::class , 'index']);
+Route::get('app-updates', [\App\Http\Controllers\Api\AppUpdateController::class , 'index']);
 
 Route::get('industries', [\App\Http\Controllers\Api\IndustryController::class , 'index']);
 
@@ -86,6 +87,11 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
             Route::post('students/{id}/photo', [StudentController::class , 'uploadPhoto']);
             Route::get('attendance', [AttendanceController::class , 'index']);
             Route::post('attendance/verify-qr', [AttendanceController::class , 'verifyQR']);
+
+            // Notificaciones
+            Route::get('notifications', [\App\Http\Controllers\Api\NotificationController::class , 'index']);
+            Route::post('notifications/{id}/read', [\App\Http\Controllers\Api\NotificationController::class , 'read']);
+            Route::post('notifications/read-all', [\App\Http\Controllers\Api\NotificationController::class , 'readAll']);
 
             // Pagos
             Route::get('payments', [PaymentController::class , 'index']);
