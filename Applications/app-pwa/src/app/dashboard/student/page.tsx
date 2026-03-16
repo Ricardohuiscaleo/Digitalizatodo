@@ -625,7 +625,7 @@ export default function StudentDashboard() {
                     <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-[2.5rem] p-6 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden group">
                         <div className="relative z-10">
                             <div className="flex items-center gap-2 mb-1">
-                                <RefreshCw size={12} className="animate-spin" />
+                                <RefreshCw size={12} className="animate-[spin_3s_linear_infinite]" />
                                 <p className="text-[10px] font-black uppercase tracking-widest opacity-90">Pago en revisión</p>
                             </div>
                             <h2 className="text-4xl font-black mb-2">${Number(totalDue).toLocaleString("es-CL")}</h2>
