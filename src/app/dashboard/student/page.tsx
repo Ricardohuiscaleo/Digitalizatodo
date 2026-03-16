@@ -23,11 +23,12 @@ import {
     MapPin,
     RefreshCw,
     Bell,
-    Sparkles
+    Sparkles,
+    Trash2
 } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
 import NotificationToast from "@/components/Notifications/NotificationToast";
-import { getProfile, markAttendanceViaQR, resumeSession, getNotifications, markAllNotificationsRead, markNotificationRead, getAppUpdates } from "@/lib/api";
+import { getProfile, markAttendanceViaQR, resumeSession, getNotifications, markAllNotificationsRead, markNotificationRead, getAppUpdates, deletePaymentProof } from "@/lib/api";
 import jsQR from "jsqr";
 import BottomNav, { NavSection } from "@/components/Navigation/BottomNav";
 import { todayCL } from "@/lib/utils";
@@ -425,6 +426,15 @@ export default function StudentDashboard() {
         }
     };
 
+    const handleDeleteProof = async (paymentId: string) => {
+        if (!confirm('¿Eliminar este comprobante?')) return;
+        const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
+        const slug = localStorage.getItem("tenant_slug");
+        if (!token || !slug) return;
+        const result = await deletePaymentProof(slug, token, paymentId);
+        if (result) refreshData();
+    };
+
 
     const handleProfilePhotoUpload = async (file: File) => {
         if (!file) return;
@@ -799,6 +809,7 @@ export default function StudentDashboard() {
                                 uploadSuccess={uploadSuccess === String(payment.id) || (uploadSuccess === "bulk" && selectedPayments.includes(String(payment.id)))}
                                 onUpload={(file) => handleUploadProof(String(payment.id), file)}
                                 onViewProof={(url) => setProofModalUrl(url)}
+                                onDeleteProof={() => handleDeleteProof(String(payment.id))}
                                 isSelected={selectedPayments.includes(String(payment.id))}
                                 onToggleSelect={() => {
                                     setSelectedPayments(prev => 
@@ -1184,6 +1195,7 @@ function PaymentRow({
     uploadSuccess,
     onUpload,
     onViewProof,
+    onDeleteProof,
     isSelected,
     onToggleSelect,
 }: {
@@ -1193,6 +1205,7 @@ function PaymentRow({
     uploadSuccess: boolean;
     onUpload: (file: File) => void;
     onViewProof: (url: string) => void;
+    onDeleteProof: () => void;
     isSelected: boolean;
     onToggleSelect: () => void;
 }) {
@@ -1251,12 +1264,22 @@ function PaymentRow({
                 )}
 
                 {payment.proof_image && (
-                    <button
-                        onClick={() => onViewProof(payment.proof_image)}
-                        className="w-10 h-10 flex items-center justify-center bg-stone-50 border border-zinc-100 text-zinc-400 rounded-xl hover:text-orange-500 transition-all"
-                    >
-                        <Eye className="w-5 h-5" />
-                    </button>
+                    <>
+                        <button
+                            onClick={() => onViewProof(payment.proof_image)}
+                            className="w-10 h-10 flex items-center justify-center bg-stone-50 border border-zinc-100 text-zinc-400 rounded-xl hover:text-orange-500 transition-all"
+                        >
+                            <Eye className="w-5 h-5" />
+                        </button>
+                        {payment.status !== 'approved' && (
+                            <button
+                                onClick={onDeleteProof}
+                                className="w-10 h-10 flex items-center justify-center bg-red-50 border border-red-100 text-red-400 rounded-xl hover:text-red-600 transition-all"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        )}
+                    </>
                 )}
             </div>
         </div>

@@ -26,6 +26,7 @@ export default function NotificationToast({ notification, onDismiss, onNavigate 
     if (notification) {
       setVisible(true);
       setExiting(false);
+      try { new Audio('/notification.wav').play().catch(() => {}); } catch {}
       const timer = setTimeout(() => dismiss(), 4000);
       return () => clearTimeout(timer);
     }
