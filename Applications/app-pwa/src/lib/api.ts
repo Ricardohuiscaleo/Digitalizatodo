@@ -517,3 +517,17 @@ export async function getAppUpdates(target?: 'staff' | 'student') {
         return { latest: null, updates: [] };
     }
 }
+
+// ─── Payment Proof ───────────────────────────────────────────────────────────
+
+export async function deletePaymentProof(tenantId: string, token: string, paymentId: string | number) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/payments/${paymentId}/proof`, {
+            method: 'DELETE',
+            headers: { ...defaultHeaders, Authorization: `Bearer ${token}` },
+        });
+        return await safeJson(response);
+    } catch {
+        return null;
+    }
+}
