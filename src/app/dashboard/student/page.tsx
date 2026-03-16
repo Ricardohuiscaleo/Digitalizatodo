@@ -904,6 +904,19 @@ export default function StudentDashboard() {
                     </button>
                     <div className="h-px bg-zinc-50 mx-4" />
                     <button 
+                        onClick={() => setActiveSection("calendar")}
+                        className="w-full flex items-center justify-between p-4 hover:bg-stone-50 rounded-2xl transition-all group"
+                    >
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400 group-hover:text-orange-500 transition-colors">
+                                <Calendar size={20} />
+                            </div>
+                            <span className="font-black text-sm text-zinc-700">Historial de Asistencia</span>
+                        </div>
+                        <ChevronRight size={18} className="text-zinc-300" />
+                    </button>
+                    <div className="h-px bg-zinc-50 mx-4" />
+                    <button 
                         onClick={() => { setActiveSection("payments"); setPaymentTab("history"); }}
                         className="w-full flex items-center justify-between p-4 hover:bg-stone-50 rounded-2xl transition-all group"
                     >
@@ -1080,7 +1093,9 @@ export default function StudentDashboard() {
             <BottomNav 
                 activeSection={activeSection} 
                 setActiveSection={setActiveSection} 
-                primaryColor={primaryColor} 
+                primaryColor={primaryColor}
+                userPhoto={guardian.photo}
+                userName={guardian.name}
             />
 
 

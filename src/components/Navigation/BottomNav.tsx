@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Home, Calendar, CreditCard, User } from "lucide-react";
+import { Home, Calendar, CreditCard } from "lucide-react";
 
 export type NavSection = "home" | "calendar" | "payments" | "profile";
 
@@ -9,14 +9,15 @@ interface BottomNavProps {
     activeSection: NavSection;
     setActiveSection: (section: NavSection) => void;
     primaryColor?: string;
+    userPhoto?: string | null;
+    userName?: string;
 }
 
-export default function BottomNav({ activeSection, setActiveSection, primaryColor = "#f97316" }: BottomNavProps) {
+export default function BottomNav({ activeSection, setActiveSection, primaryColor = "#f97316", userPhoto, userName }: BottomNavProps) {
     const items: { id: NavSection; label: string; icon: any }[] = [
         { id: "home", label: "Inicio", icon: Home },
         { id: "calendar", label: "Clases", icon: Calendar },
         { id: "payments", label: "Pagos", icon: CreditCard },
-        { id: "profile", label: "Perfil", icon: User },
     ];
 
     return (
@@ -48,6 +49,29 @@ export default function BottomNav({ activeSection, setActiveSection, primaryColo
                         </button>
                     );
                 })}
+                {/* Profile tab con foto */}
+                <button
+                    onClick={() => setActiveSection("profile")}
+                    className={`flex flex-col items-center gap-0.5 transition-all duration-150 ${
+                        activeSection === "profile" ? "opacity-100" : "opacity-30 hover:opacity-100"
+                    }`}
+                >
+                    <div className={`w-7 h-7 rounded-full overflow-hidden border-2 ${activeSection === "profile" ? '' : 'border-transparent'}`} style={activeSection === "profile" ? { borderColor: primaryColor } : {}}>
+                        {userPhoto ? (
+                            <img src={userPhoto} className="w-full h-full object-cover" alt="" />
+                        ) : (
+                            <div className="w-full h-full bg-zinc-200 flex items-center justify-center text-zinc-500 text-xs font-black">
+                                {userName?.[0] || 'U'}
+                            </div>
+                        )}
+                    </div>
+                    <span
+                        className="text-[10px] font-black uppercase tracking-widest transition-all"
+                        style={activeSection === "profile" ? { color: primaryColor } : {}}
+                    >
+                        Perfil
+                    </span>
+                </button>
             </div>
         </nav>
     );
