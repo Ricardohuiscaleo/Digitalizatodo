@@ -258,6 +258,8 @@ export default function StudentDashboard() {
         let token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
         const tenantSlug = localStorage.getItem("tenant_slug");
         
+        if (!token && !tenantSlug) return;
+
         if (!token && tenantSlug) {
             const rememberToken = localStorage.getItem("remember_token");
             if (rememberToken) {

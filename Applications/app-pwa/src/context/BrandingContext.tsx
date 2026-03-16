@@ -37,9 +37,13 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         const tenantId = localStorage.getItem("tenant_id");
 
         if (savedBranding) {
-            const parsed = JSON.parse(savedBranding);
-            setBrandingState(parsed);
-            document.documentElement.style.setProperty('--primary', parsed.primaryColor);
+            try {
+                const parsed = JSON.parse(savedBranding);
+                setBrandingState(parsed);
+                document.documentElement.style.setProperty('--primary', parsed.primaryColor);
+            } catch {
+                setBrandingState(defaultBranding);
+            }
             setIsLoading(false);
         } else if (!tenantId) {
             setBrandingState(defaultBranding);

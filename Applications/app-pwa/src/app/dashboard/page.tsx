@@ -374,7 +374,7 @@ export default function App() {
         const safeRefresh = () => {
             const t = tokenRef.current;
             const s = brandingSlugRef.current;
-            if (!t || !s) return;
+            if (!t || !s || !localStorage.getItem('staff_token')) return;
             getPayers(s, t, { month: nowCL().getMonth() + 1, year: nowCL().getFullYear() })
                 .then(d => { if (d?.payers) setPayers(d.payers); })
                 .catch(() => {});
