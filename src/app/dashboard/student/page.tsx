@@ -595,6 +595,7 @@ export default function StudentDashboard() {
     const hasPendingReview = students.some((s: any) => 
         (s.payments || []).some((p: any) => p.status === 'pending_review')
     );
+    const totalDueOrReview = totalDue > 0 || hasPendingReview;
 
     /* ─── Sections Rendering ─── */
 
@@ -618,7 +619,7 @@ export default function StudentDashboard() {
             </div>
 
             {/* Deuda / Status Card (Sistema de 3 Colores) */}
-            {totalDue > 0 ? (
+            {totalDueOrReview ? (
                 hasPendingReview ? (
                     /* ESTADO 2: EN REVISIÓN (AMARILLO/NARANJA) */
                     <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-[2.5rem] p-6 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden group">
