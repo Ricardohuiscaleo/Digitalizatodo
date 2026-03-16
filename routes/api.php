@@ -97,6 +97,7 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
             Route::get('payments', [PaymentController::class , 'index']);
             Route::post('payments/{payment}/pay', [PaymentController::class , 'initiatePayment']);
             Route::post('payments/{payment}/upload-proof', [PaymentController::class , 'uploadProof']);
+            Route::delete('payments/{payment}/proof', [PaymentController::class , 'deleteProof']);
 
             // Asistencia (solo teachers/admins - Escritura)
             Route::middleware('role:teacher,admin,owner')->group(function () {

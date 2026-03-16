@@ -113,6 +113,44 @@ class PaymentController extends Controller
     }
 
     /**
+     * Delete payment proof (guardian can remove before approval).
+     */
+    public function deleteProof(Request $request, $tenant, Payment $payment): JsonResponse
+    {
+        $guardian = $request->user();
+        $studentIds = $guardian->students->pluck('id');
+        $isOwner = Enrollment::whereIn('student_id', $studentIds)
+            ->where('id', $payment->enrollment_id)
+            ->exists();
+
+        if (!$isOwner) {
+            return response()->json(['message' => 'No autorizado.'], 403);
+        }
+
+        if ($payment->status === 'approved') {
+            return response()->json(['message' => 'No se puede eliminar un comprobante ya aprobado.'], 422);
+        }
+
+        // Borrar de S3
+        if ($payment->proof_image) {
+            $path = parse_url($payment->proof_image, PHP_URL_PATH);
+            if ($path) Storage::disk('s3')->delete(ltrim($path, '/'));
+        }
+
+        $payment->update(['proof_image' => null, 'status' => 'pending']);
+
+        $tenantModel = app('currentTenant');
+        event(new \App\Events\PaymentStatusUpdated($guardian->id, 'pending', $tenantModel->slug));
+
+        // Notificar a staff
+        foreach ($tenantModel->users as $staffUser) {
+            \App\Models\Notification::send($tenantModel->id, $staffUser->id, 'Comprobante eliminado', "{$guardian->name} eliminó un comprobante de pago.", 'payment', $tenantModel->slug);
+        }
+
+        return response()->json(['message' => 'Comprobante eliminado', 'status' => 'pending']);
+    }
+
+    /**
      * Inicia un proceso de pago (gateway).
      */
     public function initiatePayment(Request $request, $tenant, Payment $payment): JsonResponse
