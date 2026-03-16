@@ -119,45 +119,53 @@ class AuthController extends Controller
                 'students.attendances' => fn($q) => $q->orderBy('date', 'desc')->limit(5),
             ]);
 
+            $s3Base = 'https://' . env('AWS_BUCKET', env('S3_BUCKET')) . '.s3.' . env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1')) . '.amazonaws.com/';
+            $toUrl = fn($path) => $path ? (str_starts_with($path, 'http') ? $path : $s3Base . $path) : null;
+
             $allEnrollmentIds = $guardian->students->flatMap->enrollments->pluck('id')->filter();
+
+            // Calcular total_due: solo pagos pending/overdue
+            $totalDue = $guardian->students->flatMap->enrollments->flatMap->payments
+                ->whereIn('status', ['pending', 'overdue'])
+                ->sum('amount');
 
             return response()->json([
                 'user_type' => 'guardian',
                 'guardian'  => $guardian->only('id', 'name', 'email', 'phone', 'photo'),
                 'bank_info' => $bankInfo,
-                'students'  => $guardian->students ? $guardian->students->map(fn($s) => [
+                'students'  => $guardian->students->map(fn($s) => [
                     'id'                => $s->id,
                     'name'              => $s->name,
-                    'photo'             => $s->photo ? (str_starts_with($s->photo, 'http') ? $s->photo : 'https://' . env('AWS_BUCKET', env('S3_BUCKET')) . '.s3.' . env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1')) . '.amazonaws.com/' . $s->photo) : null,
+                    'photo'             => $toUrl($s->photo),
                     'category'          => $s->category ?? 'Sin Categoría',
                     'belt_rank'         => $s->belt_rank,
                     'attendance_count'  => \App\Models\Attendance::where('student_id', $s->id)->where('status', 'present')->count(),
-                    'pending_payments'  => $s->enrollments ? $s->enrollments->flatMap->payments->count() : 0,
-                    'recent_attendance' => $s->attendances ? $s->attendances->map(fn($a) => [
+                    'pending_payments'  => $s->enrollments->flatMap->payments->count(),
+                    'recent_attendance' => $s->attendances->map(fn($a) => [
                         'date'   => $a->date->format('Y-m-d'),
                         'status' => $a->status,
-                    ]) : [],
-                    'payments' => $s->enrollments ? $s->enrollments->flatMap->payments->map(fn($p) => [
-                        'id'        => $p->id,
-                        'amount'    => $p->amount,
-                        'due_date'  => $p->due_date?->format('d M, Y'),
-                        'status'    => $p->status,
-                        'proof_url' => $p->proof_image,
-                    ]) : [],
-                ]) : [],
-                'total_due' => $guardian->total_due,
+                    ]),
+                    'payments' => $s->enrollments->flatMap->payments->map(fn($p) => [
+                        'id'          => $p->id,
+                        'amount'      => $p->amount,
+                        'due_date'    => $p->due_date?->format('d M, Y'),
+                        'status'      => $p->status,
+                        'proof_image' => $toUrl($p->proof_image),
+                    ]),
+                ]),
+                'total_due' => round($totalDue),
                 'payment_history' => $allEnrollmentIds->isNotEmpty() ? \App\Models\Payment::whereIn('enrollment_id', $allEnrollmentIds)
                     ->whereIn('status', ['approved', 'pending_review'])
                     ->orderByDesc('updated_at')
                     ->limit(10)
                     ->get()
                     ->map(fn($p) => [
-                        'id'        => $p->id,
-                        'amount'    => $p->amount,
-                        'status'    => $p->status,
-                        'paid_at'   => $p->paid_at?->format('d M, Y'),
-                        'due_date'  => $p->due_date?->format('d M, Y'),
-                        'proof_url' => $p->proof_image,
+                        'id'          => $p->id,
+                        'amount'      => $p->amount,
+                        'status'      => $p->status,
+                        'paid_at'     => $p->paid_at?->format('d M, Y'),
+                        'due_date'    => $p->due_date?->format('d M, Y'),
+                        'proof_image' => $toUrl($p->proof_image),
                     ]) : collect([]),
             ]);
         }
