@@ -36,6 +36,7 @@ import BottomNav, { NavSection } from "@/components/Navigation/BottomNav";
 import { todayCL } from "@/lib/utils";
 import StudentCalendar from "@/components/Calendar/StudentCalendar";
 import { getEcho, reconnect } from "@/lib/echo";
+import { unlockAudio } from "@/lib/audio";
 
 /* ─── QR Camera Scanner ─── */
 function StudentQRScanner({
@@ -420,6 +421,12 @@ export default function StudentDashboard() {
     useEffect(() => {
         refreshData().then(() => setLoading(false));
     }, [refreshData]);
+
+    // Desbloquear AudioContext en primer gesto
+    useEffect(() => {
+        document.addEventListener('click', unlockAudio, { once: true });
+        document.addEventListener('touchstart', unlockAudio, { once: true });
+    }, []);
 
     // Cargar notificaciones y app updates
     useEffect(() => {
