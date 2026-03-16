@@ -349,7 +349,7 @@ export default function App() {
             data.payers.forEach((p: any) => {
                 if (p.enrolledStudents) {
                     p.enrolledStudents.forEach((s: any) => {
-                        if (s.today_status === 'present') currentAttendance.add(s.id);
+                        if (s.today_status === 'present') currentAttendance.add(String(s.id));
                     });
                 }
             });
@@ -561,7 +561,7 @@ export default function App() {
                     payersData.payers.forEach((p: any) => {
                         if (p.enrolledStudents) {
                             p.enrolledStudents.forEach((s: any) => {
-                                if (s.today_status === 'present') currentAttendance.add(s.id);
+                                if (s.today_status === 'present') currentAttendance.add(String(s.id));
                             });
                         }
                     });
@@ -658,9 +658,10 @@ export default function App() {
         setUser({ name: 'Admin Demo', tenant_id: 'DEMO' });
     };
 
-    const toggleAttendance = async (studentId: string) => {
+    const toggleAttendance = async (rawId: string | number) => {
+        const studentId = String(rawId);
         const isPresent = attendance.has(studentId);
-        const student = allStudents.find(s => s.id === studentId);
+        const student = allStudents.find(s => String(s.id) === studentId);
 
         const newAttendance = new Set(attendance);
         if (isPresent) {
@@ -839,7 +840,7 @@ export default function App() {
 
                         {presentToday > 0 ? (
                             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                                {allStudents.filter(s => attendance.has(s.id)).slice(0, 5).map(s => (
+                                {allStudents.filter(s => attendance.has(String(s.id))).slice(0, 5).map(s => (
                                     <img
                                         key={s.id}
                                         className="inline-block h-10 w-10 rounded-full border-2 border-white shadow-sm object-cover shrink-0"
@@ -951,7 +952,7 @@ export default function App() {
 
     const renderAttendance = () => {
         const filteredStudents = allStudents.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
-        const presentCount = allStudents.filter(s => attendance.has(s.id)).length;
+        const presentCount = allStudents.filter(s => attendance.has(String(s.id))).length;
 
         return (
             <div className="space-y-4 px-0 pb-32">
@@ -989,8 +990,7 @@ export default function App() {
                         </thead>
                         <tbody className="divide-y divide-zinc-50">
                             {filteredStudents.map(student => {
-                                const isPresent = attendance.has(student.id);
-                                return (
+                                const isPresent = attendance.has(String(student.id));                                return (
                                     <tr key={student.id} className="hover:bg-zinc-50/50 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
@@ -1040,7 +1040,7 @@ export default function App() {
                 {/* VISTA MOBILE: GRID DE TARJETAS */}
                 <div className="grid grid-cols-3 gap-3 md:hidden">
                     {filteredStudents.map(student => {
-                        const isPresent = attendance.has(student.id);
+                        const isPresent = attendance.has(String(student.id));
                         return (
                             <div key={student.id} className="relative">
                                 <button
