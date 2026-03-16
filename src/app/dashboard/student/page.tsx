@@ -21,10 +21,12 @@ import {
     ShieldCheck,
     ChevronRight,
     MapPin,
-    RefreshCw
+    RefreshCw,
+    Bell,
+    Sparkles
 } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
-import { getProfile, markAttendanceViaQR, resumeSession } from "@/lib/api";
+import { getProfile, markAttendanceViaQR, resumeSession, getNotifications, markAllNotificationsRead, getAppUpdates } from "@/lib/api";
 import jsQR from "jsqr";
 import BottomNav, { NavSection } from "@/components/Navigation/BottomNav";
 import { todayCL } from "@/lib/utils";
@@ -253,6 +255,11 @@ export default function StudentDashboard() {
     const [selectedPayments, setSelectedPayments] = useState<string[]>([]);
     const [paymentTab, setPaymentTab] = useState<"pending" | "history">("pending");
     const refreshDataRef = useRef<() => void>(() => {});
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [appUpdates, setAppUpdates] = useState<any[]>([]);
+    const [latestVersion, setLatestVersion] = useState<any>(null);
 
     const refreshData = useCallback(async () => {
         let token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
@@ -357,6 +364,21 @@ export default function StudentDashboard() {
     useEffect(() => {
         refreshData().then(() => setLoading(false));
     }, [refreshData]);
+
+    // Cargar notificaciones y app updates
+    useEffect(() => {
+        const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
+        const slug = localStorage.getItem("tenant_slug");
+        if (!token || !slug) return;
+        getNotifications(slug, token).then(d => {
+            if (d?.notifications) setNotifications(d.notifications);
+            if (d?.unread !== undefined) setUnreadCount(d.unread);
+        });
+        getAppUpdates('student').then(d => {
+            if (d?.updates) setAppUpdates(d.updates);
+            if (d?.latest) setLatestVersion(d.latest);
+        });
+    }, []);
 
     const handleUploadProof = async (paymentId: string, file: File) => {
         setUploadingPayment(paymentId);
@@ -865,7 +887,8 @@ export default function StudentDashboard() {
                     </button>
                 </div>
                 <h3 className="text-xl font-black text-zinc-900">{guardian.name}</h3>
-                <p className="text-sm text-zinc-400 font-bold">{guardian.email}</p>
+                <p className="text-sm text-zinc-400 font-bold mb-2">{guardian.email}</p>
+                <span className="inline-block bg-zinc-900 text-white text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full">Apoderado</span>
             </div>
 
             <div className="space-y-4">
@@ -904,6 +927,29 @@ export default function StudentDashboard() {
                     </button>
                 </div>
 
+                {/* Changelog */}
+                <div className="space-y-3">
+                    <div className="flex items-center gap-2 px-1">
+                        <Sparkles size={14} className="text-zinc-300" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Actualizaciones</span>
+                        {latestVersion && <span className="text-[8px] font-black bg-zinc-100 text-zinc-500 px-2 py-0.5 rounded-full">v{latestVersion.version}</span>}
+                    </div>
+                    <div className="space-y-2">
+                        {appUpdates.length > 0 ? appUpdates.slice(0, 5).map((u: any) => (
+                            <div key={u.id} className="bg-white border border-zinc-100 rounded-2xl p-4">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[9px] font-black bg-zinc-900 text-white px-2 py-0.5 rounded-full">v{u.version}</span>
+                                    <span className="text-[8px] font-bold text-zinc-300">{u.published_at}</span>
+                                </div>
+                                <h4 className="text-sm font-black text-zinc-800 mt-2">{u.title}</h4>
+                                <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{u.description}</p>
+                            </div>
+                        )) : (
+                            <p className="text-xs text-zinc-300 text-center py-4">Sin actualizaciones</p>
+                        )}
+                    </div>
+                </div>
+
                 <button
                     onClick={() => { localStorage.clear(); window.location.href = "/"; }}
                     className="w-full h-16 bg-red-50 text-red-600 rounded-3xl flex items-center justify-center gap-3 text-xs font-black uppercase tracking-[0.2em] hover:bg-red-100 transition-all active:scale-[0.98]"
@@ -913,9 +959,8 @@ export default function StudentDashboard() {
                 </button>
             </div>
 
-            <div className="pt-8 text-center">
+            <div className="pt-4 text-center">
                 <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Digitaliza Todo © 2026</p>
-                <p className="text-[8px] font-bold text-zinc-200 mt-1 uppercase">v2.4.0 optimized</p>
             </div>
 
         </div>
@@ -967,20 +1012,58 @@ export default function StudentDashboard() {
                         </span>
                     </div>
                 </div>
-                <div className="flex items-center gap-2.5 shrink-0 bg-white pl-3 pr-1 py-1 rounded-full border border-zinc-100 shadow-sm">
-                    <div className="flex flex-col items-end">
-                        <span className="text-[10px] font-black text-zinc-900 leading-none truncate max-w-[80px]">{guardian.name.split(' ')[0]}</span>
-                        <span className="text-[7px] font-black uppercase tracking-[0.2em] mt-0.5" style={{ color: primaryColor }}>Apoderado</span>
-                    </div>
-                    <div className="w-8 h-8 flex items-center justify-center shrink-0 rounded-full overflow-hidden border-2" style={{ borderColor: primaryColor }}>
-                        {guardian.photo ? (
-                            <img src={guardian.photo} className="w-full h-full object-cover" alt="" />
-                        ) : (
-                            <span className="font-black text-sm" style={{ color: primaryColor }}>{guardian.name[0]}</span>
-                        )}
+                {/* Notification Bell */}
+                <button 
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className="relative w-10 h-10 flex items-center justify-center rounded-full border border-zinc-100 shadow-sm bg-white"
+                >
+                    <Bell size={20} className="text-zinc-600" />
+                    {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                    )}
+                </button>
+            </header>
+
+            {/* Notification Dropdown */}
+            {showNotifications && (
+                <div className="fixed inset-0 z-[100]" onClick={() => setShowNotifications(false)}>
+                    <div className="absolute top-16 right-2 w-80 max-h-96 bg-white rounded-2xl shadow-2xl border border-zinc-100 overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="p-4 border-b border-zinc-50 flex items-center justify-between">
+                            <span className="text-xs font-black uppercase tracking-widest text-zinc-400">Notificaciones</span>
+                            {unreadCount > 0 && (
+                                <button onClick={async () => {
+                                    const tk = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
+                                    const sl = localStorage.getItem("tenant_slug");
+                                    if (tk && sl) {
+                                        await markAllNotificationsRead(sl, tk);
+                                        setUnreadCount(0);
+                                        setNotifications(n => n.map(x => ({ ...x, read: true })));
+                                    }
+                                }} className="text-[9px] font-black text-zinc-400 hover:text-zinc-600">Marcar leídas</button>
+                            )}
+                        </div>
+                        <div className="max-h-72 overflow-y-auto">
+                            {notifications.length > 0 ? notifications.map((n: any) => (
+                                <div key={n.id} className={`p-4 border-b border-zinc-50 ${!n.read ? 'bg-blue-50/50' : ''}`}>
+                                    <div className="flex items-start gap-3">
+                                        <div className={`w-2 h-2 rounded-full mt-1.5 ${!n.read ? 'bg-blue-500' : 'bg-zinc-200'}`} />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-bold text-zinc-800 truncate">{n.title}</p>
+                                            <p className="text-xs text-zinc-400 mt-0.5 line-clamp-2">{n.body}</p>
+                                            <p className="text-[9px] text-zinc-300 mt-1">{n.created_at}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )) : (
+                                <div className="p-8 text-center">
+                                    <Bell size={24} className="text-zinc-200 mx-auto mb-2" />
+                                    <p className="text-xs text-zinc-300">Sin notificaciones</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </header>
+            )}
 
             <div className="px-2 md:px-8 pt-4">
             {/* Dashboard Sections - Mobile Responsive */}

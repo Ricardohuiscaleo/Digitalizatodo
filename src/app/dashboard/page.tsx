@@ -33,7 +33,8 @@ import {
     Save,
     Calendar,
     DollarSign,
-    User
+    User,
+    Bell
 } from 'lucide-react';
 import { useBranding } from "@/context/BrandingContext";
 import {
@@ -49,7 +50,10 @@ import {
     getAttendanceHistory,
     resumeSession,
     updateBankInfo,
-    deleteAttendance
+    deleteAttendance,
+    getNotifications,
+    markAllNotificationsRead,
+    getAppUpdates
 } from "@/lib/api";
 
 /* ─── Proof Modal Component ─── */
@@ -317,6 +321,11 @@ export default function App() {
     const [proofModalUrl, setProofModalUrl] = useState<string | null>(null);
     const [paymentActionPayer, setPaymentActionPayer] = useState<any>(null);
     const [selectedHistoryDate, setSelectedHistoryDate] = useState<string | null>(null);
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [appUpdates, setAppUpdates] = useState<any[]>([]);
+    const [latestVersion, setLatestVersion] = useState<any>(null);
 
     // --- PERSISTENCE & DATA FETCHING ---
 
@@ -431,7 +440,7 @@ export default function App() {
         };
     }, [branding?.slug]);
 
-    const tabs = ['dashboard', 'attendance', 'payments', 'settings'];
+    const tabs = ['dashboard', 'attendance', 'payments', 'settings', 'profile'];
 
     const changeTab = (newTab: string) => {
         const currentIndex = tabs.indexOf(activeTab);
@@ -550,6 +559,19 @@ export default function App() {
 
         init();
     }, [setBranding]);
+
+    // Cargar notificaciones y app updates
+    useEffect(() => {
+        if (!token || !branding?.slug) return;
+        getNotifications(branding.slug, token).then(data => {
+            if (data?.notifications) setNotifications(data.notifications);
+            if (data?.unread !== undefined) setUnreadCount(data.unread);
+        });
+        getAppUpdates('staff').then(data => {
+            if (data?.updates) setAppUpdates(data.updates);
+            if (data?.latest) setLatestVersion(data.latest);
+        });
+    }, [token, branding?.slug]);
 
     useEffect(() => {
         if (activeTab === 'payments' && !loading) {
@@ -1645,6 +1667,73 @@ export default function App() {
         );
     };
 
+    const renderProfile = () => (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* Perfil Card */}
+            <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-8 text-center shadow-sm">
+                <div className="w-20 h-20 mx-auto mb-3 rounded-full overflow-hidden border-4 border-zinc-50 shadow-md">
+                    <img src={user?.photo || '/DLogo-v2.webp'} className="w-full h-full object-cover" alt="" />
+                </div>
+                <h3 className="text-lg font-black text-zinc-900 uppercase tracking-tight">{user?.name || 'Admin'}</h3>
+                <p className="text-xs text-zinc-400 font-bold mb-2">{user?.email}</p>
+                <span className="inline-block bg-zinc-900 text-white text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full">Staff</span>
+            </div>
+
+            {/* Menú */}
+            <div className="bg-white border border-zinc-100 rounded-3xl p-2">
+                <button onClick={() => changeTab('settings')} className="w-full flex items-center justify-between p-4 hover:bg-stone-50 rounded-2xl transition-all group">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400 group-hover:text-zinc-700 transition-colors"><Settings size={20} /></div>
+                        <span className="font-black text-sm text-zinc-700">Ajustes de Academia</span>
+                    </div>
+                    <ChevronRight size={18} className="text-zinc-300" />
+                </button>
+            </div>
+
+            {/* Changelog */}
+            <div className="space-y-3">
+                <div className="flex items-center gap-2 px-1">
+                    <Sparkles size={14} className="text-zinc-300" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Actualizaciones</span>
+                    {latestVersion && <span className="text-[8px] font-black bg-zinc-100 text-zinc-500 px-2 py-0.5 rounded-full">v{latestVersion.version}</span>}
+                </div>
+                <div className="space-y-2">
+                    {appUpdates.length > 0 ? appUpdates.slice(0, 8).map((u: any) => (
+                        <div key={u.id} className="bg-white border border-zinc-100 rounded-2xl p-4">
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-[9px] font-black bg-zinc-900 text-white px-2 py-0.5 rounded-full">v{u.version}</span>
+                                <span className="text-[8px] font-bold text-zinc-300">{u.published_at}</span>
+                            </div>
+                            <h4 className="text-sm font-black text-zinc-800 mt-2">{u.title}</h4>
+                            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{u.description}</p>
+                        </div>
+                    )) : (
+                        <p className="text-xs text-zinc-300 text-center py-4">Sin actualizaciones</p>
+                    )}
+                </div>
+            </div>
+
+            {/* Logout */}
+            <button
+                onClick={() => {
+                    const slug = localStorage.getItem("tenant_slug");
+                    const brandingData = localStorage.getItem("tenant_branding");
+                    localStorage.clear();
+                    if (slug) localStorage.setItem("tenant_slug", slug);
+                    if (brandingData) localStorage.setItem("tenant_branding", brandingData);
+                    window.location.href = "/";
+                }}
+                className="w-full h-16 bg-red-50 text-red-600 rounded-3xl flex items-center justify-center gap-3 text-xs font-black uppercase tracking-[0.2em] hover:bg-red-100 transition-all active:scale-[0.98]"
+            >
+                <LogOut size={18} /> Cerrar Sesión
+            </button>
+
+            <div className="pt-4 text-center">
+                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Digitaliza Todo © 2026</p>
+            </div>
+        </div>
+    );
+
     if (loading) return (
         <div className="h-screen flex flex-col items-center justify-center p-12 bg-white text-zinc-950">
             <RefreshCw className="animate-spin mb-6" style={{ color: branding?.primaryColor || '#6366f1' }} size={32} />
@@ -1667,21 +1756,61 @@ export default function App() {
                     <div className="flex flex-col">
                         <h1 className="text-lg font-black uppercase tracking-tighter text-zinc-950 leading-none">{branding?.name || 'Academy'}</h1>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: branding?.primaryColor || '#6366f1' }}>{activeTab === 'dashboard' ? 'Resumen' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? 'Pagos' : 'Ajustes'}</span>
+                            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: branding?.primaryColor || '#6366f1' }}>{activeTab === 'dashboard' ? 'Resumen' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? 'Pagos' : activeTab === 'settings' ? 'Ajustes' : 'Perfil'}</span>
                             {isDemo && <span className="bg-emerald-500/10 text-emerald-600 text-[6px] font-black px-1 py-0.5 rounded uppercase tracking-widest">DEMO</span>}
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-2.5 shrink-0 bg-white pl-3 pr-1 py-1 rounded-full border border-zinc-100 shadow-sm">
-                    <div className="flex flex-col items-end">
-                        <span className="text-[10px] font-black text-zinc-900 leading-none truncate max-w-[80px]">{user?.name?.split(' ')[0] || 'Admin'}</span>
-                        <span className="text-[7px] font-black uppercase tracking-[0.2em] mt-0.5" style={{ color: branding?.primaryColor || '#6366f1' }}>Staff</span>
-                    </div>
-                    <div className="w-8 h-8 flex items-center justify-center shrink-0 rounded-full overflow-hidden border-2" style={{ borderColor: branding?.primaryColor || '#6366f1' }}>
-                        <img src="/DLogo-v2.webp" className="w-full h-full object-cover" alt="D" />
+                {/* Notification Bell */}
+                <button 
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className="relative w-10 h-10 flex items-center justify-center rounded-full border border-zinc-100 shadow-sm bg-white"
+                >
+                    <Bell size={20} className="text-zinc-600" />
+                    {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                    )}
+                </button>
+            </header>
+
+            {/* Notification Dropdown */}
+            {showNotifications && (
+                <div className="fixed inset-0 z-[100] md:hidden" onClick={() => setShowNotifications(false)}>
+                    <div className="absolute top-16 right-2 w-80 max-h-96 bg-white rounded-2xl shadow-2xl border border-zinc-100 overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="p-4 border-b border-zinc-50 flex items-center justify-between">
+                            <span className="text-xs font-black uppercase tracking-widest text-zinc-400">Notificaciones</span>
+                            {unreadCount > 0 && (
+                                <button onClick={async () => {
+                                    if (branding?.slug && token) {
+                                        await markAllNotificationsRead(branding.slug, token);
+                                        setUnreadCount(0);
+                                        setNotifications(n => n.map(x => ({ ...x, read: true })));
+                                    }
+                                }} className="text-[9px] font-black text-zinc-400 hover:text-zinc-600">Marcar leídas</button>
+                            )}
+                        </div>
+                        <div className="max-h-72 overflow-y-auto">
+                            {notifications.length > 0 ? notifications.map((n: any) => (
+                                <div key={n.id} className={`p-4 border-b border-zinc-50 ${!n.read ? 'bg-blue-50/50' : ''}`}>
+                                    <div className="flex items-start gap-3">
+                                        <div className={`w-2 h-2 rounded-full mt-1.5 ${!n.read ? 'bg-blue-500' : 'bg-zinc-200'}`} />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-bold text-zinc-800 truncate">{n.title}</p>
+                                            <p className="text-xs text-zinc-400 mt-0.5 line-clamp-2">{n.body}</p>
+                                            <p className="text-[9px] text-zinc-300 mt-1">{n.created_at}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )) : (
+                                <div className="p-8 text-center">
+                                    <Bell size={24} className="text-zinc-200 mx-auto mb-2" />
+                                    <p className="text-xs text-zinc-300">Sin notificaciones</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </header>
+            )}
 
             <div className="flex flex-1 overflow-hidden">
                 {/* SIDEBAR DESKTOP */}
@@ -1727,7 +1856,7 @@ export default function App() {
                         <div key={activeTab} className="w-full animate-in fade-in duration-150">
                             <div className="hidden md:flex justify-between items-center mb-8">
                                 <h2 className="text-2xl font-black uppercase tracking-tighter text-zinc-950">
-                                    {activeTab === 'dashboard' ? 'Resumen General' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? 'Estado de Pagos' : 'Configuración'}
+                                    {activeTab === 'dashboard' ? 'Resumen General' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? 'Estado de Pagos' : activeTab === 'settings' ? 'Configuración' : 'Mi Perfil'}
                                 </h2>
                                 {isDemo && <span className="bg-emerald-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Modo Demo Activo</span>}
                             </div>
@@ -1735,6 +1864,7 @@ export default function App() {
                             {activeTab === 'attendance' && renderAttendance()}
                             {activeTab === 'payments' && renderPayments()}
                             {activeTab === 'settings' && renderSettings()}
+                            {activeTab === 'profile' && renderProfile()}
                         </div>
                     </div>
                 </main>
@@ -1787,7 +1917,16 @@ export default function App() {
                 <TabButton icon={LayoutDashboard} label="Inicio" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} primaryColor={branding?.primaryColor} />
                 <TabButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} />
                 <TabButton icon={CreditCard} label="Pagos" active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} />
-                <TabButton icon={Settings} label="Ajustes" active={activeTab === 'settings'} onClick={() => changeTab('settings')} primaryColor={branding?.primaryColor} />
+                {/* Profile tab con foto */}
+                <button
+                    onClick={() => changeTab('profile')}
+                    className={`flex flex-col items-center gap-0.5 transition-all duration-150 ${activeTab === 'profile' ? 'opacity-100' : 'opacity-30 hover:opacity-60'}`}
+                >
+                    <div className={`w-7 h-7 rounded-full overflow-hidden border-2 ${activeTab === 'profile' ? '' : 'border-transparent'}`} style={activeTab === 'profile' ? { borderColor: branding?.primaryColor || '#6366f1' } : {}}>
+                        <img src={user?.photo || '/DLogo-v2.webp'} className="w-full h-full object-cover" alt="" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest" style={activeTab === 'profile' ? { color: branding?.primaryColor || '#6366f1' } : {}}>Perfil</span>
+                </button>
             </nav>
 
             <style dangerouslySetInnerHTML={{
