@@ -164,6 +164,9 @@ class GuardianController extends Controller
 
         event(new \App\Events\PaymentStatusUpdated($guardian->id, 'approved', $tenant->slug));
 
+        // Notificar al apoderado
+        \App\Models\Notification::send($tenantId, $guardian->id, 'Pago aprobado', 'Tu pago ha sido aprobado. ¡Gracias!', 'payment', $tenant->slug);
+
         return response()->json(['message' => 'Pagos aprobados correctamente']);
     }
 

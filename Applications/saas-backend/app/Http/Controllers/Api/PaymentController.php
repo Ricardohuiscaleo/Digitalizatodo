@@ -90,6 +90,11 @@ class PaymentController extends Controller
 
                     event(new \App\Events\PaymentStatusUpdated($guardian->id, 'pending_review', $tenant->slug));
 
+                    // Notificar a staff que hay comprobante nuevo
+                    foreach ($tenant->users as $staffUser) {
+                        \App\Models\Notification::send($tenant->id, $staffUser->id, 'Comprobante recibido', "{$guardian->name} subió un comprobante de pago.", 'payment', $tenant->slug);
+                    }
+
                     return response()->json([
                         'message' => 'Comprobante optimizado y subido correctamente.',
                         'proof_url' => $url,
@@ -171,6 +176,11 @@ class PaymentController extends Controller
                 }
 
                 event(new \App\Events\PaymentStatusUpdated($guardian->id, 'pending_review', $tenant->slug));
+
+                // Notificar a staff
+                foreach ($tenant->users as $staffUser) {
+                    \App\Models\Notification::send($tenant->id, $staffUser->id, 'Comprobante recibido', "{$guardian->name} subió comprobante para {$validPayments->count()} pagos.", 'payment', $tenant->slug);
+                }
 
                 return response()->json([
                     'message' => 'Comprobante subido y aplicado a ' . $validPayments->count() . ' pagos.',
