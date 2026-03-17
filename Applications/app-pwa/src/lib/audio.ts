@@ -12,7 +12,6 @@ export function unlockAudio() {
     if (unlocked || typeof window === 'undefined') return;
     try {
         const c = getCtx();
-        // Reproducir silencio de 0.001s para desbloquear
         const buf = c.createBuffer(1, 1, 22050);
         const src = c.createBufferSource();
         src.buffer = buf;
@@ -23,7 +22,7 @@ export function unlockAudio() {
     } catch {}
 }
 
-// Reproducir notification.wav usando AudioContext (no se bloquea si ya está desbloqueado)
+// Reproducir notification.wav usando AudioContext
 export async function playNotificationSound() {
     if (typeof window === 'undefined') return;
     try {
@@ -37,4 +36,14 @@ export async function playNotificationSound() {
         src.connect(c.destination);
         src.start(0);
     } catch {}
+}
+
+// App Badging API — muestra contador en el ícono de la PWA instalada
+export function setAppBadge(count: number) {
+    if (typeof navigator === 'undefined') return;
+    if ('setAppBadge' in navigator) {
+        count > 0
+            ? (navigator as any).setAppBadge(count).catch(() => {})
+            : (navigator as any).clearAppBadge().catch(() => {});
+    }
 }
