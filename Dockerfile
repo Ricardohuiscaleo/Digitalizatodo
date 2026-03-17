@@ -1,46 +1,9 @@
-# STAGE 1: Builder (Instalación pesada de dependencias)
-FROM php:8.4-fpm AS builder
-
-WORKDIR /app
-
-# Instalar Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-# Instalar herramientas necesarias para Composer
-RUN apt-get update && apt-get install -y git unzip zip libzip-dev libicu-dev \
-    && docker-php-ext-install zip intl
-
-# Copiar archivos previos para cachear capas
-COPY composer.json composer.lock ./
-
-# Configuración de memoria agresiva para el build
-ENV COMPOSER_MEMORY_LIMIT=-1
-ENV COMPOSER_ALLOW_SUPERUSER=1
-
-# Instalar dependencias sin scripts para evitar fallos por falta de DB/contexto
-RUN composer install \
-    --no-dev \
-    --no-interaction \
-    --no-plugins \
-    --no-scripts \
-    --prefer-dist \
-    --optimize-autoloader \
-    --no-progress \
-    --no-ansi
-
-# STAGE 2: Production (Imagen ligera final)
-FROM php:8.4-fpm AS production
+# STAGE 1: Base (Extensiones y herramientas comunes)
+FROM php:8.4-fpm AS base
 
 WORKDIR /var/www/html
 
-# Traefik Labels para Reverb (WebSockets)
-LABEL traefik.http.routers.reverb.rule="Host(`admin.digitalizatodo.cl`) && PathPrefix(`/app`)"
-LABEL traefik.http.routers.reverb.entryPoints="https"
-LABEL traefik.http.routers.reverb.service="reverb"
-LABEL traefik.http.routers.reverb.tls="true"
-LABEL traefik.http.services.reverb.loadbalancer.server.port="8080"
-
-# Herramientas del sistema + extensiones PHP
+# Herramientas del sistema + extensiones PHP (Solo una vez)
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
 RUN apt-get update && apt-get install -y \
@@ -55,6 +18,44 @@ RUN apt-get update && apt-get install -y \
     zip \
     pcntl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# STAGE 2: Builder (Instalación de dependencias, hereda de base para reusar extensiones)
+FROM base AS builder
+
+WORKDIR /app
+
+# Instalar Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Copiar archivos previos para cachear capas
+COPY composer.json composer.lock ./
+
+# Configuración de memoria agresiva para el build
+ENV COMPOSER_MEMORY_LIMIT=-1
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
+# Instalar dependencias sin scripts
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --no-plugins \
+    --no-scripts \
+    --prefer-dist \
+    --optimize-autoloader \
+    --no-progress \
+    --no-ansi
+
+# STAGE 3: Production (Imagen final ligera, hereda de base)
+FROM base AS production
+
+WORKDIR /var/www/html
+
+# Traefik Labels para Reverb (WebSockets)
+LABEL traefik.http.routers.reverb.rule="Host(`admin.digitalizatodo.cl`) && PathPrefix(`/app`)"
+LABEL traefik.http.routers.reverb.entryPoints="https"
+LABEL traefik.http.routers.reverb.service="reverb"
+LABEL traefik.http.routers.reverb.tls="true"
+LABEL traefik.http.services.reverb.loadbalancer.server.port="8080"
 
 # Copiar dependencias ya instaladas desde la etapa builder
 COPY --from=builder /app/vendor ./vendor
