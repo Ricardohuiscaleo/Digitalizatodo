@@ -1917,8 +1917,8 @@ export default function App() {
                         <div className="flex items-center gap-2">
                             <h1 className="text-lg font-black uppercase tracking-tighter text-zinc-950 leading-none">{branding?.name || 'Academy'}</h1>
                             <button onClick={() => setShowPushModal(true)} className="shrink-0 mt-0.5">
-                                <div className={`w-2 h-2 rounded-full ${
-                                    pushPermission === 'granted' ? 'bg-emerald-500' :
+                                <div className={`w-3 h-3 rounded-full border-2 border-white shadow-sm transition-colors duration-500 ${
+                                    pushPermission === 'granted' ? 'bg-emerald-500 animate-pulse' :
                                     pushPermission === 'denied'  ? 'bg-red-500' :
                                     'bg-amber-400'
                                 }`} />
@@ -2006,7 +2006,16 @@ export default function App() {
                             )}
                         </div>
                         <div className="min-w-0">
-                            <h2 className="text-sm font-black uppercase tracking-tighter text-zinc-950 truncate leading-none">{branding?.name || 'Academy'}</h2>
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-sm font-black uppercase tracking-tighter text-zinc-950 truncate leading-none">{branding?.name || 'Academy'}</h2>
+                                <button onClick={() => setShowPushModal(true)} className="shrink-0">
+                                    <div className={`w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm transition-colors duration-500 ${
+                                        pushPermission === 'granted' ? 'bg-emerald-500 animate-pulse' :
+                                        pushPermission === 'denied'  ? 'bg-red-500' :
+                                        'bg-amber-400'
+                                    }`} />
+                                </button>
+                            </div>
                             <p className="text-[8px] font-black uppercase tracking-widest mt-1" style={{ color: branding?.primaryColor || '#6366f1' }}>Software de Gestión</p>
                         </div>
                     </div>
