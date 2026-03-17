@@ -4,11 +4,11 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class PaymentStatusUpdated implements ShouldBroadcast
+class PaymentStatusUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -16,9 +16,6 @@ class PaymentStatusUpdated implements ShouldBroadcast
     public $status;
     public $tenantSlug;
 
-    /**
-     * Create a new event instance.
-     */
     public function __construct($payerId, $status, $tenantSlug)
     {
         $this->payerId = $payerId;
@@ -26,9 +23,6 @@ class PaymentStatusUpdated implements ShouldBroadcast
         $this->tenantSlug = $tenantSlug;
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     */
     public function broadcastOn(): array
     {
         return [
@@ -36,9 +30,6 @@ class PaymentStatusUpdated implements ShouldBroadcast
         ];
     }
 
-    /**
-     * The event's broadcast name.
-     */
     public function broadcastAs(): string
     {
         return 'payment.updated';
