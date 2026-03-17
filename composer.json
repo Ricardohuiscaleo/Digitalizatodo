@@ -15,6 +15,7 @@
         "league/flysystem-aws-s3-v3": "^3.32",
         "pusher/pusher-php-server": "^7.2",
         "resend/resend-php": "^1.1",
+        "minishlink/web-push": "^9.0",
         "stancl/tenancy": "^3.9"
     },
     "require-dev": {
