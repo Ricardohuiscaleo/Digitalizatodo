@@ -37,6 +37,7 @@ import { todayCL } from "@/lib/utils";
 import StudentCalendar from "@/components/Calendar/StudentCalendar";
 import { getEcho, reconnect } from "@/lib/echo";
 import { unlockAudio, setAppBadge } from "@/lib/audio";
+import { subscribeToPush } from "@/lib/push";
 
 /* ─── QR Camera Scanner ─── */
 function StudentQRScanner({
@@ -304,6 +305,9 @@ export default function StudentDashboard() {
     const [showNotifications, setShowNotifications] = useState(false);
     const [appUpdates, setAppUpdates] = useState<any[]>([]);
     const [toastNotification, setToastNotification] = useState<any>(null);
+    const [showPushBanner, setShowPushBanner] = useState(false);
+    const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
+    const [showPushModal, setShowPushModal] = useState(false);
 
     const refreshData = useCallback(async () => {
         let token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
@@ -448,6 +452,68 @@ export default function StudentDashboard() {
 
         });
     }, []);
+
+    // Leer estado de permisos + mostrar banner reactivo
+    useEffect(() => {
+        if (typeof Notification === 'undefined') {
+            setPushPermission('denied');
+            return;
+        }
+
+        const updatePermission = () => {
+            const perm = Notification.permission;
+            setPushPermission(perm);
+            
+            const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
+            if (token && branding?.slug) {
+                const dismissed = localStorage.getItem('push_banner_dismissed');
+                if (perm === 'default' && !dismissed) {
+                    setShowPushBanner(true);
+                } else {
+                    setShowPushBanner(false);
+                    if (perm === 'granted') {
+                        subscribeToPush(branding.slug, token);
+                    }
+                }
+            }
+        };
+
+        updatePermission();
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') updatePermission();
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        let permStatus: PermissionStatus | null = null;
+        if (navigator.permissions && navigator.permissions.query) {
+            navigator.permissions.query({ name: 'notifications' })
+                .then(status => {
+                    permStatus = status;
+                    status.onchange = updatePermission;
+                })
+                .catch(() => {});
+        }
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            if (permStatus) permStatus.onchange = null;
+        };
+    }, [branding?.slug]);
+
+    const handleActivatePush = () => {
+        setShowPushBanner(false);
+        setShowPushModal(false);
+        if (typeof Notification !== 'undefined') {
+            Notification.requestPermission().then(permission => {
+                setPushPermission(permission);
+                const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
+                if (permission === 'granted' && token && branding?.slug) {
+                    subscribeToPush(branding.slug, token);
+                }
+            });
+        }
+    };
 
     const handleUploadProof = async (paymentId: string, file: File) => {
         setUploadingPayment(paymentId);
@@ -1113,7 +1179,16 @@ export default function StudentDashboard() {
                         )}
                     </div>
                     <div className="flex flex-col">
-                        <h1 className="text-lg font-black uppercase tracking-tighter text-zinc-950 leading-none">{branding?.name || 'Academy'}</h1>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-lg font-black uppercase tracking-tighter text-zinc-950 leading-none">{branding?.name || 'Academy'}</h1>
+                            <button onClick={() => setShowPushModal(true)} className="shrink-0 mt-0.5">
+                                <div className={`w-3 h-3 rounded-full border-2 border-white shadow-sm transition-colors duration-500 ${
+                                    pushPermission === 'granted' ? 'bg-emerald-500 animate-pulse' :
+                                    pushPermission === 'denied'  ? 'bg-red-500' :
+                                    'bg-amber-400'
+                                }`} />
+                            </button>
+                        </div>
                         <span className="text-[9px] font-black uppercase tracking-widest mt-0.5" style={{ color: primaryColor }}>
                             {activeSection === 'home' ? 'Inicio' : activeSection === 'calendar' ? 'Asistencia' : activeSection === 'payments' ? 'Pagos' : 'Perfil'}
                         </span>
@@ -1233,6 +1308,44 @@ export default function StudentDashboard() {
                     onConfirm={() => handleDeleteProof(confirmDelete)}
                     onCancel={() => setConfirmDelete(null)}
                 />
+            )}
+
+            {showPushModal && (
+                <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-end justify-center p-4 animate-in fade-in duration-200" onClick={() => setShowPushModal(false)}>
+                    <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom-4 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className={`w-4 h-4 rounded-full shrink-0 ${
+                                pushPermission === 'granted' ? 'bg-emerald-500' :
+                                pushPermission === 'denied'  ? 'bg-red-500' :
+                                'bg-amber-400'
+                            }`} />
+                            <h3 className="text-sm font-black uppercase tracking-tighter text-zinc-900">
+                                {pushPermission === 'granted' ? 'Notificaciones activas' :
+                                 pushPermission === 'denied'  ? 'Notificaciones bloqueadas' :
+                                 'Notificaciones desactivadas'}
+                            </h3>
+                        </div>
+                        <p className="text-xs text-zinc-400 leading-relaxed mb-6">
+                            {pushPermission === 'granted'
+                                ? 'Recibirás alertas de asistencia y comunicados aunque la app esté cerrada.'
+                                : pushPermission === 'denied'
+                                ? 'Bloqueaste las notificaciones. Para activarlas ve a Ajustes → Safari → Notificaciones.'
+                                : 'Activa las notificaciones para recibir alertas y mensajes importantes aunque la app esté cerrada.'}
+                        </p>
+                        {pushPermission === 'default' && (
+                            <button
+                                onClick={handleActivatePush}
+                                style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
+                                className="w-full py-4 rounded-2xl text-white font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all"
+                            >
+                                Activar notificaciones
+                            </button>
+                        )}
+                        <button onClick={() => setShowPushModal(false)} className="w-full py-3 text-zinc-400 font-black text-[9px] uppercase tracking-widest mt-2">
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
             )}
 
             {/* Global File Input for Photos */}
