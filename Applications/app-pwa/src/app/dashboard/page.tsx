@@ -649,9 +649,12 @@ export default function App() {
     const handleActivatePush = () => {
         setShowPushBanner(false);
         setShowPushModal(false);
-        if (token && branding?.slug) {
-            subscribeToPush(branding.slug, token).then(() => {
-                setPushPermission(Notification.permission);
+        if (typeof Notification !== 'undefined') {
+            Notification.requestPermission().then(permission => {
+                setPushPermission(permission);
+                if (permission === 'granted' && token && branding?.slug) {
+                    subscribeToPush(branding.slug, token);
+                }
             });
         }
     };

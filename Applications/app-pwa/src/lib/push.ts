@@ -11,9 +11,7 @@ export async function subscribeToPush(tenantSlug: string, token: string): Promis
     if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
 
     try {
-        const current = Notification.permission;
-        const permission = current === 'granted' ? 'granted' : await Notification.requestPermission();
-        if (permission !== 'granted') return;
+        if (Notification.permission !== 'granted') return;
 
         const reg = await navigator.serviceWorker.ready;
 
