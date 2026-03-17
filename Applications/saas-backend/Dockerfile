@@ -1,4 +1,34 @@
-# Imagen única Debian — más confiable que Alpine para extensiones PHP complejas
+# STAGE 1: Builder (Instalación pesada de dependencias)
+FROM php:8.4-fpm AS builder
+
+WORKDIR /app
+
+# Instalar Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Instalar herramientas necesarias para Composer
+RUN apt-get update && apt-get install -y git unzip zip libzip-dev libicu-dev \
+    && docker-php-ext-install zip intl
+
+# Copiar archivos previos para cachear capas
+COPY composer.json composer.lock ./
+
+# Configuración de memoria agresiva para el build
+ENV COMPOSER_MEMORY_LIMIT=-1
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
+# Instalar dependencias sin scripts para evitar fallos por falta de DB/contexto
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --no-plugins \
+    --no-scripts \
+    --prefer-dist \
+    --optimize-autoloader \
+    --no-progress \
+    --no-ansi
+
+# STAGE 2: Production (Imagen ligera final)
 FROM php:8.4-fpm AS production
 
 WORKDIR /var/www/html
@@ -26,24 +56,14 @@ RUN apt-get update && apt-get install -y \
     pcntl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-ENV COMPOSER_MEMORY_LIMIT=-1
-ENV COMPOSER_ALLOW_SUPERUSER=1
+# Copiar dependencias ya instaladas desde la etapa builder
+COPY --from=builder /app/vendor ./vendor
 
-# Dependencias PHP (cache layer)
-COPY composer.json composer.lock ./
-RUN composer install \
-    --no-dev \
-    --no-scripts \
-    --no-interaction \
-    --optimize-autoloader \
-    --prefer-dist \
-    --no-progress \
-    --no-ansi
-
-# Código de la app
+# Copiar el resto del código
 COPY . .
+
+# Regenerar autoloader final (rápido ya que vendor ya existe)
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 RUN composer dump-autoload --optimize --no-scripts
 
 # OPcache y límites PHP
