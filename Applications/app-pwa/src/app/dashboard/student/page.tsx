@@ -384,9 +384,12 @@ export default function StudentDashboard() {
 
         // Canal de Pagos (Vital para el apoderado: ver aprobación en segundos)
         const payChannel = echo.channel(`payments.${branding.slug}`);
-        payChannel.listen('.payment.updated', (data: any) => {
-            console.log('Real-time payment update received:', data);
-            refreshDataRef.current();
+        payChannel.listen('.payment.updated', (ev: any) => {
+            console.log('[Student WS] 💳 payment.updated:', ev);
+            const guardianId = data?.guardian?.id;
+            if (!guardianId || String(ev.payerId) === String(guardianId)) {
+                refreshDataRef.current();
+            }
         });
 
         // Canal de Notificaciones en tiempo real
