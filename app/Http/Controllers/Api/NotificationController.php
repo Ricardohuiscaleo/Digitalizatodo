@@ -12,7 +12,7 @@ class NotificationController extends Controller
     public function index(Request $request): JsonResponse
     {
         $notifications = Notification::forUser($request->user()->id)
-            ->where('tenant_id', $request->attributes->get('tenant_id'))
+            ->where('tenant_id', app('currentTenant')->id)
             ->orderByDesc('created_at')
             ->limit(50)
             ->get()
@@ -26,7 +26,7 @@ class NotificationController extends Controller
             ]);
 
         $unread = Notification::forUser($request->user()->id)
-            ->where('tenant_id', $request->attributes->get('tenant_id'))
+            ->where('tenant_id', app('currentTenant')->id)
             ->unread()
             ->count();
 
@@ -46,7 +46,7 @@ class NotificationController extends Controller
     public function readAll(Request $request): JsonResponse
     {
         Notification::forUser($request->user()->id)
-            ->where('tenant_id', $request->attributes->get('tenant_id'))
+            ->where('tenant_id', app('currentTenant')->id)
             ->unread()
             ->update(['read_at' => now()]);
 
