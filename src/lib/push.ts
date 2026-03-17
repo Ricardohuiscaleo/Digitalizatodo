@@ -27,7 +27,7 @@ export async function subscribeToPush(tenantSlug: string, token: string): Promis
 
         const subscription = await reg.pushManager.subscribe({
             userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(key),
+            applicationServerKey: urlBase64ToUint8Array(key) as any,
         });
 
         const { endpoint, keys } = subscription.toJSON() as any;
