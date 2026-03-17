@@ -28,6 +28,8 @@ RUN apt-get update && apt-get install -y \
 
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+ENV COMPOSER_MEMORY_LIMIT=-1
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 # Dependencias PHP (cache layer)
 COPY composer.json composer.lock ./
@@ -36,7 +38,9 @@ RUN composer install \
     --no-scripts \
     --no-interaction \
     --optimize-autoloader \
-    --prefer-dist
+    --prefer-dist \
+    --no-progress \
+    --no-ansi
 
 # Código de la app
 COPY . .
