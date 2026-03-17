@@ -592,21 +592,58 @@ export default function App() {
     const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
     const [showPushModal, setShowPushModal] = useState(false);
 
-    // Leer estado de permisos + mostrar banner
+    // Leer estado de permisos + mostrar banner reactivo
     useEffect(() => {
         if (typeof Notification === 'undefined') {
             setPushPermission('denied'); // iOS sin soporte → rojo, no mostrar banner
             return;
         }
-        const perm = Notification.permission;
-        setPushPermission(perm);
-        if (!token || !branding?.slug) return;
-        const dismissed = localStorage.getItem('push_banner_dismissed');
-        if (perm === 'default' && !dismissed) {
-            setShowPushBanner(true);
-        } else if (perm === 'granted') {
-            subscribeToPush(branding.slug, token);
+
+        const updatePermission = () => {
+            const perm = Notification.permission;
+            setPushPermission(perm);
+            
+            if (token && branding?.slug) {
+                const dismissed = localStorage.getItem('push_banner_dismissed');
+                if (perm === 'default' && !dismissed) {
+                    setShowPushBanner(true);
+                } else {
+                    setShowPushBanner(false);
+                    if (perm === 'granted') {
+                        subscribeToPush(branding.slug, token);
+                    }
+                }
+            }
+        };
+
+        // Primera comprobación
+        updatePermission();
+
+        // 1. Escuchar cuando la PWA vuelve al primer plano
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                updatePermission();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        // 2. Escuchar cambios de permisos directo (API)
+        let permStatus: PermissionStatus | null = null;
+        if (navigator.permissions && navigator.permissions.query) {
+            navigator.permissions.query({ name: 'notifications' })
+                .then(status => {
+                    permStatus = status;
+                    status.onchange = updatePermission;
+                })
+                .catch(() => {});
         }
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            if (permStatus) {
+                permStatus.onchange = null;
+            }
+        };
     }, [token, branding?.slug]);
 
     const handleActivatePush = () => {
