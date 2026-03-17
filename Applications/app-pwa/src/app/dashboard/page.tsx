@@ -588,11 +588,17 @@ export default function App() {
         document.addEventListener('touchstart', unlockAudio, { once: true });
     }, []);
 
-    // Web Push — suscribir solo si ya tiene permiso concedido (sin gesture)
-    // Si no tiene permiso, se pide al hacer click en la campana
+    const [showPushBanner, setShowPushBanner] = useState(false);
+
+    // Mostrar banner de notificaciones si nunca ha respondido
     useEffect(() => {
         if (!token || !branding?.slug) return;
-        if (Notification.permission === 'granted') {
+        if (typeof Notification === 'undefined') return;
+        const dismissed = localStorage.getItem('push_banner_dismissed');
+        if (dismissed) return;
+        if (Notification.permission === 'default') {
+            setShowPushBanner(true);
+        } else if (Notification.permission === 'granted') {
             subscribeToPush(branding.slug, token);
         }
     }, [token, branding?.slug]);
@@ -1796,7 +1802,41 @@ export default function App() {
     );
 
     return (
-        <div className="flex flex-col h-screen bg-white font-sans relative overflow-hidden text-zinc-950">
+            {/* Banner Web Push — aparece una sola vez si nunca ha dado permiso */}
+            {showPushBanner && (
+                <div className="fixed bottom-24 left-3 right-3 z-[200] animate-in slide-in-from-bottom-4 duration-300">
+                    <div className="bg-zinc-900 rounded-2xl p-4 flex items-center gap-3 shadow-2xl border border-white/10">
+                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                            <Bell size={20} className="text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-black text-white leading-tight">Activa las notificaciones</p>
+                            <p className="text-[9px] text-white/50 font-bold mt-0.5">Recibe alertas de pagos y asistencia</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                            <button
+                                onClick={() => {
+                                    localStorage.setItem('push_banner_dismissed', '1');
+                                    setShowPushBanner(false);
+                                }}
+                                className="text-[9px] font-black text-white/40 uppercase tracking-widest px-2 py-1"
+                            >
+                                Ahora no
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowPushBanner(false);
+                                    if (token && branding?.slug) subscribeToPush(branding.slug, token);
+                                }}
+                                style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
+                                className="text-[9px] font-black text-white uppercase tracking-widest px-3 py-2 rounded-xl"
+                            >
+                                Activar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             <NotificationToast
                 notification={toastNotification}
                 onDismiss={() => setToastNotification(null)}
@@ -1826,13 +1866,7 @@ export default function App() {
                 </div>
                 {/* Notification Bell */}
                 <button 
-                    onClick={() => {
-                        // Si no tiene permiso, pedirlo aquí (dentro de un gesture)
-                        if (Notification.permission !== 'granted' && token && branding?.slug) {
-                            subscribeToPush(branding.slug, token);
-                        }
-                        setShowNotifications(!showNotifications);
-                    }}
+                    onClick={() => setShowNotifications(!showNotifications)}
                     className="relative w-10 h-10 flex items-center justify-center rounded-full border border-zinc-100 shadow-sm bg-white"
                 >
                     <Bell size={20} className="text-zinc-600" />
