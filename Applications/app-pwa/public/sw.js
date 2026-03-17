@@ -29,6 +29,12 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // HTML pages: always network first (ensures fresh deploys load immediately)
+  if (event.request.mode === 'navigate') {
+    event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+    return;
+  }
+
   // Static assets only: cache first, then network
   event.respondWith(
     caches.match(event.request).then(cached => cached || fetch(event.request))
