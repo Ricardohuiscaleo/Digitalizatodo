@@ -56,25 +56,35 @@ self.addEventListener('message', event => {
 // Web Push — notificación nativa cuando la app está cerrada
 self.addEventListener('push', event => {
   let data = {};
-  try { data = event.data?.json() ?? {}; } catch {}
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data = { title: "Alerta", body: event.data.text() };
+    }
+  }
 
   const title = data.title || 'Digitaliza Todo';
   const body  = data.body  || 'Tienes una nueva notificación';
   const count = data.badgeCount || 1;
 
-  event.waitUntil(
-    Promise.all([
-      self.registration.showNotification(title, {
-        body,
-        icon: '/icon.webp',
-        badge: '/icon.webp',
-        data: { type: data.type },
-      }),
-      'setAppBadge' in self.registration
-        ? self.registration.setAppBadge(count)
-        : Promise.resolve(),
-    ])
-  );
+  const notificationOptions = {
+    body,
+    icon: '/icon.webp',
+    badge: '/icon.webp',
+    data: { type: data.type || 'default' },
+    requireInteraction: true // REQUISITO IOS
+  };
+
+  const renderPromise = self.registration.showNotification(title, notificationOptions);
+
+  if ('setAppBadge' in navigator && count > 0) {
+    navigator.setAppBadge(count).catch(() => {});
+  } else if ('setAppBadge' in self.registration && count > 0) {
+    self.registration.setAppBadge(count).catch(() => {});
+  }
+
+  event.waitUntil(renderPromise);
 });
 
 // Click en notificación — abrir la app
