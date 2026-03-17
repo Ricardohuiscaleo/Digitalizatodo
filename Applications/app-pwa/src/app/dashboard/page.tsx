@@ -592,21 +592,19 @@ export default function App() {
     const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
     const [showPushModal, setShowPushModal] = useState(false);
 
-    // Leer estado de permisos
+    // Leer estado de permisos + mostrar banner
     useEffect(() => {
-        if (typeof Notification === 'undefined') return;
-        setPushPermission(Notification.permission);
-    }, []);
-
-    // Mostrar banner si nunca ha respondido y no lo descartó
-    useEffect(() => {
+        if (typeof Notification === 'undefined') {
+            setPushPermission('denied'); // iOS sin soporte → rojo, no mostrar banner
+            return;
+        }
+        const perm = Notification.permission;
+        setPushPermission(perm);
         if (!token || !branding?.slug) return;
-        if (typeof Notification === 'undefined') return;
         const dismissed = localStorage.getItem('push_banner_dismissed');
-        if (dismissed) return;
-        if (Notification.permission === 'default') {
+        if (perm === 'default' && !dismissed) {
             setShowPushBanner(true);
-        } else if (Notification.permission === 'granted') {
+        } else if (perm === 'granted') {
             subscribeToPush(branding.slug, token);
         }
     }, [token, branding?.slug]);
