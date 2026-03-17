@@ -70,3 +70,11 @@ Personal portfolio site for the developer.
 - **Events**: `ShouldBroadcastNow` (synchronous, no queue worker needed)
 - **Channels**: Public per-tenant (`attendance.{slug}`), Private per-user planned (`private-user.{id}`)
 - **Full documentation**: `.amazonq/rules/memory-bank/realtime.md`
+
+## Web Push Architecture
+- **VAPID keys**: generadas con `npx web-push generate-vapid-keys`, guardadas en Coolify env vars (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`)
+- **Backend**: `minishlink/web-push` (composer), `PushSubscription` model, `PushController`, `Notification::sendWebPush()` llamado desde `Notification::send()`
+- **Frontend**: `lib/push.ts` → `subscribeToPush()` llamado en dashboard al autenticar
+- **SW**: handler `push` en `sw.js` → `showNotification()` + `setAppBadge()`
+- **Tabla**: `push_subscriptions` (user_id, tenant_id, endpoint, public_key, auth_token)
+- **Flujo**: Notificación creada → WebSocket (app abierta) + Web Push (app cerrada, badge garantizado iOS/Android)

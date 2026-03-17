@@ -588,10 +588,13 @@ export default function App() {
         document.addEventListener('touchstart', unlockAudio, { once: true });
     }, []);
 
-    // Web Push — suscribir cuando tengamos token y slug
+    // Web Push — suscribir solo si ya tiene permiso concedido (sin gesture)
+    // Si no tiene permiso, se pide al hacer click en la campana
     useEffect(() => {
         if (!token || !branding?.slug) return;
-        subscribeToPush(branding.slug, token);
+        if (Notification.permission === 'granted') {
+            subscribeToPush(branding.slug, token);
+        }
     }, [token, branding?.slug]);
 
     // App Badge — sincronizar contador con ícono PWA
@@ -1823,7 +1826,13 @@ export default function App() {
                 </div>
                 {/* Notification Bell */}
                 <button 
-                    onClick={() => setShowNotifications(!showNotifications)}
+                    onClick={() => {
+                        // Si no tiene permiso, pedirlo aquí (dentro de un gesture)
+                        if (Notification.permission !== 'granted' && token && branding?.slug) {
+                            subscribeToPush(branding.slug, token);
+                        }
+                        setShowNotifications(!showNotifications);
+                    }}
                     className="relative w-10 h-10 flex items-center justify-center rounded-full border border-zinc-100 shadow-sm bg-white"
                 >
                     <Bell size={20} className="text-zinc-600" />

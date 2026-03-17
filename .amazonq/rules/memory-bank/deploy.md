@@ -92,3 +92,6 @@ git push
 | `GET /api/debug?emit={slug}` | Emitir evento de prueba WebSocket |
 | `GET /api/app-updates` | Ver changelog registrado |
 | `GET /api/app-updates?target=staff` | Changelog filtrado por target |
+| `GET /api/{tenant}/push/vapid-public-key` | Clave pública VAPID (auth requerida) |
+| `POST /api/{tenant}/push/subscribe` | Guardar suscripción Web Push |
+| `POST /api/{tenant}/push/unsubscribe` | Eliminar suscripción Web Push |
