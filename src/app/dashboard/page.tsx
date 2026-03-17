@@ -589,8 +589,16 @@ export default function App() {
     }, []);
 
     const [showPushBanner, setShowPushBanner] = useState(false);
+    const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
+    const [showPushModal, setShowPushModal] = useState(false);
 
-    // Mostrar banner de notificaciones si nunca ha respondido
+    // Leer estado de permisos
+    useEffect(() => {
+        if (typeof Notification === 'undefined') return;
+        setPushPermission(Notification.permission);
+    }, []);
+
+    // Mostrar banner si nunca ha respondido y no lo descartó
     useEffect(() => {
         if (!token || !branding?.slug) return;
         if (typeof Notification === 'undefined') return;
@@ -602,6 +610,16 @@ export default function App() {
             subscribeToPush(branding.slug, token);
         }
     }, [token, branding?.slug]);
+
+    const handleActivatePush = () => {
+        setShowPushBanner(false);
+        setShowPushModal(false);
+        if (token && branding?.slug) {
+            subscribeToPush(branding.slug, token).then(() => {
+                setPushPermission(Notification.permission);
+            });
+        }
+    };
 
     // App Badge — sincronizar contador con ícono PWA
     useEffect(() => { setAppBadge(unreadCount); }, [unreadCount]);
@@ -1802,6 +1820,7 @@ export default function App() {
     );
 
     return (
+        <div className="flex flex-col h-screen bg-white font-sans relative overflow-hidden text-zinc-950">
             {/* Banner Web Push — aparece una sola vez si nunca ha dado permiso */}
             {showPushBanner && (
                 <div className="fixed bottom-24 left-3 right-3 z-[200] animate-in slide-in-from-bottom-4 duration-300">
@@ -1857,7 +1876,16 @@ export default function App() {
                         )}
                     </div>
                     <div className="flex flex-col">
-                        <h1 className="text-lg font-black uppercase tracking-tighter text-zinc-950 leading-none">{branding?.name || 'Academy'}</h1>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-lg font-black uppercase tracking-tighter text-zinc-950 leading-none">{branding?.name || 'Academy'}</h1>
+                            <button onClick={() => setShowPushModal(true)} className="shrink-0 mt-0.5">
+                                <div className={`w-2 h-2 rounded-full ${
+                                    pushPermission === 'granted' ? 'bg-emerald-500' :
+                                    pushPermission === 'denied'  ? 'bg-red-500' :
+                                    'bg-amber-400'
+                                }`} />
+                            </button>
+                        </div>
                         <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: branding?.primaryColor || '#6366f1' }}>{activeTab === 'dashboard' ? 'Resumen' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? 'Pagos' : activeTab === 'settings' ? 'Ajustes' : 'Perfil'}</span>
                             {isDemo && <span className="bg-emerald-500/10 text-emerald-600 text-[6px] font-black px-1 py-0.5 rounded uppercase tracking-widest">DEMO</span>}
@@ -1997,6 +2025,45 @@ export default function App() {
                     checkedInStudent={lastCheckedInStudent}
                     onStudentAcknowledged={() => setLastCheckedInStudent(null)}
                 />
+            )}
+
+            {/* MODAL PUSH PERMISSIONS */}
+            {showPushModal && (
+                <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-end justify-center p-4 animate-in fade-in duration-200" onClick={() => setShowPushModal(false)}>
+                    <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom-4 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className={`w-4 h-4 rounded-full shrink-0 ${
+                                pushPermission === 'granted' ? 'bg-emerald-500' :
+                                pushPermission === 'denied'  ? 'bg-red-500' :
+                                'bg-amber-400'
+                            }`} />
+                            <h3 className="text-sm font-black uppercase tracking-tighter text-zinc-900">
+                                {pushPermission === 'granted' ? 'Notificaciones activas' :
+                                 pushPermission === 'denied'  ? 'Notificaciones bloqueadas' :
+                                 'Notificaciones desactivadas'}
+                            </h3>
+                        </div>
+                        <p className="text-xs text-zinc-400 leading-relaxed mb-6">
+                            {pushPermission === 'granted'
+                                ? 'Recibirás alertas de pagos y asistencia aunque la app esté cerrada.'
+                                : pushPermission === 'denied'
+                                ? 'Bloqueaste las notificaciones. Para activarlas ve a Ajustes → Safari → Notificaciones.'
+                                : 'Activa las notificaciones para recibir alertas de pagos y asistencia aunque la app esté cerrada.'}
+                        </p>
+                        {pushPermission === 'default' && (
+                            <button
+                                onClick={handleActivatePush}
+                                style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
+                                className="w-full py-4 rounded-2xl text-white font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all"
+                            >
+                                Activar notificaciones
+                            </button>
+                        )}
+                        <button onClick={() => setShowPushModal(false)} className="w-full py-3 text-zinc-400 font-black text-[9px] uppercase tracking-widest mt-2">
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
             )}
 
             {/* MODAL DE COMPROBANTE */}
