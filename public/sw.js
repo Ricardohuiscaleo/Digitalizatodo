@@ -34,3 +34,15 @@ self.addEventListener('fetch', event => {
     caches.match(event.request).then(cached => cached || fetch(event.request))
   );
 });
+
+// App Badging desde Service Worker (requerido por iOS)
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SET_BADGE') {
+    const count = event.data.count || 0;
+    if ('setAppBadge' in self.registration) {
+      count > 0
+        ? self.registration.setAppBadge(count).catch(() => {})
+        : self.registration.clearAppBadge().catch(() => {});
+    }
+  }
+});

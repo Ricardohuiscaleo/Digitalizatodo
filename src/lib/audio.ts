@@ -39,8 +39,16 @@ export async function playNotificationSound() {
 }
 
 // App Badging API — muestra contador en el ícono de la PWA instalada
+// En iOS debe ir via Service Worker; en Android funciona directo desde la página
 export function setAppBadge(count: number) {
     if (typeof navigator === 'undefined') return;
+
+    // Intentar via Service Worker primero (requerido por iOS)
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'SET_BADGE', count });
+    }
+
+    // Fallback directo para Android Chrome
     if ('setAppBadge' in navigator) {
         count > 0
             ? (navigator as any).setAppBadge(count).catch(() => {})
