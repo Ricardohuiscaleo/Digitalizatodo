@@ -1320,17 +1320,17 @@ export default function StudentDashboard() {
                                 'bg-amber-400'
                             }`} />
                             <h3 className="text-sm font-black uppercase tracking-tighter text-zinc-900">
-                                {pushPermission === 'granted' ? 'Notificaciones activas' :
-                                 pushPermission === 'denied'  ? 'Notificaciones bloqueadas' :
-                                 'Notificaciones desactivadas'}
+                                {pushPermission === 'granted' ? 'Alertas Activadas 🔔' :
+                                 pushPermission === 'denied'  ? 'Alertas Bloqueadas 🔕' :
+                                 'Activar Alertas de Seguridad'}
                             </h3>
                         </div>
-                        <p className="text-xs text-zinc-400 leading-relaxed mb-6">
+                        <p className="text-xs text-zinc-500 leading-relaxed mb-6 font-medium">
                             {pushPermission === 'granted'
-                                ? 'Recibirás alertas de asistencia y comunicados aunque la app esté cerrada.'
+                                ? 'Todo listo. Recibirás avisos instantáneos cuando el alumno registre su asistencia en portería.'
                                 : pushPermission === 'denied'
-                                ? 'Bloqueaste las notificaciones. Para activarlas ve a Ajustes → Safari → Notificaciones.'
-                                : 'Activa las notificaciones para recibir alertas y mensajes importantes aunque la app esté cerrada.'}
+                                ? 'Has bloqueado los avisos. Por seguridad, te recomendamos ir a los Ajustes de tu teléfono → Safari y permitir las notificaciones para esta App.'
+                                : 'Es fundamental que actives las notificaciones. Así te avisaremos en tiempo real cuando el alumno ingrese a la academia y cuando tus pagos sean aprobados.'}
                         </p>
                         {pushPermission === 'default' && (
                             <button
