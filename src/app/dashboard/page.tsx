@@ -59,6 +59,7 @@ import {
     getAppUpdates
 } from "@/lib/api";
 import { unlockAudio, setAppBadge } from "@/lib/audio";
+import { subscribeToPush } from "@/lib/push";
 
 /* ─── Proof Modal Component ─── */
 /* ─── Payment Action Modal ─── */
@@ -586,6 +587,12 @@ export default function App() {
         document.addEventListener('click', unlockAudio, { once: true });
         document.addEventListener('touchstart', unlockAudio, { once: true });
     }, []);
+
+    // Web Push — suscribir cuando tengamos token y slug
+    useEffect(() => {
+        if (!token || !branding?.slug) return;
+        subscribeToPush(branding.slug, token);
+    }, [token, branding?.slug]);
 
     // App Badge — sincronizar contador con ícono PWA
     useEffect(() => { setAppBadge(unreadCount); }, [unreadCount]);
