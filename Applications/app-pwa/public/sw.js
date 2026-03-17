@@ -46,3 +46,38 @@ self.addEventListener('message', event => {
     }
   }
 });
+
+// Web Push — notificación nativa cuando la app está cerrada
+self.addEventListener('push', event => {
+  let data = {};
+  try { data = event.data?.json() ?? {}; } catch {}
+
+  const title = data.title || 'Digitaliza Todo';
+  const body  = data.body  || 'Tienes una nueva notificación';
+  const count = data.badgeCount || 1;
+
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(title, {
+        body,
+        icon: '/icon.webp',
+        badge: '/icon.webp',
+        data: { type: data.type },
+      }),
+      'setAppBadge' in self.registration
+        ? self.registration.setAppBadge(count)
+        : Promise.resolve(),
+    ])
+  );
+});
+
+// Click en notificación — abrir la app
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      if (list.length > 0) return list[0].focus();
+      return clients.openWindow('/');
+    })
+  );
+});
