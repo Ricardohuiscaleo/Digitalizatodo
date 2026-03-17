@@ -78,13 +78,20 @@ self.addEventListener('push', event => {
 
   const renderPromise = self.registration.showNotification(title, notificationOptions);
 
+  // Avisar a la app que hay nuevas notificaciones (si está abierta)
+  const broadcastPromise = self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+    clients.forEach(client => {
+      client.postMessage({ type: 'REFRESH_NOTIFICATIONS' });
+    });
+  });
+
   if ('setAppBadge' in navigator && count > 0) {
     navigator.setAppBadge(count).catch(() => {});
   } else if ('setAppBadge' in self.registration && count > 0) {
     self.registration.setAppBadge(count).catch(() => {});
   }
 
-  event.waitUntil(renderPromise);
+  event.waitUntil(Promise.all([renderPromise, broadcastPromise]));
 });
 
 // Click en notificación — abrir la app
