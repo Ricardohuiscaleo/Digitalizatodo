@@ -58,7 +58,7 @@ import {
     markNotificationRead,
     getAppUpdates
 } from "@/lib/api";
-import { unlockAudio } from "@/lib/audio";
+import { unlockAudio, setAppBadge } from "@/lib/audio";
 
 /* ─── Proof Modal Component ─── */
 /* ─── Payment Action Modal ─── */
@@ -586,6 +586,9 @@ export default function App() {
         document.addEventListener('click', unlockAudio, { once: true });
         document.addEventListener('touchstart', unlockAudio, { once: true });
     }, []);
+
+    // App Badge — sincronizar contador con ícono PWA
+    useEffect(() => { setAppBadge(unreadCount); }, [unreadCount]);
 
     // Cargar notificaciones y app updates
     useEffect(() => {

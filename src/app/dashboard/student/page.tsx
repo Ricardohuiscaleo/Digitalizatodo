@@ -36,7 +36,7 @@ import BottomNav, { NavSection } from "@/components/Navigation/BottomNav";
 import { todayCL } from "@/lib/utils";
 import StudentCalendar from "@/components/Calendar/StudentCalendar";
 import { getEcho, reconnect } from "@/lib/echo";
-import { unlockAudio } from "@/lib/audio";
+import { unlockAudio, setAppBadge } from "@/lib/audio";
 
 /* ─── QR Camera Scanner ─── */
 function StudentQRScanner({
@@ -430,6 +430,9 @@ export default function StudentDashboard() {
         document.addEventListener('click', unlockAudio, { once: true });
         document.addEventListener('touchstart', unlockAudio, { once: true });
     }, []);
+
+    // App Badge — sincronizar contador con ícono PWA
+    useEffect(() => { setAppBadge(unreadCount); }, [unreadCount]);
 
     // Cargar notificaciones y app updates
     useEffect(() => {
