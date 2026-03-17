@@ -399,6 +399,14 @@ export default function App() {
             getAttendanceHistory(s, t)
                 .then(h => { if (h?.attendance) setAttendanceHistory(h.attendance); })
                 .catch(() => {});
+            
+            // Refrescar notificaciones también
+            if (slug && token) {
+                getNotifications(slug, token).then(d => {
+                    if (d?.notifications) setNotifications(d.notifications);
+                    if (d?.unread !== undefined) setUnreadCount(d.unread);
+                });
+            }
         };
 
         echo.channel(`attendance.${slug}`)
@@ -430,6 +438,18 @@ export default function App() {
             .listen('.payment.updated', () => { console.log('[WS] payment.updated'); safeRefresh(); });
         echo.channel(`dashboard.${slug}`)
             .listen('.student.registered', () => { console.log('[WS] student.registered'); safeRefresh(); });
+
+        // Escuchar mensajes del Service Worker (Push Sync)
+        let handleMessage: ((event: MessageEvent) => void) | null = null;
+        if ('serviceWorker' in navigator) {
+            handleMessage = (event: MessageEvent) => {
+                if (event.data?.type === 'REFRESH_NOTIFICATIONS') {
+                    console.log('[Staff PWA] 🔄 Push received — refreshing notifications');
+                    safeRefresh();
+                }
+            };
+            navigator.serviceWorker.addEventListener('message', handleMessage);
+        }
 
         // Notificaciones en tiempo real
         const userId = userRef.current?.id;

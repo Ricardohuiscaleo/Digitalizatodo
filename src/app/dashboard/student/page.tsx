@@ -348,6 +348,10 @@ export default function StudentDashboard() {
             }
         }
 
+        const notificationsData = await getNotifications(tenantSlug, token);
+        if (notificationsData?.notifications) setNotifications(notificationsData.notifications);
+        if (notificationsData?.unread !== undefined) setUnreadCount(notificationsData.unread);
+
         if (profile) {
             setData(profile);
         } else {
@@ -437,6 +441,21 @@ export default function StudentDashboard() {
 
     // App Badge — sincronizar contador con ícono PWA
     useEffect(() => { setAppBadge(unreadCount); }, [unreadCount]);
+
+    // Escuchar mensajes del Service Worker (Push Sync)
+    useEffect(() => {
+        if (!('serviceWorker' in navigator)) return;
+
+        const handleMessage = (event: MessageEvent) => {
+            if (event.data?.type === 'REFRESH_NOTIFICATIONS') {
+                console.log('[Student PWA] 🔄 Push received — refreshing notifications');
+                refreshData();
+            }
+        };
+
+        navigator.serviceWorker.addEventListener('message', handleMessage);
+        return () => navigator.serviceWorker.removeEventListener('message', handleMessage);
+    }, [refreshData]);
 
     // Cargar notificaciones y app updates
     useEffect(() => {
