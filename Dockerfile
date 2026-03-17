@@ -11,18 +11,19 @@ LABEL traefik.http.routers.reverb.tls="true"
 LABEL traefik.http.services.reverb.loadbalancer.server.port="8080"
 
 # Herramientas del sistema + extensiones PHP
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
+
 RUN apt-get update && apt-get install -y \
     nginx supervisor curl zip unzip git \
-    libzip-dev libpng-dev libonig-dev libxml2-dev \
-    libfreetype6-dev libjpeg62-turbo-dev libwebp-dev \
-    libicu-dev libgd-dev libsqlite3-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install \
-    pdo pdo_mysql pdo_sqlite \
-    mbstring zip \
-    exif pcntl bcmath \
-    dom xml \
-    gd intl \
+    && install-php-extensions \
+    pdo_mysql \
+    pdo_sqlite \
+    bcmath \
+    exif \
+    gd \
+    intl \
+    zip \
+    pcntl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Composer
