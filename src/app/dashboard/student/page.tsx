@@ -468,9 +468,9 @@ export default function StudentDashboard() {
             if (token && branding?.slug) {
                 const dismissed = localStorage.getItem('push_banner_dismissed');
                 if (perm === 'default' && !dismissed) {
-                    setShowPushBanner(true);
+                    setShowPushModal(true);
                 } else {
-                    setShowPushBanner(false);
+                    setShowPushModal(false);
                     if (perm === 'granted') {
                         subscribeToPush(branding.slug, token);
                     }
