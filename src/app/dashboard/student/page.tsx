@@ -26,11 +26,12 @@ import {
     Sparkles,
     Trash2,
     Minus,
+    ShoppingCart,
     ImageIcon
 } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
 import NotificationToast from "@/components/Notifications/NotificationToast";
-import { getProfile, markAttendanceViaQR, resumeSession, getNotifications, markAllNotificationsRead, markNotificationRead, getAppUpdates, deletePaymentProof } from "@/lib/api";
+import { getProfile, markAttendanceViaQR, resumeSession, getNotifications, markAllNotificationsRead, markNotificationRead, getAppUpdates, deletePaymentProof, getExpenses } from "@/lib/api";
 import jsQR from "jsqr";
 import BottomNav, { NavSection } from "@/components/Navigation/BottomNav";
 import { todayCL } from "@/lib/utils";
@@ -284,6 +285,11 @@ export default function StudentDashboard() {
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [activeSection, setActiveSection] = useState<NavSection>("home");
+    const [expensesList, setExpensesList] = useState<any[]>([]);
+    const [expensesTotal, setExpensesTotal] = useState(0);
+    const [expensesSummary, setExpensesSummary] = useState<any[]>([]);
+    const [expensesLoading, setExpensesLoading] = useState(false);
+    const [expenseLightbox, setExpenseLightbox] = useState<string | null>(null);
     const [activeScanner, setActiveScanner] = useState<string | null>(null);
     const [uploadingPayment, setUploadingPayment] = useState<string | null>(null);
     const [proofModal, setProofModal] = useState<{ url: string; canDelete: boolean; paymentId: string } | null>(null);
@@ -519,6 +525,19 @@ export default function StudentDashboard() {
             if (permStatus) permStatus.onchange = null;
         };
     }, [branding?.slug]);
+
+    useEffect(() => {
+        if (activeSection === 'rendicion' && branding?.slug) {
+            const token = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
+            setExpensesLoading(true);
+            getExpenses(branding.slug, token).then(data => {
+                setExpensesList(data?.expenses ?? []);
+                setExpensesTotal(data?.total ?? 0);
+                setExpensesSummary(data?.summary ?? []);
+                setExpensesLoading(false);
+            });
+        }
+    }, [activeSection, branding?.slug]);
 
     const handleActivatePush = () => {
         setShowPushBanner(false);
@@ -1023,6 +1042,96 @@ export default function StudentDashboard() {
         </div>
     );
 
+    const renderRendicion = () => {
+        const EXPENSE_CAT_COLORS: Record<string, string> = {
+            alimentacion: 'bg-orange-100 text-orange-700',
+            materiales: 'bg-blue-100 text-blue-700',
+            infraestructura: 'bg-slate-100 text-slate-700',
+            actividades: 'bg-purple-100 text-purple-700',
+            administrativo: 'bg-zinc-100 text-zinc-700',
+            insumos: 'bg-green-100 text-green-700',
+            otros: 'bg-rose-100 text-rose-700',
+        };
+        const fmt = (n: number) => `$${Number(n).toLocaleString('es-CL')}`;
+        return (
+            <div className="space-y-4 pb-24 px-4 pt-4">
+                <div className="bg-zinc-950 rounded-[24px] p-5 text-white">
+                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-3">Rendición de Caja</p>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">Total gastado</p>
+                            <p className="text-xl font-black text-rose-400">{fmt(expensesTotal)}</p>
+                        </div>
+                        <div>
+                            <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">Compras</p>
+                            <p className="text-xl font-black text-white">{expensesList.length}</p>
+                        </div>
+                    </div>
+                    {expensesSummary.length > 0 && (
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            {expensesSummary.map((s: any) => (
+                                <div key={s.category} className="flex items-center gap-1.5 bg-white/10 rounded-full px-3 py-1">
+                                    <span className="text-[9px] font-black uppercase tracking-wider">{s.category}</span>
+                                    <span className="text-[9px] font-bold text-zinc-300">{fmt(s.total)}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {expensesLoading ? (
+                    <div className="flex justify-center py-12"><Loader2 className="animate-spin text-zinc-300" size={24} /></div>
+                ) : expensesList.length === 0 ? (
+                    <div className="text-center py-12 text-zinc-300">
+                        <ShoppingCart size={32} className="mx-auto mb-2" />
+                        <p className="text-xs font-bold">Sin compras registradas</p>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {expensesList.map((exp: any) => (
+                            <div key={exp.id} className="bg-white rounded-[20px] p-4 border border-zinc-100 shadow-sm">
+                                <div className="flex items-start gap-3">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${EXPENSE_CAT_COLORS[exp.category] ?? 'bg-zinc-100 text-zinc-600'}`}>{exp.category}</span>
+                                            <span className="text-[9px] text-zinc-400 font-bold">{exp.expense_date}</span>
+                                        </div>
+                                        <p className="text-sm font-black text-zinc-900 truncate">{exp.title}</p>
+                                        {exp.description && <p className="text-[11px] text-zinc-500 mt-0.5 line-clamp-2">{exp.description}</p>}
+                                        <p className="text-base font-black text-zinc-900 mt-1">{fmt(exp.amount)}</p>
+                                    </div>
+                                </div>
+                                {(exp.receipt_photo || exp.product_photo) && (
+                                    <div className="flex gap-2 mt-3">
+                                        {exp.receipt_photo && (
+                                            <button onClick={() => setExpenseLightbox(exp.receipt_photo)} className="relative h-16 w-16 rounded-xl overflow-hidden border border-zinc-100 flex-shrink-0">
+                                                <img src={exp.receipt_photo} className="w-full h-full object-cover" />
+                                                <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-[7px] text-white font-black text-center py-0.5">BOLETA</div>
+                                            </button>
+                                        )}
+                                        {exp.product_photo && (
+                                            <button onClick={() => setExpenseLightbox(exp.product_photo)} className="relative h-16 w-16 rounded-xl overflow-hidden border border-zinc-100 flex-shrink-0">
+                                                <img src={exp.product_photo} className="w-full h-full object-cover" />
+                                                <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-[7px] text-white font-black text-center py-0.5">PRODUCTO</div>
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {expenseLightbox && (
+                    <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setExpenseLightbox(null)}>
+                        <img src={expenseLightbox} className="max-w-full max-h-full rounded-2xl object-contain" />
+                        <button className="absolute top-4 right-4 p-2 bg-white/20 rounded-full"><X size={18} className="text-white" /></button>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     const renderProfile = () => (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <h2 className="text-2xl font-black text-zinc-900">Mi Perfil</h2>
@@ -1288,6 +1397,7 @@ export default function StudentDashboard() {
                 {activeSection === "calendar" && renderCalendar()}
                 {activeSection === "payments" && renderPayments()}
                 {activeSection === "profile" && renderProfile()}
+                {activeSection === "rendicion" && renderRendicion()}
             </div>
 
             </div>
@@ -1299,6 +1409,7 @@ export default function StudentDashboard() {
                 primaryColor={primaryColor}
                 userPhoto={guardian.photo}
                 userName={guardian.name}
+                industry={branding?.industry}
             />
 
 
