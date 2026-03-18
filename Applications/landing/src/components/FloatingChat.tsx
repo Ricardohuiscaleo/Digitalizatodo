@@ -102,10 +102,10 @@ const FloatingChat = () => {
         // Fetch Geolocation
         const fetchGeo = async () => {
             try {
-                const res = await fetch('https://ipapi.co/json/');
+                const res = await fetch('https://freeipapi.com/api/json');
                 const data = await res.json();
-                if (data.ip) setUserIp(data.ip);
-                if (data.city) setUserCity(data.city);
+                if (data.ipAddress) setUserIp(data.ipAddress);
+                if (data.cityName) setUserCity(data.cityName);
             } catch (e) {}
         };
         fetchGeo();
