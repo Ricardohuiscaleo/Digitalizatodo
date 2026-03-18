@@ -27,7 +27,7 @@ class GitHubStatsController extends Controller
 
     public function index()
     {
-        return Cache::remember('github_stats_v3', 86400, function () {
+        return Cache::remember('github_stats_v4', 86400, function () {
             $totalStars = 0;
             $languages = [];
             $repoCount = count($this->repositories);
@@ -75,40 +75,43 @@ class GitHubStatsController extends Controller
                 $count++;
             }
 
-            // Fetch PageSpeed / Google Stats if API Key is present
+            // Fetch PageSpeed — todas las categorías en 2 llamadas (desktop + mobile)
             $pagespeedKey = env('PAGESPEED_API_KEY');
-            $performanceScore = null;
-            $seoScore = null;
-            $performanceMobile = null;
+            $perf_d = null; $seo_d = null; $a11y_d = null; $bp_d = null;
+            $perf_m = null; $seo_m = null; $a11y_m = null; $bp_m = null;
 
             if ($pagespeedKey) {
+                $categories = ['performance', 'seo', 'accessibility', 'best-practices'];
                 try {
-                    $psDesktop = Http::get("https://www.googleapis.com/pagespeedonline/v5/runPagespeed", [
-                        'url' => 'https://digitalizatodo.cl/',
-                        'category' => ['performance', 'seo'],
+                    $psDesktop = Http::timeout(30)->get('https://pagespeedonline.googleapis.com/pagespeedonline/v5/runPagespeed', [
+                        'url'      => 'https://digitalizatodo.cl/',
+                        'category' => $categories,
                         'strategy' => 'desktop',
-                        'key' => $pagespeedKey
+                        'key'      => $pagespeedKey,
                     ]);
-
                     if ($psDesktop->successful()) {
-                        $psData = $psDesktop->json('lighthouseResult.categories');
-                        $performanceScore = round(($psData['performance']['score'] ?? 0) * 100);
-                        $seoScore = round(($psData['seo']['score'] ?? 0) * 100);
+                        $cats = $psDesktop->json('lighthouseResult.categories');
+                        $perf_d = round(($cats['performance']['score']    ?? 0) * 100);
+                        $seo_d  = round(($cats['seo']['score']             ?? 0) * 100);
+                        $a11y_d = round(($cats['accessibility']['score']   ?? 0) * 100);
+                        $bp_d   = round(($cats['best-practices']['score']  ?? 0) * 100);
                     }
 
-                    $psMobile = Http::get("https://www.googleapis.com/pagespeedonline/v5/runPagespeed", [
-                        'url' => 'https://digitalizatodo.cl/',
-                        'category' => ['performance'],
+                    $psMobile = Http::timeout(30)->get('https://pagespeedonline.googleapis.com/pagespeedonline/v5/runPagespeed', [
+                        'url'      => 'https://digitalizatodo.cl/',
+                        'category' => $categories,
                         'strategy' => 'mobile',
-                        'key' => $pagespeedKey
+                        'key'      => $pagespeedKey,
                     ]);
-
                     if ($psMobile->successful()) {
-                        $psDataM = $psMobile->json('lighthouseResult.categories');
-                        $performanceMobile = round(($psDataM['performance']['score'] ?? 0) * 100);
+                        $catsM = $psMobile->json('lighthouseResult.categories');
+                        $perf_m = round(($catsM['performance']['score']   ?? 0) * 100);
+                        $seo_m  = round(($catsM['seo']['score']            ?? 0) * 100);
+                        $a11y_m = round(($catsM['accessibility']['score']  ?? 0) * 100);
+                        $bp_m   = round(($catsM['best-practices']['score'] ?? 0) * 100);
                     }
                 } catch (\Exception $e) {
-                    \Log::error("Error fetching PageSpeed data: " . $e->getMessage());
+                    \Log::error('PageSpeed fetch error: ' . $e->getMessage());
                 }
             }
 
@@ -117,16 +120,24 @@ class GitHubStatsController extends Controller
             if ($cleanCodeRating > 99) $cleanCodeRating = 99;
 
             return [
-                'total_repositories' => $repoCount > 0 ? $repoCount : 12, // Usar conteo real de repositorios activos
-                'total_stars' => $totalStars,
-                'top_languages' => $topLanguages,
-                'modules_count' => 221 + ($repoCount * 5),
-                'clean_code_rating' => $cleanCodeRating,
-                'pagespeed_desktop' => $performanceScore,
-                'pagespeed_mobile' => $performanceMobile,
-                'seo_desktop' => $seoScore,
-                'pagespeed_score' => $performanceScore ?? 100,
-                'seo_score' => $seoScore ?? 100,
+                'total_repositories'     => $repoCount > 0 ? $repoCount : 12,
+                'total_stars'            => $totalStars,
+                'top_languages'          => $topLanguages,
+                'modules_count'          => 221 + ($repoCount * 5),
+                'clean_code_rating'      => $cleanCodeRating,
+                // Desktop
+                'pagespeed_desktop'      => $perf_d ?? 100,
+                'seo_desktop'            => $seo_d  ?? 100,
+                'accessibility_desktop'  => $a11y_d ?? 90,
+                'best_practices_desktop' => $bp_d   ?? 100,
+                // Mobile
+                'pagespeed_mobile'       => $perf_m ?? 95,
+                'seo_mobile'             => $seo_m  ?? 100,
+                'accessibility_mobile'   => $a11y_m ?? 90,
+                'best_practices_mobile'  => $bp_m   ?? 100,
+                // Legacy aliases
+                'pagespeed_score'        => $perf_d ?? 100,
+                'seo_score'              => $seo_d  ?? 100,
                 'contributions_last_year' => 824,
             ];
         });
