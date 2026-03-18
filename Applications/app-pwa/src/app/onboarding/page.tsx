@@ -102,7 +102,7 @@ export default function OnboardingPage() {
                 </div>
                 <div className="space-y-2">
                     <h1 className="text-4xl font-black uppercase tracking-tighter italic leading-none">¡Bienvenido al <br/> Futuro!</h1>
-                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] mt-4">Academia <span className="text-white">{formData.tenant_name}</span> creada.</p>
+                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] mt-4">Dashboard <span className="text-white">{formData.tenant_name}</span> creado.</p>
                 </div>
                 <button
                     onClick={() => window.location.href = `/`}
@@ -126,7 +126,7 @@ export default function OnboardingPage() {
                     </div>
                     <div className="inline-flex items-center gap-2 bg-indigo-50 px-3 py-1 rounded-full text-indigo-600">
                         <Sparkles size={10} className="animate-pulse" />
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">Registro de Academia</span>
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">Nuevo Dashboard</span>
                     </div>
                     <h1 className="text-3xl font-black uppercase tracking-tighter text-zinc-900 leading-[0.85]">
                         Crea tu propio <br />
@@ -285,7 +285,7 @@ export default function OnboardingPage() {
                                 >
                                     {isLoading ? <Loader2 className="animate-spin" size={18} /> : (
                                         <>
-                                            {step === 1 ? 'Siguiente Paso' : 'Crear Mi Academia'} 
+                                            {step === 1 ? 'Siguiente Paso' : 'Crear Dashboard'} 
                                             <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                                         </>
                                     )}

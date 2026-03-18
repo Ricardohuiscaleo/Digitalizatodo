@@ -62,6 +62,9 @@ else
     php artisan migrate --force --no-interaction || echo "⚠️  Migraciones fallaron"
 fi
 
+echo "==> Corriendo seeders base..."
+php artisan db:seed --class=IndustrySeeder --force 2>/dev/null || echo "⚠️  IndustrySeeder falló"
+
 echo "==> Creando usuario admin si no existe..."
 if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ]; then
     php artisan tinker --execute="
