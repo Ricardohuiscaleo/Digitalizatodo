@@ -27,16 +27,20 @@ class AuthController extends Controller
         $tenant = app('currentTenant');
 
         try {
-            // Buscamos el usuario en staff (User) o clientes (Guardian) de forma agnóstica
-            $user = User::where('email', $credentials['email'])->where('tenant_id', $tenant->id)->first();
             $userType = 'staff';
             $passwordValidated = false;
 
-            // Intentar validar contraseña contra el perfil de Staff
+            // Buscar staff por email (sin filtrar tenant — soporta multi-tenant)
+            $user = User::where('email', $credentials['email'])->first();
+
             if ($user && Hash::check($credentials['password'], $user->password)) {
+                // Verificar que tiene acceso a este tenant
+                if (!$user->hasAccessToTenant($tenant->id)) {
+                    return response()->json(['message' => 'No tienes acceso a esta organización.'], 403);
+                }
                 $passwordValidated = true;
             } else {
-                // Si no existe como Staff o la contraseña no coincide, intentamos buscar y validar como Guardian
+                // Intentar como Guardian del tenant
                 $guardian = Guardian::where('email', $credentials['email'])
                     ->where('tenant_id', $tenant->id)
                     ->where('active', true)
@@ -65,10 +69,13 @@ class AuthController extends Controller
                 ])->save();
             }
 
+            $role = ($userType === 'staff') ? $user->getRoleForTenant($tenant->id) : null;
+
             return response()->json([
                 'token' => $token,
                 'remember_token' => $rememberToken,
                 'user_type' => $userType,
+                'role' => $role,
                 'user' => $user->only('id', 'name', 'email', 'phone'),
                 'tenant' => $tenant->only('id', 'slug', 'name', 'primary_color', 'logo'),
             ]);
@@ -90,11 +97,13 @@ class AuthController extends Controller
 
         if ($user instanceof User) {
             $tenant = app('currentTenant');
+            $role = $user->getRoleForTenant($tenant->id);
             return response()->json([
                 'user_type' => 'staff',
                 'id'        => $user->id,
                 'name'      => $user->name,
                 'email'     => $user->email,
+                'role'      => $role,
                 'tenant_id' => $tenant->id,
                 'tenant'    => [
                     'id'            => $tenant->id,
@@ -195,10 +204,15 @@ class AuthController extends Controller
         $tenant = app('currentTenant');
 
         // Intentamos buscar en Staff (User)
-        $user = User::where('remember_token', $credentials['remember_token'])
-            ->where('tenant_id', $tenant->id)
-            ->first();
+        $user = User::where('remember_token', $credentials['remember_token'])->first();
         $userType = 'staff';
+
+        if ($user) {
+            // Verificar acceso al tenant
+            if (!$user->hasAccessToTenant($tenant->id)) {
+                $user = null;
+            }
+        }
 
         if (!$user) {
             // Si no está en Staff, buscamos en Guardians
