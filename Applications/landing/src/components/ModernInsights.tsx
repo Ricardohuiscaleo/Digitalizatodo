@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Zap, Activity, ShieldCheck, Star, Code2, Loader2 } from 'lucide-react';
+import { Zap, Activity, ShieldCheck, Code2, Loader2 } from 'lucide-react';
 import { siPhp, siLaravel, siNextdotjs, siReact, siTypescript, siAstro, siTailwindcss, siMysql } from 'simple-icons';
 import { useLazyReveal, revealClass, revealStyle } from '../hooks/useLazyReveal';
 
@@ -68,18 +68,16 @@ const ModernInsights = () => {
     }, []);
 
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-    const perf = isMobile ? (data?.pagespeed_mobile      ?? 95)  : (data?.pagespeed_desktop      ?? 100);
-    const seo  = isMobile ? (data?.seo_mobile             ?? 100) : (data?.seo_desktop             ?? 100);
-    const a11y = isMobile ? (data?.accessibility_mobile   ?? 90)  : (data?.accessibility_desktop   ?? 90);
-    const bp   = isMobile ? (data?.best_practices_mobile  ?? 100) : (data?.best_practices_desktop  ?? 100);
+    const perf = isMobile ? (data?.pagespeed_mobile    ?? 95)  : (data?.pagespeed_desktop    ?? 100);
+    const seo  = isMobile ? (data?.seo_mobile          ?? 100) : (data?.seo_desktop          ?? 100);
+    const a11y = isMobile ? (data?.accessibility_mobile ?? 90) : (data?.accessibility_desktop ?? 90);
     const contributions = data?.contributions_last_year ?? 824;
 
     const cards: CardProps[] = [
         { label: 'Rendimiento',        value: perf,          suffix: '/100', source: 'PageSpeed API', icon: Zap,         color: 'bg-brand-blue',   href: PAGESPEED_URL, delay: 0   },
         { label: 'SEO',                value: seo,           suffix: '/100', source: 'PageSpeed API', icon: Activity,    color: 'bg-brand-orange', href: PAGESPEED_URL, delay: 100 },
         { label: 'Accesibilidad',      value: a11y,          suffix: '/100', source: 'PageSpeed API', icon: ShieldCheck, color: 'bg-brand-green',  href: PAGESPEED_URL, delay: 200 },
-        { label: 'Recomendaciones',    value: bp,            suffix: '/100', source: 'PageSpeed API', icon: Star,        color: 'bg-slate-900',    href: PAGESPEED_URL, delay: 300 },
-        { label: 'Contributions / año',value: contributions, suffix: '',     source: 'GitHub API',    icon: Code2,       color: 'bg-slate-900',                         delay: 400 },
+        { label: 'Contributions / año',value: contributions, suffix: '',     source: 'GitHub API',    icon: Code2,       color: 'bg-slate-900',                         delay: 300 },
     ];
 
     return (
@@ -90,7 +88,7 @@ const ModernInsights = () => {
                     <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tighter">Números que respaldan el trabajo</h2>
                 </div>
 
-                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                     {cards.map((card, i) => <InsightCard key={i} {...card} loading={loading} />)}
                 </div>
 
