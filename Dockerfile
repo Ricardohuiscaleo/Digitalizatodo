@@ -1,52 +1,5 @@
-# STAGE 1: Base (Extensiones y herramientas comunes)
-FROM php:8.4-fpm AS base
-
-WORKDIR /var/www/html
-
-# Herramientas del sistema + extensiones PHP (Solo una vez)
-COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
-
-RUN apt-get update && apt-get install -y \
-    nginx supervisor curl zip unzip git \
-    && install-php-extensions \
-    pdo_mysql \
-    pdo_sqlite \
-    bcmath \
-    exif \
-    gd \
-    intl \
-    zip \
-    pcntl \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# STAGE 2: Builder (Instalación de dependencias, hereda de base para reusar extensiones)
-FROM base AS builder
-
-WORKDIR /app
-
-# Instalar Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-# Copiar archivos previos para cachear capas
-COPY composer.json composer.lock ./
-
-# Configuración de memoria agresiva para el build
-ENV COMPOSER_MEMORY_LIMIT=-1
-ENV COMPOSER_ALLOW_SUPERUSER=1
-
-# Instalar dependencias sin scripts
-RUN composer install \
-    --no-dev \
-    --no-interaction \
-    --no-plugins \
-    --no-scripts \
-    --prefer-dist \
-    --optimize-autoloader \
-    --no-progress \
-    --no-ansi
-
-# STAGE 3: Production (Imagen final ligera, hereda de base)
-FROM base AS production
+# Imagen única Debian — más confiable que Alpine para extensiones PHP complejas
+FROM php:8.4-fpm AS production
 
 WORKDIR /var/www/html
 
@@ -57,14 +10,39 @@ LABEL traefik.http.routers.reverb.service="reverb"
 LABEL traefik.http.routers.reverb.tls="true"
 LABEL traefik.http.services.reverb.loadbalancer.server.port="8080"
 
-# Copiar dependencias ya instaladas desde la etapa builder
-COPY --from=builder /app/vendor ./vendor
+# Herramientas del sistema + extensiones PHP (Versión Estable)
+RUN apt-get update && apt-get install -y \
+    nginx supervisor curl zip unzip git \
+    libzip-dev libpng-dev libonig-dev libxml2-dev \
+    libfreetype6-dev libjpeg62-turbo-dev libwebp-dev \
+    libicu-dev libgd-dev libsqlite3-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+    && docker-php-ext-install \
+    pdo pdo_mysql pdo_sqlite \
+    mbstring zip \
+    exif pcntl bcmath \
+    dom xml \
+    gd intl \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copiar el resto del código
-COPY . .
-
-# Regenerar autoloader final (rápido ya que vendor ya existe)
+# Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+ENV COMPOSER_MEMORY_LIMIT=2G
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
+# Dependencias PHP (cache layer)
+COPY composer.json composer.lock ./
+RUN composer install \
+    --no-dev \
+    --no-scripts \
+    --no-interaction \
+    --optimize-autoloader \
+    --prefer-dist \
+    --no-progress \
+    --no-ansi
+
+# Código de la app
+COPY . .
 RUN composer dump-autoload --optimize --no-scripts
 
 # OPcache y límites PHP
