@@ -102,6 +102,10 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
             // Gastos públicos (apoderados pueden ver)
             Route::get('expenses', [\App\Http\Controllers\Api\ExpenseController::class, 'index']);
 
+            // Cuotas — apoderado ve las suyas y sube comprobante
+            Route::get('fees/my', [\App\Http\Controllers\Api\FeeController::class, 'myFees']);
+            Route::post('fees/{id}/upload-proof', [\App\Http\Controllers\Api\FeeController::class, 'uploadProof']);
+
             // Asistencia (solo teachers/admins - Escritura)
             Route::middleware('role:teacher,admin,owner')->group(function () {
                     Route::post('attendance', [AttendanceController::class , 'store']);
@@ -130,6 +134,13 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
                     Route::get('expenses', [\App\Http\Controllers\Api\ExpenseController::class, 'index']);
                     Route::post('expenses', [\App\Http\Controllers\Api\ExpenseController::class, 'store']);
                     Route::delete('expenses/{id}', [\App\Http\Controllers\Api\ExpenseController::class, 'destroy']);
+
+                    // Cuotas (Tesorero)
+                    Route::get('fees', [\App\Http\Controllers\Api\FeeController::class, 'index']);
+                    Route::post('fees', [\App\Http\Controllers\Api\FeeController::class, 'store']);
+                    Route::get('fees/{id}', [\App\Http\Controllers\Api\FeeController::class, 'show']);
+                    Route::delete('fees/{id}', [\App\Http\Controllers\Api\FeeController::class, 'destroy']);
+                    Route::post('fees/{id}/approve-payment', [\App\Http\Controllers\Api\FeeController::class, 'approvePayment']);
                 }
                 );
             }

@@ -1,0 +1,17 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Fee extends Model
+{
+    protected $fillable = [
+        'tenant_id', 'title', 'description', 'amount', 'due_date', 'target', 'created_by',
+    ];
+
+    protected $casts = ['due_date' => 'date', 'amount' => 'float'];
+
+    public function payments() { return $this->hasMany(FeePayment::class); }
+    public function creator()  { return $this->belongsTo(User::class, 'created_by'); }
+}
