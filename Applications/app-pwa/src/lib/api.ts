@@ -531,3 +531,42 @@ export async function deletePaymentProof(tenantId: string, token: string, paymen
         return null;
     }
 }
+
+// ─── Expenses (Tesorero) ─────────────────────────────────────────────────────
+
+export async function getExpenses(tenantId: string, token: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/expenses`, {
+            cache: 'no-store' as RequestCache,
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+        });
+        return await safeJson(response);
+    } catch {
+        return { expenses: [], summary: [], total: 0 };
+    }
+}
+
+export async function createExpense(tenantId: string, token: string, data: FormData) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/expenses`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+            body: data,
+        });
+        return await safeJson(response);
+    } catch {
+        return { message: 'Error de conexión' };
+    }
+}
+
+export async function deleteExpense(tenantId: string, token: string, id: number) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/expenses/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+        });
+        return await safeJson(response);
+    } catch {
+        return { message: 'Error de conexión' };
+    }
+}
