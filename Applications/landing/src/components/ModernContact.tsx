@@ -130,9 +130,10 @@ const ModernContact = () => {
                                     />
                                 </div>
                                 <div className="sm:col-span-2 space-y-2">
-                                    <label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Servicio de Interés</label>
+                                    <label htmlFor="service-select" className="text-sm font-bold text-slate-700 uppercase tracking-wider">Servicio de Interés</label>
                                     <div className="relative">
                                         <select 
+                                            id="service-select"
                                             required
                                             value={formData.service}
                                             onChange={(e) => setFormData({...formData, service: e.target.value})}

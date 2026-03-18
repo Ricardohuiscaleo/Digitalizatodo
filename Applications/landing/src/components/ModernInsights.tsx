@@ -12,24 +12,33 @@ interface InsightCardProps {
 
 const AnimatedCounter = ({ value, duration = 2000 }: { value: string | number, duration?: number }) => {
     const [count, setCount] = useState(0);
-    const target = typeof value === 'number' ? value : parseInt(String(value).replace(/[^0-9]/g, '')) || 0;
-    const suffix = typeof value === 'string' ? value.replace(/[0-9]/g, '') : '';
+    
+    // Si el valor contiene un "/", solo animamos el primer número
+    const isScore = typeof value === 'string' && value.includes('/');
+    const cleanValue = typeof value === 'string' ? value.split('/')[0] : value;
+    
+    const target = typeof cleanValue === 'number' ? cleanValue : parseInt(String(cleanValue).replace(/[^0-9]/g, '')) || 0;
+    const suffix = isScore ? '/100' : (typeof value === 'string' ? value.replace(/[0-9]/g, '') : '');
 
     useEffect(() => {
         let start = 0;
         const end = target;
-        if (start === end) return;
+        if (end === 0) {
+            setCount(0);
+            return;
+        }
 
-        let totalMiliseconds = duration;
-        let incrementTime = (totalMiliseconds / end) > 10 ? (totalMiliseconds / end) : 10;
+        const incrementTime = 20;
+        const totalSteps = duration / incrementTime;
+        const stepSize = end / totalSteps;
         
-        let timer = setInterval(() => {
-            start += Math.ceil(end / (duration / incrementTime));
-            if (start > end) {
+        const timer = setInterval(() => {
+            start += stepSize;
+            if (start >= end) {
                 setCount(end);
                 clearInterval(timer);
             } else {
-                setCount(start);
+                setCount(Math.floor(start));
             }
         }, incrementTime);
 
@@ -40,24 +49,24 @@ const AnimatedCounter = ({ value, duration = 2000 }: { value: string | number, d
 };
 
 const InsightCard = ({ label, value, source, icon: Icon, color, loading }: InsightCardProps) => (
-    <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500 group relative overflow-hidden">
+    <div className="bg-white p-4 sm:p-6 rounded-[24px] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500 group relative overflow-hidden aspect-square flex flex-col justify-center text-center">
         {loading && (
             <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex items-center justify-center">
                 <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
             </div>
         )}
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex flex-col items-center gap-2 sm:gap-4 mb-2 sm:mb-4">
             <div className={`p-3 rounded-2xl ${color as string} bg-opacity-10 transition-colors group-hover:bg-opacity-20`}>
-                <Icon className={`w-6 h-6 ${(color as string).replace('bg-', 'text-')}`} />
+                <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${(color as string).replace('bg-', 'text-')}`} />
             </div>
             <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{source}</p>
-                <p className="text-3xl font-black text-slate-900 tracking-tighter">
+                <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{source}</p>
+                <p className="text-xl sm:text-3xl font-black text-slate-900 tracking-tighter">
                     {loading ? '--' : <AnimatedCounter value={value} />}
                 </p>
             </div>
         </div>
-        <p className="text-sm font-bold text-slate-600 uppercase tracking-wider">{label}</p>
+        <p className="text-[10px] sm:text-sm font-bold text-slate-600 uppercase tracking-wider">{label}</p>
     </div>
 );
 
@@ -86,45 +95,54 @@ const ModernInsights = () => {
     const insights = [
         {
             label: 'Puntaje SEO',
-            value: data?.seo_score ? `${data.seo_score}/100` : '98/100',
+            value: data?.seo_score ? `${data.seo_score}/100` : '',
             source: 'Google API',
             icon: Search,
             color: 'bg-brand-orange'
         },
         {
             label: 'Velocidad Web',
-            value: data?.pagespeed_score ? `${data.pagespeed_score}/100` : '95/100',
+            value: data?.pagespeed_score ? `${data.pagespeed_score}/100` : '',
             source: 'PageSpeed API',
             icon: Zap,
             color: 'bg-brand-blue'
         },
         {
             label: 'Repositorios Activos',
-            value: data?.total_repositories || 12,
+            value: data?.total_repositories || '',
             source: 'GitHub API',
             icon: Github,
             color: 'bg-slate-900'
         },
         {
             label: 'Código Limpio',
-            value: `${data?.clean_code_rating || 86}%`,
+            value: data?.clean_code_rating ? `${data.clean_code_rating}%` : '',
             source: 'Carbon API',
             icon: Leaf,
             color: 'bg-brand-green'
         }
-    ];
+    ].filter(i => i.value !== '');
+
+    if (loading || insights.length === 0) {
+        if (!loading && insights.length === 0) return null;
+        return (
+            <div className="py-20 flex justify-center">
+                <Loader2 className="w-10 h-10 animate-spin text-slate-200" />
+            </div>
+        );
+    }
 
     return (
-        <section className="py-20 px-[5px] sm:px-10 relative z-10 bg-white">
+        <section className="py-20 px-4 sm:px-10 relative z-10 bg-white">
             <div className="max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                     {insights.map((insight, i) => (
                         <InsightCard key={i} {...insight} loading={loading} />
                     ))}
                 </div>
                 
                 {data?.top_languages && (
-                    <div className="mt-12 p-8 bg-slate-50 rounded-[32px] border border-slate-100 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                    <div className="mt-12 p-8 bg-slate-50 rounded-[32px] border border-slate-100 animate-in fade-in slide-in-from-bottom-4 duration-1000 hidden sm:block">
                         <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-brand-orange animate-pulse"></div>
                             Stack Tecnológico Real-time
@@ -141,7 +159,7 @@ const ModernInsights = () => {
                                         idx === 3 ? 'bg-slate-900' : 'bg-slate-400'
                                     }`}
                                     title={`${lang.name}: ${lang.percentage}%`}
-                               ></div>
+                                ></div>
                            ))}
                         </div>
                         <div className="mt-4 flex flex-wrap gap-6">

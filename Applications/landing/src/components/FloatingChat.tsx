@@ -282,7 +282,11 @@ const FloatingChat = () => {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-slate-800 rounded-full transition-colors text-slate-400 hover:text-white sm:hidden">
+                        <button 
+                            onClick={() => setIsOpen(false)} 
+                            className="p-2 hover:bg-slate-800 rounded-full transition-colors text-slate-400 hover:text-white sm:hidden"
+                            aria-label="Cerrar chat"
+                        >
                             <X className="w-5 h-5" />
                         </button>
                     </div>
@@ -349,7 +353,12 @@ const FloatingChat = () => {
                                 />
                             </div>
 
-                            <button type="submit" disabled={!message.trim() || chatStatus === 'sending'} className="p-3 bg-brand-orange text-white rounded-full hover:bg-orange-600 transition-all shadow-md shadow-orange-500/20 disabled:opacity-50">
+                            <button 
+                                type="submit" 
+                                disabled={!message.trim() || chatStatus === 'sending'} 
+                                className="p-3 bg-brand-orange text-white rounded-full hover:bg-orange-600 transition-all shadow-md shadow-orange-500/20 disabled:opacity-50"
+                                aria-label="Enviar mensaje"
+                            >
                                 {chatStatus === 'sending' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                             </button>
                         </form>
@@ -363,6 +372,7 @@ const FloatingChat = () => {
                     onClick={() => setIsOpen(!isOpen)}
                     className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full text-white flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-500 relative
                     ${isOpen ? 'bg-slate-900 rotate-90' : 'bg-brand-orange hover:bg-orange-600 rotate-0'}`}
+                    aria-label={isOpen ? "Cerrar chat" : "Abrir chat"}
                 >
                     {!isOpen && unreadCount > 0 && (
                         <div className="absolute -top-1 -left-1 w-6 h-6 bg-slate-900 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-20">

@@ -147,6 +147,7 @@ const ModernNavbar = () => {
             <button 
               className={`lg:hidden p-2 rounded-full transition-colors ${isMobileMenuOpen ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-900'}`} 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
             >
               {isMobileMenuOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5" />}
             </button>
