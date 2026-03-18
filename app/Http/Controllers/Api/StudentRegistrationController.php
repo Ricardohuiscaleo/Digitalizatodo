@@ -33,7 +33,7 @@ class StudentRegistrationController extends Controller
             'is_self_register' => 'required|boolean',
             'students' => 'required_if:is_self_register,false|array',
             'students.*.name' => 'required_with:students|string|max:255',
-            'students.*.category' => 'required_with:students|in:kids,adults,teen',
+            'students.*.category' => 'required_with:students|string|max:50',
             'plan_id' => 'nullable|exists:plans,id',
         ]);
 
