@@ -15,17 +15,12 @@ interface BottomNavProps {
 }
 
 export default function BottomNav({ activeSection, setActiveSection, primaryColor = "#f97316", userPhoto, userName, industry }: BottomNavProps) {
-    const isSchoolTreasury = industry === 'school_treasury';
-    const items: { id: NavSection; label: string; icon: any }[] = isSchoolTreasury
-        ? [
-            { id: "home", label: "Inicio", icon: Home },
-            { id: "rendicion", label: "Rendición", icon: ShoppingCart },
-          ]
-        : [
-            { id: "home", label: "Inicio", icon: Home },
-            { id: "calendar", label: "Clases", icon: Calendar },
-            { id: "payments", label: "Pagos", icon: CreditCard },
-          ];
+    const items: { id: NavSection; label: string; icon: any }[] = [
+        { id: "home", label: "Inicio", icon: Home },
+        { id: "calendar", label: "Clases", icon: Calendar },
+        { id: "payments", label: "Pagos", icon: CreditCard },
+        ...(industry === 'school_treasury' ? [{ id: "rendicion" as NavSection, label: "Rendición", icon: ShoppingCart }] : []),
+    ];
 
     return (
         <nav className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-zinc-100 px-6 pb-7 pt-3 md:hidden z-50 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
