@@ -7,7 +7,7 @@ import { Loader2, RefreshCw, ArrowLeft, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const { setBranding, isLoading } = useBranding();
-  const [step, setStep] = useState<"email" | "password">("email");
+  const [step, setStep] = useState<"email" | "tenant" | "password">("email");  const [availableTenants, setAvailableTenants] = useState<any[]>([]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
@@ -55,20 +55,21 @@ export default function LoginPage() {
     const data = await identifyTenant(email);
     setIsIdentifying(false);
     if (data?.found && data.tenants.length > 0) {
-      const t = data.tenants[0];
-      setTenant(t);
-      setBranding({ 
-        id: t.id, 
-        slug: t.slug, 
-        name: t.name, 
-        industry: t.industry, 
-        logo: t.logo, 
-        primaryColor: t.primary_color 
-      });
-      setStep("password");
+      if (data.tenants.length === 1) {
+        selectTenant(data.tenants[0]);
+      } else {
+        setAvailableTenants(data.tenants);
+        setStep("tenant");
+      }
     } else {
       setError("No encontramos una academia asociada a este correo.");
     }
+  };
+
+  const selectTenant = (t: any) => {
+    setTenant(t);
+    setBranding({ id: t.id, slug: t.slug, name: t.name, industry: t.industry, logo: t.logo, primaryColor: t.primary_color });
+    setStep("password");
   };
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -189,6 +190,32 @@ export default function LoginPage() {
                   Continuar <ArrowLeft className="rotate-180" size={14} />
                 </button>
               </form>
+            </div>
+          )}
+
+          {/* Paso 1.5: Selector de Tenant */}
+          {step === "tenant" && (
+            <div className="border border-zinc-100 rounded-[2.5rem] p-8 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 text-center">Selecciona tu organización</p>
+              {availableTenants.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => selectTenant(t)}
+                  className="w-full flex items-center gap-4 p-4 rounded-2xl bg-zinc-50 hover:bg-zinc-100 transition-all text-left"
+                >
+                  <img src={t.logo} className="h-10 w-10 rounded-full object-cover" />
+                  <div>
+                    <p className="text-sm font-bold text-zinc-900">{t.name}</p>
+                    <p className="text-[10px] text-zinc-400 uppercase tracking-wider">{t.detected_roles?.includes('staff') ? 'Staff' : 'Apoderado'}</p>
+                  </div>
+                </button>
+              ))}
+              <button
+                onClick={() => { setStep("email"); setError(null); }}
+                className="w-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-all py-1"
+              >
+                <ArrowLeft size={12} /> Usar otro correo
+              </button>
             </div>
           )}
 
