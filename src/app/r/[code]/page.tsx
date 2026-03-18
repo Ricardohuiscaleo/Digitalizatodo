@@ -5,6 +5,67 @@ import { useParams } from "next/navigation";
 import { getRegistrationPage, registerStudent } from "@/lib/api";
 import { Loader2, CheckCircle2, Eye, EyeOff } from "lucide-react";
 
+type IndustryConfig = {
+  memberLabel: string;       // "Alumno" | "Estudiante" | "Participante"
+  membersLabel: string;      // "Alumnos" | "Estudiantes"
+  selfRegisterLabel: string; // "Yo también participaré" | null (ocultar toggle)
+  showSelfRegister: boolean;
+  showPricing: boolean;
+  showCategory: boolean;     // kids/adults vs curso
+  courseLabel: string;       // "Curso" | "Categoría"
+  courseOptions: { value: string; label: string }[];
+  guardianLabel: string;     // "Apoderado" | "Titular"
+};
+
+function getIndustryConfig(industry: string): IndustryConfig {
+  const isSchool = industry === "school_treasury" || industry === "education";
+
+  if (isSchool) {
+    return {
+      memberLabel: "Estudiante",
+      membersLabel: "Estudiantes",
+      selfRegisterLabel: "",
+      showSelfRegister: false,
+      showPricing: false,
+      showCategory: true,
+      courseLabel: "Curso",
+      courseOptions: [
+        { value: "pre_kinder", label: "Pre-Kinder" },
+        { value: "kinder", label: "Kinder" },
+        { value: "1_basico", label: "1° Básico" },
+        { value: "2_basico", label: "2° Básico" },
+        { value: "3_basico", label: "3° Básico" },
+        { value: "4_basico", label: "4° Básico" },
+        { value: "5_basico", label: "5° Básico" },
+        { value: "6_basico", label: "6° Básico" },
+        { value: "7_basico", label: "7° Básico" },
+        { value: "8_basico", label: "8° Básico" },
+        { value: "1_medio", label: "1° Medio" },
+        { value: "2_medio", label: "2° Medio" },
+        { value: "3_medio", label: "3° Medio" },
+        { value: "4_medio", label: "4° Medio" },
+      ],
+      guardianLabel: "Apoderado",
+    };
+  }
+
+  // martial_arts, fitness, dance, music, clinic, default
+  return {
+    memberLabel: "Alumno",
+    membersLabel: "Alumnos",
+    selfRegisterLabel: "Yo también participaré",
+    showSelfRegister: true,
+    showPricing: true,
+    showCategory: true,
+    courseLabel: "Categoría",
+    courseOptions: [
+      { value: "kids", label: "Kids" },
+      { value: "adults", label: "Adulto" },
+    ],
+    guardianLabel: "Titular",
+  };
+}
+
 export default function RegisterPage() {
   const { code } = useParams();
   const [tenant, setTenant] = useState<any>(null);
@@ -13,10 +74,11 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
     guardian_name: "", guardian_email: "", guardian_phone: "",
     password: "", password_confirmation: "",
-    is_self_register: true,
+    is_self_register: false,
     students: [{ name: "", category: "kids" }],
     plan_id: null,
   });
@@ -28,32 +90,26 @@ export default function RegisterPage() {
     });
   }, [code]);
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const config: IndustryConfig = tenant ? getIndustryConfig(tenant.industry || "default") : getIndustryConfig("default");
 
   const validate = () => {
-    const newErrors: Record<string, string> = {};
-    if (!form.guardian_name) newErrors.guardian_name = "El nombre es obligatorio";
-    if (!form.guardian_email) newErrors.guardian_email = "El correo es obligatorio";
-    if (!form.guardian_phone) newErrors.guardian_phone = "El teléfono es obligatorio";
-    if (!form.password) newErrors.password = "La contraseña es obligatoria";
-    if (form.password.length < 8) newErrors.password = "Mínimo 8 caracteres";
-    if (form.password !== form.password_confirmation) newErrors.password_confirmation = "No coinciden";
-
-    // Si no se registra a sí mismo, debe haber al menos un alumno
-    if (!form.is_self_register && (form.students.length === 0 || !form.students[0].name)) {
-      newErrors.students = "Debes inscribir al menos a un alumno si tú no participas";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const e: Record<string, string> = {};
+    if (!form.guardian_name) e.guardian_name = "El nombre es obligatorio";
+    if (!form.guardian_email) e.guardian_email = "El correo es obligatorio";
+    if (!form.guardian_phone) e.guardian_phone = "El teléfono es obligatorio";
+    if (!form.password) e.password = "La contraseña es obligatoria";
+    if (form.password.length < 8) e.password = "Mínimo 8 caracteres";
+    if (form.password !== form.password_confirmation) e.password_confirmation = "No coinciden";
+    if (!form.is_self_register && (form.students.length === 0 || !form.students[0].name))
+      e.students = `Debes inscribir al menos un ${config.memberLabel.toLowerCase()}`;
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-
     setSubmitting(true); setError("");
-    console.log("Intentando registro en tenant ID:", tenant.id, tenant);
     const result = await registerStudent(tenant.id, form);
     setSubmitting(false);
     if (result?.errors) {
@@ -69,36 +125,28 @@ export default function RegisterPage() {
   const pricing = tenant?.data?.pricing || tenant?.data?.prices || { kids: 0, adult: 0, discountThreshold: 2, discountPercentage: 0 };
 
   const calculateTotal = () => {
-    let kidsCount = 0;
-    let adultsCount = 0;
-
-    if (form.is_self_register) {
-      adultsCount += 1;
-    }
-
+    let kidsCount = 0, adultsCount = 0;
+    if (form.is_self_register) adultsCount += 1;
     form.students.forEach(s => {
-      // Solo sumamos si hay un nombre escrito, para no cobrar filas vacías
-      if (s.name.trim() !== "") {
-        if (s.category === 'kids') kidsCount += 1;
-        else if (s.category === 'adults') adultsCount += 1;
+      if (s.name.trim()) {
+        if (s.category === "kids") kidsCount += 1;
+        else adultsCount += 1;
       }
     });
-
     const totalInscriptions = kidsCount + adultsCount;
     const subtotal = (kidsCount * (pricing.kids || 0)) + (adultsCount * (pricing.adult || 0));
-
-    let total = subtotal;
-    let hasDiscount = false;
-
+    let total = subtotal, hasDiscount = false;
     if (pricing.discountThreshold > 0 && totalInscriptions >= pricing.discountThreshold && pricing.discountPercentage > 0) {
-      total = subtotal * (1 - (pricing.discountPercentage / 100));
+      total = subtotal * (1 - pricing.discountPercentage / 100);
       hasDiscount = true;
     }
-
     return { kidsCount, adultsCount, totalInscriptions, subtotal, total, hasDiscount };
   };
 
   const totals = calculateTotal();
+
+  const inputClass = (field: string) =>
+    `w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors[field] ? "border-red-400" : "border-zinc-100 hover:border-zinc-200"}`;
 
   if (loading) return (
     <div className="flex min-h-screen items-center justify-center bg-white">
@@ -128,8 +176,9 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col items-center p-6 pb-20">
       <div className="w-full max-w-sm pt-10 space-y-8">
+
+        {/* Branding */}
         <div className="flex flex-col items-center gap-3">
-          <p className="text-[8px] text-zinc-300 font-mono uppercase tracking-widest">v1.0.2-fix</p>
           <div className="h-14 w-14 rounded-2xl bg-zinc-100 overflow-hidden flex items-center justify-center shadow-sm">
             {tenant.logo
               ? <img src={tenant.logo} className="h-full w-full object-contain" />
@@ -143,30 +192,30 @@ export default function RegisterPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {error && <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2 animate-in fade-in zoom-in duration-200">{error}</p>}
+          {error && <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</p>}
 
-          {/* DATOS DEL TITULAR */}
+          {/* DATOS DEL APODERADO/TITULAR */}
           <div className="space-y-4">
-            <label className="text-[10px] uppercase tracking-widest font-black text-zinc-400">Datos del titular (Tú)</label>
+            <label className="text-[10px] uppercase tracking-widest font-black text-zinc-400">
+              Datos del {config.guardianLabel}
+            </label>
             <div className="space-y-2.5">
               <div className="relative">
                 <input placeholder="Nombre completo" value={form.guardian_name}
                   onChange={e => { setForm({ ...form, guardian_name: e.target.value }); if (errors.guardian_name) setErrors({ ...errors, guardian_name: "" }); }}
-                  className={`w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors.guardian_name ? 'border-red-400' : 'border-zinc-100 hover:border-zinc-200'}`} />
+                  className={inputClass("guardian_name")} />
                 {errors.guardian_name && <span className="text-[9px] text-red-500 font-bold uppercase ml-4 absolute -bottom-4 left-0">{errors.guardian_name}</span>}
               </div>
-
               <div className="relative">
                 <input type="email" placeholder="Correo electrónico" value={form.guardian_email}
                   onChange={e => { setForm({ ...form, guardian_email: e.target.value }); if (errors.guardian_email) setErrors({ ...errors, guardian_email: "" }); }}
-                  className={`w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors.guardian_email ? 'border-red-400' : 'border-zinc-100 hover:border-zinc-200'}`} />
+                  className={inputClass("guardian_email")} />
                 {errors.guardian_email && <span className="text-[9px] text-red-500 font-bold uppercase ml-4 absolute -bottom-4 left-0">{errors.guardian_email}</span>}
               </div>
-
               <div className="relative">
                 <input type="tel" placeholder="Teléfono" value={form.guardian_phone}
                   onChange={e => { setForm({ ...form, guardian_phone: e.target.value }); if (errors.guardian_phone) setErrors({ ...errors, guardian_phone: "" }); }}
-                  className={`w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors.guardian_phone ? 'border-red-400' : 'border-zinc-100 hover:border-zinc-200'}`} />
+                  className={inputClass("guardian_phone")} />
                 {errors.guardian_phone && <span className="text-[9px] text-red-500 font-bold uppercase ml-4 absolute -bottom-4 left-0">{errors.guardian_phone}</span>}
               </div>
             </div>
@@ -176,158 +225,150 @@ export default function RegisterPage() {
           <div className="space-y-4 pt-2">
             <label className="text-[10px] uppercase tracking-widest font-black text-zinc-400">Crear Cuenta</label>
             <div className="space-y-2.5">
-              <div className="relative">
-                {errors.password && (
-                  <div className="absolute -top-7 left-2 animate-in fade-in zoom-in slide-in-from-bottom-2 duration-300 z-10">
-                    <div className="bg-red-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-md shadow-lg flex items-center gap-1.5 whitespace-nowrap">
-                      <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
-                      {errors.password}
-                      <div className="absolute -bottom-1 left-3 w-2 h-2 bg-red-500 rotate-45"></div>
+              {(["password", "password_confirmation"] as const).map((field, idx) => (
+                <div key={field} className="relative">
+                  {errors[field] && (
+                    <div className="absolute -top-7 left-2 z-10">
+                      <div className="bg-red-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-md shadow-lg flex items-center gap-1.5 whitespace-nowrap">
+                        <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
+                        {errors[field]}
+                        <div className="absolute -bottom-1 left-3 w-2 h-2 bg-red-500 rotate-45"></div>
+                      </div>
                     </div>
+                  )}
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder={idx === 0 ? "Contraseña (mín. 8 caracteres)" : "Confirmar contraseña"}
+                      value={form[field]}
+                      onChange={e => { setForm({ ...form, [field]: e.target.value }); if (errors[field]) setErrors({ ...errors, [field]: "" }); }}
+                      className={`w-full h-11 bg-zinc-50 rounded-xl px-4 pr-11 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors[field] ? "border-red-400" : "border-zinc-100 hover:border-zinc-200"}`}
+                    />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors">
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
                   </div>
-                )}
-                <div className="relative">
-                  <input type={showPassword ? "text" : "password"} placeholder="Contraseña (mín. 8 caracteres)" value={form.password}
-                    onChange={e => { setForm({ ...form, password: e.target.value }); if (errors.password) setErrors({ ...errors, password: "" }); }}
-                    className={`w-full h-11 bg-zinc-50 rounded-xl px-4 pr-11 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors.password ? 'border-red-400 shadow-[0_0_15px_-3px_rgba(248,113,113,0.2)]' : 'border-zinc-100 hover:border-zinc-200'}`} />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors">
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
                 </div>
-              </div>
-              <div className="relative">
-                {errors.password_confirmation && (
-                  <div className="absolute -top-7 left-2 animate-in fade-in zoom-in slide-in-from-bottom-2 duration-300 z-10">
-                    <div className="bg-red-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-md shadow-lg flex items-center gap-1.5 whitespace-nowrap">
-                      <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
-                      {errors.password_confirmation}
-                      <div className="absolute -bottom-1 left-3 w-2 h-2 bg-red-500 rotate-45"></div>
-                    </div>
-                  </div>
-                )}
-                <div className="relative">
-                  <input type={showPassword ? "text" : "password"} placeholder="Confirmar contraseña" value={form.password_confirmation}
-                    onChange={e => { setForm({ ...form, password_confirmation: e.target.value }); if (errors.password_confirmation) setErrors({ ...errors, password_confirmation: "" }); }}
-                    className={`w-full h-11 bg-zinc-50 rounded-xl px-4 pr-11 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors.password_confirmation ? 'border-red-400 shadow-[0_0_15px_-3px_rgba(248,113,113,0.2)]' : 'border-zinc-100 hover:border-zinc-200'}`} />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors">
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 
-          {/* CONFIGURACIÓN DE INSCRIPCIÓN */}
-          <div className="space-y-6 pt-4">
-            <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-100 space-y-4">
-              <label className="flex items-center gap-3 cursor-pointer group">
+          {/* TOGGLE "YO TAMBIÉN PARTICIPO" — solo industrias que lo usan */}
+          {config.showSelfRegister && (
+            <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-100">
+              <label className="flex items-center gap-3 cursor-pointer">
                 <div className="relative flex items-center justify-center">
                   <input type="checkbox" checked={form.is_self_register}
                     onChange={e => setForm({ ...form, is_self_register: e.target.checked })}
                     className="sr-only" />
-                  <div className={`w-10 h-6 rounded-full transition-colors ${form.is_self_register ? 'bg-zinc-950' : 'bg-zinc-200'}`}></div>
-                  <div className={`absolute left-1 w-4 h-4 bg-white rounded-full transition-transform ${form.is_self_register ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                  <div className={`w-10 h-6 rounded-full transition-colors ${form.is_self_register ? "bg-zinc-950" : "bg-zinc-200"}`}></div>
+                  <div className={`absolute left-1 w-4 h-4 bg-white rounded-full transition-transform ${form.is_self_register ? "translate-x-4" : "translate-x-0"}`}></div>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xs font-black text-zinc-900 uppercase">Yo también participaré</span>
-                  <span className="text-[9px] text-zinc-400 font-bold uppercase">{form.is_self_register ? 'Se te inscribirá como alumno' : 'Solo inscribirás a otros (hijos/alumnos)'}</span>
+                  <span className="text-xs font-black text-zinc-900 uppercase">{config.selfRegisterLabel}</span>
+                  <span className="text-[9px] text-zinc-400 font-bold uppercase">
+                    {form.is_self_register ? `Se te inscribirá como ${config.memberLabel.toLowerCase()}` : `Solo inscribirás a otros`}
+                  </span>
                 </div>
               </label>
             </div>
+          )}
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <label className="text-[10px] uppercase tracking-widest font-black text-zinc-400">Otros alumnos para inscribir</label>
-                <button type="button" onClick={() => setForm({ ...form, students: [...form.students, { name: "", category: "kids" }] })}
-                  className="text-[10px] font-black uppercase text-indigo-600 hover:text-indigo-800 transition-colors">+ Agregar</button>
-              </div>
-
-              {errors.students && <p className="text-[9px] text-red-500 font-bold uppercase mt-1 animate-pulse">{errors.students}</p>}
-
-              <div className="space-y-3">
-                {form.students.map((s, i) => (
-                  <div key={i} className="flex gap-2 group animate-in slide-in-from-right-2 duration-200">
-                    <input required placeholder="Nombre del alumno" value={s.name}
-                      onChange={e => { const st = [...form.students]; st[i].name = e.target.value; setForm({ ...form, students: st }); if (errors.students) setErrors({ ...errors, students: "" }); }}
-                      className="flex-1 h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border border-zinc-100 focus:border-zinc-950 transition-all outline-none" />
-                    <select value={s.category}
-                      onChange={e => { const st = [...form.students]; st[i].category = e.target.value; setForm({ ...form, students: st }); }}
-                      className="h-11 bg-zinc-50 rounded-xl px-3 text-[10px] font-black uppercase text-zinc-600 border border-zinc-100 focus:border-zinc-950 outline-none">
-                      <option value="kids">Kids</option>
-                      <option value="adults">Adulto</option>
-                    </select>
-                    {form.students.length > 0 && (
-                      <button type="button" onClick={() => { const st = form.students.filter((_, idx) => idx !== i); setForm({ ...form, students: st }); }}
-                        className="w-11 h-11 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-300 hover:text-red-400 hover:bg-red-50 transition-all border border-zinc-100">
-                        <span className="text-lg leading-none">×</span>
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-              {form.students.length === 0 && !form.is_self_register && (
-                <div className="bg-zinc-50 rounded-xl p-6 border border-dashed border-zinc-200 text-center">
-                  <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest">Inicia agregando a un alumno</p>
-                </div>
-              )}
+          {/* LISTA DE ALUMNOS/ESTUDIANTES */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] uppercase tracking-widest font-black text-zinc-400">
+                {config.showSelfRegister ? `Otros ${config.membersLabel.toLowerCase()} a inscribir` : `${config.membersLabel} a inscribir`}
+              </label>
+              <button type="button"
+                onClick={() => setForm({ ...form, students: [...form.students, { name: "", category: config.courseOptions[0].value }] })}
+                className="text-[10px] font-black uppercase text-indigo-600 hover:text-indigo-800 transition-colors">
+                + Agregar
+              </button>
             </div>
-          </div>
 
-          <div className="pt-4">
-            {totals.totalInscriptions > 0 && (
-              <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-200 mb-6 space-y-3">
-                <h3 className="text-[10px] uppercase font-black tracking-widest text-zinc-400">Resumen de Inscripción</h3>
+            {errors.students && <p className="text-[9px] text-red-500 font-bold uppercase animate-pulse">{errors.students}</p>}
 
-                <div className="space-y-1 text-sm">
-                  {totals.adultsCount > 0 && (
-                    <div className="flex justify-between items-center text-zinc-600">
-                      <span>{totals.adultsCount}x Adulto</span>
-                      <span className="font-medium">${(totals.adultsCount * (pricing.adult || 0)).toLocaleString('es-CL')}</span>
-                    </div>
-                  )}
-                  {totals.kidsCount > 0 && (
-                    <div className="flex justify-between items-center text-zinc-600">
-                      <span>{totals.kidsCount}x Kids</span>
-                      <span className="font-medium">${(totals.kidsCount * (pricing.kids || 0)).toLocaleString('es-CL')}</span>
-                    </div>
+            <div className="space-y-3">
+              {form.students.map((s, i) => (
+                <div key={i} className="flex gap-2 animate-in slide-in-from-right-2 duration-200">
+                  <input
+                    placeholder={`Nombre del ${config.memberLabel.toLowerCase()}`}
+                    value={s.name}
+                    onChange={e => { const st = [...form.students]; st[i].name = e.target.value; setForm({ ...form, students: st }); if (errors.students) setErrors({ ...errors, students: "" }); }}
+                    className="flex-1 h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border border-zinc-100 focus:border-zinc-950 transition-all outline-none"
+                  />
+                  <select value={s.category}
+                    onChange={e => { const st = [...form.students]; st[i].category = e.target.value; setForm({ ...form, students: st }); }}
+                    className="h-11 bg-zinc-50 rounded-xl px-3 text-[10px] font-black uppercase text-zinc-600 border border-zinc-100 focus:border-zinc-950 outline-none">
+                    {config.courseOptions.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                  {form.students.length > 1 && (
+                    <button type="button"
+                      onClick={() => setForm({ ...form, students: form.students.filter((_, idx) => idx !== i) })}
+                      className="w-11 h-11 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-300 hover:text-red-400 hover:bg-red-50 transition-all border border-zinc-100">
+                      <span className="text-lg leading-none">×</span>
+                    </button>
                   )}
                 </div>
+              ))}
+            </div>
 
-                <div className="border-t border-zinc-200 pt-3 flex items-end justify-between">
-                  <div className="flex flex-col">
-                    <span className="text-zinc-900 font-bold">Total a pagar mensual</span>
-                    {totals.hasDiscount && (
-                      <span className="text-[10px] font-black text-emerald-500 uppercase">
-                        ¡Aplica {pricing.discountPercentage}% Descuento Familiar!
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    {totals.hasDiscount && (
-                      <span className="text-xs text-zinc-400 line-through block leading-none w-full text-right">
-                        ${totals.subtotal.toLocaleString('es-CL')}
-                      </span>
-                    )}
-                    <span className="text-xl font-black text-zinc-900 leading-none">
-                      ${totals.total.toLocaleString('es-CL')}
-                    </span>
-                  </div>
-                </div>
+            {form.students.length === 0 && !form.is_self_register && (
+              <div className="bg-zinc-50 rounded-xl p-6 border border-dashed border-zinc-200 text-center">
+                <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest">
+                  Agrega al menos un {config.memberLabel.toLowerCase()}
+                </p>
               </div>
             )}
-
-            <button type="submit" disabled={submitting}
-              className="w-full h-12 bg-zinc-950 hover:bg-zinc-800 text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-zinc-200 disabled:opacity-40">
-              {submitting ? <Loader2 className="animate-spin text-zinc-400" size={18} /> : (
-                <>
-                  <span>Completar Inscripción</span>
-                  <CheckCircle2 size={18} className="opacity-40" />
-                </>
-              )}
-            </button>
           </div>
+
+          {/* RESUMEN DE PRECIOS — solo industrias con pricing */}
+          {config.showPricing && totals.totalInscriptions > 0 && (
+            <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-200 space-y-3">
+              <h3 className="text-[10px] uppercase font-black tracking-widest text-zinc-400">Resumen de Inscripción</h3>
+              <div className="space-y-1 text-sm">
+                {totals.adultsCount > 0 && (
+                  <div className="flex justify-between items-center text-zinc-600">
+                    <span>{totals.adultsCount}x Adulto</span>
+                    <span className="font-medium">${(totals.adultsCount * (pricing.adult || 0)).toLocaleString("es-CL")}</span>
+                  </div>
+                )}
+                {totals.kidsCount > 0 && (
+                  <div className="flex justify-between items-center text-zinc-600">
+                    <span>{totals.kidsCount}x Kids</span>
+                    <span className="font-medium">${(totals.kidsCount * (pricing.kids || 0)).toLocaleString("es-CL")}</span>
+                  </div>
+                )}
+              </div>
+              <div className="border-t border-zinc-200 pt-3 flex items-end justify-between">
+                <div className="flex flex-col">
+                  <span className="text-zinc-900 font-bold">Total mensual</span>
+                  {totals.hasDiscount && (
+                    <span className="text-[10px] font-black text-emerald-500 uppercase">
+                      ¡{pricing.discountPercentage}% Descuento Familiar!
+                    </span>
+                  )}
+                </div>
+                <div className="text-right">
+                  {totals.hasDiscount && (
+                    <span className="text-xs text-zinc-400 line-through block">${totals.subtotal.toLocaleString("es-CL")}</span>
+                  )}
+                  <span className="text-xl font-black text-zinc-900">${totals.total.toLocaleString("es-CL")}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <button type="submit" disabled={submitting}
+            className="w-full h-12 bg-zinc-950 hover:bg-zinc-800 text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-zinc-200 disabled:opacity-40">
+            {submitting ? <Loader2 className="animate-spin text-zinc-400" size={18} /> : (
+              <><span>Completar Inscripción</span><CheckCircle2 size={18} className="opacity-40" /></>
+            )}
+          </button>
 
           <p className="text-center text-[10px] font-black text-zinc-400 uppercase tracking-widest">
             ¿Ya tienes cuenta?{" "}
