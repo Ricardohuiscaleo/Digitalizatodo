@@ -11,7 +11,7 @@ const ModernFooter = () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
-                api_key: 'm802579675-c6ffdf4f254467ff66e8a418',
+                api_key: import.meta.env.PUBLIC_UPTIMEROBOT_KEY ?? '',
                 custom_uptime_ratios: '7-30',
                 response_times: '1',
                 response_times_limit: '48',
