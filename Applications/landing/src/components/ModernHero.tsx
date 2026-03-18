@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import SectionBadge from './common/SectionBadge';
 import { ArrowRight } from 'lucide-react';
 
@@ -79,6 +79,7 @@ const EcosystemCards = () => (
 
 const ModernHero = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
+    const [videoReady, setVideoReady] = useState(false);
 
     useEffect(() => {
         const video = videoRef.current;
@@ -148,7 +149,8 @@ const ModernHero = () => {
                             poster="/recursosweb/app-colorida-poster.jpg"
                             autoPlay loop muted playsInline
                             preload="auto"
-                            className="relative w-full mix-blend-multiply"
+                            onCanPlay={() => setVideoReady(true)}
+                            className={`relative w-full mix-blend-multiply transition-opacity duration-500 ${videoReady ? 'opacity-100' : 'opacity-0'}`}
                         />
                     </div>
                 </div>
