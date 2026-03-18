@@ -25,8 +25,13 @@ class FeeController extends Controller
                 'payments as paid_count'   => fn($q) => $q->where('status', 'paid'),
                 'payments as review_count' => fn($q) => $q->where('status', 'review'),
             ])
+            ->withSum(['payments as paid_amount' => fn($q) => $q->where('status', 'paid')], 'fee_id')
             ->orderByDesc('due_date')
-            ->get();
+            ->get()
+            ->each(function ($fee) {
+                // paid_amount = paid_count * amount (fee_payments no tienen monto propio)
+                $fee->paid_amount = $fee->paid_count * $fee->amount;
+            });
 
         return response()->json(['fees' => $fees]);
     }

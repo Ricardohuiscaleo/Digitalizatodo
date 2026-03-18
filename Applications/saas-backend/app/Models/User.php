@@ -12,6 +12,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Filament\Models\Contracts\HasTenants;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
 
 class User extends Authenticatable implements FilamentUser, HasTenants
@@ -65,6 +66,24 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    public function tenantUsers(): HasMany
+    {
+        return $this->hasMany(TenantUser::class);
+    }
+
+    public function getRoleForTenant(int $tenantId): ?string
+    {
+        return $this->tenantUsers()
+            ->where('tenant_id', $tenantId)
+            ->value('role');
+    }
+
+    public function hasAccessToTenant(int $tenantId): bool
+    {
+        return $this->tenant_id === $tenantId
+            || $this->tenantUsers()->where('tenant_id', $tenantId)->exists();
     }
 
     public function getTenants(Panel $panel): array |Collection

@@ -88,6 +88,7 @@ export default function LoginPage() {
       
       if (result.user_type === "staff") {
         localStorage.setItem("staff_token", result.token);
+        if (result.role) localStorage.setItem("user_role", result.role);
         window.location.href = "/dashboard";
       } else {
         localStorage.setItem("auth_token", result.token);
