@@ -35,7 +35,9 @@ import {
     DollarSign,
     User,
     Bell,
-    ChevronLeft
+    ChevronLeft,
+    Trash2,
+    Banknote
 } from 'lucide-react';
 import { useBranding } from "@/context/BrandingContext";
 import NotificationToast from "@/components/Notifications/NotificationToast";
@@ -57,7 +59,11 @@ import {
     markAllNotificationsRead,
     markNotificationRead,
     getAppUpdates,
-    getFees
+    getFees,
+    getFeeDetail,
+    createFee,
+    deleteFee,
+    approveFeePayment
 } from "@/lib/api";
 import { unlockAudio, setAppBadge } from "@/lib/audio";
 import { subscribeToPush } from "@/lib/push";
@@ -335,6 +341,20 @@ export default function App() {
     const [appUpdates, setAppUpdates] = useState<any[]>([]);
     const [toastNotification, setToastNotification] = useState<any>(null);
     const [feesSummary, setFeesSummary] = useState<{ total: number; pending: number; review: number } | null>(null);
+    const [feesList, setFeesList] = useState<any[]>([]);
+    const [feesLoading, setFeesLoading] = useState(false);
+    const [showCreateFee, setShowCreateFee] = useState(false);
+    const [selectedFee, setSelectedFee] = useState<any>(null);
+    const [feePayments, setFeePayments] = useState<any[]>([]);
+    const [feeDetailLoading, setFeeDetailLoading] = useState(false);
+    const [feeProofUrl, setFeeProofUrl] = useState<string | null>(null);
+    const [feeForm, setFeeForm] = useState({ title: '', description: '', amount: '', due_date: '', target: 'all' });
+    const [feeSubmitting, setFeeSubmitting] = useState(false);
+    const [feeFormError, setFeeFormError] = useState('');
+    const [approvingFeePayment, setApprovingFeePayment] = useState<any>(null);
+    const [feeApproveMethod, setFeeApproveMethod] = useState<'cash' | 'transfer'>('cash');
+    const [feeApproveNotes, setFeeApproveNotes] = useState('');
+    const [feeApprovingLoading, setFeeApprovingLoading] = useState(false);
 
     // --- PERSISTENCE & DATA FETCHING ---
 
@@ -484,7 +504,7 @@ export default function App() {
         };
     }, [branding?.slug, user?.id]);
 
-    const tabs = ['dashboard', 'attendance', 'payments', 'settings', 'profile'];
+    const tabs = ['dashboard', 'attendance', 'payments', 'settings', 'profile', 'fees'];
 
     const changeTab = (newTab: string) => {
         const currentIndex = tabs.indexOf(activeTab);
@@ -711,6 +731,9 @@ export default function App() {
         if (activeTab === 'payments' && !loading) {
             refreshPayers();
         }
+        if (activeTab === 'fees' && !loading && branding?.slug && token) {
+            loadFees();
+        }
     }, [paymentFilter, selectedMonth, selectedYear, activeTab]);
 
     // --- LÓGICA DE DATOS ---
@@ -870,6 +893,284 @@ export default function App() {
     };
 
     // --- VISTAS DE LA APP ---
+
+    const loadFees = async () => {
+        setFeesLoading(true);
+        const data = await getFees(branding?.slug || '', token || '');
+        setFeesList(data?.fees || []);
+        if (data?.fees) {
+            const total = data.fees.length;
+            const pending = data.fees.reduce((a: number, f: any) => a + (f.total_count - f.paid_count - f.review_count), 0);
+            const review = data.fees.reduce((a: number, f: any) => a + (f.review_count || 0), 0);
+            setFeesSummary({ total, pending, review });
+        }
+        setFeesLoading(false);
+    };
+
+    const openFee = async (fee: any) => {
+        setSelectedFee(fee);
+        setFeeDetailLoading(true);
+        const data = await getFeeDetail(branding?.slug || '', token || '', fee.id);
+        setFeePayments(data?.payments || []);
+        setFeeDetailLoading(false);
+    };
+
+    const handleCreateFee = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!feeForm.title || !feeForm.amount || !feeForm.due_date) { setFeeFormError('Completa todos los campos requeridos'); return; }
+        setFeeSubmitting(true); setFeeFormError('');
+        const result = await createFee(branding?.slug || '', token || '', { ...feeForm, amount: parseFloat(feeForm.amount) });
+        setFeeSubmitting(false);
+        if (result?.fee) {
+            setShowCreateFee(false);
+            setFeeForm({ title: '', description: '', amount: '', due_date: '', target: 'all' });
+            loadFees();
+        } else {
+            setFeeFormError(result?.message || 'Error al crear cuota');
+        }
+    };
+
+    const handleDeleteFee = async (feeId: number) => {
+        if (!confirm('¿Eliminar esta cuota y todos sus pagos?')) return;
+        await deleteFee(branding?.slug || '', token || '', feeId);
+        loadFees();
+    };
+
+    const handleApproveFeePayment = async () => {
+        if (!approvingFeePayment || !selectedFee) return;
+        setFeeApprovingLoading(true);
+        await approveFeePayment(branding?.slug || '', token || '', selectedFee.id, {
+            guardian_id: approvingFeePayment.guardian_id,
+            payment_method: feeApproveMethod,
+            notes: feeApproveNotes,
+        });
+        setFeeApprovingLoading(false);
+        setApprovingFeePayment(null);
+        setFeeApproveNotes('');
+        const data = await getFeeDetail(branding?.slug || '', token || '', selectedFee.id);
+        setFeePayments(data?.payments || []);
+        loadFees();
+    };
+
+    const STATUS_LABEL: Record<string, { label: string; color: string }> = {
+        pending: { label: 'Pendiente', color: 'bg-rose-50 text-rose-600 border-rose-100' },
+        review:  { label: 'En revisión', color: 'bg-amber-50 text-amber-600 border-amber-100' },
+        paid:    { label: 'Pagado', color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+    };
+
+    const renderFees = () => (
+        <div className="space-y-3 pb-24">
+            <div className="flex items-center justify-between mb-2">
+                <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">{feesList.length} cuotas creadas</p>
+                <button onClick={() => { loadFees(); setShowCreateFee(true); }}
+                    className="flex items-center gap-2 h-9 px-4 bg-zinc-950 text-white text-[10px] font-black uppercase rounded-xl active:scale-95 transition-all">
+                    <Plus size={14} /> Nueva
+                </button>
+            </div>
+
+            {feesLoading ? (
+                <div className="flex justify-center py-20"><Loader2 className="animate-spin text-zinc-300" size={24} /></div>
+            ) : feesList.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                    <div className="w-16 h-16 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center">
+                        <DollarSign size={28} className="text-zinc-300" />
+                    </div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Sin cuotas creadas</p>
+                    <button onClick={() => setShowCreateFee(true)}
+                        className="h-10 px-6 bg-zinc-950 text-white text-[10px] font-black uppercase rounded-xl active:scale-95">
+                        Crear primera cuota
+                    </button>
+                </div>
+            ) : feesList.map(fee => {
+                const paidCount = fee.paid_count || 0;
+                const reviewCount = fee.review_count || 0;
+                const totalCount = fee.total_count || 0;
+                const pendingCount = totalCount - paidCount - reviewCount;
+                const progress = totalCount > 0 ? Math.round((paidCount / totalCount) * 100) : 0;
+                return (
+                    <div key={fee.id} className="bg-white border border-zinc-100 rounded-[1.8rem] p-4 shadow-sm">
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-sm font-black text-zinc-900 uppercase leading-tight">{fee.title}</h3>
+                                {fee.description && <p className="text-[10px] text-zinc-400 mt-0.5 line-clamp-1">{fee.description}</p>}
+                                <div className="flex items-center gap-3 mt-1.5">
+                                    <span className="text-base font-black text-zinc-950">{formatMoney(fee.amount)}</span>
+                                    <span className="flex items-center gap-1 text-[9px] font-bold text-zinc-400 uppercase">
+                                        <Calendar size={10} /> Vence {new Date(fee.due_date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                    </span>
+                                </div>
+                            </div>
+                            <button onClick={() => handleDeleteFee(fee.id)}
+                                className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center text-rose-400 active:scale-95 border border-rose-100 shrink-0">
+                                <Trash2 size={14} />
+                            </button>
+                        </div>
+                        <div className="mb-3">
+                            <div className="flex justify-between text-[9px] font-black uppercase text-zinc-400 mb-1">
+                                <span>{paidCount} pagados</span>
+                                <span>{progress}%</span>
+                            </div>
+                            <div className="h-2 bg-zinc-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 mb-3">
+                            {paidCount > 0 && <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">{paidCount} pagados</span>}
+                            {reviewCount > 0 && <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100">{reviewCount} en revisión</span>}
+                            {pendingCount > 0 && <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100">{pendingCount} pendientes</span>}
+                        </div>
+                        <button onClick={() => openFee(fee)}
+                            className="w-full h-9 bg-zinc-50 border border-zinc-100 rounded-xl text-[10px] font-black uppercase text-zinc-600 flex items-center justify-center gap-2 active:scale-95 transition-all">
+                            <Users size={13} /> Ver apoderados
+                        </button>
+                    </div>
+                );
+            })}
+
+            {/* Modal crear cuota */}
+            {showCreateFee && (
+                <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end justify-center p-0 animate-in fade-in duration-200" onClick={() => setShowCreateFee(false)}>
+                    <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom-4 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-center mb-4"><div className="w-10 h-1.5 bg-zinc-200 rounded-full" /></div>
+                        <h2 className="text-base font-black uppercase tracking-tighter text-zinc-900 mb-5">Nueva Cuota</h2>
+                        <form onSubmit={handleCreateFee} className="space-y-3">
+                            {feeFormError && <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{feeFormError}</p>}
+                            <input placeholder="Título (ej: Gira de estudios)" value={feeForm.title}
+                                onChange={e => setFeeForm({ ...feeForm, title: e.target.value })}
+                                className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm font-bold text-zinc-900 placeholder:text-zinc-300 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950" />
+                            <textarea placeholder="Descripción (opcional)" value={feeForm.description}
+                                onChange={e => setFeeForm({ ...feeForm, description: e.target.value })}
+                                rows={2}
+                                className="w-full bg-zinc-50 rounded-xl px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-300 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950 resize-none" />
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-[9px] font-black uppercase text-zinc-400 ml-1">Monto ($)</label>
+                                    <input type="number" placeholder="0" value={feeForm.amount}
+                                        onChange={e => setFeeForm({ ...feeForm, amount: e.target.value })}
+                                        className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm font-black text-zinc-900 placeholder:text-zinc-300 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950 mt-1" />
+                                </div>
+                                <div>
+                                    <label className="text-[9px] font-black uppercase text-zinc-400 ml-1">Fecha límite</label>
+                                    <input type="date" value={feeForm.due_date}
+                                        onChange={e => setFeeForm({ ...feeForm, due_date: e.target.value })}
+                                        className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm font-bold text-zinc-900 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950 mt-1" />
+                                </div>
+                            </div>
+                            <button type="submit" disabled={feeSubmitting}
+                                className="w-full h-12 bg-zinc-950 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-40">
+                                {feeSubmitting ? <Loader2 className="animate-spin" size={16} /> : <><Plus size={16} /> Crear Cuota</>}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal detalle cuota */}
+            {selectedFee && (
+                <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end justify-center animate-in fade-in duration-200" onClick={() => setSelectedFee(null)}>
+                    <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] shadow-2xl animate-in slide-in-from-bottom-4 duration-200 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                        <div className="p-5 border-b border-zinc-100 shrink-0">
+                            <div className="flex justify-center mb-3"><div className="w-10 h-1.5 bg-zinc-200 rounded-full" /></div>
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <h2 className="text-base font-black uppercase tracking-tighter text-zinc-900">{selectedFee.title}</h2>
+                                    <p className="text-[10px] text-zinc-400 font-bold mt-0.5">{formatMoney(selectedFee.amount)} · Vence {new Date(selectedFee.due_date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}</p>
+                                </div>
+                                <button onClick={() => setSelectedFee(null)} className="w-8 h-8 rounded-xl bg-zinc-50 flex items-center justify-center text-zinc-400 border border-zinc-100">
+                                    <X size={16} />
+                                </button>
+                            </div>
+                        </div>
+                        <div className="overflow-y-auto flex-1 p-4 space-y-2">
+                            {feeDetailLoading ? (
+                                <div className="flex justify-center py-10"><Loader2 className="animate-spin text-zinc-300" size={20} /></div>
+                            ) : feePayments.length === 0 ? (
+                                <p className="text-center text-[10px] text-zinc-400 font-black uppercase py-10">Sin apoderados asignados</p>
+                            ) : feePayments.map(p => {
+                                const st = STATUS_LABEL[p.status] || STATUS_LABEL.pending;
+                                return (
+                                    <div key={p.id} className="bg-zinc-50 rounded-2xl p-3 border border-zinc-100 flex items-center gap-3">
+                                        <img src={p.guardian?.photo || '/icon.webp'} className="w-10 h-10 rounded-full object-cover border border-white shadow-sm shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-black text-zinc-900 uppercase leading-none truncate">{p.guardian?.name}</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full border ${st.color}`}>{st.label}</span>
+                                                {p.payment_method && <span className="text-[8px] text-zinc-400 font-bold uppercase">{p.payment_method === 'cash' ? 'Efectivo' : 'Transferencia'}</span>}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                            {p.proof_url && (
+                                                <button onClick={() => setFeeProofUrl(p.proof_url)}
+                                                    className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500 active:scale-95">
+                                                    <Eye size={14} />
+                                                </button>
+                                            )}
+                                            {p.status !== 'paid' && (
+                                                <button onClick={() => { setApprovingFeePayment(p); setFeeApproveMethod('cash'); }}
+                                                    className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 active:scale-95">
+                                                    <CheckCircle2 size={14} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal aprobar pago */}
+            {approvingFeePayment && (
+                <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setApprovingFeePayment(null)}>
+                    <div className="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-sm font-black uppercase tracking-tighter text-zinc-900 mb-1">Confirmar Pago</h3>
+                        <p className="text-[10px] text-zinc-400 font-bold mb-5">{approvingFeePayment.guardian?.name}</p>
+                        <div className="space-y-3 mb-5">
+                            <p className="text-[9px] font-black uppercase text-zinc-400">Método de pago</p>
+                            <div className="grid grid-cols-2 gap-2">
+                                <button onClick={() => setFeeApproveMethod('cash')}
+                                    className={`h-12 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase border transition-all ${feeApproveMethod === 'cash' ? 'bg-zinc-950 text-white border-zinc-950' : 'bg-zinc-50 text-zinc-400 border-zinc-200'}`}>
+                                    <Banknote size={16} /> Efectivo
+                                </button>
+                                <button onClick={() => setFeeApproveMethod('transfer')}
+                                    className={`h-12 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase border transition-all ${feeApproveMethod === 'transfer' ? 'bg-zinc-950 text-white border-zinc-950' : 'bg-zinc-50 text-zinc-400 border-zinc-200'}`}>
+                                    <RefreshCw size={16} /> Transferencia
+                                </button>
+                            </div>
+                            <input placeholder="Notas (opcional)" value={feeApproveNotes}
+                                onChange={e => setFeeApproveNotes(e.target.value)}
+                                className="w-full h-10 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border border-zinc-100 outline-none" />
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={() => setApprovingFeePayment(null)}
+                                className="flex-1 h-11 bg-zinc-50 text-zinc-400 text-[10px] font-black uppercase rounded-xl border border-zinc-100 active:scale-95">
+                                Cancelar
+                            </button>
+                            <button onClick={handleApproveFeePayment} disabled={feeApprovingLoading}
+                                className="flex-[2] h-11 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-xl flex items-center justify-center gap-2 active:scale-95 disabled:opacity-40">
+                                {feeApprovingLoading ? <Loader2 className="animate-spin" size={14} /> : <><CheckCircle2 size={14} /> Marcar Pagado</>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Lightbox comprobante */}
+            {feeProofUrl && (
+                <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setFeeProofUrl(null)}>
+                    <div className="relative max-w-sm w-full" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => setFeeProofUrl(null)} className="absolute -top-12 right-0 w-10 h-10 bg-white/10 border border-white/20 rounded-full flex items-center justify-center text-white">
+                            <X size={20} />
+                        </button>
+                        <div className="rounded-3xl overflow-hidden border border-white/10">
+                            <img src={feeProofUrl} alt="Comprobante" className="w-full object-contain max-h-[85vh]" />
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 
     const renderDashboard = () => {
         const totalStudents = allStudents.length;
@@ -1862,10 +2163,19 @@ export default function App() {
                 <button onClick={() => changeTab('settings')} className="w-full flex items-center justify-between p-4 hover:bg-stone-50 rounded-2xl transition-all group">
                     <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400 group-hover:text-zinc-700 transition-colors"><Settings size={20} /></div>
-                        <span className="font-black text-sm text-zinc-700">Ajustes de Academia</span>
+                        <span className="font-black text-sm text-zinc-700">Ajustes</span>
                     </div>
                     <ChevronRight size={18} className="text-zinc-300" />
                 </button>
+                {branding?.industry === 'school_treasury' && (
+                    <button onClick={() => changeTab('fees')} className="w-full flex items-center justify-between p-4 hover:bg-stone-50 rounded-2xl transition-all group">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400 group-hover:text-zinc-700 transition-colors"><DollarSign size={20} /></div>
+                            <span className="font-black text-sm text-zinc-700">Cuotas</span>
+                        </div>
+                        <ChevronRight size={18} className="text-zinc-300" />
+                    </button>
+                )}
             </div>
 
             {/* Changelog */}
@@ -2120,6 +2430,7 @@ export default function App() {
                             {activeTab === 'payments' && renderPayments()}
                             {activeTab === 'settings' && renderSettings()}
                             {activeTab === 'profile' && renderProfile()}
+                            {activeTab === 'fees' && renderFees()}
                         </div>
                     </div>
                 </main>
