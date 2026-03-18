@@ -8,7 +8,10 @@ _Última actualización: 2026-03-08_
 - **Repo backend real (Coolify):** `https://github.com/Ricardohuiscaleo/saas-backend.git`
   - Clonado localmente en `/Users/ricardohuiscaleollafquen/saas-backend-repo/`
   - Deploya en `https://admin.digitalizatodo.cl`
-- **Servidor:** `root@srv1331519` (VPS)
+- **Servidor:** `srv1331519.hstgr.cloud` (Hostinger KVM 2)
+  - **Specs:** 2 vCPUs | **8GB RAM** | 100GB SSD (Ubuntu 24.04 + Coolify)
+  - **IP:** `76.13.126.63`
+  - **Hostinger API Token:** `QoKAvSEB08CRDD8qA9ARkFiwwVcOyLVSUQfwqCXD7a04f20d` (usar para monitoreo/reinicio)
 - **Contenedor backend activo:** `bo888gk4kg8w0wossc00ccs8-001837956620`
 
 ## REGLA IMPORTANTE
