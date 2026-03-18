@@ -94,4 +94,21 @@ git push
 | `GET /api/app-updates?target=staff` | Changelog filtrado por target |
 | `GET /api/{tenant}/push/vapid-public-key` | Clave pública VAPID (auth requerida) |
 | `POST /api/{tenant}/push/subscribe` | Guardar suscripción Web Push |
-| `POST /api/{tenant}/push/unsubscribe` | Eliminar suscripción Web Push |
+---
+
+## Solución de Errores de Memoria (OOM / Exit code 4)
+
+Si el deploy falla durante el build de la imagen (específicamente en `composer install`):
+
+### 1. Sincronización de `composer.lock` (CRÍTICO)
+El error suele ocurrir porque `composer.lock` está desincronizado con `composer.json`. Esto obliga al servidor a "resolver" dependencias en vivo, agotando la RAM.
+- **Solución**: Ejecutar `composer update --lock` localmente y hacer push del archivo `.lock`.
+
+### 2. Configuración Docker Estable
+Para el VPS (KVM 2) con RAM limitada (~2GB), la configuración más estable es:
+- **Single-stage build**: Evita el overhead de capas intermedias.
+- **Límite de RAM**: `ENV COMPOSER_MEMORY_LIMIT=2G`.
+- **Instalación Manual**: La lista manual de extensiones PHP en el `Dockerfile` es más confiable que los instaladores automáticos en este entorno.
+
+### 3. Check OOM
+Si el build tarda menos de 3 minutos y falla con `exit code: 4`, es un pico de memoria. Si tarda más de 5 minutos, probablemente ya pasó la fase crítica de Composer.
