@@ -1956,7 +1956,9 @@ export default function App() {
                     )}
                 </div>
 
-                {/* PRECIOS + DESCUENTO en una sola tarjeta */}
+                {/* PRECIOS + DESCUENTO — oculto para school_treasury */}
+                {branding?.industry !== 'school_treasury' && (
+                    <>
                 <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden">
                     <div className="px-4 py-2 border-b border-zinc-50 flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -1991,6 +1993,8 @@ export default function App() {
                     className="w-full text-white font-black py-4 rounded-2xl active:scale-95 transition-all text-[10px] uppercase tracking-widest flex items-center justify-center gap-2">
                     <Save size={16} /> Guardar Configuración de Precios
                 </button>
+                    </>
+                )}
 
                 {/* DATOS DE TRANSFERENCIA */}
                 {/* DATOS DE TRANSFERENCIA */}
