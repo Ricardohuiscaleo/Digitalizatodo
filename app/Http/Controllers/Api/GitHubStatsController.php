@@ -75,6 +75,28 @@ class GitHubStatsController extends Controller
                 $count++;
             }
 
+            // Fetch UptimeRobot
+            $uptimeKey = env('PUBLIC_UPTIMEROBOT_KEY');
+            $uptimePercent = 100;
+            $responseTime = null;
+            if ($uptimeKey) {
+                try {
+                    $ur = Http::timeout(10)->post('https://api.uptimerobot.com/v2/getMonitors', [
+                        'api_key'           => $uptimeKey,
+                        'format'            => 'json',
+                        'custom_uptime_ratios' => '30',
+                        'response_times'    => '1',
+                    ]);
+                    if ($ur->successful() && $ur->json('stat') === 'ok') {
+                        $monitor = $ur->json('monitors.0');
+                        $uptimePercent = (float) ($monitor['custom_uptime_ratio'] ?? 100);
+                        $responseTime  = (int)   ($monitor['average_response_time'] ?? null);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('UptimeRobot fetch error: ' . $e->getMessage());
+                }
+            }
+
             // Fetch PageSpeed — todas las categorías en 2 llamadas (desktop + mobile)
             $pagespeedKey = env('PAGESPEED_API_KEY');
             $perf_d = null; $seo_d = null; $a11y_d = null; $bp_d = null;
@@ -139,6 +161,8 @@ class GitHubStatsController extends Controller
                 'pagespeed_score'        => $perf_d ?? 100,
                 'seo_score'              => $seo_d  ?? 100,
                 'contributions_last_year' => 824,
+                'uptime_percent'          => $uptimePercent,
+                'response_time_ms'        => $responseTime,
             ];
         });
     }
