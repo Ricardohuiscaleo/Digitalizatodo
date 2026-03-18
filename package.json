@@ -10,5 +10,8 @@
         "dev:ricardo": "npm run dev --workspace ricardohuiscaleo",
         "build:landing": "npm run build --workspace @digitalizatodo/landing",
         "build:ricardo": "npm run build --workspace ricardohuiscaleo"
+    },
+    "dependencies": {
+        "simple-icons": "^16.12.0"
     }
 }

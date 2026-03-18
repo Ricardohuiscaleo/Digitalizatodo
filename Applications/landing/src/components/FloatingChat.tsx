@@ -11,6 +11,7 @@ const FloatingChat = () => {
     const [isRecording, setIsRecording] = useState(false);
     const [recordingDuration, setRecordingDuration] = useState(0);
     const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+    const [fabHidden, setFabHidden] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const recordingInterval = useRef<any>(null);
     const audioChunks = useRef<Blob[]>([]);
@@ -19,6 +20,18 @@ const FloatingChat = () => {
     const imageInputRef = useRef<HTMLInputElement>(null);
     const [userIp, setUserIp] = useState('...');
     const [userCity, setUserCity] = useState('...');
+
+    // Footer intersection observer
+    useEffect(() => {
+        const footer = document.getElementById('footer');
+        if (!footer) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => setFabHidden(entry.isIntersecting),
+            { threshold: 0.1 }
+        );
+        observer.observe(footer);
+        return () => observer.disconnect();
+    }, []);
 
     // Initial message with delay
     const [messages, setMessages] = useState<any[]>([]);
@@ -367,7 +380,9 @@ const FloatingChat = () => {
             </div>
 
             {/* FLOATING ACTION BUTTON (FAB) */}
-            <div className={`fixed bottom-6 right-6 z-[100] transform-gpu ${isOpen ? 'hidden sm:block' : 'block'}`}>
+            <div className={`fixed bottom-6 right-6 z-[100] transform-gpu transition-all duration-300 ${
+                isOpen ? 'hidden sm:block' : 'block'
+            } ${fabHidden ? 'opacity-0 pointer-events-none translate-y-4' : 'opacity-100 translate-y-0'}`}>
                 <button 
                     onClick={() => setIsOpen(!isOpen)}
                     className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full text-white flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-500 relative
