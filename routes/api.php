@@ -99,6 +99,9 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
             Route::post('payments/{payment}/upload-proof', [PaymentController::class , 'uploadProof']);
             Route::delete('payments/{payment}/proof', [PaymentController::class , 'deleteProof']);
 
+            // Gastos públicos (apoderados pueden ver)
+            Route::get('expenses', [\App\Http\Controllers\Api\ExpenseController::class, 'index']);
+
             // Asistencia (solo teachers/admins - Escritura)
             Route::middleware('role:teacher,admin,owner')->group(function () {
                     Route::post('attendance', [AttendanceController::class , 'store']);
@@ -122,6 +125,11 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
                     Route::put('schedules/{id}', [\App\Http\Controllers\Api\ScheduleController::class, 'update']);
                     Route::delete('schedules/{id}', [\App\Http\Controllers\Api\ScheduleController::class, 'destroy']);
                     Route::post('schedules/{id}/students', [\App\Http\Controllers\Api\ScheduleController::class, 'assignStudents']);
+
+                    // Gastos (Tesorero)
+                    Route::get('expenses', [\App\Http\Controllers\Api\ExpenseController::class, 'index']);
+                    Route::post('expenses', [\App\Http\Controllers\Api\ExpenseController::class, 'store']);
+                    Route::delete('expenses/{id}', [\App\Http\Controllers\Api\ExpenseController::class, 'destroy']);
                 }
                 );
             }
