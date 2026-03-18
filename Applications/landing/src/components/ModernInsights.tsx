@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Zap, Activity, ShieldCheck, Star, Loader2, Monitor, Smartphone } from 'lucide-react';
+import { Zap, Activity, ShieldCheck, Star, Code2, Loader2 } from 'lucide-react';
 import { siPhp, siLaravel, siNextdotjs, siReact, siTypescript, siAstro, siTailwindcss, siMysql } from 'simple-icons';
 import { useLazyReveal, revealClass, revealStyle } from '../hooks/useLazyReveal';
 
@@ -53,7 +53,6 @@ const InsightCard = ({ label, value, suffix, source, icon: Icon, color, href, lo
 const ModernInsights = () => {
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [mode, setMode] = useState<'desktop' | 'mobile'>('desktop');
     const { ref: sectionRef, visible: sectionVisible } = useLazyReveal(0.05);
     const { ref: stackRef, visible: stackVisible } = useLazyReveal();
 
@@ -68,17 +67,19 @@ const ModernInsights = () => {
         fetch_();
     }, []);
 
-    const d = mode === 'desktop';
-    const perf = d ? (data?.pagespeed_desktop      ?? 100) : (data?.pagespeed_mobile      ?? 95);
-    const seo  = d ? (data?.seo_desktop             ?? 100) : (data?.seo_mobile             ?? 100);
-    const a11y = d ? (data?.accessibility_desktop   ?? 90)  : (data?.accessibility_mobile   ?? 90);
-    const bp   = d ? (data?.best_practices_desktop  ?? 100) : (data?.best_practices_mobile  ?? 100);
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const perf = isMobile ? (data?.pagespeed_mobile      ?? 95)  : (data?.pagespeed_desktop      ?? 100);
+    const seo  = isMobile ? (data?.seo_mobile             ?? 100) : (data?.seo_desktop             ?? 100);
+    const a11y = isMobile ? (data?.accessibility_mobile   ?? 90)  : (data?.accessibility_desktop   ?? 90);
+    const bp   = isMobile ? (data?.best_practices_mobile  ?? 100) : (data?.best_practices_desktop  ?? 100);
+    const contributions = data?.contributions_last_year ?? 824;
 
     const cards: CardProps[] = [
-        { label: 'Rendimiento',     value: perf, suffix: '/100', source: 'PageSpeed API', icon: Zap,         color: 'bg-brand-blue',   href: PAGESPEED_URL, delay: 0   },
-        { label: 'SEO',             value: seo,  suffix: '/100', source: 'PageSpeed API', icon: Activity,    color: 'bg-brand-orange', href: PAGESPEED_URL, delay: 100 },
-        { label: 'Accesibilidad',   value: a11y, suffix: '/100', source: 'PageSpeed API', icon: ShieldCheck, color: 'bg-brand-green',  href: PAGESPEED_URL, delay: 200 },
-        { label: 'Recomendaciones', value: bp,   suffix: '/100', source: 'PageSpeed API', icon: Star,        color: 'bg-slate-900',    href: PAGESPEED_URL, delay: 300 },
+        { label: 'Rendimiento',        value: perf,          suffix: '/100', source: 'PageSpeed API', icon: Zap,         color: 'bg-brand-blue',   href: PAGESPEED_URL, delay: 0   },
+        { label: 'SEO',                value: seo,           suffix: '/100', source: 'PageSpeed API', icon: Activity,    color: 'bg-brand-orange', href: PAGESPEED_URL, delay: 100 },
+        { label: 'Accesibilidad',      value: a11y,          suffix: '/100', source: 'PageSpeed API', icon: ShieldCheck, color: 'bg-brand-green',  href: PAGESPEED_URL, delay: 200 },
+        { label: 'Recomendaciones',    value: bp,            suffix: '/100', source: 'PageSpeed API', icon: Star,        color: 'bg-slate-900',    href: PAGESPEED_URL, delay: 300 },
+        { label: 'Contributions / año',value: contributions, suffix: '',     source: 'GitHub API',    icon: Code2,       color: 'bg-slate-900',                         delay: 400 },
     ];
 
     return (
@@ -87,17 +88,9 @@ const ModernInsights = () => {
                 <div ref={sectionRef} style={revealStyle(0)} className={`${revealClass(sectionVisible)} mb-10 text-center`}>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2">Métricas reales</p>
                     <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tighter">Números que respaldan el trabajo</h2>
-                    <div className="inline-flex items-center gap-1 mt-5 bg-slate-100 rounded-full p-1">
-                        <button onClick={() => setMode('desktop')} className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'desktop' ? 'bg-white shadow text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}>
-                            <Monitor size={11} /> Desktop
-                        </button>
-                        <button onClick={() => setMode('mobile')} className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'mobile' ? 'bg-white shadow text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}>
-                            <Smartphone size={11} /> Mobile
-                        </button>
-                    </div>
                 </div>
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
                     {cards.map((card, i) => <InsightCard key={i} {...card} loading={loading} />)}
                 </div>
 
