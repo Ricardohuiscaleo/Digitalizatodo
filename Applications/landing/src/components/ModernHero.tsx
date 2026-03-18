@@ -30,7 +30,7 @@ const cards = [
     {
         title: 'Dashboard central',
         desc: 'Ves ventas, inventario, asistencia y alertas en tiempo real desde donde estés — aunque no estés en el negocio.',
-        media: { type: 'video' as const, src: '/recursosweb/dashboard-multiuso.mp4' },
+        media: { type: 'video' as const, src: '/recursosweb/dashboard-multiuso.mp4', poster: '/recursosweb/dashboard-multiuso-poster.jpg' },
         color: 'from-brand-green/10 to-brand-green/5',
         border: 'border-brand-green/20',
         icon: (
@@ -52,7 +52,9 @@ const EcosystemCards = () => (
                     {card.media.type === 'video' ? (
                         <video
                             src={card.media.src}
+                            poster={card.media.poster}
                             autoPlay loop muted playsInline
+                            preload="auto"
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                     ) : (
@@ -143,6 +145,7 @@ const ModernHero = () => {
                         <video
                             ref={videoRef}
                             src="/recursosweb/app-colorida.mp4"
+                            poster="/recursosweb/app-colorida-poster.jpg"
                             autoPlay loop muted playsInline
                             preload="auto"
                             className="relative w-full mix-blend-multiply"
