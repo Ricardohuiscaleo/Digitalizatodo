@@ -1838,7 +1838,7 @@ export default function App() {
                                 <span className="text-[8px] font-bold text-zinc-300">{u.published_at}</span>
                             </div>
                             <h4 className="text-sm font-black text-zinc-800 mt-2">{u.title}</h4>
-                            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{u.description}</p>
+                            <p className="text-xs text-zinc-400 mt-1 leading-relaxed whitespace-pre-wrap">{u.description}</p>
                         </div>
                     )) : (
                         <p className="text-xs text-zinc-300 text-center py-4">Sin actualizaciones</p>
