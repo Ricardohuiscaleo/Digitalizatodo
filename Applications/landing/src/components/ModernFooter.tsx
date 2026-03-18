@@ -7,31 +7,15 @@ const ModernFooter = () => {
     const [dailyRatios, setDailyRatios] = useState<number[]>([]);
 
     useEffect(() => {
-        fetch('https://api.uptimerobot.com/v2/getMonitors', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-                api_key: import.meta.env.PUBLIC_UPTIMEROBOT_KEY ?? '',
-                custom_uptime_ratios: '7-30',
-                response_times: '1',
-                response_times_limit: '48',
-                format: 'json',
-            }),
-        })
+        const API_BASE = (import.meta as any).env?.PUBLIC_API_URL || 'https://admin.digitalizatodo.cl';
+        fetch(`${API_BASE}/api/w/github-stats`)
             .then((r) => r.json())
             .then((data) => {
-                const monitor = data?.monitors?.[0];
-                if (!monitor) return;
-                setStatus(monitor.status === 2 ? 'up' : 'down');
-                const ratio = monitor.custom_uptime_ratio?.split('-')[0];
-                setUptime(parseFloat(ratio));
-                // response_times viene como array de {datetime, value}
-                const times: {value: number}[] = monitor.response_times || [];
-                // Agrupar en 48 bloques — verde si existe dato, rojo si no
-                const bars = times.slice(-48).map((t) => t.value > 0 ? 100 : 0);
-                // Rellenar si hay menos de 48
-                while (bars.length < 48) bars.unshift(100);
-                setDailyRatios(bars);
+                const ratio = data?.uptime_percent ?? 100;
+                setUptime(ratio);
+                setStatus(ratio >= 99 ? 'up' : 'down');
+                // Barras estáticas — todas verdes si uptime >= 99
+                setDailyRatios(Array(48).fill(ratio >= 99 ? 100 : 0));
             })
             .catch(() => setStatus('down'));
     }, []);
