@@ -1045,8 +1045,8 @@ export default function App() {
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="text-[9px] font-black uppercase text-zinc-400 ml-1">Monto ($)</label>
-                                    <input type="number" placeholder="0" value={feeForm.amount}
-                                        onChange={e => setFeeForm({ ...feeForm, amount: e.target.value })}
+                                    <input type="text" inputMode="numeric" placeholder="$ 0" value={feeForm.amount ? formatCLP(parseInt(feeForm.amount)) : ''}
+                                        onChange={e => setFeeForm({ ...feeForm, amount: String(parseCLP(e.target.value)) })}
                                         className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm font-black text-zinc-900 placeholder:text-zinc-300 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950 mt-1" />
                                 </div>
                                 <div>
