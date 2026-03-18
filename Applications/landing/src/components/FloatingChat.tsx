@@ -18,8 +18,7 @@ const FloatingChat = () => {
     const notificationAudio = useRef<HTMLAudioElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
-    const [userIp, setUserIp] = useState('...');
-    const [userCity, setUserCity] = useState('...');
+    const [pendingMsgs, setPendingMsgs] = useState<string[]>([]);
 
     // Footer intersection observer
     useEffect(() => {
@@ -35,12 +34,11 @@ const FloatingChat = () => {
 
     // Initial message with delay
     const [messages, setMessages] = useState<any[]>([]);
+    const [initShown, setInitShown] = useState(false);
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            setMessages([
-                { id: 'init', message: "¡Hola! 👋 Soy Ricardo. ¿En qué podemos ayudarte con tu próximo proyecto?", sender: 'admin', created_at: new Date().toISOString() }
-            ]);
+            setInitShown(true);
             if (!isOpen) {
                 setUnreadCount(prev => prev + 1);
                 playNotification();
@@ -99,20 +97,14 @@ const FloatingChat = () => {
         };
         pingVisit();
 
-        // Fetch Geolocation
-        const fetchGeo = async () => {
-            try {
-                const res = await fetch('https://freeipapi.com/api/json');
-                const data = await res.json();
-                if (data.ipAddress) setUserIp(data.ipAddress);
-                if (data.cityName) setUserCity(data.cityName);
-            } catch (e) {}
-        };
-        fetchGeo();
+
     }, []);
 
     useEffect(() => {
-        if (isOpen) setUnreadCount(0);
+        if (isOpen) {
+            setUnreadCount(0);
+            setPendingMsgs([]);
+        }
     }, [isOpen]);
 
     // SSE & Polling Integration
@@ -132,6 +124,8 @@ const FloatingChat = () => {
                         if (prev.find(m => m.id === newMsg.id)) return prev;
                         if (!isOpen && newMsg.sender === 'admin') {
                             setUnreadCount(c => c + 1);
+                            const txt = newMsg.message || newMsg.text;
+                            if (txt) setPendingMsgs(prev => [...prev.slice(-2), txt]);
                             playNotification();
                         }
                         return [...prev, newMsg];
@@ -153,17 +147,26 @@ const FloatingChat = () => {
                     const data = await response.json();
                     if (data.length > 0) {
                         setMessages(prev => {
-                            const existingIds = new Set(prev.map(m => m.id));
+                            const existingIds = new Set(prev.filter(m => !m._temp).map(m => m.id));
                             const newOnly = data.filter((m: any) => !existingIds.has(m.id));
-                            if (newOnly.length === 0) return prev;
+                            // Reemplazar temps con mensajes reales del servidor
+                            const withoutTemps = prev.filter(m => !m._temp);
+                            const merged = [...withoutTemps];
+                            newOnly.forEach((m: any) => { if (!merged.find(x => x.id === m.id)) merged.push(m); });
+                            merged.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+                            if (newOnly.length === 0 && prev.every(m => !m._temp)) return prev;
                             
                             // Si hay mensajes nuevos de admin fuera del lag, notificar
-                            const hasAdminMsg = newOnly.some((m: any) => m.sender === 'admin');
-                            if (!isOpen && hasAdminMsg) {
-                                setUnreadCount(c => c + 1);
+                            const adminMsgs = newOnly.filter((m: any) => m.sender === 'admin');
+                            if (!isOpen && adminMsgs.length > 0) {
+                                setUnreadCount(c => c + adminMsgs.length);
+                                setPendingMsgs(prev => {
+                                    const txts = adminMsgs.map((m: any) => m.message || m.text).filter(Boolean);
+                                    return [...prev, ...txts].slice(-3);
+                                });
                                 playNotification();
                             }
-                            return [...prev, ...newOnly];
+                            return merged;
                         });
                     }
                 }
@@ -247,8 +250,11 @@ const FloatingChat = () => {
         if (!message.trim() || !sessionId) return;
         const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://admin.digitalizatodo.cl';
         const currentMsg = message;
+        const tempId = `temp_${Date.now()}`;
         setMessage('');
         setChatStatus('sending');
+        // Optimistic update
+        setMessages(prev => [...prev, { id: tempId, message: currentMsg, sender: 'user', created_at: new Date().toISOString(), _temp: true }]);
         try {
             await fetch(`${API_BASE}/api/w/chat/send`, {
                 method: 'POST',
@@ -291,7 +297,7 @@ const FloatingChat = () => {
                         <div>
                             <h3 className="font-bold text-sm">Ricardo - DigitalizaTodo</h3>
                             <p className="text-[10px] text-slate-400 font-medium leading-tight">En línea • responde en minutos</p>
-                            <p className="text-[10px] text-brand-orange font-bold uppercase tracking-wider leading-tight">Tu IP es: {userIp} • Ciudad: {userCity}</p>
+
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -306,28 +312,50 @@ const FloatingChat = () => {
                 </div>
 
                 {/* Messages Area */}
-                <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50">
-                    <div className="text-center mb-6">
+                <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 bg-slate-50/50">
+                    <div className="text-center mb-4">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-200/50 px-3 py-1 rounded-full">Hoy</span>
                     </div>
-                    {messages.map((msg, idx) => (
-                        <div key={idx} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'} max-w-full animate-in fade-in slide-in-from-bottom-2`}>
-                            <div className={`px-4 py-3 rounded-2xl max-w-[85%] text-sm shadow-sm leading-relaxed ${
-                                msg.sender === 'user' 
-                                ? 'bg-brand-orange text-white rounded-tr-sm' 
-                                : 'bg-white border border-slate-100 text-slate-700 rounded-tl-sm'
-                            }`}>
-                                {msg.type === 'image' && msg.file_path && (
-                                    <img src={msg.file_path} alt="Media" className="rounded-lg mb-2 max-w-full h-auto cursor-pointer" onClick={() => window.open(msg.file_path, '_blank')} />
-                                )}
-                                {msg.type === 'audio' && msg.file_path && (
-                                    <audio controls className="w-full h-8 mb-2"><source src={msg.file_path} type="audio/ogg" />Audio</audio>
-                                )}
-                                {msg.message || msg.text}
+                    {/* Mensaje inicial local */}
+                    {initShown && (
+                        <div className="flex flex-col items-start max-w-full animate-in fade-in slide-in-from-bottom-2 mb-3">
+                            <div className="px-4 py-2.5 max-w-[85%] text-sm shadow-sm leading-relaxed rounded-2xl rounded-tl-sm bg-white border border-slate-100 text-slate-700">
+                                ¡Hola! 👋 Soy Ricardo. ¿En qué podemos ayudarte con tu próximo proyecto?
                             </div>
-                            <span className="text-[10px] font-medium text-slate-400 mt-1 px-1">{new Date(msg.created_at || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            <span className="text-[10px] font-medium text-slate-400 mt-1 px-1">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                         </div>
-                    ))}
+                    )}
+                    {messages.map((msg, idx) => {
+                        const isUser = msg.sender === 'user';
+                        const prev = messages[idx - 1];
+                        const next = messages[idx + 1];
+                        const isFirst = !prev || prev.sender !== msg.sender;
+                        const isLast = !next || next.sender !== msg.sender;
+                        // border-radius stacking: top corners flat when not first, bottom corners flat when not last
+                        const bubbleRadius = isUser
+                            ? `rounded-2xl ${isFirst ? '' : 'rounded-tr-sm'} ${isLast ? 'rounded-tr-sm' : 'rounded-tr-sm rounded-br-sm'}`
+                            : `rounded-2xl ${isFirst ? '' : 'rounded-tl-sm'} ${isLast ? 'rounded-tl-sm' : 'rounded-tl-sm rounded-bl-sm'}`;
+                        return (
+                            <div key={idx} className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-full animate-in fade-in slide-in-from-bottom-2 ${isLast ? 'mb-3' : 'mb-0.5'}`}>
+                                <div className={`px-4 py-2.5 max-w-[85%] text-sm shadow-sm leading-relaxed ${bubbleRadius} ${
+                                    isUser
+                                    ? 'bg-brand-orange text-white'
+                                    : 'bg-white border border-slate-100 text-slate-700'
+                                }`}>
+                                    {msg.type === 'image' && msg.file_path && (
+                                        <img src={msg.file_path} alt="Media" className="rounded-lg mb-2 max-w-full h-auto cursor-pointer" onClick={() => window.open(msg.file_path, '_blank')} />
+                                    )}
+                                    {msg.type === 'audio' && msg.file_path && (
+                                        <audio controls className="w-full h-8 mb-2"><source src={msg.file_path} type="audio/ogg" />Audio</audio>
+                                    )}
+                                    {msg.message || msg.text}
+                                </div>
+                                {isLast && (
+                                    <span className="text-[10px] font-medium text-slate-400 mt-1 px-1">{new Date(msg.created_at || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
 
                 {/* Input Area */}
@@ -383,6 +411,33 @@ const FloatingChat = () => {
             <div className={`fixed bottom-6 right-6 z-[100] transform-gpu transition-all duration-300 ${
                 isOpen ? 'hidden sm:block' : 'block'
             } ${fabHidden ? 'opacity-0 pointer-events-none translate-y-4' : 'opacity-100 translate-y-0'}`}>
+                {/* Notification bubbles apiladas */}
+                {!isOpen && pendingMsgs.length > 0 && (
+                    <div className="absolute bottom-full right-0 mb-3 flex flex-col items-end gap-1.5" onClick={() => setIsOpen(true)}>
+                        {pendingMsgs.map((txt, i) => {
+                            const isNewest = i === pendingMsgs.length - 1;
+                            const offset = (pendingMsgs.length - 1 - i) * 6;
+                            return (
+                                <div
+                                    key={i}
+                                    style={{ marginRight: offset, opacity: isNewest ? 1 : 0.6 + i * 0.15, transform: `scale(${isNewest ? 1 : 0.95 - (pendingMsgs.length - 1 - i) * 0.03})` }}
+                                    className={`w-64 bg-white rounded-2xl rounded-br-sm shadow-xl border border-slate-100 p-3 cursor-pointer animate-in fade-in slide-in-from-bottom-2 duration-300`}
+                                >
+                                    {isNewest && (
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <img src="/crh.png" alt="R" className="w-5 h-5 rounded-full object-cover" />
+                                            <span className="text-xs font-bold text-slate-800">Ricardo</span>
+                                            <div className="w-2 h-2 bg-emerald-500 rounded-full ml-auto"></div>
+                                        </div>
+                                    )}
+                                    <p className="text-sm text-slate-600 leading-snug line-clamp-2">{txt}</p>
+                                    {isNewest && <div className="absolute -bottom-2 right-5 w-4 h-4 bg-white border-r border-b border-slate-100 rotate-45"></div>}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
                 <button 
                     onClick={() => setIsOpen(!isOpen)}
                     className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full text-white flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-500 relative

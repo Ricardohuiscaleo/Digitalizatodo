@@ -1,0 +1,234 @@
+---
+import '../styles/global.css';
+import ModernNavbar from '../components/ModernNavbar';
+import ModernFooter from '../components/ModernFooter';
+import FloatingChat from '../components/FloatingChat';
+---
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="description" content="Términos y Condiciones de Uso y Servicio — Soluciones en Inteligencia Artificial SpA · Digitaliza Todo"/>
+  <title>Términos y Condiciones | Digitaliza Todo</title>
+  <link rel="icon" href="/DLogo-v2.webp"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
+</head>
+<body class="font-sans text-slate-600 min-h-screen selection:bg-orange-500 selection:text-white bg-white overflow-x-hidden">
+  <ModernNavbar client:load />
+
+  <main class="max-w-4xl mx-auto px-5 sm:px-6 pt-32 pb-24">
+
+    <!-- Back -->
+    <div class="mb-10">
+      <a href="/" class="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-brand-orange transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Volver al inicio
+      </a>
+    </div>
+
+    <!-- Header -->
+    <div class="mb-12 pb-10 border-b border-slate-100">
+      <span class="inline-block text-[10px] font-black uppercase tracking-[0.25em] text-brand-orange bg-orange-50 px-3 py-1.5 rounded-full mb-5">Legal</span>
+      <h1 class="text-3xl sm:text-5xl font-black tracking-tighter text-slate-900 leading-tight mb-4">
+        Términos y Condiciones<br/>de Uso y Servicio
+      </h1>
+      <p class="text-sm text-slate-400 font-medium mb-6">Última actualización: <strong class="text-slate-600">18 de marzo de 2026</strong></p>
+      <div class="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+        <p class="text-sm text-slate-500 leading-relaxed">
+          Estos Términos regulan el acceso y uso de los servicios de <strong class="text-slate-700">Soluciones en Inteligencia Artificial SpA</strong>, R.U.T. 78.109.539-7, domicilio en Santa Magdalena 75, Oficina 304, Providencia, Chile — empresa registrada ante el S.I.I. bajo código de actividad <strong class="text-slate-700">620900</strong>. Digitaliza Todo es una marca y producto de esta empresa.
+          <br/><br/>
+          Al acceder, registrarse o utilizar cualquiera de nuestros servicios, el Cliente acepta estos términos en su totalidad.
+        </p>
+      </div>
+    </div>
+
+    <div class="lg:grid lg:grid-cols-[220px_1fr] lg:gap-16 items-start">
+
+      <!-- Índice sticky -->
+      <aside class="hidden lg:block sticky top-28 self-start">
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Índice</p>
+        <nav class="space-y-1">
+          {[
+            ['#s1', '1. Descripción del Servicio'],
+            ['#s2', '2. Cuentas y Responsabilidad'],
+            ['#s3', '3. Pagos y Facturación'],
+            ['#s4', '4. Soporte Técnico'],
+            ['#s5', '5. Propiedad Intelectual'],
+            ['#s6', '6. Privacidad y Datos'],
+            ['#s7', '7. Limitación de Responsabilidad'],
+            ['#s8', '8. Alcance y Exclusiones'],
+            ['#s9', '9. Jurisdicción'],
+          ].map(([href, label]) => (
+            <a href={href} class="block text-xs text-slate-500 hover:text-brand-orange transition-colors py-1 leading-snug">{label}</a>
+          ))}
+        </nav>
+      </aside>
+
+      <!-- Contenido -->
+      <div class="space-y-12">
+
+        <section id="s1">
+          <div class="summary-box">
+            <strong>En resumen:</strong> Proveemos plataformas SaaS de gestión operativa para PyMEs, academias, comercios y servicios. Lo que puedes hacer depende del plan que contrates.
+          </div>
+          <h2>1. Descripción de los Servicios</h2>
+          <p>La Empresa provee soluciones tecnológicas en modalidad SaaS, enfocadas en la optimización y gestión operativa. Estas incluyen, de manera enunciativa mas no limitativa:</p>
+          <ul>
+            <li>Plataformas integrales para la administración de usuarios, control de asistencia y gestión de pagos.</li>
+            <li>Desarrollo, despliegue y alojamiento de Aplicaciones Web Progresivas (PWA) e infraestructura en servidores VPS.</li>
+            <li>Integración de herramientas y modelos de Inteligencia Artificial mediante APIs de terceros.</li>
+          </ul>
+          <p>Las funcionalidades exactas dependerán del plan contratado por el Cliente.</p>
+        </section>
+
+        <section id="s2">
+          <div class="summary-box">
+            <strong>En resumen:</strong> Eres responsable de tu cuenta y de todo lo que ocurra en ella. Si detectamos uso fraudulento, podemos suspenderla.
+          </div>
+          <h2>2. Creación de Cuentas y Responsabilidad del Cliente</h2>
+          <ul>
+            <li>El Cliente es el único responsable de la veracidad de los datos ingresados y de mantener la confidencialidad de sus credenciales.</li>
+            <li>Cualquier actividad realizada desde la cuenta del Cliente se considerará autorizada por este.</li>
+            <li>La Empresa podrá suspender cuentas que evidencien uso fraudulento, malintencionado o que intenten vulnerar la seguridad de la plataforma.</li>
+          </ul>
+        </section>
+
+        <section id="s3">
+          <div class="summary-box">
+            <strong>En resumen:</strong> El servicio se paga por adelantado. Si no pagas en 5 días hábiles tras el aviso, suspendemos el acceso. La deuda sigue vigente.
+          </div>
+          <h2>3. Pagos, Facturación y Suspensión de Servicio</h2>
+          <ul>
+            <li>El servicio se provee bajo la modalidad de pago por adelantado mensual, anual o según lo acordado comercialmente.</li>
+            <li>En caso de mora, la Empresa emitirá un aviso. Si el pago no se regulariza en un plazo de <strong>5 días hábiles</strong>, el acceso a la plataforma será suspendido automáticamente.</li>
+            <li>La suspensión por no pago no exime al Cliente de su obligación de saldar la deuda, ni responsabiliza a la Empresa por la paralización de sus operaciones.</li>
+          </ul>
+        </section>
+
+        <section id="s4">
+          <div class="summary-box">
+            <strong>En resumen:</strong> Soporte de lunes a viernes, 9:00–18:00 hrs, solo por canales oficiales. Respondemos en 24–48 hrs hábiles. No cubrimos capacitaciones repetitivas ni desarrollos nuevos.
+          </div>
+          <h2>4. Soporte Técnico y Horarios de Atención</h2>
+          <ul>
+            <li><strong>Horario:</strong> Lunes a viernes, 09:00–18:00 hrs, excluyendo feriados legales en Chile.</li>
+            <li><strong>Canales oficiales:</strong> Solo por correo electrónico oficial o plataforma de tickets. No se aceptan solicitudes por redes sociales o llamadas fuera de horario.</li>
+            <li><strong>Tiempos de respuesta:</strong> 24 a 48 horas hábiles desde la recepción.</li>
+            <li><strong>Exclusiones:</strong> El soporte cubre bugs del código de la plataforma y caídas de nuestros servidores. No incluye capacitación repetitiva, problemas de internet local del Cliente, ni modificaciones o desarrollos nuevos (cotizables por separado).</li>
+          </ul>
+        </section>
+
+        <section id="s5">
+          <div class="summary-box">
+            <strong>En resumen:</strong> El código, diseño e infraestructura son nuestros. Tus datos son tuyos. Recibes una licencia de uso mientras tu suscripción esté vigente.
+          </div>
+          <h2>5. Propiedad Intelectual y Licencia</h2>
+          <ul>
+            <li><strong>Propiedad de la Empresa:</strong> Soluciones en Inteligencia Artificial SpA mantiene el 100% de los derechos sobre el código fuente, arquitectura, diseño, algoritmos de IA e infraestructura. El Cliente recibe una licencia de uso temporal e intransferible mientras mantenga su suscripción al día.</li>
+            <li><strong>Propiedad del Cliente:</strong> Todos los datos comerciales, registros de asistencia, pagos y bases de datos ingresados a la plataforma son propiedad exclusiva del Cliente.</li>
+          </ul>
+        </section>
+
+        <section id="s6">
+          <div class="summary-box">
+            <strong>En resumen:</strong> Nosotros alojamos los datos (Encargado de Tratamiento). Tú eres responsable de tener el consentimiento de tus propios usuarios (Responsable de los Datos).
+          </div>
+          <h2>6. Privacidad y Protección de Datos (Ley N° 19.628)</h2>
+          <ul>
+            <li>La Empresa actúa como <strong>"Encargado de Tratamiento"</strong> de los datos alojados, proveyendo la infraestructura técnica.</li>
+            <li>El Cliente asume el rol de <strong>"Responsable de los Datos"</strong>, garantizando que cuenta con el consentimiento legal de sus propios usuarios o clientes para ingresar y procesar dicha información en el sistema.</li>
+          </ul>
+        </section>
+
+        <section id="s7">
+          <div class="summary-box">
+            <strong>En resumen:</strong> Hacemos nuestro mejor esfuerzo, pero no garantizamos disponibilidad 100%. Si algo falla por nuestra causa, la compensación máxima es el último mes pagado.
+          </div>
+          <h2>7. Disponibilidad y Limitación de Responsabilidad</h2>
+          <ul>
+            <li>La Empresa procurará un tiempo en línea óptimo. Sin embargo, los servicios pueden sufrir interrupciones temporales por mantenimiento programado o fallas de proveedores de infraestructura externa.</li>
+            <li>En la máxima medida permitida por la ley, la Empresa no se hace responsable por daños indirectos, lucro cesante, pérdida de ingresos o pérdida de datos derivados de interrupciones del servicio o del mal uso de la plataforma.</li>
+            <li>Ante cualquier eventualidad demostrable y adjudicable a la Empresa, la compensación máxima no superará el equivalente a la suscripción del <strong>último mes pagado</strong> por el Cliente.</li>
+          </ul>
+        </section>
+
+        <section id="s8">
+          <div class="summary-box">
+            <strong>En resumen:</strong> Estamos orientados a PyMEs y comercio general. No somos el servicio adecuado para sistemas de misión crítica, almacenamiento masivo de archivos o IA de alto consumo local.
+          </div>
+          <h2>8. Alcance del Servicio y Exclusiones Técnicas</h2>
+          <p>Con el fin de garantizar la estabilidad del servicio para todos los clientes, la Empresa establece las siguientes limitaciones técnicas:</p>
+          <ul>
+            <li><strong>Almacenamiento de archivos pesados:</strong> La plataforma no está diseñada para el almacenamiento masivo de archivos multimedia de gran tamaño (videos, imágenes en alta resolución, documentos médicos, etc.). Para estos casos, la Empresa podrá configurar integración con servicios de almacenamiento externo (Amazon S3, Cloudinary u otros), cotizados por separado.</li>
+            <li><strong>Sistemas de misión crítica:</strong> Los servicios están orientados a PyMEs, establecimientos educacionales, comercio y servicios generales. No se garantiza disponibilidad continua para sistemas donde una interrupción pueda comprometer vidas humanas (clínicas de urgencia, monitoreo médico en tiempo real, etc.).</li>
+            <li><strong>Disponibilidad del servicio:</strong> La Empresa procura la mayor disponibilidad posible, pero no garantiza un uptime del 100%. Las interrupciones por mantenimiento programado, actualizaciones de infraestructura o fallas de proveedores externos quedan excluidas de cualquier responsabilidad.</li>
+            <li><strong>Procesamiento de IA:</strong> Los modelos de inteligencia artificial de alto consumo computacional se ejecutan mediante APIs de terceros. La Empresa no ejecuta modelos de lenguaje de gran escala (LLMs) directamente en su infraestructura compartida.</li>
+          </ul>
+        </section>
+
+        <section id="s9">
+          <div class="summary-box">
+            <strong>En resumen:</strong> Cualquier disputa se resuelve bajo las leyes de Chile, con domicilio en Arica y sus tribunales ordinarios.
+          </div>
+          <h2>9. Jurisdicción y Competencia</h2>
+          <p>Cualquier conflicto derivado de estos Términos y Condiciones será resuelto conforme a las leyes de la República de Chile, fijando las partes su domicilio en la ciudad de <strong>Arica</strong>, y sometiéndose a la jurisdicción de sus tribunales ordinarios de justicia.</p>
+        </section>
+
+        <!-- Firma -->
+        <div class="pt-8 border-t border-slate-100 space-y-1">
+          <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Empresa</p>
+          <p class="text-sm font-semibold text-slate-700">Soluciones en Inteligencia Artificial SpA</p>
+          <p class="text-sm text-slate-500">R.U.T. 78.109.539-7</p>
+          <p class="text-sm text-slate-500">Santa Magdalena 75, Oficina 304, Providencia, Chile</p>
+          <p class="text-sm text-slate-500">
+            <a href="mailto:info@digitalizatodo.cl" class="text-brand-orange hover:underline">info@digitalizatodo.cl</a>
+          </p>
+        </div>
+
+        <!-- Back bottom -->
+        <div class="pt-4">
+          <a href="/" class="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-brand-orange transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+            Volver al inicio
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <ModernFooter client:visible />
+  <FloatingChat client:load />
+</body>
+</html>
+
+<style>
+  section h2 {
+    @apply text-xl sm:text-2xl font-black text-slate-900 tracking-tight mb-5 mt-6;
+  }
+  section p {
+    @apply text-slate-600 text-sm sm:text-base leading-relaxed mb-3;
+  }
+  section ul {
+    @apply space-y-3 mb-3;
+  }
+  section ul li {
+    @apply text-slate-600 text-sm sm:text-base leading-relaxed pl-5 relative;
+  }
+  section ul li::before {
+    content: '—';
+    @apply absolute left-0 text-brand-orange font-bold;
+  }
+  strong {
+    @apply text-slate-800 font-semibold;
+  }
+  .summary-box {
+    @apply bg-orange-50 border border-orange-100 rounded-xl px-4 py-3 text-sm text-slate-600 leading-relaxed mb-5;
+  }
+  .summary-box strong {
+    @apply text-brand-orange font-black;
+  }
+</style>

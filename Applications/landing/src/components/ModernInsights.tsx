@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Zap, Activity, Briefcase, Code2, Loader2 } from 'lucide-react';
 import { siPhp, siLaravel, siNextdotjs, siReact, siTypescript, siAstro, siTailwindcss, siMysql } from 'simple-icons';
+import { useLazyReveal, revealClass, revealStyle } from '../hooks/useLazyReveal';
 
 const PAGESPEED_URL = 'https://pagespeed.web.dev/analysis/https-digitalizatodo-cl/itiat2dknj?form_factor=desktop';
 const UPTIME_URL   = 'https://stats.uptimerobot.com/aFB0Ubdoys/802579675';
 
 const AnimatedCounter = ({ value, duration = 2000 }: { value: number, duration?: number }) => {
     const [count, setCount] = useState(0);
-
     useEffect(() => {
         if (value === 0) { setCount(0); return; }
         let start = 0;
@@ -19,24 +19,15 @@ const AnimatedCounter = ({ value, duration = 2000 }: { value: number, duration?:
         }, 20);
         return () => clearInterval(timer);
     }, [value, duration]);
-
     return <>{count}</>;
 };
 
-interface CardProps {
-    label: string;
-    value: number;
-    suffix: string;
-    source: string;
-    icon: React.ElementType;
-    color: string;
-    href?: string;
-    loading?: boolean;
-}
+interface CardProps { label: string; value: number; suffix: string; source: string; icon: React.ElementType; color: string; href?: string; loading?: boolean; delay?: number; }
 
-const InsightCard = ({ label, value, suffix, source, icon: Icon, color, href, loading }: CardProps) => {
+const InsightCard = ({ label, value, suffix, source, icon: Icon, color, href, loading, delay = 0 }: CardProps) => {
+    const { ref, visible } = useLazyReveal();
     const inner = (
-        <div className={`bg-white p-4 sm:p-6 rounded-[24px] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500 group relative overflow-hidden aspect-square flex flex-col justify-center text-center ${href ? 'cursor-pointer hover:-translate-y-1' : ''}`}>
+        <div ref={ref} style={revealStyle(delay)} className={`${revealClass(visible)} bg-white p-4 sm:p-6 rounded-[24px] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500 group relative overflow-hidden aspect-square flex flex-col justify-center text-center ${href ? 'cursor-pointer hover:-translate-y-1' : ''}`}>
             {loading && (
                 <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex items-center justify-center">
                     <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
@@ -63,6 +54,8 @@ const InsightCard = ({ label, value, suffix, source, icon: Icon, color, href, lo
 const ModernInsights = () => {
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const { ref: sectionRef, visible: sectionVisible } = useLazyReveal(0.05);
+    const { ref: stackRef, visible: stackVisible } = useLazyReveal();
 
     useEffect(() => {
         const fetch_ = async () => {
@@ -70,142 +63,77 @@ const ModernInsights = () => {
                 const API_BASE = import.meta.env.PUBLIC_API_URL || 'https://admin.digitalizatodo.cl';
                 const res = await fetch(`${API_BASE}/api/w/github-stats`);
                 if (res.ok) setData(await res.json());
-            } catch (e) {
-                console.error('Error fetching insights:', e);
-            } finally {
-                setLoading(false);
-            }
+            } catch (e) {} finally { setLoading(false); }
         };
         fetch_();
     }, []);
 
-    const currentYear  = new Date().getFullYear();
-    const activeSince  = data?.active_since ?? 2019;
-    const yearsActive  = currentYear - activeSince;
-    const perfScore    = data?.pagespeed_desktop ?? data?.pagespeed_score ?? null;
-    const seoScore     = data?.seo_desktop ?? data?.seo_score ?? null;
-    const uptime       = data?.uptime_percent ?? null;
+    const contributions = data?.contributions_last_year ?? 824;
+    const perfScore    = data?.pagespeed_desktop ?? data?.pagespeed_score ?? 100;
+    const seoScore     = data?.seo_desktop ?? data?.seo_score ?? 100;
+    const uptime       = data?.uptime_percent ?? 100;
 
     const cards: CardProps[] = [
-        {
-            label:  'Rendimiento Web',
-            value:  perfScore ?? 99,
-            suffix: '/100',
-            source: 'PageSpeed API',
-            icon:   Zap,
-            color:  'bg-brand-blue',
-            href:   PAGESPEED_URL,
-        },
-        {
-            label:  'SEO Score',
-            value:  seoScore ?? 100,
-            suffix: '/100',
-            source: 'PageSpeed API',
-            icon:   Activity,
-            color:  'bg-brand-orange',
-            href:   PAGESPEED_URL,
-        },
-        {
-            label:  'Uptime Producción',
-            value:  uptime ?? 100,
-            suffix: '%',
-            source: 'UptimeRobot',
-            icon:   Briefcase,
-            color:  'bg-brand-green',
-            href:   UPTIME_URL,
-        },
-        {
-            label:  'Años de Experiencia',
-            value:  yearsActive,
-            suffix: ' años',
-            source: 'GitHub API',
-            icon:   Code2,
-            color:  'bg-slate-900',
-        },
+        { label: 'Rendimiento Web', value: perfScore, suffix: '/100', source: 'PageSpeed API', icon: Zap,      color: 'bg-brand-blue',   href: PAGESPEED_URL, delay: 0   },
+        { label: 'SEO Score',       value: seoScore,  suffix: '/100', source: 'PageSpeed API', icon: Activity, color: 'bg-brand-orange', href: PAGESPEED_URL, delay: 100 },
+        { label: 'Uptime Producción', value: uptime,  suffix: '%',    source: 'UptimeRobot',   icon: Briefcase,color: 'bg-brand-green',  href: UPTIME_URL,    delay: 200 },
+        { label: 'Contributions / año', value: contributions, suffix: '', source: 'GitHub API', icon: Code2,   color: 'bg-slate-900',                         delay: 300 },
     ];
-
-    if (loading) {
-        return <div className="py-20 flex justify-center"><Loader2 className="w-10 h-10 animate-spin text-slate-200" /></div>;
-    }
 
     return (
         <section className="py-20 px-4 sm:px-10 relative z-10 bg-white">
             <div className="max-w-7xl mx-auto">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                    {cards.map((card, i) => (
-                        <InsightCard key={i} {...card} loading={loading} />
-                    ))}
+                <div ref={sectionRef} style={revealStyle(0)} className={`${revealClass(sectionVisible)} mb-10 text-center`}>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2">Métricas reales</p>
+                    <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tighter">Números que respaldan el trabajo</h2>
                 </div>
 
-                {/* Stack tecnológico */}
-                <div className="mt-12 p-8 bg-slate-50 rounded-[32px] border border-slate-100">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                    {cards.map((card, i) => <InsightCard key={i} {...card} loading={loading} />)}
+                </div>
+
+                <div ref={stackRef} style={revealStyle(100)} className={`${revealClass(stackVisible)} mt-12 p-8 bg-slate-50 rounded-[32px] border border-slate-100`}>
                     <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-brand-orange animate-pulse"></div>
                         Stack Tecnológico
                     </h4>
-
-                    {/* Frameworks — simple-icons */}
                     <div className="grid grid-cols-4 sm:grid-cols-8 gap-3 mb-8">
                         {([
-                            { name: 'PHP',        version: '8.5',  si: siPhp,          bg: '#777BB4' },
-                            { name: 'Laravel',    version: '12',   si: siLaravel,      bg: '#FF2D20' },
-                            { name: 'Next.js',    version: '16',   si: siNextdotjs,    bg: '#000000' },
-                            { name: 'React',      version: '19',   si: siReact,        bg: '#61DAFB' },
-                            { name: 'TypeScript', version: '5',    si: siTypescript,   bg: '#3178C6' },
-                            { name: 'Astro',      version: '4',    si: siAstro,        bg: '#BC52EE' },
-                            { name: 'Tailwind',   version: '3.4',  si: siTailwindcss,  bg: '#06B6D4' },
-                            { name: 'MySQL',      version: '9.6',  si: siMysql,        bg: '#4479A1' },
-                        ] as const).map((tech) => {
-                            const isDark = ['#000000'].includes(tech.bg);
-                            return (
-                                <div
-                                    key={tech.name}
-                                    className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border aspect-square"
-                                    style={{
-                                        backgroundColor: tech.bg + '12',
-                                        borderColor: tech.bg + '30',
-                                    }}
-                                >
-                                    <svg viewBox="0 0 24 24" className="w-6 h-6 flex-shrink-0" fill={isDark ? '#1e293b' : tech.bg}>
-                                        <path d={tech.si.path} />
-                                    </svg>
-                                    <div className="text-center">
-                                        <p className="text-[10px] font-black text-slate-700 leading-none">{tech.name}</p>
-                                        <p className="text-[9px] font-bold text-slate-400 mt-0.5">{tech.version}</p>
-                                    </div>
+                            { name: 'PHP',        version: '8.5',  si: siPhp,         bg: '#777BB4' },
+                            { name: 'Laravel',    version: '12',   si: siLaravel,     bg: '#FF2D20' },
+                            { name: 'Next.js',    version: '16',   si: siNextdotjs,   bg: '#000000' },
+                            { name: 'React',      version: '19',   si: siReact,       bg: '#61DAFB' },
+                            { name: 'TypeScript', version: '5',    si: siTypescript,  bg: '#3178C6' },
+                            { name: 'Astro',      version: '4',    si: siAstro,       bg: '#BC52EE' },
+                            { name: 'Tailwind',   version: '3.4',  si: siTailwindcss, bg: '#06B6D4' },
+                            { name: 'MySQL',      version: '9.6',  si: siMysql,       bg: '#4479A1' },
+                        ] as const).map((tech) => (
+                            <div key={tech.name} className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border aspect-square"
+                                style={{ backgroundColor: tech.bg + '12', borderColor: tech.bg + '30' }}>
+                                <svg viewBox="0 0 24 24" className="w-6 h-6 flex-shrink-0" fill={tech.bg === '#000000' ? '#1e293b' : tech.bg}>
+                                    <path d={tech.si.path} />
+                                </svg>
+                                <div className="text-center">
+                                    <p className="text-[10px] font-black text-slate-700 leading-none">{tech.name}</p>
+                                    <p className="text-[9px] font-bold text-slate-400 mt-0.5">{tech.version}</p>
                                 </div>
-                            );
-                        })}
+                            </div>
+                        ))}
                     </div>
-
-                    {/* Lenguajes — GitHub API */}
                     {data?.top_languages && (
                         <>
                             <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-3">Distribución de código</p>
                             <div className="flex h-2 w-full rounded-full overflow-hidden bg-slate-200">
                                 {data.top_languages.map((lang: any, idx: number) => (
-                                    <div
-                                        key={idx}
-                                        style={{ width: `${lang.percentage}%` }}
-                                        className={`h-full ${
-                                            idx === 0 ? 'bg-brand-blue' :
-                                            idx === 1 ? 'bg-brand-orange' :
-                                            idx === 2 ? 'bg-brand-green' :
-                                            idx === 3 ? 'bg-slate-900' : 'bg-slate-400'
-                                        }`}
-                                        title={`${lang.name}: ${lang.percentage}%`}
-                                    />
+                                    <div key={idx} style={{ width: `${lang.percentage}%` }}
+                                        className={`h-full ${idx === 0 ? 'bg-brand-blue' : idx === 1 ? 'bg-brand-orange' : idx === 2 ? 'bg-brand-green' : idx === 3 ? 'bg-slate-900' : 'bg-slate-400'}`}
+                                        title={`${lang.name}: ${lang.percentage}%`} />
                                 ))}
                             </div>
                             <div className="mt-3 flex flex-wrap gap-4">
                                 {data.top_languages.map((lang: any, idx: number) => (
                                     <div key={idx} className="flex items-center gap-1.5">
-                                        <div className={`w-2 h-2 rounded-full ${
-                                            idx === 0 ? 'bg-brand-blue' :
-                                            idx === 1 ? 'bg-brand-orange' :
-                                            idx === 2 ? 'bg-brand-green' :
-                                            idx === 3 ? 'bg-slate-900' : 'bg-slate-400'
-                                        }`} />
+                                        <div className={`w-2 h-2 rounded-full ${idx === 0 ? 'bg-brand-blue' : idx === 1 ? 'bg-brand-orange' : idx === 2 ? 'bg-brand-green' : idx === 3 ? 'bg-slate-900' : 'bg-slate-400'}`} />
                                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{lang.name}</span>
                                         <span className="text-[10px] font-black text-slate-400">{lang.percentage}%</span>
                                     </div>

@@ -22,6 +22,7 @@ class RegisterTenantController extends Controller
             'user_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:8|confirmed',
+            'accepted_terms_at' => 'required|date',
         ]);
 
         // Crear Empresa
@@ -40,6 +41,7 @@ class RegisterTenantController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'tenant_id' => $tenant->id,
+            'accepted_terms_at' => $validated['accepted_terms_at'],
         ]);
 
         // Notificar por Telegram

@@ -53,13 +53,16 @@ const ModernFooter = () => {
                             <div className="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center shadow-2xl overflow-hidden p-2">
                                 <img src="/DLogo-v2.webp" alt="Digitaliza Todo" className="h-full w-full object-contain" />
                             </div>
-                            <div>
-                                <h2 className="font-black text-2xl tracking-tighter text-white leading-none">DIGITALIZA</h2>
-                                <h2 className="font-black text-2xl tracking-tighter text-brand-orange leading-none">TODO</h2>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mb-1">digitalizatodo.cl</span>
+                                <h2 className="font-black text-base tracking-tighter text-white leading-none">Digitaliza Todo</h2>
                             </div>
                         </div>
                         <p className="text-slate-400 text-sm leading-relaxed font-medium max-w-sm">
                             Laboratorio de ingeniería de software enfocado en transformar la complejidad técnica en <span className="text-white">ventaja competitiva</span> sostenible.
+                        </p>
+                        <p className="text-slate-600 text-[11px] leading-relaxed max-w-sm">
+                            Digitaliza Todo es una marca y producto de <span className="text-slate-500 font-semibold">Soluciones en Inteligencia Artificial SpA</span>.
                         </p>
                         <div className="flex gap-3">
                             <a href="https://wa.me/56945392581" target="_blank" rel="noopener noreferrer" className="w-11 h-11 rounded-2xl bg-white/5 flex items-center justify-center hover:bg-green-500/20 transition-all hover:-translate-y-1">
@@ -111,8 +114,13 @@ const ModernFooter = () => {
                             <h4 className="text-white font-black uppercase tracking-[0.2em] text-[10px]">Ubicación</h4>
                             <div className="space-y-3">
                                 <p className="text-slate-400 text-sm leading-relaxed">
-                                    Arica, Chile<br />
-                                    <span className="text-slate-600 font-bold uppercase text-[10px] tracking-widest">Lu-Vi / 9:00 - 18:00</span>
+                                    <span className="text-slate-500 font-bold uppercase text-[10px] tracking-widest block mb-0.5">Representante</span>
+                                    Arica, Chile
+                                </p>
+                                <p className="text-slate-400 text-sm leading-relaxed">
+                                    <span className="text-slate-500 font-bold uppercase text-[10px] tracking-widest block mb-0.5">Oficina</span>
+                                    Sta. Magdalena 75, Of. 304<br />
+                                    Providencia, Chile
                                 </p>
                                 <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1">
                                     <p className="text-white text-xs font-black tracking-widest uppercase">¿Listo para empezar?</p>
@@ -131,14 +139,12 @@ const ModernFooter = () => {
                     {/* Izquierda: copyright + links */}
                     <div className="flex flex-col gap-2">
                         <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em]">
-                            © 2026 Digitaliza Todo SpA
+                            © 2026 SOLUCIONES EN INTELIGENCIA ARTIFICIAL SpA · 78109539-7
                         </p>
                         <div className="flex items-center gap-4 flex-wrap">
-                            {['Términos', 'Privacidad', 'Seguridad'].map((item) => (
-                                <a key={item} href="#" className="text-slate-600 hover:text-slate-400 text-[10px] font-black uppercase tracking-widest transition-colors">
-                                    {item}
-                                </a>
-                            ))}
+                            <a href="/legal" className="text-slate-600 hover:text-slate-400 text-[10px] font-black uppercase tracking-widest transition-colors">Legal</a>
+                            <a href="/terminos" className="text-slate-600 hover:text-slate-400 text-[10px] font-black uppercase tracking-widest transition-colors">Términos</a>
+                            <a href="/privacidad" className="text-slate-600 hover:text-slate-400 text-[10px] font-black uppercase tracking-widest transition-colors">Privacidad</a>
                         </div>
                     </div>
 

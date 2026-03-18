@@ -1,0 +1,242 @@
+---
+import '../styles/global.css';
+import ModernNavbar from '../components/ModernNavbar';
+import ModernFooter from '../components/ModernFooter';
+import FloatingChat from '../components/FloatingChat';
+---
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="description" content="Política de Privacidad — Soluciones en Inteligencia Artificial SpA · Digitaliza Todo"/>
+  <title>Política de Privacidad | Digitaliza Todo</title>
+  <link rel="icon" href="/DLogo-v2.webp"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
+</head>
+<body class="font-sans text-slate-600 min-h-screen selection:bg-orange-500 selection:text-white bg-white overflow-x-hidden">
+  <ModernNavbar client:load />
+
+  <main class="max-w-4xl mx-auto px-5 sm:px-6 pt-32 pb-24">
+
+    <div class="mb-10">
+      <a href="/legal" class="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-brand-orange transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Centro Legal
+      </a>
+    </div>
+
+    <div class="mb-12 pb-10 border-b border-slate-100">
+      <span class="inline-block text-[10px] font-black uppercase tracking-[0.25em] text-brand-orange bg-orange-50 px-3 py-1.5 rounded-full mb-5">Legal</span>
+      <h1 class="text-3xl sm:text-5xl font-black tracking-tighter text-slate-900 leading-tight mb-4">Política de Privacidad</h1>
+      <p class="text-sm text-slate-400 font-medium">Última actualización: <strong class="text-slate-600">18 de marzo de 2026</strong></p>
+    </div>
+
+    <div class="lg:grid lg:grid-cols-[220px_1fr] lg:gap-16 items-start">
+
+      <!-- Índice sticky -->
+      <aside class="hidden lg:block sticky top-28 self-start">
+        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Índice</p>
+        <nav class="space-y-1">
+          {[
+            ['#p1', '1. Introducción'],
+            ['#p2', '2. Nuestros valores'],
+            ['#p3', '3. Qué información recopilamos'],
+            ['#p4', '4. Por qué procesamos tu información'],
+            ['#p5', '5. Tus derechos'],
+            ['#p6', '6. Dónde enviamos tu información'],
+            ['#p7', '7. Cuánto tiempo conservamos tus datos'],
+            ['#p8', '8. Cookies y seguimiento'],
+            ['#p9', '9. Cómo protegemos tu información'],
+            ['#p10', '10. Contacto'],
+          ].map(([href, label]) => (
+            <a href={href} class="block text-xs text-slate-500 hover:text-brand-orange transition-colors py-1 leading-snug">{label}</a>
+          ))}
+        </nav>
+      </aside>
+
+      <!-- Contenido -->
+      <div class="space-y-12">
+
+        <section id="p1">
+          <div class="summary-box">
+            <strong>En resumen:</strong> Esta política explica qué datos recopilamos, para qué los usamos y cómo los protegemos. Aplica a todos los usuarios de digitalizatodo.cl y sus plataformas asociadas.
+          </div>
+          <h2>1. Introducción</h2>
+          <p>Soluciones en Inteligencia Artificial SpA (R.U.T. 78.109.539-7), operadora de la marca <strong>Digitaliza Todo</strong>, se compromete a proteger la privacidad de sus usuarios. Esta Política de Privacidad describe cómo recopilamos, usamos, almacenamos y protegemos la información personal de quienes acceden a nuestros sitios web y plataformas SaaS.</p>
+          <p>Al usar nuestros servicios, aceptas las prácticas descritas en este documento.</p>
+        </section>
+
+        <section id="p2">
+          <div class="summary-box">
+            <strong>En resumen:</strong> Solo recopilamos lo necesario. No vendemos tu información a terceros. Tú tienes control sobre tus datos.
+          </div>
+          <h2>2. Nuestros valores</h2>
+          <ul>
+            <li>Recopilamos solo la información estrictamente necesaria para prestar el servicio.</li>
+            <li>No vendemos, arrendamos ni comercializamos datos personales a terceros.</li>
+            <li>Aplicamos medidas técnicas razonables para proteger la información almacenada.</li>
+            <li>Respetamos los derechos de los titulares de datos conforme a la Ley N° 19.628 de Chile.</li>
+          </ul>
+        </section>
+
+        <section id="p3">
+          <div class="summary-box">
+            <strong>En resumen:</strong> Recopilamos datos que tú nos entregas directamente (nombre, email, RUT) y datos técnicos de uso (IP, navegador, páginas visitadas).
+          </div>
+          <h2>3. Qué información recopilamos</h2>
+          <p><strong>Información que nos entregas directamente:</strong></p>
+          <ul>
+            <li>Nombre completo, correo electrónico, teléfono y RUT al registrarte o contactarnos.</li>
+            <li>Datos de tu empresa o negocio al contratar un plan.</li>
+            <li>Mensajes enviados a través del chat o formularios de contacto.</li>
+          </ul>
+          <p><strong>Información recopilada automáticamente:</strong></p>
+          <ul>
+            <li>Dirección IP y ubicación aproximada (ciudad/país).</li>
+            <li>Tipo de navegador, sistema operativo y dispositivo.</li>
+            <li>Páginas visitadas, tiempo de sesión y acciones dentro de la plataforma.</li>
+            <li>Cookies de sesión y preferencias.</li>
+          </ul>
+        </section>
+
+        <section id="p4">
+          <div class="summary-box">
+            <strong>En resumen:</strong> Usamos tu información para prestarte el servicio, comunicarnos contigo y mejorar nuestras plataformas. Nunca para fines ajenos al servicio contratado.
+          </div>
+          <h2>4. Por qué procesamos tu información</h2>
+          <ul>
+            <li>Para crear y gestionar tu cuenta en nuestras plataformas.</li>
+            <li>Para procesar pagos y emitir documentos tributarios.</li>
+            <li>Para enviarte notificaciones del servicio, actualizaciones y soporte técnico.</li>
+            <li>Para analizar el uso de la plataforma y mejorar su funcionamiento.</li>
+            <li>Para cumplir con obligaciones legales y tributarias en Chile.</li>
+          </ul>
+        </section>
+
+        <section id="p5">
+          <div class="summary-box">
+            <strong>En resumen:</strong> Puedes solicitar acceso, rectificación, cancelación u oposición al tratamiento de tus datos en cualquier momento escribiéndonos.
+          </div>
+          <h2>5. Tus derechos</h2>
+          <p>Conforme a la Ley N° 19.628 sobre Protección de la Vida Privada, tienes derecho a:</p>
+          <ul>
+            <li><strong>Acceso:</strong> Solicitar qué datos personales tuyos tenemos almacenados.</li>
+            <li><strong>Rectificación:</strong> Corregir datos incorrectos o desactualizados.</li>
+            <li><strong>Cancelación:</strong> Solicitar la eliminación de tus datos cuando ya no sean necesarios.</li>
+            <li><strong>Oposición:</strong> Oponerte al tratamiento de tus datos para fines específicos.</li>
+          </ul>
+          <p>Para ejercer cualquiera de estos derechos, escríbenos a <a href="mailto:info@digitalizatodo.cl" class="text-brand-orange hover:underline font-semibold">info@digitalizatodo.cl</a>. Responderemos en un plazo máximo de 30 días hábiles.</p>
+        </section>
+
+        <section id="p6">
+          <div class="summary-box">
+            <strong>En resumen:</strong> Tus datos pueden ser procesados por proveedores de infraestructura (servidores, email, pagos). No los compartimos con terceros para fines comerciales.
+          </div>
+          <h2>6. Dónde enviamos tu información</h2>
+          <p>Para operar nuestros servicios, podemos compartir datos con proveedores de confianza bajo estrictas condiciones de confidencialidad:</p>
+          <ul>
+            <li><strong>Infraestructura de servidores:</strong> Hostinger (VPS en Europa/EE.UU.).</li>
+            <li><strong>Correo electrónico transaccional:</strong> Resend.</li>
+            <li><strong>Notificaciones:</strong> Telegram Bot API.</li>
+            <li><strong>Análisis de visitas:</strong> Datos anonimizados de sesión.</li>
+          </ul>
+          <p>No vendemos ni cedemos datos personales a terceros con fines publicitarios o comerciales.</p>
+        </section>
+
+        <section id="p7">
+          <div class="summary-box">
+            <strong>En resumen:</strong> Conservamos tus datos mientras tu cuenta esté activa. Al cancelar, los eliminamos en un plazo razonable salvo obligación legal de retención.
+          </div>
+          <h2>7. Cuánto tiempo conservamos tus datos</h2>
+          <ul>
+            <li>Los datos de cuenta se conservan mientras la suscripción esté activa.</li>
+            <li>Tras la cancelación, los datos se eliminan en un plazo máximo de <strong>90 días</strong>, salvo que la ley exija un período de retención mayor (ej. documentos tributarios: 6 años según normativa del S.I.I.).</li>
+            <li>Los logs de acceso y seguridad se conservan por un máximo de <strong>12 meses</strong>.</li>
+          </ul>
+        </section>
+
+        <section id="p8">
+          <div class="summary-box">
+            <strong>En resumen:</strong> Usamos cookies esenciales para que la plataforma funcione. No usamos cookies de publicidad de terceros.
+          </div>
+          <h2>8. Cookies y tecnologías de seguimiento</h2>
+          <p>Utilizamos cookies y tecnologías similares para:</p>
+          <ul>
+            <li><strong>Cookies esenciales:</strong> Mantener tu sesión iniciada y recordar preferencias básicas.</li>
+            <li><strong>Cookies de análisis:</strong> Entender cómo se usa el sitio (datos anonimizados).</li>
+          </ul>
+          <p>No utilizamos cookies de publicidad de terceros ni redes de retargeting. Puedes configurar tu navegador para rechazar cookies, aunque esto puede afectar el funcionamiento de algunas funciones.</p>
+        </section>
+
+        <section id="p9">
+          <div class="summary-box">
+            <strong>En resumen:</strong> Usamos HTTPS, autenticación con tokens y acceso restringido a datos. Ningún sistema es 100% seguro, pero aplicamos las mejores prácticas disponibles.
+          </div>
+          <h2>9. Cómo protegemos tu información</h2>
+          <ul>
+            <li>Todas las comunicaciones se realizan sobre <strong>HTTPS/TLS</strong>.</li>
+            <li>Las contraseñas se almacenan con hash seguro (bcrypt).</li>
+            <li>El acceso a datos de producción está restringido al personal autorizado.</li>
+            <li>Los tokens de autenticación tienen expiración y se invalidan al cerrar sesión.</li>
+            <li>Realizamos backups periódicos de la base de datos.</li>
+          </ul>
+          <p>Ningún sistema de seguridad es infalible. En caso de una brecha de seguridad que afecte tus datos, te notificaremos en el menor tiempo posible.</p>
+        </section>
+
+        <section id="p10">
+          <h2>10. Contacto</h2>
+          <p>Para consultas sobre esta Política de Privacidad o para ejercer tus derechos:</p>
+          <div class="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-1 mt-4">
+            <p class="text-sm font-semibold text-slate-700">Soluciones en Inteligencia Artificial SpA</p>
+            <p class="text-sm text-slate-500">R.U.T. 78.109.539-7</p>
+            <p class="text-sm text-slate-500">Santa Magdalena 75, Oficina 304, Providencia, Chile</p>
+            <p class="text-sm"><a href="mailto:info@digitalizatodo.cl" class="text-brand-orange hover:underline font-semibold">info@digitalizatodo.cl</a></p>
+          </div>
+        </section>
+
+        <div class="pt-4">
+          <a href="/legal" class="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-brand-orange transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+            Volver al Centro Legal
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <ModernFooter client:visible />
+  <FloatingChat client:load />
+</body>
+</html>
+
+<style>
+  section h2 {
+    @apply text-xl sm:text-2xl font-black text-slate-900 tracking-tight mb-5 mt-6;
+  }
+  section p {
+    @apply text-slate-600 text-sm sm:text-base leading-relaxed mb-3;
+  }
+  section ul {
+    @apply space-y-3 mb-3;
+  }
+  section ul li {
+    @apply text-slate-600 text-sm sm:text-base leading-relaxed pl-5 relative;
+  }
+  section ul li::before {
+    content: '—';
+    @apply absolute left-0 text-brand-orange font-bold;
+  }
+  strong {
+    @apply text-slate-800 font-semibold;
+  }
+  .summary-box {
+    @apply bg-orange-50 border border-orange-100 rounded-xl px-4 py-3 text-sm text-slate-600 leading-relaxed mb-5;
+  }
+  .summary-box strong {
+    @apply text-brand-orange font-black;
+  }
+</style>

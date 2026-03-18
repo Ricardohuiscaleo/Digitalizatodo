@@ -1,0 +1,100 @@
+---
+import '../styles/global.css';
+import ModernNavbar from '../components/ModernNavbar';
+import ModernFooter from '../components/ModernFooter';
+import FloatingChat from '../components/FloatingChat';
+
+const sections = [
+  {
+    title: 'Términos del Servicio',
+    description: 'Los términos que aceptas al usar Digitaliza Todo y nuestras plataformas SaaS.',
+    links: [
+      { label: 'Ver Términos y Condiciones', href: '/terminos' },
+    ],
+  },
+  {
+    title: 'Privacidad y Protección de Datos',
+    description: 'Cómo recopilamos, usamos y protegemos tu información personal y la de tus clientes.',
+    links: [
+      { label: 'Ver Política de Privacidad', href: '/privacidad' },
+    ],
+  },
+  {
+    title: 'Propiedad Intelectual',
+    description: 'El código, diseño e infraestructura de nuestras plataformas son propiedad de Soluciones en Inteligencia Artificial SpA. Los datos del cliente son propiedad del cliente.',
+    links: [],
+  },
+  {
+    title: 'Contacto Legal',
+    description: 'Para consultas legales, solicitudes de información o reportar un problema.',
+    links: [
+      { label: 'info@digitalizatodo.cl', href: 'mailto:info@digitalizatodo.cl' },
+    ],
+  },
+];
+---
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="description" content="Centro legal de Digitaliza Todo — Soluciones en Inteligencia Artificial SpA"/>
+  <title>Legal | Digitaliza Todo</title>
+  <link rel="icon" href="/DLogo-v2.webp"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
+</head>
+<body class="font-sans text-slate-600 min-h-screen selection:bg-orange-500 selection:text-white bg-white overflow-x-hidden">
+  <ModernNavbar client:load />
+
+  <main class="max-w-3xl mx-auto px-5 sm:px-6 pt-32 pb-24">
+
+    <div class="mb-10">
+      <a href="/" class="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-brand-orange transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Volver al inicio
+      </a>
+    </div>
+
+    <div class="mb-12 pb-10 border-b border-slate-100">
+      <span class="inline-block text-[10px] font-black uppercase tracking-[0.25em] text-brand-orange bg-orange-50 px-3 py-1.5 rounded-full mb-5">Legal</span>
+      <h1 class="text-3xl sm:text-5xl font-black tracking-tighter text-slate-900 leading-tight mb-4">Centro Legal</h1>
+      <p class="text-slate-500 text-base leading-relaxed max-w-xl">
+        Información legal importante sobre el uso de los servicios de <strong class="text-slate-700">Digitaliza Todo</strong>, una marca de <strong class="text-slate-700">Soluciones en Inteligencia Artificial SpA</strong> · R.U.T. 78.109.539-7.
+      </p>
+    </div>
+
+    <div class="space-y-4">
+      {sections.map((s) => (
+        <div class="rounded-2xl border border-slate-100 p-6 hover:border-slate-200 transition-colors">
+          <h2 class="text-base font-black text-slate-900 mb-1">{s.title}</h2>
+          <p class="text-sm text-slate-500 leading-relaxed mb-4">{s.description}</p>
+          {s.links.length > 0 && (
+            <div class="flex flex-wrap gap-3">
+              {s.links.map((l) => (
+                <a href={l.href} class="inline-flex items-center gap-1.5 text-xs font-bold text-brand-orange hover:underline transition-colors">
+                  {l.label}
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+
+    <div class="mt-16 pt-8 border-t border-slate-100 space-y-1">
+      <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Empresa</p>
+      <p class="text-sm font-semibold text-slate-700">Soluciones en Inteligencia Artificial SpA</p>
+      <p class="text-sm text-slate-500">R.U.T. 78.109.539-7 · Código actividad S.I.I.: 620900</p>
+      <p class="text-sm text-slate-500">Santa Magdalena 75, Oficina 304, Providencia, Chile</p>
+      <p class="text-sm text-slate-500"><a href="mailto:info@digitalizatodo.cl" class="text-brand-orange hover:underline">info@digitalizatodo.cl</a></p>
+    </div>
+
+  </main>
+
+  <ModernFooter client:visible />
+  <FloatingChat client:load />
+</body>
+</html>
