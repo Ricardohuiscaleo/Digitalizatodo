@@ -735,8 +735,8 @@ export default function StudentDashboard() {
                 </div>
             </div>
 
-            {/* Deuda / Status Card (Sistema de 3 Colores) */}
-            {totalDueOrReview ? (
+            {/* Deuda / Status Card — solo para academias con mensualidades */}
+            {branding?.industry !== 'school_treasury' && (totalDueOrReview ? (
                 hasPendingReview ? (
                     /* ESTADO 2: EN REVISIÓN (AMARILLO/NARANJA) */
                     <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-[2.5rem] p-6 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden group">
@@ -782,9 +782,10 @@ export default function StudentDashboard() {
                     </div>
                     <CreditCard className="absolute -right-4 -bottom-4 w-32 h-32 opacity-5 -rotate-12" />
                 </div>
-            )}
+            ))}
 
             {/* Mis Alumnos Cards */}
+            {branding?.industry !== 'school_treasury' && (
             <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-1">
                     <div className="w-1 h-4 bg-orange-500 rounded-full" />
@@ -855,6 +856,7 @@ export default function StudentDashboard() {
                     );
                 })}
             </div>
+            )}
         </div>
     );
 
