@@ -27,7 +27,7 @@ class GitHubStatsController extends Controller
 
     public function index()
     {
-        return Cache::remember('github_stats', 86400, function () {
+        return Cache::remember('github_stats_v2', 86400, function () {
             $totalStars = 0;
             $languages = [];
             $repoCount = count($this->repositories);
