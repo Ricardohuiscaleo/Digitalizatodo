@@ -11,6 +11,7 @@ export default function OnboardingPage() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
     const [step, setStep] = useState(1); // 1: Negocio, 2: Admin
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [formData, setFormData] = useState({
         tenant_name: "",
         tenant_slug: "",
@@ -74,7 +75,10 @@ export default function OnboardingPage() {
             return;
         }
         try {
-            const data = await registerTenant(formData) as any;
+            const data = await registerTenant({
+                ...formData,
+                accepted_terms_at: new Date().toISOString(),
+            }) as any;
             if (!data) throw new Error("El servidor no respondió correctamente");
             if (data.errors) {
                 const errorKey = Object.keys(data.errors)[0];
@@ -236,10 +240,48 @@ export default function OnboardingPage() {
                             )}
 
                             <div className="pt-2 flex flex-col gap-3">
+                                {step === 2 && (
+                                    <label className="flex items-start gap-3 cursor-pointer group">
+                                        <div className="relative mt-0.5 flex-shrink-0">
+                                            <input
+                                                type="checkbox"
+                                                checked={acceptedTerms}
+                                                onChange={e => setAcceptedTerms(e.target.checked)}
+                                                className="sr-only"
+                                            />
+                                            <div className={`h-5 w-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                                                acceptedTerms ? 'bg-indigo-600 border-indigo-600' : 'border-zinc-300 bg-white group-hover:border-zinc-400'
+                                            }`}>
+                                                {acceptedTerms && <CheckCircle2 size={12} className="text-white" />}
+                                            </div>
+                                        </div>
+                                        <span className="text-[10px] font-bold text-zinc-500 leading-relaxed">
+                                            He leído y acepto los{' '}
+                                            <a
+                                                href="https://digitalizatodo.cl/terminos"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-indigo-600 underline underline-offset-2 hover:text-indigo-800"
+                                                onClick={e => e.stopPropagation()}
+                                            >
+                                                Términos y Condiciones
+                                            </a>{' '}y la{' '}
+                                            <a
+                                                href="https://digitalizatodo.cl/privacidad"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-indigo-600 underline underline-offset-2 hover:text-indigo-800"
+                                                onClick={e => e.stopPropagation()}
+                                            >
+                                                Política de Privacidad
+                                            </a>
+                                        </span>
+                                    </label>
+                                )}
                                 <button
                                     type="submit"
-                                    disabled={isLoading}
-                                    className="w-full h-16 bg-zinc-950 hover:bg-zinc-800 text-white font-black rounded-2xl uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-4 shadow-xl active:scale-[0.98] transition-all group"
+                                    disabled={isLoading || (step === 2 && !acceptedTerms)}
+                                    className="w-full h-16 bg-zinc-950 hover:bg-zinc-800 text-white font-black rounded-2xl uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-4 shadow-xl active:scale-[0.98] transition-all group disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
                                 >
                                     {isLoading ? <Loader2 className="animate-spin" size={18} /> : (
                                         <>
