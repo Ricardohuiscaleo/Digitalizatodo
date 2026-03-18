@@ -570,3 +570,94 @@ export async function deleteExpense(tenantId: string, token: string, id: number)
         return { message: 'Error de conexión' };
     }
 }
+
+// ─── Fees / Cuotas (Tesorero) ─────────────────────────────────────────────────
+
+export async function getFees(tenantId: string, token: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/fees`, {
+            cache: 'no-store' as RequestCache,
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+        });
+        return await safeJson(response);
+    } catch {
+        return { fees: [] };
+    }
+}
+
+export async function getFeeDetail(tenantId: string, token: string, feeId: number) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/fees/${feeId}`, {
+            cache: 'no-store' as RequestCache,
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+        });
+        return await safeJson(response);
+    } catch {
+        return null;
+    }
+}
+
+export async function createFee(tenantId: string, token: string, data: any) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/fees`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        return await safeJson(response);
+    } catch {
+        return { message: 'Error de conexión' };
+    }
+}
+
+export async function deleteFee(tenantId: string, token: string, feeId: number) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/fees/${feeId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+        });
+        return await safeJson(response);
+    } catch {
+        return { message: 'Error de conexión' };
+    }
+}
+
+export async function approveFeePayment(tenantId: string, token: string, feeId: number, data: { guardian_id: number; payment_method: 'cash' | 'transfer'; notes?: string }) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/fees/${feeId}/approve-payment`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        return await safeJson(response);
+    } catch {
+        return { message: 'Error de conexión' };
+    }
+}
+
+export async function uploadFeeProof(tenantId: string, token: string, feeId: number, file: File) {
+    try {
+        const formData = new FormData();
+        formData.append('proof', file);
+        const response = await fetch(`${API_URL}/${tenantId}/fees/${feeId}/upload-proof`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+            body: formData,
+        });
+        return await safeJson(response);
+    } catch {
+        return { message: 'Error de conexión' };
+    }
+}
+
+export async function getMyFees(tenantId: string, token: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/fees/my`, {
+            cache: 'no-store' as RequestCache,
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+        });
+        return await safeJson(response);
+    } catch {
+        return { payments: [] };
+    }
+}

@@ -56,7 +56,8 @@ import {
     getNotifications,
     markAllNotificationsRead,
     markNotificationRead,
-    getAppUpdates
+    getAppUpdates,
+    getFees
 } from "@/lib/api";
 import { unlockAudio, setAppBadge } from "@/lib/audio";
 import { subscribeToPush } from "@/lib/push";
@@ -333,6 +334,7 @@ export default function App() {
     const [showNotifications, setShowNotifications] = useState(false);
     const [appUpdates, setAppUpdates] = useState<any[]>([]);
     const [toastNotification, setToastNotification] = useState<any>(null);
+    const [feesSummary, setFeesSummary] = useState<{ total: number; pending: number; review: number } | null>(null);
 
     // --- PERSISTENCE & DATA FETCHING ---
 
@@ -691,8 +693,18 @@ export default function App() {
         });
         getAppUpdates('staff').then(data => {
             if (data?.updates) setAppUpdates(data.updates);
-
         });
+        // Cuotas — solo school_treasury
+        if (branding?.industry === 'school_treasury') {
+            getFees(branding.slug, token).then(data => {
+                if (data?.fees) {
+                    const total = data.fees.length;
+                    const pending = data.fees.reduce((a: number, f: any) => a + (f.total_count - f.paid_count - f.review_count), 0);
+                    const review = data.fees.reduce((a: number, f: any) => a + (f.review_count || 0), 0);
+                    setFeesSummary({ total, pending, review });
+                }
+            });
+        }
     }, [token, branding?.slug]);
 
     useEffect(() => {
@@ -967,7 +979,39 @@ export default function App() {
                         )}
                     </div>
 
-
+                    {/* Card Cuotas — solo school_treasury */}
+                    {branding?.industry === 'school_treasury' && (
+                        <a href="/dashboard/fees" className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100 flex flex-col justify-between hover:border-zinc-200 transition-all active:scale-[0.98]">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2 uppercase tracking-tighter">
+                                        <DollarSign style={{ color: branding?.primaryColor || '#6366f1' }} size={18} />
+                                        Cuotas
+                                    </h3>
+                                    <p className="text-[10px] text-zinc-400 font-bold mt-1 uppercase tracking-widest">Gestión de cobros</p>
+                                </div>
+                                <ChevronRight size={18} className="text-zinc-300 mt-1" />
+                            </div>
+                            {feesSummary ? (
+                                <div className="flex items-center gap-3">
+                                    <div className="flex flex-col">
+                                        <span className="text-2xl font-black text-zinc-950">{feesSummary.total}</span>
+                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">cuotas activas</span>
+                                    </div>
+                                    {feesSummary.review > 0 && (
+                                        <span className="text-[8px] font-black uppercase px-2 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-100">{feesSummary.review} por revisar</span>
+                                    )}
+                                    {feesSummary.pending > 0 && (
+                                        <span className="text-[8px] font-black uppercase px-2 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100">{feesSummary.pending} pendientes</span>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-3 py-2">
+                                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Ver cuotas →</span>
+                                </div>
+                            )}
+                        </a>
+                    )}
                 </div>
 
                 {/* HISTORIAL DE ASISTENCIA - RE-ESTILIZADO PARA DESKTOP */}
