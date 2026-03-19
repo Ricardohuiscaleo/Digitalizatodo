@@ -20,7 +20,7 @@ export default function BottomNav({ activeSection, setActiveSection, primaryColo
         industry === 'school_treasury'
             ? { id: "calendar" as NavSection, label: "Horario", icon: Calendar }
             : { id: "calendar" as NavSection, label: "Clases", icon: Calendar },
-        { id: "payments" as NavSection, label: "Pagos", icon: CreditCard },
+        { id: "payments" as NavSection, label: industry === 'school_treasury' ? 'Cuotas' : 'Pagos', icon: CreditCard },
         ...(industry === 'school_treasury' ? [{ id: "rendicion" as NavSection, label: "Rendición", icon: ShoppingCart }] : []),
     ];
 
