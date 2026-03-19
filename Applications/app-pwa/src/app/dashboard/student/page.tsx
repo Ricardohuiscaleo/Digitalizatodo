@@ -390,7 +390,6 @@ export default function StudentDashboard() {
 
         let profile = await getProfile(tenantSlug, token);
 
-        // Si el token falló (ej: expiró) intentamos recuperar con remember_token
         if (!profile) {
             const rememberToken = localStorage.getItem("remember_token");
             if (rememberToken && tenantSlug) {
@@ -412,10 +411,9 @@ export default function StudentDashboard() {
             setData(profile);
             if (profile.tenant?.industry) localStorage.setItem('tenant_industry', profile.tenant.industry);
         } else {
-            // Si después de intentar reanudar sigue sin haber perfil, al login
             window.location.href = "/";
         }
-    }, [resumeSession, getProfile]);
+    }, []);
 
     // Mantener ref actualizado
     refreshDataRef.current = refreshData;
