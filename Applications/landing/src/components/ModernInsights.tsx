@@ -21,7 +21,7 @@ const AnimatedCounter = ({ value, duration = 2000 }: { value: number, duration?:
     return <>{count}</>;
 };
 
-interface CardProps { label: string; value: number; suffix: string; source: string; icon: React.ElementType; color: string; href?: string; loading?: boolean; delay?: number; }
+interface CardProps { label: string; value: number; suffix: string; source: string; icon: React.ComponentType<{ className?: string }>; color: string; href?: string; loading?: boolean; delay?: number; }
 
 const InsightCard = ({ label, value, suffix, source, icon: Icon, color, href, loading, delay = 0 }: CardProps) => {
     const { ref, visible } = useLazyReveal();
@@ -107,7 +107,7 @@ const ModernInsights = () => {
                             { name: 'Astro',      version: '4',    si: siAstro,       bg: '#BC52EE' },
                             { name: 'Tailwind',   version: '3.4',  si: siTailwindcss, bg: '#06B6D4' },
                             { name: 'MySQL',      version: '9.6',  si: siMysql,       bg: '#4479A1' },
-                        ] as const).map((tech) => (
+                        ] as { name: string; version: string; si: { path: string }; bg: string }[]).map((tech) => (
                             <div key={tech.name} className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border aspect-square"
                                 style={{ backgroundColor: tech.bg + '12', borderColor: tech.bg + '30' }}>
                                 <svg viewBox="0 0 24 24" className="w-6 h-6 flex-shrink-0" fill={tech.bg === '#000000' ? '#1e293b' : tech.bg}>

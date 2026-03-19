@@ -4,7 +4,7 @@ import SectionBadge from './common/SectionBadge';
 import { useLazyReveal, revealClass, revealStyle } from '../hooks/useLazyReveal';
 
 interface ServiceCardProps {
-    title: string; description: string; icon: React.ElementType;
+    title: string; description: string; icon: React.ComponentType<{ className?: string }>;
     color: string; bg: string; delay: number; price: string; tags: string[];
 }
 

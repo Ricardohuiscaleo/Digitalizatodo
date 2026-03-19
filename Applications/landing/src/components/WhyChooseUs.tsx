@@ -1,12 +1,12 @@
 import React from 'react';
 import { CheckCircle2, TrendingUp, Users, ShieldCheck, Clock } from 'lucide-react';
 
-const BentoCard = ({ title, value, description, icon: Icon, className }: { title: string, value: string, description: string, icon: React.ElementType, className?: string }) => (
+const BentoCard = ({ title, value, description, icon: Icon, className }: { title: string, value: string, description: string, icon: React.ComponentType<{ className?: string }>, className?: string }) => (
     <div className={`p-8 rounded-[24px] bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 ${className}`}>
         <div className="flex flex-col h-full justify-between">
             <div>
                 <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center mb-4">
-                    <Icon className={`w-5 h-5 ${'text-brand-orange' as string}`} />
+                    <Icon className="w-5 h-5 text-brand-orange" />
                 </div>
                 <h4 className="text-slate-500 font-bold uppercase tracking-widest text-xs mb-2">{title}</h4>
                 <div className="text-4xl font-black text-slate-900 mb-2">{value}</div>

@@ -777,7 +777,7 @@ export default function App() {
             ];
             if (isSchoolTreasury) baseRequests.push(getSchedules(tenantSlug, storedToken!));
 
-            let [profile, payersData, attendanceHistoryData, schedulesData]: [any, any, any, any] = await Promise.all(baseRequests);
+            let [profile, payersData, attendanceHistoryData, schedulesData]: any[] = await Promise.all(baseRequests);
 
             // Si el token falló (ej: expiró) pero tenemos un remember_token, intentamos recuperar la sesión una vez
             if (!profile) {
