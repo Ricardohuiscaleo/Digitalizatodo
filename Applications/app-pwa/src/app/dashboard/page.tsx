@@ -76,6 +76,7 @@ import {
     deleteSchedule
 } from "@/lib/api";
 import WeeklySchedule from "@/components/Schedule/WeeklySchedule";
+import { ExpenseCard } from "@/app/dashboard/expenses/page";
 import { unlockAudio, setAppBadge } from "@/lib/audio";
 import { subscribeToPush } from "@/lib/push";
 
@@ -1290,7 +1291,7 @@ export default function App() {
                                     <span className="text-base font-black text-zinc-950">{formatMoney(fee.amount)}</span>
                                     {fee.type === 'recurring' ? (
                                         <span className="flex items-center gap-1 text-[9px] font-bold text-violet-500 uppercase bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-full">
-                                            🔁 Día {fee.recurring_day} c/mes
+                                            <RefreshCw size={9} /> Día {fee.recurring_day} c/mes
                                         </span>
                                     ) : fee.due_date ? (
                                         <span className="flex items-center gap-1 text-[9px] font-bold text-zinc-400 uppercase">
@@ -1345,7 +1346,7 @@ export default function App() {
                                                 ? 'bg-zinc-950 text-white border-zinc-950'
                                                 : 'bg-zinc-50 text-zinc-400 border-zinc-100'
                                         }`}>
-                                        {t === 'once' ? '📌 Única' : '🔁 Recurrente'}
+                                        <span className="flex items-center justify-center gap-1.5">{t === 'once' ? <><CalendarCheck size={12} /> Única</> : <><RefreshCw size={12} /> Recurrente</>}</span>
                                     </button>
                                 ))}
                             </div>
@@ -1387,8 +1388,8 @@ export default function App() {
                             </div>
 
                             {feeForm.type === 'recurring' && feeForm.recurring_day && (
-                                <p className="text-[10px] text-zinc-400 bg-zinc-50 rounded-xl px-3 py-2 border border-zinc-100">
-                                    🔁 Se cobrará el <strong>día {feeForm.recurring_day}</strong> de cada mes. Los recordatorios se envían 1 y 2 días antes.
+                                <p className="text-[10px] text-zinc-400 bg-zinc-50 rounded-xl px-3 py-2 border border-zinc-100 flex items-center gap-1.5">
+                                    <RefreshCw size={10} /> Se cobrará el <strong>día {feeForm.recurring_day}</strong> de cada mes.
                                 </p>
                             )}
 
@@ -1410,7 +1411,7 @@ export default function App() {
                             <div className="flex items-start justify-between">
                                 <div>
                                     <h2 className="text-base font-black uppercase tracking-tighter text-zinc-900">{selectedFee.title}</h2>
-                                    <p className="text-[10px] text-zinc-400 font-bold mt-0.5">{formatMoney(selectedFee.amount)} · Vence {new Date(selectedFee.due_date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}</p>
+                                    <p className="text-[10px] text-zinc-400 font-bold mt-0.5">{formatMoney(selectedFee.amount)} · {selectedFee.type === 'recurring' ? `Día ${selectedFee.recurring_day} c/mes` : selectedFee.due_date ? `Vence ${new Date(selectedFee.due_date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}` : ''}</p>
                                 </div>
                                 <button onClick={() => setSelectedFee(null)} className="w-8 h-8 rounded-xl bg-zinc-50 flex items-center justify-center text-zinc-400 border border-zinc-100">
                                     <X size={16} />
@@ -1586,42 +1587,13 @@ export default function App() {
                 ) : (
                     <div className="space-y-3">
                         {expensesList.map((exp: any) => (
-                            <div key={exp.id} className="bg-white rounded-[20px] p-4 border border-zinc-100 shadow-sm">
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${EXPENSE_CAT_COLORS[exp.category] ?? 'bg-zinc-100 text-zinc-600'}`}>{exp.category}</span>
-                                            <span className="text-[9px] text-zinc-400 font-bold">{new Date(exp.expense_date).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                                        </div>
-                                        <p className="text-sm font-black text-zinc-900 truncate">{exp.title}</p>
-                                        {exp.description && <p className="text-[11px] text-zinc-500 mt-0.5 line-clamp-2">{exp.description}</p>}
-                                        <p className="text-base font-black text-zinc-900 mt-1">{formatCLP(exp.amount)}</p>
-                                    </div>
-                                    <button
-                                        onClick={() => handleDeleteExpense(exp.id)}
-                                        disabled={expenseDeletingId === exp.id}
-                                        className="p-2 rounded-xl hover:bg-rose-50 text-zinc-300 hover:text-rose-500 transition-colors flex-shrink-0"
-                                    >
-                                        {expenseDeletingId === exp.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                                    </button>
-                                </div>
-                                {(exp.receipt_photo || exp.product_photo) && (
-                                    <div className="flex gap-2 mt-3">
-                                        {exp.receipt_photo && (
-                                            <button onClick={() => setExpenseLightbox(exp.receipt_photo)} className="relative h-16 w-16 rounded-xl overflow-hidden border border-zinc-100 flex-shrink-0">
-                                                <img src={exp.receipt_photo} className="w-full h-full object-cover" />
-                                                <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-[7px] text-white font-black text-center py-0.5">BOLETA</div>
-                                            </button>
-                                        )}
-                                        {exp.product_photo && (
-                                            <button onClick={() => setExpenseLightbox(exp.product_photo)} className="relative h-16 w-16 rounded-xl overflow-hidden border border-zinc-100 flex-shrink-0">
-                                                <img src={exp.product_photo} className="w-full h-full object-cover" />
-                                                <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-[7px] text-white font-black text-center py-0.5">PRODUCTO</div>
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
+                            <ExpenseCard
+                                key={exp.id}
+                                exp={exp}
+                                onLightbox={setExpenseLightbox}
+                                onDelete={() => handleDeleteExpense(exp.id)}
+                                deleting={expenseDeletingId === exp.id}
+                            />
                         ))}
                     </div>
                 )}
