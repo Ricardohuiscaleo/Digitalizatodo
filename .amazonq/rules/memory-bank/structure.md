@@ -128,3 +128,7 @@ api/                        # PHP backend for contact forms
 - **Role-based access**: `role:teacher,admin,owner` middleware on write routes; roles stored per-user per-tenant.
 - **Filament panels**: Three separate panels with distinct providers, each scoped to a user role.
 - **Realtime via WebSockets**: Laravel Reverb (port 8080) + Laravel Echo on frontend. Events use `ShouldBroadcastNow` (no queue worker needed). Public channels per tenant (`attendance.{slug}`). Full architecture documented in `realtime.md`.
+- **Auth dual (staff + guardian)**: Rutas protegidas usan `auth:sanctum,guardian-api`. Staff autentica con guard `sanctum` (modelo `User`), apoderados con guard `guardian-api` (modelo `Guardian`). Configurado en `config/auth.php`.
+- **Rutas duplicadas (PELIGRO)**: Si un `GET` existe en el grupo público/sanctum Y en el grupo `role:staff`, Laravel resuelve el último registrado. Eliminar siempre el GET del grupo staff y dejar solo POST/PUT/DELETE.
+- **Schedules en student init**: `getSchedules` se llama en `Promise.all` junto con `refreshData()` en el `useEffect([], [])` inicial — garantiza que el horario esté disponible al primer render sin depender del profile.
+- **Skeleton loading**: Ambas apps (staff `page.tsx` y student `page.tsx`) muestran skeleton `animate-pulse` mientras `loading=true`. Layout usa `bg-stone-50` (no negro) para evitar flash oscuro.

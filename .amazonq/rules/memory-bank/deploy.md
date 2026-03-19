@@ -92,8 +92,8 @@ git push
 | `GET /api/debug?emit={slug}` | Emitir evento de prueba WebSocket |
 | `GET /api/app-updates` | Ver changelog registrado |
 | `GET /api/app-updates?target=staff` | Changelog filtrado por target |
-| `GET /api/{tenant}/push/vapid-public-key` | Clave pública VAPID (auth requerida) |
-| `POST /api/{tenant}/push/subscribe` | Guardar suscripción Web Push |
+| `GET /api/{tenant}/push/vapid-public-key` | Clave pública VAPID (pública, sin auth) |
+| `POST /api/{tenant}/push/subscribe` | Guardar suscripción Web Push (auth requerida) |
 ---
 
 ## Debugging en Producción
@@ -116,6 +116,9 @@ docker exec <container> php /var/www/html/artisan tinker --execute="..."
 | 500 en endpoint con modelos | Modelo Eloquent no existe en `app/Models/` | Crear el modelo faltante |
 | 404 en rutas que antes funcionaban | Controlador o ruta se perdió en un update | Recrear controlador y registrar ruta en `api.php` |
 | `ShouldBroadcast` sin notificaciones | Queue worker no corre | Usar `ShouldBroadcastNow` siempre |
+| 403 en endpoint para apoderados | Ruta duplicada en grupo `role:staff` sobreescribe la accesible | Eliminar el GET duplicado del grupo staff |
+| 403 en rutas `auth:sanctum` para guardians | Guard `guardian-api` no configurado | Agregar guard sanctum en `auth.php` y usar `auth:sanctum,guardian-api` |
+| Colores blancos/incorrectos en horario | Campo `color` guardado como nombre en español ("Naranja") en vez de hex | UPDATE schedules SET color = CASE color WHEN 'Naranja' THEN '#f97316'... |
 
 ### Modelos que deben existir (críticos)
 Si alguno falta, los endpoints dan 500:
