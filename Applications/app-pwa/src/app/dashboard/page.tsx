@@ -756,11 +756,18 @@ export default function App() {
 
             setToken(storedToken!);
 
-            let [profile, payersData, attendanceHistoryData]: [any, any, any] = await Promise.all([
+            // Detectar industry desde branding en contexto para decidir qué cargar
+            const cachedIndustry = localStorage.getItem('tenant_industry');
+            const isSchoolTreasury = cachedIndustry === 'school_treasury';
+
+            const baseRequests: Promise<any>[] = [
                 getProfile(tenantSlug, storedToken!),
                 getPayers(tenantSlug, storedToken!, { month: selectedMonth, year: selectedYear, history: paymentFilter === 'history' }),
-                getAttendanceHistory(tenantSlug, storedToken!)
-            ]);
+                getAttendanceHistory(tenantSlug, storedToken!),
+            ];
+            if (isSchoolTreasury) baseRequests.push(getSchedules(tenantSlug, storedToken!));
+
+            let [profile, payersData, attendanceHistoryData, schedulesData]: [any, any, any, any] = await Promise.all(baseRequests);
 
             // Si el token falló (ej: expiró) pero tenemos un remember_token, intentamos recuperar la sesión una vez
             if (!profile) {
@@ -774,11 +781,13 @@ export default function App() {
                         setToken(newToken);
                         
                         // Re-intentamos las peticiones con el nuevo token
-                        [profile, payersData, attendanceHistoryData] = await Promise.all([
+                        const retryRequests: Promise<any>[] = [
                             getProfile(tenantSlug, newToken),
                             getPayers(tenantSlug, newToken, { month: selectedMonth, year: selectedYear, history: paymentFilter === 'history' }),
-                            getAttendanceHistory(tenantSlug, newToken)
-                        ]);
+                            getAttendanceHistory(tenantSlug, newToken),
+                        ];
+                        if (isSchoolTreasury) retryRequests.push(getSchedules(tenantSlug, newToken));
+                        [profile, payersData, attendanceHistoryData, schedulesData] = await Promise.all(retryRequests);
                     }
                 }
             }
@@ -801,20 +810,26 @@ export default function App() {
                 if (profile.tenant?.data?.bank_info) {
                     setBankData(profile.tenant.data.bank_info);
                 }
-                if (profile.tenant && (!branding?.name || !branding?.industry)) {
-                    setBranding({
-                        id: String(profile.tenant.id),
-                        slug: profile.tenant.slug,
-                        name: profile.tenant.name,
-                        industry: profile.tenant.industry,
-                        logo: profile.tenant.logo,
-                        primaryColor: profile.tenant.primary_color
-                    });
+                if (profile.tenant) {
+                    localStorage.setItem('tenant_industry', profile.tenant.industry || '');
+                    if (!branding?.name || !branding?.industry) {
+                        setBranding({
+                            id: String(profile.tenant.id),
+                            slug: profile.tenant.slug,
+                            name: profile.tenant.name,
+                            industry: profile.tenant.industry,
+                            logo: profile.tenant.logo,
+                            primaryColor: profile.tenant.primary_color
+                        });
+                    }
                 }
                 setPayers(payersData?.payers || []);
 
                 if (attendanceHistoryData?.attendance) {
                     setAttendanceHistory(attendanceHistoryData.attendance);
+                }
+                if (schedulesData?.schedules) {
+                    setSchedulesList(schedulesData.schedules);
                 }
 
                 if (payersData?.payers) {
@@ -957,8 +972,7 @@ export default function App() {
         }
         if (activeTab === 'dashboard' && !loading && branding?.slug && token && branding?.industry === 'school_treasury' && schedulesList.length === 0) {
             loadSchedules();
-        }
-    }, [paymentFilter, selectedMonth, selectedYear, activeTab]);
+        }    }, [paymentFilter, selectedMonth, selectedYear, activeTab]);
 
     // --- LÓGICA DE DATOS ---
 
@@ -2671,35 +2685,7 @@ export default function App() {
         </div>
     );
 
-    if (loading) return (
-        <div className="flex flex-col h-screen bg-white font-sans overflow-hidden text-zinc-950">
-            {/* Header skeleton */}
-            <header className="bg-white px-2 py-3 flex items-center justify-between border-b border-zinc-50 shrink-0 md:hidden">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full overflow-hidden border border-zinc-100 shadow-sm bg-zinc-100 animate-pulse">
-                        {branding?.logo && <img src={branding.logo} className="w-full h-full object-cover" alt="" />}
-                    </div>
-                    <div className="flex flex-col gap-1">
-                        <div className="h-4 w-28 bg-zinc-100 rounded-full animate-pulse" />
-                        <div className="h-2.5 w-16 bg-zinc-50 rounded-full animate-pulse" />
-                    </div>
-                </div>
-                <div className="w-10 h-10 rounded-full bg-zinc-50 animate-pulse" />
-            </header>
-            {/* Content skeleton */}
-            <div className="flex-1 px-3 py-4 space-y-4 overflow-hidden">
-                <div className="grid grid-cols-4 gap-2">
-                    {[...Array(4)].map((_, i) => <div key={i} className="h-[75px] rounded-[1.8rem] bg-zinc-100 animate-pulse" />)}
-                </div>
-                <div className="h-32 rounded-3xl bg-zinc-100 animate-pulse" />
-                <div className="h-48 rounded-3xl bg-zinc-100 animate-pulse" />
-            </div>
-            {/* Nav skeleton */}
-            <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-50 pt-3 pb-8 px-6 flex justify-between items-center md:hidden">
-                {[...Array(4)].map((_, i) => <div key={i} className="w-10 h-10 rounded-2xl bg-zinc-50 animate-pulse" />)}
-            </nav>
-        </div>
-    );
+    if (loading) return null;
 
     return (
         <div className="flex flex-col h-screen bg-white font-sans relative overflow-hidden text-zinc-950">
