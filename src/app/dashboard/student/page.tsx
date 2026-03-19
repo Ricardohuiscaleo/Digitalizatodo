@@ -1812,23 +1812,29 @@ function FeeCard({ feeData, primaryColor, onPay, onViewProof }: {
                     )}
                 </div>
             </div>
-            {/* Mini progreso */}
+            {/* Mini progreso con etiquetas */}
             {total > 1 && (
-                <div className="mt-3 flex gap-1 flex-wrap">
-                    {periods.map((p: any, i: number) => {
-                        const isOverdue = p.status === 'pending' && p.due_date && new Date(p.due_date) < today;
-                        return (
-                            <div
-                                key={i}
-                                title={`${p.label} — ${p.status}`}
-                                className={`h-2 flex-1 min-w-[8px] rounded-full ${
-                                    p.status === 'paid' ? 'bg-emerald-400' :
-                                    p.status === 'review' ? 'bg-yellow-400' :
-                                    isOverdue ? 'bg-red-400' : 'bg-zinc-200'
-                                }`}
-                            />
-                        );
-                    })}
+                <div className="mt-3">
+                    <div className="flex gap-1 flex-wrap">
+                        {periods.map((p: any, i: number) => {
+                            const isOverdue = p.status === 'pending' && p.due_date && new Date(p.due_date) < today;
+                            return (
+                                <div key={i} className="flex flex-col items-center gap-0.5" style={{ flex: '1 1 0', minWidth: 0 }}>
+                                    <div
+                                        title={`${p.label} — ${p.status}`}
+                                        className={`h-2 w-full rounded-full ${
+                                            p.status === 'paid' ? 'bg-emerald-400' :
+                                            p.status === 'review' ? 'bg-yellow-400' :
+                                            isOverdue ? 'bg-red-400' : 'bg-zinc-200'
+                                        }`}
+                                    />
+                                    <span className="text-[7px] font-black text-zinc-400 uppercase leading-none truncate w-full text-center">
+                                        {['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][p.month - 1]}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             )}
         </div>
