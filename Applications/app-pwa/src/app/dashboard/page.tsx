@@ -955,6 +955,9 @@ export default function App() {
         if (activeTab === 'schedule' && !loading && branding?.slug && token) {
             loadSchedules();
         }
+        if (activeTab === 'dashboard' && !loading && branding?.slug && token && branding?.industry === 'school_treasury' && schedulesList.length === 0) {
+            loadSchedules();
+        }
     }, [paymentFilter, selectedMonth, selectedYear, activeTab]);
 
     // --- LÓGICA DE DATOS ---
@@ -2669,9 +2672,32 @@ export default function App() {
     );
 
     if (loading) return (
-        <div className="h-screen flex flex-col items-center justify-center p-12 bg-white text-zinc-950">
-            <RefreshCw className="animate-spin mb-6" style={{ color: branding?.primaryColor || '#6366f1' }} size={32} />
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400">Sincronizando Sistema</p>
+        <div className="flex flex-col h-screen bg-white font-sans overflow-hidden text-zinc-950">
+            {/* Header skeleton */}
+            <header className="bg-white px-2 py-3 flex items-center justify-between border-b border-zinc-50 shrink-0 md:hidden">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full overflow-hidden border border-zinc-100 shadow-sm bg-zinc-100 animate-pulse">
+                        {branding?.logo && <img src={branding.logo} className="w-full h-full object-cover" alt="" />}
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <div className="h-4 w-28 bg-zinc-100 rounded-full animate-pulse" />
+                        <div className="h-2.5 w-16 bg-zinc-50 rounded-full animate-pulse" />
+                    </div>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-zinc-50 animate-pulse" />
+            </header>
+            {/* Content skeleton */}
+            <div className="flex-1 px-3 py-4 space-y-4 overflow-hidden">
+                <div className="grid grid-cols-4 gap-2">
+                    {[...Array(4)].map((_, i) => <div key={i} className="h-[75px] rounded-[1.8rem] bg-zinc-100 animate-pulse" />)}
+                </div>
+                <div className="h-32 rounded-3xl bg-zinc-100 animate-pulse" />
+                <div className="h-48 rounded-3xl bg-zinc-100 animate-pulse" />
+            </div>
+            {/* Nav skeleton */}
+            <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-50 pt-3 pb-8 px-6 flex justify-between items-center md:hidden">
+                {[...Array(4)].map((_, i) => <div key={i} className="w-10 h-10 rounded-2xl bg-zinc-50 animate-pulse" />)}
+            </nav>
         </div>
     );
 
