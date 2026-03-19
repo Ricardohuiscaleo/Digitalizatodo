@@ -17,8 +17,10 @@ interface BottomNavProps {
 export default function BottomNav({ activeSection, setActiveSection, primaryColor = "#f97316", userPhoto, userName, industry }: BottomNavProps) {
     const items: { id: NavSection; label: string; icon: any }[] = [
         { id: "home", label: "Inicio", icon: Home },
-        { id: "calendar", label: "Clases", icon: Calendar },
-        { id: "payments", label: "Pagos", icon: CreditCard },
+        industry === 'school_treasury'
+            ? { id: "payments" as NavSection, label: "Pagos", icon: CreditCard }
+            : { id: "calendar" as NavSection, label: "Clases", icon: Calendar },
+        ...(industry !== 'school_treasury' ? [{ id: "payments" as NavSection, label: "Pagos", icon: CreditCard }] : []),
         ...(industry === 'school_treasury' ? [{ id: "rendicion" as NavSection, label: "Rendición", icon: ShoppingCart }] : []),
     ];
 

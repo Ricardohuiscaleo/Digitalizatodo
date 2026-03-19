@@ -27,8 +27,8 @@ class TenantDiscoveryController extends Controller
             ->where('active', true)
             ->get();
 
-        // 2. Buscar Staff/Owners (User)
-        $userTenants = \App\Models\User::with('tenant')
+        // 2. Buscar Staff/Owners (User) — via tenant_user (multi-tenant)
+        $users = \App\Models\User::with(['tenantUsers.tenant'])
             ->where('email', $email)
             ->get();
 
@@ -45,14 +45,16 @@ class TenantDiscoveryController extends Controller
             }
         }
 
-        foreach ($userTenants as $u) {
-            if ($u->tenant && $u->tenant->active) {
-                $tid = $u->tenant->id;
-                if (!isset($allTenantsMap[$tid])) {
-                    $allTenantsMap[$tid] = ['tenant' => $u->tenant, 'roles' => []];
-                }
-                if (!in_array('staff', $allTenantsMap[$tid]['roles'])) {
-                    $allTenantsMap[$tid]['roles'][] = 'staff';
+        foreach ($users as $u) {
+            foreach ($u->tenantUsers as $tu) {
+                if ($tu->tenant && $tu->tenant->active) {
+                    $tid = $tu->tenant->id;
+                    if (!isset($allTenantsMap[$tid])) {
+                        $allTenantsMap[$tid] = ['tenant' => $tu->tenant, 'roles' => []];
+                    }
+                    if (!in_array('staff', $allTenantsMap[$tid]['roles'])) {
+                        $allTenantsMap[$tid]['roles'][] = 'staff';
+                    }
                 }
             }
         }

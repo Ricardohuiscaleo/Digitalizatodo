@@ -64,6 +64,9 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
     // Planes públicos
     Route::get('plans', [PlanController::class , 'index']);
 
+    // Horario público (apoderados pueden ver sin auth)
+    Route::get('schedules', [\App\Http\Controllers\Api\ScheduleController::class, 'index']);
+
     // Registro público de alumnos
     Route::post('register-student', [StudentRegistrationController::class , 'register']);
 
