@@ -31,9 +31,10 @@ import {
 } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
 import NotificationToast from "@/components/Notifications/NotificationToast";
-import { getProfile, markAttendanceViaQR, resumeSession, getNotifications, markAllNotificationsRead, markNotificationRead, getAppUpdates, deletePaymentProof, getExpenses } from "@/lib/api";
+import { getProfile, markAttendanceViaQR, resumeSession, getNotifications, markAllNotificationsRead, markNotificationRead, getAppUpdates, deletePaymentProof, getExpenses, getSchedules } from "@/lib/api";
 import jsQR from "jsqr";
 import BottomNav, { NavSection } from "@/components/Navigation/BottomNav";
+import WeeklySchedule from "@/components/Schedule/WeeklySchedule";
 import { todayCL } from "@/lib/utils";
 import StudentCalendar from "@/components/Calendar/StudentCalendar";
 import { getEcho, reconnect } from "@/lib/echo";
@@ -292,6 +293,7 @@ export default function StudentDashboard() {
     const [expensesSummary, setExpensesSummary] = useState<any[]>([]);
     const [expensesLoading, setExpensesLoading] = useState(false);
     const [expenseLightbox, setExpenseLightbox] = useState<string | null>(null);
+    const [schedulesList, setSchedulesList] = useState<any[]>([]);
     const [activeScanner, setActiveScanner] = useState<string | null>(null);
     const [uploadingPayment, setUploadingPayment] = useState<string | null>(null);
     const [proofModal, setProofModal] = useState<{ url: string; canDelete: boolean; paymentId: string } | null>(null);
@@ -498,7 +500,7 @@ export default function StudentDashboard() {
                     setShowPushModal(true);
                 } else {
                     setShowPushModal(false);
-                    if (perm === 'granted') {
+                    if (perm === 'granted' && branding?.industry !== 'school_treasury') {
                         subscribeToPush(branding.slug, token);
                     }
                 }
@@ -541,6 +543,10 @@ export default function StudentDashboard() {
                 setExpensesLoading(false);
             });
         }
+        if (activeSection === 'calendar' && branding?.slug && schedulesList.length === 0) {
+            const token = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
+            getSchedules(branding.slug, token).then(data => setSchedulesList(data?.schedules ?? []));
+        }
     }, [activeSection, branding?.slug]);
 
     const handleActivatePush = () => {
@@ -550,7 +556,7 @@ export default function StudentDashboard() {
             Notification.requestPermission().then(permission => {
                 setPushPermission(permission);
                 const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-                if (permission === 'granted' && token && branding?.slug) {
+                if (permission === 'granted' && token && branding?.slug && branding?.industry !== 'school_treasury') {
                     subscribeToPush(branding.slug, token);
                 }
             });
@@ -865,28 +871,42 @@ export default function StudentDashboard() {
     );
 
     const renderCalendar = () => {
-        // Combinamos la asistencia de todos los alumnos en un solo array, incluyendo sus fotos y categorías
-        const combinedAttendance = students.flatMap((s: any) => 
-            (s.recent_attendance || []).map((a: any) => ({ 
-                ...a, 
+        // school_treasury: mostrar horario de clases
+        if (branding?.industry === 'school_treasury') {
+            return (
+                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+                    <div>
+                        <h2 className="text-2xl font-black text-zinc-900">Mi Horario</h2>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mt-1">Horario semanal de clases</p>
+                    </div>
+                    <div className="bg-white rounded-[20px] p-4 border border-zinc-100 shadow-sm">
+                        {schedulesList.length === 0 ? (
+                            <p className="text-center text-xs text-zinc-300 py-8 font-bold">Sin horario cargado aún</p>
+                        ) : (
+                            <WeeklySchedule schedules={schedulesList} editable={false} />
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // Otros: calendario de asistencia
+        const combinedAttendance = students.flatMap((s: any) =>
+            (s.recent_attendance || []).map((a: any) => ({
+                ...a,
                 studentName: s.name,
                 studentPhoto: s.photo,
                 studentCategory: s.category
             }))
         );
-
         return (
             <div className="h-[calc(100vh-120px)] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
                 <header className="mb-4 shrink-0 px-1">
                     <h2 className="text-2xl font-black text-zinc-900">Asistencia</h2>
                     <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mt-1">Actividad de todos tus alumnos</p>
                 </header>
-
                 <div className="flex-1 min-h-0">
-                    <StudentCalendar 
-                        attendance={combinedAttendance} 
-                        primaryColor={primaryColor} 
-                    />
+                    <StudentCalendar attendance={combinedAttendance} primaryColor={primaryColor} />
                 </div>
             </div>
         );
