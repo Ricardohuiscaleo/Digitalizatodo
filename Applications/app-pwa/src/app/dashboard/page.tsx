@@ -204,10 +204,7 @@ function PaymentActionModal({ payer, onConfirm, onCancel, primaryColor, formatMo
 }
 
 function HistoryDetailModal({ date, records, branding, onClose }: { date: string; records: any[]; branding: any; onClose: () => void }) {
-    if (!date) return null;
-    const dateObj = new Date(date + 'T12:00:00');
-    const dateStr = dateObj.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
-
+    // ⚠️ Hooks SIEMPRE primero, antes de cualquier return condicional (Reglas de Hooks de React)
     const [dragY, setDragY] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const startY = useRef(0);
@@ -215,9 +212,14 @@ function HistoryDetailModal({ date, records, branding, onClose }: { date: string
 
     // Bloquear scroll del body mientras el modal está abierto
     useEffect(() => {
+        if (!date) return;
         document.body.style.overflow = 'hidden';
         return () => { document.body.style.overflow = ''; };
-    }, []);
+    }, [date]);
+
+    if (!date) return null;
+    const dateObj = new Date(date + 'T12:00:00');
+    const dateStr = dateObj.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
 
     const handleTouchStart = (e: React.TouchEvent) => {
         // Solo permitir swipe si el contenido scrolleable está en top
