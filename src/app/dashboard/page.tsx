@@ -1533,6 +1533,7 @@ export default function App() {
                     </div>
                 </div>
 
+                {branding?.industry !== 'school_treasury' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Tarjeta de Asistencia Hoy */}
                     <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100 flex flex-col justify-between">
@@ -1580,41 +1581,8 @@ export default function App() {
                             </div>
                         )}
                     </div>
-
-                    {/* Card Cuotas — solo school_treasury */}
-                    {branding?.industry === 'school_treasury' && (
-                        <a href="/dashboard/fees" className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100 flex flex-col justify-between hover:border-zinc-200 transition-all active:scale-[0.98]">
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2 uppercase tracking-tighter">
-                                        <DollarSign style={{ color: branding?.primaryColor || '#6366f1' }} size={18} />
-                                        Cuotas
-                                    </h3>
-                                    <p className="text-[10px] text-zinc-400 font-bold mt-1 uppercase tracking-widest">Gestión de cobros</p>
-                                </div>
-                                <ChevronRight size={18} className="text-zinc-300 mt-1" />
-                            </div>
-                            {feesSummary ? (
-                                <div className="flex items-center gap-3">
-                                    <div className="flex flex-col">
-                                        <span className="text-2xl font-black text-zinc-950">{feesSummary.total}</span>
-                                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">cuotas activas</span>
-                                    </div>
-                                    {feesSummary.review > 0 && (
-                                        <span className="text-[8px] font-black uppercase px-2 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-100">{feesSummary.review} por revisar</span>
-                                    )}
-                                    {feesSummary.pending > 0 && (
-                                        <span className="text-[8px] font-black uppercase px-2 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100">{feesSummary.pending} pendientes</span>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="flex items-center gap-3 py-2">
-                                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Ver cuotas →</span>
-                                </div>
-                            )}
-                        </a>
-                    )}
                 </div>
+                )}
 
                 {/* HISTORIAL DE ASISTENCIA - RE-ESTILIZADO PARA DESKTOP */}
                 <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100">
@@ -1842,6 +1810,20 @@ export default function App() {
         );
     };
 
+    const [paymentDropdownOpen, setPaymentDropdownOpen] = useState(false);
+    const [longPressPayerId, setLongPressPayerId] = useState<string | null>(null);
+    const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handleLongPressStart = (payerId: string) => {
+        longPressTimer.current = setTimeout(() => {
+            const payer = payers.find(p => p.id === payerId);
+            if (payer) setPaymentActionPayer(payer);
+        }, 500);
+    };
+    const handleLongPressEnd = () => {
+        if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    };
+
     const renderPayments = () => {
         const filteredPayers = payers.filter(p => {
             if (paymentFilter === 'pending') return p.status === 'pending' || p.status === 'review';
@@ -1868,8 +1850,49 @@ export default function App() {
 
         return (
             <div className="space-y-6 px-0 pb-24">
-                {/* Tabs Selector Premium (Neumorphic Style) */}
-                <div className="flex bg-zinc-100 p-1.5 rounded-[2.2rem] gap-1 shadow-inner">
+                {/* Buscador + opciones */}
+                <div className="flex items-center gap-2">
+                    <div className="relative flex-1 group focus-within:scale-[1.01] transition-all duration-300">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-zinc-950 transition-colors z-10" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Buscar..."
+                            className="w-full bg-white pl-12 pr-4 py-3 rounded-[2rem] text-sm font-black text-zinc-950 placeholder:text-zinc-300 placeholder:font-black placeholder:uppercase placeholder:tracking-widest focus:outline-none shadow-[6px_6px_12px_#e5e5e5,-6px_-6px_12px_#ffffff] focus:shadow-[inset_3px_3px_6px_#e5e5e5,inset_-3px_-3px_6px_#ffffff] border-2 border-zinc-100 focus:border-zinc-300"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <div className="relative shrink-0">
+                        <button
+                            onClick={() => setPaymentDropdownOpen(v => !v)}
+                            className="w-12 h-12 bg-white rounded-2xl border-2 border-zinc-100 flex items-center justify-center shadow-[4px_4px_8px_#e5e5e5,-4px_-4px_8px_#ffffff] active:scale-95 transition-all"
+                        >
+                            <span className="text-zinc-500 font-black text-lg leading-none">···</span>
+                        </button>
+                        {paymentDropdownOpen && (
+                            <div className="absolute right-0 top-14 w-48 bg-white rounded-2xl shadow-2xl border border-zinc-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                                {[
+                                    { label: 'Pendientes', value: 'pending' },
+                                    { label: 'Por aprobar', value: 'review' },
+                                    { label: 'Pagados', value: 'paid' },
+                                    { label: 'Historial', value: 'history' },
+                                ].map(opt => (
+                                    <button key={opt.value}
+                                        onClick={() => { setPaymentFilter(opt.value); setPaymentDropdownOpen(false); setExpandedPayerId(null); }}
+                                        className={`w-full text-left px-4 py-3 text-[11px] font-black uppercase tracking-widest transition-colors hover:bg-zinc-50 ${
+                                            paymentFilter === opt.value ? 'text-zinc-950' : 'text-zinc-400'
+                                        }`}
+                                    >
+                                        {paymentFilter === opt.value && <span className="mr-2">✓</span>}{opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Tabs Selector — oculto, reemplazado por dropdown */}
+                <div className="hidden flex bg-zinc-100 p-1.5 rounded-[2.2rem] gap-1 shadow-inner">
                     {['pending', 'history'].map((f) => (
                         <button
                             key={f}
@@ -2036,7 +2059,15 @@ export default function App() {
                                     'border-rose-300 bg-rose-100 shadow-rose-50'
                                 }`}
                             >
-                                <div className="p-4 flex items-center gap-3 cursor-pointer" onClick={() => setExpandedPayerId(isExpanded ? null : payer.id)}>
+                                <div
+                                    className="p-4 flex items-center gap-3 cursor-pointer select-none"
+                                    onClick={() => setExpandedPayerId(isExpanded ? null : payer.id)}
+                                    onMouseDown={() => handleLongPressStart(payer.id)}
+                                    onMouseUp={handleLongPressEnd}
+                                    onMouseLeave={handleLongPressEnd}
+                                    onTouchStart={() => handleLongPressStart(payer.id)}
+                                    onTouchEnd={handleLongPressEnd}
+                                >
                                     <div className="relative shrink-0">
                                         <img src={payer.photo} className="w-14 h-14 rounded-full object-cover shadow-sm grayscale-[0.3]" />
                                         <div className="absolute -bottom-1.5 -right-1 text-white text-[7px] font-black px-1 py-0.5 rounded border border-white uppercase" style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}>Titular</div>
@@ -2869,7 +2900,9 @@ export default function App() {
             {/* NAV CON ESTILO PREMIUM - Solo visible en Mobile */}
             <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-50 pt-3 pb-8 px-6 flex justify-between items-center h-22 z-50 md:hidden text-zinc-950">
                 <TabButton icon={LayoutDashboard} label="Inicio" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} primaryColor={branding?.primaryColor} />
-                <TabButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} />
+                {branding?.industry !== 'school_treasury' && (
+                    <TabButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} />
+                )}
                 <TabButton icon={CreditCard} label="Pagos" active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} />
                 {branding?.industry === 'school_treasury' && (
                     <TabButton icon={ShoppingCart} label="Compras" active={activeTab === 'expenses'} onClick={() => changeTab('expenses')} primaryColor={branding?.primaryColor} />
