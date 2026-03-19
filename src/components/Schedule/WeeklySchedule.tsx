@@ -229,7 +229,13 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
         const [start, end] = modalCell.slot.split("|");
         const existing = getCell(modalCell.day, modalCell.slot);
         if (existing) {
-            await onUpdate?.(existing.id, { subject: value, color });
+            await onUpdate?.(existing.id, {
+                subject: value,
+                color,
+                day_of_week: existing.day_of_week,
+                start_time: toHHMM(existing.start_time),
+                end_time: toHHMM(existing.end_time),
+            });
         } else if (value.trim()) {
             await onSave?.({ day_of_week: modalCell.day, start_time: toHHMM(start), end_time: toHHMM(end), subject: value, color, name: null });
         }
