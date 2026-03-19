@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
 import NotificationToast from "@/components/Notifications/NotificationToast";
-import { getProfile, markAttendanceViaQR, resumeSession, getNotifications, markAllNotificationsRead, markNotificationRead, getAppUpdates, deletePaymentProof, getExpenses, getSchedules, updateStudentName } from "@/lib/api";
+import { getProfile, markAttendanceViaQR, resumeSession, getNotifications, markAllNotificationsRead, markNotificationRead, getAppUpdates, deletePaymentProof, getExpenses, getSchedules, updateStudentName, getMyFees, uploadFeeProof } from "@/lib/api";
 import { ExpenseCard } from "@/app/dashboard/expenses/page";
 import jsQR from "jsqr";
 import { nowCL } from "@/lib/utils";
@@ -362,6 +362,9 @@ export default function StudentDashboard() {
     const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
     const [editingStudentName, setEditingStudentName] = useState("");
     const [savingStudentName, setSavingStudentName] = useState(false);
+    const [myFees, setMyFees] = useState<any[]>([]);
+    const [uploadingFeeProof, setUploadingFeeProof] = useState<string | null>(null);
+    const [uploadFeeSuccess, setUploadFeeSuccess] = useState<string | null>(null);
 
     const refreshData = useCallback(async () => {
         let token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
@@ -490,6 +493,7 @@ export default function StudentDashboard() {
         const promises: Promise<any>[] = [
             refreshData(),
             slug ? getSchedules(slug, tk).then(d => setSchedulesList(d?.schedules ?? [])) : Promise.resolve(),
+            slug && tk ? getMyFees(slug, tk).then(d => setMyFees(d?.payments ?? [])) : Promise.resolve(),
         ];
         Promise.all(promises).then(() => setLoading(false));
     }, []);
@@ -643,6 +647,21 @@ export default function StudentDashboard() {
         } finally {
             setUploadingPayment(null);
         }
+    };
+
+    const handleUploadFeeProof = async (feeId: string, file: File) => {
+        setUploadingFeeProof(feeId);
+        const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
+        const slug = localStorage.getItem("tenant_slug");
+        if (!token || !slug) return;
+        const res = await uploadFeeProof(slug, token, Number(feeId), file);
+        if (res?.payment) {
+            setUploadFeeSuccess(feeId);
+            const updated = await getMyFees(slug, token);
+            setMyFees(updated?.payments ?? []);
+            setTimeout(() => setUploadFeeSuccess(null), 2000);
+        }
+        setUploadingFeeProof(null);
     };
 
     const handleDeleteProof = async (paymentId: string) => {
@@ -1039,11 +1058,11 @@ export default function StudentDashboard() {
                         </div>
                     )}
 
-                    {/* Pendientes List */}
+                    {/* Pagos pendientes — cuotas (school_treasury) + mensualidades */}
                     <div className="space-y-3">
                         <div className="flex items-center justify-between ml-2">
                             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
-                                {branding?.industry === 'school_treasury' ? 'Cuotas' : 'Mensualidades'}
+                                Pagos
                             </h3>
                             {selectedPayments.length > 0 && (
                                 <button 
@@ -1056,6 +1075,17 @@ export default function StudentDashboard() {
                                 </button>
                             )}
                         </div>
+                        {myFees.map((fp: any) => (
+                                <FeePaymentRow
+                                    key={fp.id}
+                                    feePayment={fp}
+                                    primaryColor={primaryColor}
+                                    uploading={uploadingFeeProof === String(fp.fee_id)}
+                                    uploadSuccess={uploadFeeSuccess === String(fp.fee_id)}
+                                    onUpload={(file) => handleUploadFeeProof(String(fp.fee_id), file)}
+                                    onViewProof={(url) => setProofModal({ url, canDelete: fp.status !== 'paid', paymentId: String(fp.id) })}
+                                />
+                            ))}
                         {students.flatMap((s: any) => s.payments || []).map((payment: any) => (
                             <PaymentRow
                                 key={payment.id}
@@ -1076,7 +1106,7 @@ export default function StudentDashboard() {
                                 }}
                             />
                         ))}
-                        {students.every((s: any) => (s.payments || []).length === 0) && (
+                        {students.every((s: any) => (s.payments || []).length === 0) && myFees.length === 0 && (
                             <div className="bg-white border border-dashed border-zinc-200 rounded-[2rem] p-8 text-center">
                                 <p className="text-sm text-zinc-400 font-bold italic">No hay pagos pendientes</p>
                             </div>
@@ -1649,6 +1679,70 @@ export default function StudentDashboard() {
             />
         </div>
         </>
+    );
+}
+
+/* ─── Fee Payment Row Component ─── */
+function FeePaymentRow({
+    feePayment,
+    primaryColor,
+    uploading,
+    uploadSuccess,
+    onUpload,
+    onViewProof,
+}: {
+    feePayment: any;
+    primaryColor: string;
+    uploading: boolean;
+    uploadSuccess: boolean;
+    onUpload: (file: File) => void;
+    onViewProof: (url: string) => void;
+}) {
+    const fileRef = useRef<HTMLInputElement>(null);
+    const fee = feePayment.fee;
+    const statusConfig: Record<string, { label: string; color: string }> = {
+        pending: { label: "Pendiente", color: "text-red-500 bg-red-50 border-red-200" },
+        review:  { label: "En Revisión", color: "text-yellow-600 bg-yellow-50 border-yellow-200" },
+        paid:    { label: "Pagado", color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+    };
+    const sc = statusConfig[feePayment.status] || statusConfig.pending;
+    const dueLabel = fee?.type === 'recurring' && fee?.recurring_day
+        ? `Día ${fee.recurring_day} c/mes`
+        : fee?.due_date ? new Date(fee.due_date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }) : '—';
+
+    return (
+        <div className="bg-white border border-zinc-100 rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-black text-zinc-900">{fee?.title || 'Cuota'}</p>
+                    <p className="text-[10px] text-zinc-400 font-bold">
+                        ${Number(fee?.amount || 0).toLocaleString('es-CL')} · {fee?.type === 'recurring' && <RefreshCw size={9} className="inline mb-0.5" />} {dueLabel}
+                    </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                    <span className={`text-[9px] border rounded-full px-2 py-0.5 font-black uppercase shadow-sm ${sc.color}`}>{sc.label}</span>
+                    {uploadSuccess && <CheckCircle2 className="w-6 h-6 text-emerald-500 animate-in zoom-in duration-300" />}
+                    {feePayment.status === 'pending' && !uploadSuccess && (
+                        <>
+                            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onUpload(f); }} />
+                            <button
+                                onClick={() => fileRef.current?.click()}
+                                disabled={uploading}
+                                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider bg-zinc-900 text-white rounded-xl px-4 py-2 hover:bg-zinc-800 transition-all disabled:opacity-50"
+                            >
+                                {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                                {uploading ? '...' : 'Pagar'}
+                            </button>
+                        </>
+                    )}
+                    {feePayment.proof_url && feePayment.status !== 'pending' && (
+                        <button onClick={() => onViewProof(feePayment.proof_url)} className="w-10 h-10 flex items-center justify-center bg-zinc-900 text-white rounded-xl hover:bg-orange-500 transition-all">
+                            <Eye size={18} />
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
     );
 }
 
