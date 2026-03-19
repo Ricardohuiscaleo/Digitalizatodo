@@ -287,6 +287,8 @@ export default function StudentDashboard() {
     const [activeSection, setActiveSection] = useState<NavSection>("home");
     const [expensesList, setExpensesList] = useState<any[]>([]);
     const [expensesTotal, setExpensesTotal] = useState(0);
+    const [expensesCollected, setExpensesCollected] = useState(0);
+    const [expensesBalance, setExpensesBalance] = useState(0);
     const [expensesSummary, setExpensesSummary] = useState<any[]>([]);
     const [expensesLoading, setExpensesLoading] = useState(false);
     const [expenseLightbox, setExpenseLightbox] = useState<string | null>(null);
@@ -533,6 +535,8 @@ export default function StudentDashboard() {
             getExpenses(branding.slug, token).then(data => {
                 setExpensesList(data?.expenses ?? []);
                 setExpensesTotal(data?.total ?? 0);
+                setExpensesCollected(data?.collected ?? 0);
+                setExpensesBalance(data?.balance ?? 0);
                 setExpensesSummary(data?.summary ?? []);
                 setExpensesLoading(false);
             });
@@ -951,7 +955,9 @@ export default function StudentDashboard() {
                     {/* Pendientes List */}
                     <div className="space-y-3">
                         <div className="flex items-center justify-between ml-2">
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Mensualidades</h3>
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
+                                {branding?.industry === 'school_treasury' ? 'Cuotas' : 'Mensualidades'}
+                            </h3>
                             {selectedPayments.length > 0 && (
                                 <button 
                                     onClick={() => bulkFileInputRef.current?.click()}
@@ -1059,26 +1065,24 @@ export default function StudentDashboard() {
             <div className="space-y-4 pb-24 px-4 pt-4">
                 <div className="bg-zinc-950 rounded-[24px] p-5 text-white">
                     <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-3">Rendición de Caja</p>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3 mb-3">
                         <div>
-                            <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">Total gastado</p>
+                            <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">Total Gastado</p>
                             <p className="text-xl font-black text-rose-400">{fmt(expensesTotal)}</p>
                         </div>
                         <div>
-                            <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">Compras</p>
-                            <p className="text-xl font-black text-white">{expensesList.length}</p>
+                            <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">Saldo Caja</p>
+                            <p className={`text-xl font-black ${expensesBalance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{fmt(expensesBalance)}</p>
                         </div>
                     </div>
-                    {expensesSummary.length > 0 && (
-                        <div className="mt-4 flex flex-wrap gap-2">
-                            {expensesSummary.map((s: any) => (
-                                <div key={s.category} className="flex items-center gap-1.5 bg-white/10 rounded-full px-3 py-1">
-                                    <span className="text-[9px] font-black uppercase tracking-wider">{s.category}</span>
-                                    <span className="text-[9px] font-bold text-zinc-300">{fmt(s.total)}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className="bg-white/10 rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-wider">{expensesList.length} compras</span>
+                        {expensesSummary.map((s: any) => (
+                            <span key={s.category} className="bg-white/10 rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-wider">
+                                {s.category} {fmt(s.total)}
+                            </span>
+                        ))}
+                    </div>
                 </div>
 
                 {expensesLoading ? (
