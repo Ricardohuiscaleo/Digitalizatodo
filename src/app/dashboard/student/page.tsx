@@ -404,7 +404,13 @@ export default function StudentDashboard() {
 
         if (profile) {
             setData(profile);
-            if (profile.tenant?.industry) localStorage.setItem('tenant_industry', profile.tenant.industry);
+            if (profile.tenant?.industry) {
+                localStorage.setItem('tenant_industry', profile.tenant.industry);
+                // Si es school_treasury y schedules aún no cargados, cargarlos ahora
+                if (profile.tenant.industry === 'school_treasury' && tenantSlug) {
+                    getSchedules(tenantSlug, token).then(d => setSchedulesList(d?.schedules ?? []));
+                }
+            }
         } else {
             // Si después de intentar reanudar sigue sin haber perfil, al login
             window.location.href = "/";
@@ -1393,7 +1399,7 @@ export default function StudentDashboard() {
                             </button>
                         </div>
                         <span className="text-[9px] font-black uppercase tracking-widest mt-0.5" style={{ color: primaryColor }}>
-                            {activeSection === 'home' ? 'Inicio' : activeSection === 'calendar' ? 'Asistencia' : activeSection === 'payments' ? 'Pagos' : 'Perfil'}
+                            {activeSection === 'home' ? 'Inicio' : activeSection === 'calendar' ? (branding?.industry === 'school_treasury' ? 'Horario' : 'Asistencia') : activeSection === 'payments' ? 'Pagos' : activeSection === 'rendicion' ? 'Rendición' : 'Perfil'}
                         </span>
                     </div>
                 </div>
