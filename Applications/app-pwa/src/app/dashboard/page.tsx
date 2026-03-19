@@ -1591,7 +1591,7 @@ export default function App() {
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${EXPENSE_CAT_COLORS[exp.category] ?? 'bg-zinc-100 text-zinc-600'}`}>{exp.category}</span>
-                                            <span className="text-[9px] text-zinc-400 font-bold">{exp.expense_date}</span>
+                                            <span className="text-[9px] text-zinc-400 font-bold">{new Date(exp.expense_date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                                         </div>
                                         <p className="text-sm font-black text-zinc-900 truncate">{exp.title}</p>
                                         {exp.description && <p className="text-[11px] text-zinc-500 mt-0.5 line-clamp-2">{exp.description}</p>}

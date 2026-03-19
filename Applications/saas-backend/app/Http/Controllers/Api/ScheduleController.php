@@ -68,7 +68,7 @@ class ScheduleController extends Controller
         });
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $tenant, $id)
     {
         $tenant = app('currentTenant');
         $schedule = Schedule::where('tenant_id', $tenant->id)->findOrFail($id);
@@ -107,7 +107,7 @@ class ScheduleController extends Controller
         });
     }
 
-    public function destroy($id)
+    public function destroy($tenant, $id)
     {
         $tenant = app('currentTenant');
         $schedule = Schedule::where('tenant_id', $tenant->id)->findOrFail($id);
@@ -119,7 +119,7 @@ class ScheduleController extends Controller
         ]);
     }
 
-    public function assignStudents(Request $request, $id)
+    public function assignStudents(Request $request, $tenant, $id)
     {
         $tenant = app('currentTenant');
         $schedule = Schedule::where('tenant_id', $tenant->id)->findOrFail($id);
