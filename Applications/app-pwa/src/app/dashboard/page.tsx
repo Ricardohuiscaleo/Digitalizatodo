@@ -3296,6 +3296,7 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers, 
     const [timeLeft, setTimeLeft] = useState(60);
     const [loading, setLoading] = useState(true);
     const [detectedStudent, setDetectedStudent] = useState<any>(null);
+    const [continueCountdown, setContinueCountdown] = useState(0);
     const currentTokenRef = useRef<string | null>(null);
 
     const fetchToken = useCallback(async () => {
@@ -3371,7 +3372,6 @@ function DynamicQRModal({ onClose, tenantSlug, authToken, primaryColor, payers, 
     }, [detectedStudent, qrData, tenantSlug, authToken]);
 
     // Auto-continuar después de 7 segundos
-    const [continueCountdown, setContinueCountdown] = useState(0);
     useEffect(() => {
         if (!detectedStudent || continueCountdown <= 0) return;
         const t = setTimeout(() => {
