@@ -18,9 +18,9 @@ export default function BottomNav({ activeSection, setActiveSection, primaryColo
     const items: { id: NavSection; label: string; icon: any }[] = [
         { id: "home", label: "Inicio", icon: Home },
         industry === 'school_treasury'
-            ? { id: "payments" as NavSection, label: "Pagos", icon: CreditCard }
+            ? { id: "calendar" as NavSection, label: "Horario", icon: Calendar }
             : { id: "calendar" as NavSection, label: "Clases", icon: Calendar },
-        ...(industry !== 'school_treasury' ? [{ id: "payments" as NavSection, label: "Pagos", icon: CreditCard }] : []),
+        { id: "payments" as NavSection, label: "Pagos", icon: CreditCard },
         ...(industry === 'school_treasury' ? [{ id: "rendicion" as NavSection, label: "Rendición", icon: ShoppingCart }] : []),
     ];
 
