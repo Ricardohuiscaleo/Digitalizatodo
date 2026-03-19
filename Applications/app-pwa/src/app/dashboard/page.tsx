@@ -2792,7 +2792,7 @@ export default function App() {
                             </button>
                         </div>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: branding?.primaryColor || '#6366f1' }}>{activeTab === 'dashboard' ? 'Resumen' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? 'Pagos' : activeTab === 'settings' ? 'Ajustes' : 'Perfil'}</span>
+                            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: branding?.primaryColor || '#6366f1' }}>{activeTab === 'dashboard' ? 'Resumen' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? (branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos') : activeTab === 'settings' ? 'Ajustes' : 'Perfil'}</span>
                             {isDemo && <span className="bg-emerald-500/10 text-emerald-600 text-[6px] font-black px-1 py-0.5 rounded uppercase tracking-widest">DEMO</span>}
                         </div>
                     </div>
@@ -2890,7 +2890,7 @@ export default function App() {
                     <nav className="flex flex-col gap-2">
                         <SidebarButton icon={LayoutDashboard} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} primaryColor={branding?.primaryColor} />
                         <SidebarButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} />
-                        <SidebarButton icon={CreditCard} label="Pagos" active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} />
+                        <SidebarButton icon={CreditCard} label={branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos'} active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} />
                         <SidebarButton icon={Settings} label="Ajustes" active={activeTab === 'settings'} onClick={() => changeTab('settings')} primaryColor={branding?.primaryColor} />
                     </nav>
 
@@ -2914,13 +2914,13 @@ export default function App() {
                         <div key={activeTab} className="w-full animate-in fade-in duration-150">
                             <div className="hidden md:flex justify-between items-center mb-8">
                                 <h2 className="text-2xl font-black uppercase tracking-tighter text-zinc-950">
-                                    {activeTab === 'dashboard' ? 'Resumen General' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? 'Estado de Pagos' : activeTab === 'settings' ? 'Configuración' : 'Mi Perfil'}
+                                    {activeTab === 'dashboard' ? 'Resumen General' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? (branding?.industry === 'school_treasury' ? 'Cuotas' : 'Estado de Pagos') : activeTab === 'settings' ? 'Configuración' : 'Mi Perfil'}
                                 </h2>
                                 {isDemo && <span className="bg-emerald-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Modo Demo Activo</span>}
                             </div>
                             {activeTab === 'dashboard' && renderDashboard()}
                             {activeTab === 'attendance' && renderAttendance()}
-                            {activeTab === 'payments' && renderPayments()}
+                            {activeTab === 'payments' && (branding?.industry === 'school_treasury' ? renderFees() : renderPayments())}
                             {activeTab === 'settings' && renderSettings()}
                             {activeTab === 'profile' && renderProfile()}
                             {activeTab === 'fees' && renderFees()}
@@ -3018,7 +3018,7 @@ export default function App() {
                 {branding?.industry !== 'school_treasury' && (
                     <TabButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} />
                 )}
-                <TabButton icon={CreditCard} label="Pagos" active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} />
+                <TabButton icon={CreditCard} label={branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos'} active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} />
                 {branding?.industry === 'school_treasury' && (
                     <TabButton icon={ShoppingCart} label="Compras" active={activeTab === 'expenses'} onClick={() => changeTab('expenses')} primaryColor={branding?.primaryColor} />
                 )}
