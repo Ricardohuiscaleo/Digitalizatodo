@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Plus, Trash2, Receipt, Package, Loader2, ChevronDown, X, Camera } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Receipt, Package, Loader2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getExpenses, createExpense, deleteExpense } from "@/lib/api";
 
@@ -14,16 +14,6 @@ const CATEGORIES = [
     { id: "insumos",         label: "Insumos" },
     { id: "otros",           label: "Otros" },
 ];
-
-const CAT_COLORS: Record<string, string> = {
-    alimentacion:    "bg-orange-100 text-orange-700",
-    materiales:      "bg-blue-100 text-blue-700",
-    infraestructura: "bg-slate-100 text-slate-700",
-    actividades:     "bg-purple-100 text-purple-700",
-    administrativo:  "bg-zinc-100 text-zinc-700",
-    insumos:         "bg-green-100 text-green-700",
-    otros:           "bg-rose-100 text-rose-700",
-};
 
 function formatCLP(n: number) {
     return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 }).format(n);
@@ -175,46 +165,13 @@ export default function ExpensesPage() {
                 ) : (
                     <div className="space-y-3">
                         {expenses.map((exp: any) => (
-                            <div key={exp.id} className="bg-white rounded-[20px] p-4 border border-zinc-100 shadow-sm">
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${CAT_COLORS[exp.category] ?? "bg-zinc-100 text-zinc-600"}`}>
-                                                {exp.category}
-                                            </span>
-                                            <span className="text-[9px] text-zinc-400 font-bold">{new Date(exp.expense_date).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                                        </div>
-                                        <p className="text-sm font-black text-zinc-900 truncate">{exp.title}</p>
-                                        {exp.description && <p className="text-[11px] text-zinc-500 mt-0.5 line-clamp-2">{exp.description}</p>}
-                                        <p className="text-base font-black text-zinc-900 mt-1">{formatCLP(exp.amount)}</p>
-                                    </div>
-                                    <button
-                                        onClick={() => handleDelete(exp.id)}
-                                        disabled={deletingId === exp.id}
-                                        className="p-2 rounded-xl hover:bg-rose-50 text-zinc-300 hover:text-rose-500 transition-colors flex-shrink-0"
-                                    >
-                                        {deletingId === exp.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                                    </button>
-                                </div>
-
-                                {/* Fotos */}
-                                {(exp.receipt_photo || exp.product_photo) && (
-                                    <div className="flex gap-2 mt-3">
-                                        {exp.receipt_photo && (
-                                            <button onClick={() => setLightbox(exp.receipt_photo)} className="relative h-16 w-16 rounded-xl overflow-hidden border border-zinc-100 flex-shrink-0">
-                                                <img src={exp.receipt_photo} className="w-full h-full object-cover" />
-                                                <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-[7px] text-white font-black text-center py-0.5">BOLETA</div>
-                                            </button>
-                                        )}
-                                        {exp.product_photo && (
-                                            <button onClick={() => setLightbox(exp.product_photo)} className="relative h-16 w-16 rounded-xl overflow-hidden border border-zinc-100 flex-shrink-0">
-                                                <img src={exp.product_photo} className="w-full h-full object-cover" />
-                                                <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-[7px] text-white font-black text-center py-0.5">PRODUCTO</div>
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
+                            <ExpenseCard
+                                key={exp.id}
+                                exp={exp}
+                                onLightbox={setLightbox}
+                                onDelete={() => handleDelete(exp.id)}
+                                deleting={deletingId === exp.id}
+                            />
                         ))}
                     </div>
                 )}
@@ -309,6 +266,103 @@ export default function ExpensesPage() {
                     <button className="absolute top-4 right-4 p-2 bg-white/20 rounded-full"><X size={18} className="text-white" /></button>
                 </div>
             )}
+        </div>
+    );
+}
+
+/* ─── Shared Expense Card — usado en admin y apoderado ─── */
+const CAT_COLORS: Record<string, string> = {
+    alimentacion:    "bg-orange-100 text-orange-700",
+    materiales:      "bg-blue-100 text-blue-700",
+    infraestructura: "bg-slate-100 text-slate-700",
+    actividades:     "bg-purple-100 text-purple-700",
+    administrativo:  "bg-zinc-100 text-zinc-700",
+    insumos:         "bg-green-100 text-green-700",
+    otros:           "bg-rose-100 text-rose-700",
+};
+
+function fmtDate(raw: string) {
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? raw : d.toLocaleDateString("es-CL", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function fmtCLP(n: number) {
+    return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 }).format(n);
+}
+
+export function ExpenseCard({
+    exp,
+    onLightbox,
+    onDelete,
+    deleting,
+}: {
+    exp: any;
+    onLightbox: (url: string) => void;
+    onDelete?: () => void;
+    deleting?: boolean;
+}) {
+    const photo = exp.receipt_photo || exp.product_photo;
+    const hasBoth = !!(exp.receipt_photo && exp.product_photo);
+
+    return (
+        <div className="bg-white rounded-[20px] border border-zinc-100 shadow-sm overflow-hidden">
+            <div className="flex">
+                {/* Foto cuadrada izquierda */}
+                {photo ? (
+                    <button
+                        onClick={() => onLightbox(exp.receipt_photo || exp.product_photo)}
+                        className="w-[72px] h-[72px] shrink-0 relative overflow-hidden border-r border-zinc-100 rounded-l-[20px]"
+                    >
+                        <img src={exp.receipt_photo || exp.product_photo} className="w-full h-full object-cover" />
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-[7px] text-white font-black text-center py-0.5 uppercase tracking-wider">
+                            {exp.receipt_photo ? "Boleta" : "Producto"}
+                        </div>
+                    </button>
+                ) : (
+                    <div className="w-[72px] h-[72px] shrink-0 bg-zinc-50 border-r border-zinc-100 rounded-l-[20px] flex items-center justify-center">
+                        <Receipt size={22} className="text-zinc-200" />
+                    </div>
+                )}
+
+                {/* Info */}
+                <div className="flex-1 min-w-0 px-3 py-2.5 flex flex-col justify-between">
+                    <div>
+                        <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${CAT_COLORS[exp.category] ?? "bg-zinc-100 text-zinc-600"}`}>
+                                {exp.category}
+                            </span>
+                            <span className="text-[9px] text-zinc-400 font-bold">{fmtDate(exp.expense_date)}</span>
+                        </div>
+                        <p className="text-sm font-black text-zinc-900 leading-tight truncate">{exp.title}</p>
+                        {exp.description && (
+                            <p className="text-[10px] text-zinc-400 line-clamp-1">{exp.description}</p>
+                        )}
+                    </div>
+                    <div className="flex items-center justify-between mt-1">
+                        <p className="text-base font-black text-zinc-900">{fmtCLP(exp.amount)}</p>
+                        <div className="flex items-center gap-1.5">
+                            {/* Thumbnail foto producto si hay ambas */}
+                            {hasBoth && (
+                                <button
+                                    onClick={() => onLightbox(exp.product_photo)}
+                                    className="w-7 h-7 rounded-lg overflow-hidden border border-zinc-100 shrink-0"
+                                >
+                                    <img src={exp.product_photo} className="w-full h-full object-cover" />
+                                </button>
+                            )}
+                            {onDelete && (
+                                <button
+                                    onClick={onDelete}
+                                    disabled={deleting}
+                                    className="w-7 h-7 rounded-lg bg-zinc-50 hover:bg-rose-50 text-zinc-300 hover:text-rose-500 transition-colors flex items-center justify-center border border-zinc-100"
+                                >
+                                    {deleting ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
