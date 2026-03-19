@@ -67,6 +67,7 @@ import {
     createFee,
     deleteFee,
     approveFeePayment,
+    getFeesGuardiansSummary,
     getExpenses,
     createExpense,
     deleteExpense,
@@ -570,6 +571,12 @@ export default function App() {
     const [feeApproveMethod, setFeeApproveMethod] = useState<'cash' | 'transfer'>('cash');
     const [feeApproveNotes, setFeeApproveNotes] = useState('');
     const [feeApprovingLoading, setFeeApprovingLoading] = useState(false);
+    const [feesGuardians, setFeesGuardians] = useState<any[]>([]);
+    const [feesGuardiansLoading, setFeesGuardiansLoading] = useState(false);
+    const [feesGuardianFilter, setFeesGuardianFilter] = useState('pending');
+    const [feesGuardianSearch, setFeesGuardianSearch] = useState('');
+    const [feesGuardianDropdown, setFeesGuardianDropdown] = useState(false);
+    const [feesBubbleModal, setFeesBubbleModal] = useState<any>(null);
 
     // --- PERSISTENCE & DATA FETCHING ---
 
@@ -959,7 +966,13 @@ export default function App() {
 
     useEffect(() => {
         if (activeTab === 'payments' && !loading) {
-            refreshPayers();
+            if (branding?.industry === 'school_treasury') {
+                setFeesGuardiansLoading(true);
+                getFeesGuardiansSummary(branding.slug || '', token || '')
+                    .then(d => { setFeesGuardians(d?.guardians ?? []); setFeesGuardiansLoading(false); });
+            } else {
+                refreshPayers();
+            }
         }
         if (activeTab === 'fees' && !loading && branding?.slug && token) {
             loadFees();
@@ -1250,6 +1263,171 @@ export default function App() {
         pending: { label: 'Pendiente', color: 'bg-rose-50 text-rose-600 border-rose-100' },
         review:  { label: 'En revisión', color: 'bg-amber-50 text-amber-600 border-amber-100' },
         paid:    { label: 'Pagado', color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+    };
+
+    const renderFeesGuardians = () => {
+        const filtered = feesGuardians
+            .filter(g => {
+                if (feesGuardianFilter === 'pending') return g.status === 'pending' && g.total > 0;
+                if (feesGuardianFilter === 'review')  return g.status === 'review';
+                if (feesGuardianFilter === 'paid')    return g.status === 'paid';
+                return g.total > 0; // all
+            })
+            .filter(g => g.name.toLowerCase().includes(feesGuardianSearch.toLowerCase()));
+
+        return (
+            <div className="space-y-6 px-0 pb-24">
+                {/* Buscador + filtro */}
+                <div className="flex items-center gap-2">
+                    <div className="relative flex-1 group focus-within:scale-[1.01] transition-all duration-300">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-zinc-950 transition-colors z-10" size={18} />
+                        <input
+                            type="text" placeholder="Buscar..."
+                            className="w-full bg-white pl-12 pr-4 py-3 rounded-[2rem] text-sm font-black text-zinc-950 placeholder:text-zinc-300 placeholder:font-black placeholder:uppercase placeholder:tracking-widest focus:outline-none shadow-[6px_6px_12px_#e5e5e5,-6px_-6px_12px_#ffffff] focus:shadow-[inset_3px_3px_6px_#e5e5e5,inset_-3px_-3px_6px_#ffffff] border-2 border-zinc-100 focus:border-zinc-300"
+                            value={feesGuardianSearch} onChange={e => setFeesGuardianSearch(e.target.value)}
+                        />
+                    </div>
+                    <div className="relative shrink-0">
+                        <button onClick={() => setFeesGuardianDropdown(v => !v)}
+                            className="w-12 h-12 bg-white rounded-2xl border-2 border-zinc-100 flex items-center justify-center shadow-[4px_4px_8px_#e5e5e5,-4px_-4px_8px_#ffffff] active:scale-95 transition-all">
+                            <span className="text-zinc-500 font-black text-lg leading-none">···</span>
+                        </button>
+                        {feesGuardianDropdown && (
+                            <div className="absolute right-0 top-14 w-48 bg-white rounded-2xl shadow-2xl border border-zinc-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                                {[
+                                    { label: 'Pendientes', value: 'pending' },
+                                    { label: 'Por aprobar', value: 'review' },
+                                    { label: 'Pagados', value: 'paid' },
+                                    { label: 'Todos', value: 'all' },
+                                ].map(opt => (
+                                    <button key={opt.value}
+                                        onClick={() => { setFeesGuardianFilter(opt.value); setFeesGuardianDropdown(false); }}
+                                        className={`w-full text-left px-4 py-3 text-[11px] font-black uppercase tracking-widest transition-colors hover:bg-zinc-50 ${
+                                            feesGuardianFilter === opt.value ? 'text-zinc-950' : 'text-zinc-400'
+                                        }`}>
+                                        {feesGuardianFilter === opt.value && <span className="mr-2">✓</span>}{opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Globos */}
+                {feesGuardiansLoading ? (
+                    <div className="flex justify-center py-20"><Loader2 className="animate-spin text-zinc-300" size={24} /></div>
+                ) : filtered.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 gap-3">
+                        <Users size={32} className="text-zinc-200" />
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Sin resultados</p>
+                    </div>
+                ) : (
+                    <div className="flex flex-wrap gap-4 justify-start px-1 pb-6">
+                        {filtered.flatMap((guardian: any) => {
+                            const isPaid   = guardian.status === 'paid';
+                            const isReview = guardian.status === 'review';
+                            const ringColor = isPaid   ? 'ring-4 ring-emerald-400 shadow-emerald-100'
+                                            : isReview ? 'ring-4 ring-amber-400 shadow-amber-100'
+                                            :            'ring-4 ring-rose-400 shadow-rose-100';
+                            const dotColor  = isPaid   ? 'bg-emerald-500'
+                                            : isReview ? 'bg-amber-400'
+                                            :            'bg-rose-500';
+
+                            // Un globo por estudiante del apoderado, o uno del apoderado si no tiene estudiantes
+                            const subjects = guardian.students?.length > 0 ? guardian.students : [{ id: guardian.id, name: guardian.name, photo: guardian.photo }];
+                            return subjects.map((s: any) => (
+                                <div key={`${guardian.id}-${s.id}`}
+                                    className="flex flex-col items-center gap-1.5 cursor-pointer select-none active:scale-95 transition-transform"
+                                    onClick={() => setFeesBubbleModal(guardian)}>
+                                    <div className="relative">
+                                        <img src={s.photo || guardian.photo || '/icon.webp'}
+                                            className={`w-16 h-16 rounded-full object-cover shadow-md ${ringColor}`}
+                                            alt={s.name} />
+                                        <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white shadow-sm ${dotColor}`} />
+                                    </div>
+                                    <p className="text-[9px] font-black uppercase text-zinc-700 text-center leading-tight max-w-[72px] line-clamp-2">
+                                        {s.name.split(' ')[0]}
+                                    </p>
+                                </div>
+                            ));
+                        })}
+                    </div>
+                )}
+
+                {/* Modal detalle apoderado */}
+                {feesBubbleModal && (
+                    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-end justify-center animate-in fade-in duration-200" onClick={() => setFeesBubbleModal(null)}>
+                        <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] shadow-2xl animate-in slide-in-from-bottom-4 duration-200 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                            <div className="p-5 border-b border-zinc-100 shrink-0">
+                                <div className="flex justify-center mb-3"><div className="w-10 h-1.5 bg-zinc-200 rounded-full" /></div>
+                                <div className="flex items-center gap-3">
+                                    <img src={feesBubbleModal.photo || '/icon.webp'} className="w-12 h-12 rounded-full object-cover border border-zinc-100" />
+                                    <div>
+                                        <h3 className="text-sm font-black uppercase text-zinc-900">{feesBubbleModal.name}</h3>
+                                        <p className="text-[10px] text-zinc-400 font-bold">{feesBubbleModal.pending} pendiente · {feesBubbleModal.review} en revisión · {feesBubbleModal.paid} pagado</p>
+                                    </div>
+                                    <button onClick={() => setFeesBubbleModal(null)} className="ml-auto w-8 h-8 rounded-xl bg-zinc-50 flex items-center justify-center text-zinc-400 border border-zinc-100"><X size={16} /></button>
+                                </div>
+                            </div>
+                            <div className="overflow-y-auto flex-1 p-4 space-y-2">
+                                {feesBubbleModal.payments?.map((p: any) => {
+                                    const st = { pending: { label: 'Pendiente', color: 'bg-rose-50 text-rose-600 border-rose-100' }, review: { label: 'En revisión', color: 'bg-amber-50 text-amber-600 border-amber-100' }, paid: { label: 'Pagado', color: 'bg-emerald-50 text-emerald-600 border-emerald-100' } }[p.status as string] || { label: 'Pendiente', color: 'bg-rose-50 text-rose-600 border-rose-100' };
+                                    return (
+                                        <div key={p.id} className="bg-zinc-50 rounded-2xl p-3 border border-zinc-100 flex items-center gap-3">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-black text-zinc-900 uppercase leading-none truncate">{p.fee?.title}</p>
+                                                <p className="text-[10px] text-zinc-400 mt-0.5">{formatMoney(p.fee?.amount || 0)} · {p.fee?.type === 'recurring' ? `Día ${p.fee.recurring_day} c/mes` : p.fee?.due_date ? new Date(p.fee.due_date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }) : ''}</p>
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full border ${st.color}`}>{st.label}</span>
+                                                {p.proof_url && (
+                                                    <button onClick={() => setProofModalUrl(p.proof_url)}
+                                                        className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500 active:scale-95">
+                                                        <Eye size={14} />
+                                                    </button>
+                                                )}
+                                                {p.status !== 'paid' && (
+                                                    <button onClick={() => { setApprovingFeePayment(p); setSelectedFee(p.fee); setFeeApproveMethod('cash'); }}
+                                                        className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 active:scale-95">
+                                                        <CheckCircle2 size={14} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Modal aprobar pago de cuota */}
+                {approvingFeePayment && selectedFee && (
+                    <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-end justify-center p-0 animate-in fade-in duration-200" onClick={() => setApprovingFeePayment(null)}>
+                        <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom-4 duration-200" onClick={e => e.stopPropagation()}>
+                            <div className="flex justify-center mb-4"><div className="w-10 h-1.5 bg-zinc-200 rounded-full" /></div>
+                            <h3 className="text-sm font-black uppercase tracking-tighter text-zinc-900 mb-4">Aprobar Pago — {selectedFee.title}</h3>
+                            <div className="grid grid-cols-2 gap-2 mb-4">
+                                {(['cash', 'transfer'] as const).map(m => (
+                                    <button key={m} onClick={() => setFeeApproveMethod(m)}
+                                        className={`h-10 rounded-xl text-[10px] font-black uppercase border transition-all ${
+                                            feeApproveMethod === m ? 'bg-zinc-950 text-white border-zinc-950' : 'bg-zinc-50 text-zinc-400 border-zinc-100'
+                                        }`}>
+                                        {m === 'cash' ? <span className="flex items-center justify-center gap-1.5"><Banknote size={12} /> Efectivo</span> : <span className="flex items-center justify-center gap-1.5"><CreditCard size={12} /> Transferencia</span>}
+                                    </button>
+                                ))}
+                            </div>
+                            <input placeholder="Notas (opcional)" value={feeApproveNotes} onChange={e => setFeeApproveNotes(e.target.value)}
+                                className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm font-bold text-zinc-900 border border-zinc-100 outline-none mb-4" />
+                            <button onClick={handleApproveFeePayment} disabled={feeApprovingLoading}
+                                className="w-full h-12 bg-emerald-500 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 active:scale-95 disabled:opacity-40">
+                                {feeApprovingLoading ? <Loader2 className="animate-spin" size={16} /> : <><CheckCircle2 size={16} /> Confirmar Pago</>}
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
     };
 
     const renderFees = () => (
@@ -2920,7 +3098,7 @@ export default function App() {
                             </div>
                             {activeTab === 'dashboard' && renderDashboard()}
                             {activeTab === 'attendance' && renderAttendance()}
-                            {activeTab === 'payments' && (branding?.industry === 'school_treasury' ? renderFees() : renderPayments())}
+                            {activeTab === 'payments' && (branding?.industry === 'school_treasury' ? renderFeesGuardians() : renderPayments())}
                             {activeTab === 'settings' && renderSettings()}
                             {activeTab === 'profile' && renderProfile()}
                             {activeTab === 'fees' && renderFees()}
