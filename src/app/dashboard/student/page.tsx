@@ -789,7 +789,7 @@ export default function StudentDashboard() {
             <div className="flex items-center justify-between mb-4">
                 <div>
                     <h1 className="text-2xl font-black text-zinc-900 leading-tight">Hola, {guardian.name.split(' ')[0]}</h1>
-                    <p className="text-[11px] font-bold text-zinc-500 mt-1">Bienvenid@ gestiona tu asistencia y pagos 😊.</p>
+                    <p className="text-[11px] font-bold text-zinc-500 mt-1">{isSchoolTreasury ? 'Bienvenid@ gestiona tus pagos y horario 😊' : 'Bienvenid@ gestiona tu asistencia y pagos 😊.'}</p>
                 </div>
                 <div className="w-14 h-14 bg-white rounded-full border-2 border-zinc-50 shadow-md flex items-center justify-center overflow-hidden shrink-0 relative p-0.5">
                     {branding?.logo ? (
