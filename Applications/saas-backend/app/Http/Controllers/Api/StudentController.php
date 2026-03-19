@@ -129,6 +129,24 @@ class StudentController extends Controller
     // Resto del CRUD...
     public function store(Request $request) {}
     public function show(string $id) {}
-    public function update(Request $request, string $id) {}
+
+    public function updateName(Request $request, $tenant, $id)
+    {
+        $tenant  = app('currentTenant');
+        $student = Student::where('tenant_id', $tenant->id)->findOrFail($id);
+
+        $user = $request->user();
+        if ($user && $user->role === 'guardian') {
+            $isAssociated = \App\Models\GuardianStudent::where('guardian_id', $user->id)
+                ->where('student_id', $student->id)->exists();
+            if (!$isAssociated) return response()->json(['error' => 'No autorizado'], 403);
+        }
+
+        $validated = $request->validate(['name' => 'required|string|max:255']);
+        $student->update(['name' => $validated['name']]);
+
+        return response()->json(['message' => 'Nombre actualizado', 'student' => $student]);
+    }
+
     public function destroy(string $id) {}
 }

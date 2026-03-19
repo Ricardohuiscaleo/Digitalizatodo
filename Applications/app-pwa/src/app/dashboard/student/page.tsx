@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
 import NotificationToast from "@/components/Notifications/NotificationToast";
-import { getProfile, markAttendanceViaQR, resumeSession, getNotifications, markAllNotificationsRead, markNotificationRead, getAppUpdates, deletePaymentProof, getExpenses, getSchedules } from "@/lib/api";
+import { getProfile, markAttendanceViaQR, resumeSession, getNotifications, markAllNotificationsRead, markNotificationRead, getAppUpdates, deletePaymentProof, getExpenses, getSchedules, updateStudentName } from "@/lib/api";
 import jsQR from "jsqr";
 import { nowCL } from "@/lib/utils";
 import BottomNav, { NavSection } from "@/components/Navigation/BottomNav";
@@ -358,6 +358,9 @@ export default function StudentDashboard() {
     const [showPushBanner, setShowPushBanner] = useState(false);
     const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
     const [showPushModal, setShowPushModal] = useState(false);
+    const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
+    const [editingStudentName, setEditingStudentName] = useState("");
+    const [savingStudentName, setSavingStudentName] = useState(false);
 
     const refreshData = useCallback(async () => {
         let token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
@@ -753,6 +756,7 @@ export default function StudentDashboard() {
     };
 
     const primaryColor = branding?.primaryColor || "#f97316";
+    const isSchoolTreasury = branding?.industry === 'school_treasury';
 
     if (loading) return (
         <div className="min-h-screen bg-stone-50 px-4 pt-6 pb-32 max-w-lg mx-auto space-y-4 animate-pulse">
@@ -1256,6 +1260,95 @@ export default function StudentDashboard() {
             </div>
 
             <div className="space-y-4">
+
+                {/* Mis hijos */}
+                {students.length > 0 && (
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-2 px-1">
+                            <div className="w-1 h-4 rounded-full" style={{ backgroundColor: primaryColor }} />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Mis hijos</span>
+                        </div>
+                        {students.map((s: any) => (
+                            <div key={s.id} className="bg-white border border-zinc-100 rounded-3xl p-4 flex items-center gap-4 shadow-sm">
+                                <button
+                                    type="button"
+                                    className="w-14 h-14 rounded-full overflow-hidden bg-zinc-100 shrink-0 border-2 border-zinc-50 shadow-sm relative"
+                                    onClick={() => { studentForPhotoRef.current = s.id; profileFileInputRef.current?.click(); }}
+                                >
+                                    {studentPhotoLoadingId === s.id ? (
+                                        <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                                            <Loader2 className="animate-spin text-orange-500" size={16} />
+                                        </div>
+                                    ) : s.photo ? (
+                                        <img src={s.photo} alt={s.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-xl font-black text-zinc-300">
+                                            {s.name[0]}
+                                        </div>
+                                    )}
+                                    <div className="absolute bottom-0 right-0 w-5 h-5 bg-white rounded-full shadow flex items-center justify-center border border-zinc-100">
+                                        <Camera className="w-3 h-3 text-zinc-400" />
+                                    </div>
+                                </button>
+                                <div className="flex-1 min-w-0">
+                                    {editingStudentId === s.id ? (
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                autoFocus
+                                                value={editingStudentName}
+                                                onChange={e => setEditingStudentName(e.target.value)}
+                                                onKeyDown={async e => {
+                                                    if (e.key === 'Enter') {
+                                                        setSavingStudentName(true);
+                                                        const tk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
+                                                        const slug = localStorage.getItem('tenant_slug') || '';
+                                                        await updateStudentName(slug, tk, s.id, editingStudentName);
+                                                        setSavingStudentName(false);
+                                                        setEditingStudentId(null);
+                                                        refreshData();
+                                                    } else if (e.key === 'Escape') {
+                                                        setEditingStudentId(null);
+                                                    }
+                                                }}
+                                                className="flex-1 text-sm font-black text-zinc-900 bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-1.5 outline-none focus:border-orange-400"
+                                            />
+                                            <button
+                                                disabled={savingStudentName}
+                                                onClick={async () => {
+                                                    setSavingStudentName(true);
+                                                    const tk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
+                                                    const slug = localStorage.getItem('tenant_slug') || '';
+                                                    await updateStudentName(slug, tk, s.id, editingStudentName);
+                                                    setSavingStudentName(false);
+                                                    setEditingStudentId(null);
+                                                    refreshData();
+                                                }}
+                                                className="w-8 h-8 bg-orange-500 text-white rounded-xl flex items-center justify-center shrink-0 active:scale-90 transition-transform"
+                                            >
+                                                {savingStudentName ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                                            </button>
+                                            <button onClick={() => setEditingStudentId(null)} className="w-8 h-8 bg-zinc-100 text-zinc-400 rounded-xl flex items-center justify-center shrink-0">
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-sm font-black text-zinc-900 truncate">{s.name}</p>
+                                            <button
+                                                onClick={() => { setEditingStudentId(s.id); setEditingStudentName(s.name); }}
+                                                className="w-6 h-6 bg-zinc-100 text-zinc-400 rounded-lg flex items-center justify-center shrink-0 hover:bg-zinc-200 transition-colors"
+                                            >
+                                                <Settings size={12} />
+                                            </button>
+                                        </div>
+                                    )}
+                                    <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider mt-0.5">{s.category}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 <div className="bg-white border border-zinc-100 rounded-3xl p-2">
                     <button className="w-full flex items-center justify-between p-4 hover:bg-stone-50 rounded-2xl transition-all group">
                         <div className="flex items-center gap-4">
