@@ -874,6 +874,57 @@ export default function StudentDashboard() {
                 </div>
             ))}
 
+            {/* Status cuotas — school_treasury */}
+            {branding?.industry === 'school_treasury' && (() => {
+                const allPeriods = myFees.flatMap((fd: any) => fd.periods || []);
+                const hasReview  = allPeriods.some((p: any) => p.status === 'review');
+                const hasPending = allPeriods.some((p: any) => p.status === 'pending');
+                const nextDue    = myFees.flatMap((fd: any) =>
+                    (fd.periods || []).filter((p: any) => p.status === 'pending')
+                        .map((p: any) => ({ ...p, amount: fd.fee.amount, title: fd.fee.title }))
+                ).sort((a: any, b: any) => a.year !== b.year ? a.year - b.year : a.month - b.month)[0];
+
+                if (hasReview) return (
+                    <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-[2.5rem] p-5 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden">
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-2 mb-1">
+                                <RefreshCw size={11} className="animate-[spin_3s_linear_infinite]" />
+                                <p className="text-[10px] font-black uppercase tracking-widest opacity-90">Comprobante en revisión</p>
+                            </div>
+                            <h2 className="text-xl font-black mb-1">Pago enviado</h2>
+                            <p className="text-xs opacity-80 mb-3">Te notificaremos cuando sea aprobado 🔔</p>
+                            <button onClick={() => setActiveSection('payments')} className="bg-white/20 border border-white/30 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                                Ver cuotas <ChevronRight size={13} />
+                            </button>
+                        </div>
+                        <CreditCard className="absolute -right-4 -bottom-4 w-28 h-28 opacity-10 -rotate-12" />
+                    </div>
+                );
+                if (hasPending && nextDue) return (
+                    <div className="bg-gradient-to-br from-red-500 to-orange-600 rounded-[2.5rem] p-5 text-white shadow-xl shadow-red-500/20 relative overflow-hidden">
+                        <div className="relative z-10">
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Cuota pendiente</p>
+                            <h2 className="text-2xl font-black mb-0.5">${Number(nextDue.amount).toLocaleString('es-CL')}</h2>
+                            <p className="text-xs opacity-70 mb-3">{nextDue.title} · {['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][nextDue.month - 1]} {nextDue.year}</p>
+                            <button onClick={() => setActiveSection('payments')} className="bg-white/20 border border-white/30 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                                Pagar ahora <ChevronRight size={13} />
+                            </button>
+                        </div>
+                        <CreditCard className="absolute -right-4 -bottom-4 w-28 h-28 opacity-10 -rotate-12" />
+                    </div>
+                );
+                return (
+                    <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-[2.5rem] p-5 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden">
+                        <div className="relative z-10">
+                            <CheckCircle2 className="w-7 h-7 mb-2" />
+                            <h2 className="text-xl font-black">¡Estás al día!</h2>
+                            <p className="text-xs opacity-80 mt-1">No tienes cuotas pendientes.</p>
+                        </div>
+                        <CreditCard className="absolute -right-4 -bottom-4 w-28 h-28 opacity-5 -rotate-12" />
+                    </div>
+                );
+            })()}
+
             {/* Horario del día — school_treasury */}
             {branding?.industry === 'school_treasury' && (
                 <TodaySchedule schedules={schedulesList} primaryColor={primaryColor} />
