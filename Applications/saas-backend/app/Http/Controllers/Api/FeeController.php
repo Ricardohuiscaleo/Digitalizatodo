@@ -193,19 +193,14 @@ class FeeController extends Controller
     // POST /fees/{id}/upload-proof — apoderado sube comprobante
     public function uploadProof(Request $request, $tenant, $id)
     {
-        $tenant = app('currentTenant');
-        $user   = $request->user();
+        $tenant   = app('currentTenant');
+        $guardian = $request->user();
 
         $request->validate([
             'proof' => 'required|image|mimes:jpeg,png,jpg,webp,heic|max:20480',
         ]);
 
-        // Buscar el guardian del usuario autenticado
-        $guardian = Guardian::where('tenant_id', $tenant->id)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if (!$guardian) {
+        if (!$guardian instanceof Guardian) {
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
@@ -237,13 +232,10 @@ class FeeController extends Controller
     // GET /fees/my — apoderado ve sus cuotas con períodos calculados
     public function myFees(Request $request)
     {
-        $tenant  = app('currentTenant');
-        $user    = $request->user();
+        $tenant   = app('currentTenant');
+        $guardian = $request->user();
 
-        $guardian = $user instanceof Guardian ? $user
-            : Guardian::where('tenant_id', $tenant->id)->where('user_id', $user->id)->first();
-
-        if (!$guardian) return response()->json(['fees' => []]);
+        if (!$guardian instanceof Guardian) return response()->json(['fees' => []]);
 
         $fees = Fee::where('tenant_id', $tenant->id)->get();
         $result = [];
@@ -289,13 +281,10 @@ class FeeController extends Controller
     // POST /fees/submit-payment — apoderado paga uno o varios períodos de una o varias fees
     public function submitPayment(Request $request)
     {
-        $tenant  = app('currentTenant');
-        $user    = $request->user();
+        $tenant   = app('currentTenant');
+        $guardian = $request->user();
 
-        $guardian = $user instanceof Guardian ? $user
-            : Guardian::where('tenant_id', $tenant->id)->where('user_id', $user->id)->first();
-
-        if (!$guardian) return response()->json(['message' => 'No autorizado'], 403);
+        if (!$guardian instanceof Guardian) return response()->json(['message' => 'No autorizado'], 403);
 
         $request->validate([
             'proof'           => 'required|image|mimes:jpeg,png,jpg,webp,heic|max:20480',
@@ -378,7 +367,7 @@ class FeeController extends Controller
             $periods[] = [
                 'month'    => $month,
                 'year'     => $year,
-                'due_date' => sprintf('%04d-%02d-%02d', $year, $month, min($day, cal_days_in_month(CAL_GREGORIAN, $month, $year))),
+                'due_date' => sprintf('%04d-%02d-%02d', $year, $month, min($day, (int) date('t', mktime(0, 0, 0, $month, 1, $year)))),
                 'label'    => $current->format('M Y'),
             ];
             $current->modify('+1 month');

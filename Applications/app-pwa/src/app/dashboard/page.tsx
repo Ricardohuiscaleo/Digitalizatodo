@@ -564,7 +564,7 @@ export default function App() {
     const [feePayments, setFeePayments] = useState<any[]>([]);
     const [feeDetailLoading, setFeeDetailLoading] = useState(false);
     const [feeProofUrl, setFeeProofUrl] = useState<string | null>(null);
-    const [feeForm, setFeeForm] = useState({ title: '', description: '', amount: '', due_date: '', target: 'all', type: 'once', recurring_day: '' });
+    const [feeForm, setFeeForm] = useState({ title: '', description: '', amount: '', due_date: '', target: 'all', type: 'once', recurring_day: '', start_month: '', start_year: '', end_month: '', end_year: '' });
     const [feeSubmitting, setFeeSubmitting] = useState(false);
     const [feeFormError, setFeeFormError] = useState('');
     const [approvingFeePayment, setApprovingFeePayment] = useState<any>(null);
@@ -1221,16 +1221,21 @@ export default function App() {
         if (feeForm.type === 'once' && !feeForm.due_date) { setFeeFormError('La fecha límite es requerida'); return; }
         if (feeForm.type === 'recurring' && !feeForm.recurring_day) { setFeeFormError('Indica el día del mes'); return; }
         setFeeSubmitting(true); setFeeFormError('');
+        const startDate = feeForm.type === 'recurring' && feeForm.start_month && feeForm.start_year
+            ? `${feeForm.start_year}-${String(feeForm.start_month).padStart(2,'0')}-01` : undefined;
+        const endDate = feeForm.type === 'recurring' && feeForm.end_month && feeForm.end_year
+            ? `${feeForm.end_year}-${String(feeForm.end_month).padStart(2,'0')}-28` : undefined;
         const result = await createFee(branding?.slug || '', token || '', {
                 ...feeForm,
                 amount: parseFloat(feeForm.amount),
                 recurring_day: feeForm.type === 'recurring' ? parseInt(feeForm.recurring_day) : undefined,
-                due_date: feeForm.type === 'once' ? feeForm.due_date : undefined,
+                due_date: feeForm.type === 'once' ? feeForm.due_date : startDate,
+                end_date: endDate,
             });
         setFeeSubmitting(false);
         if (result?.fee) {
             setShowCreateFee(false);
-            setFeeForm({ title: '', description: '', amount: '', due_date: '', target: 'all', type: 'once', recurring_day: '' });
+            setFeeForm({ title: '', description: '', amount: '', due_date: '', target: 'all', type: 'once', recurring_day: '', start_month: '', start_year: '', end_month: '', end_year: '' });
             loadFees();
         } else {
             setFeeFormError(result?.message || 'Error al crear cuota');
@@ -1518,7 +1523,7 @@ export default function App() {
                             <div className="grid grid-cols-2 gap-2">
                                 {(['once', 'recurring'] as const).map(t => (
                                     <button key={t} type="button"
-                                        onClick={() => setFeeForm({ ...feeForm, type: t, due_date: '', recurring_day: '' })}
+                                        onClick={() => setFeeForm({ ...feeForm, type: t, due_date: '', recurring_day: '', start_month: '', start_year: '', end_month: '', end_year: '' })}
                                         className={`h-10 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
                                             feeForm.type === t
                                                 ? 'bg-zinc-950 text-white border-zinc-950'
@@ -1565,10 +1570,39 @@ export default function App() {
                                 </div>
                             </div>
 
-                            {feeForm.type === 'recurring' && feeForm.recurring_day && (
-                                <p className="text-[10px] text-zinc-400 bg-zinc-50 rounded-xl px-3 py-2 border border-zinc-100 flex items-center gap-1.5">
-                                    <RefreshCw size={10} /> Se cobrará el <strong>día {feeForm.recurring_day}</strong> de cada mes.
-                                </p>
+                            {feeForm.type === 'recurring' && (
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="text-[9px] font-black uppercase text-zinc-400 ml-1">Desde (mes/año)</label>
+                                        <div className="grid grid-cols-2 gap-1 mt-1">
+                                            <select value={feeForm.start_month} onChange={e => setFeeForm({ ...feeForm, start_month: e.target.value })}
+                                                className="h-11 bg-zinc-50 rounded-xl px-2 text-sm font-bold text-zinc-900 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950">
+                                                <option value="">Mes</option>
+                                                {['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'].map((m,i) => <option key={i+1} value={i+1}>{m}</option>)}
+                                            </select>
+                                            <select value={feeForm.start_year} onChange={e => setFeeForm({ ...feeForm, start_year: e.target.value })}
+                                                className="h-11 bg-zinc-50 rounded-xl px-2 text-sm font-bold text-zinc-900 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950">
+                                                <option value="">Año</option>
+                                                {[2024,2025,2026,2027].map(y => <option key={y} value={y}>{y}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-[9px] font-black uppercase text-zinc-400 ml-1">Hasta (mes/año)</label>
+                                        <div className="grid grid-cols-2 gap-1 mt-1">
+                                            <select value={feeForm.end_month} onChange={e => setFeeForm({ ...feeForm, end_month: e.target.value })}
+                                                className="h-11 bg-zinc-50 rounded-xl px-2 text-sm font-bold text-zinc-900 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950">
+                                                <option value="">Mes</option>
+                                                {['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'].map((m,i) => <option key={i+1} value={i+1}>{m}</option>)}
+                                            </select>
+                                            <select value={feeForm.end_year} onChange={e => setFeeForm({ ...feeForm, end_year: e.target.value })}
+                                                className="h-11 bg-zinc-50 rounded-xl px-2 text-sm font-bold text-zinc-900 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950">
+                                                <option value="">Año</option>
+                                                {[2024,2025,2026,2027].map(y => <option key={y} value={y}>{y}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
                             )}
 
                             <button type="submit" disabled={feeSubmitting}
@@ -2823,16 +2857,7 @@ export default function App() {
                     <button onClick={() => changeTab('fees')} className="w-full flex items-center justify-between p-4 hover:bg-stone-50 rounded-2xl transition-all group">
                         <div className="flex items-center gap-4">
                             <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400 group-hover:text-zinc-700 transition-colors"><DollarSign size={20} /></div>
-                            <span className="font-black text-sm text-zinc-700">Cuotas</span>
-                        </div>
-                        <ChevronRight size={18} className="text-zinc-300" />
-                    </button>
-                )}
-                {branding?.industry === 'school_treasury' && (
-                    <button onClick={() => changeTab('expenses')} className="w-full flex items-center justify-between p-4 hover:bg-stone-50 rounded-2xl transition-all group">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400 group-hover:text-zinc-700 transition-colors"><ShoppingCart size={20} /></div>
-                            <span className="font-black text-sm text-zinc-700">Compras</span>
+                            <span className="font-black text-sm text-zinc-700">Crear cuotas</span>
                         </div>
                         <ChevronRight size={18} className="text-zinc-300" />
                     </button>
@@ -2840,26 +2865,39 @@ export default function App() {
             </div>
 
             {/* Changelog */}
-            <div className="space-y-3">
-                <div className="flex items-center gap-2 px-1">
-                    <Sparkles size={14} className="text-zinc-300" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Actualizaciones</span>
-                </div>
-                <div className="max-h-[340px] overflow-y-auto space-y-2 pr-1">
-                    {appUpdates.length > 0 ? appUpdates.map((u: any) => (
-                        <div key={u.id} className="bg-white border border-zinc-100 rounded-2xl p-4">
-                            <div className="flex items-center justify-between mb-1">
-                                <span className="text-[9px] font-black bg-zinc-900 text-white px-2 py-0.5 rounded-full">v{u.version}</span>
-                                <span className="text-[8px] font-bold text-zinc-300">{u.published_at}</span>
+            {(() => {
+                const [updatesOpen, setUpdatesOpen] = React.useState(false);
+                return (
+                    <div className="bg-white border border-zinc-100 rounded-3xl overflow-hidden">
+                        <button onClick={() => setUpdatesOpen(v => !v)} className="w-full flex items-center justify-between p-4 hover:bg-stone-50 transition-all">
+                            <div className="flex items-center gap-3">
+                                <Sparkles size={16} className="text-zinc-400" />
+                                <span className="font-black text-sm text-zinc-700">Actualizaciones</span>
+                                {appUpdates.length > 0 && (
+                                    <span className="text-[9px] font-black bg-zinc-900 text-white px-2 py-0.5 rounded-full">{appUpdates.length}</span>
+                                )}
                             </div>
-                            <h4 className="text-sm font-black text-zinc-800 mt-2">{u.title}</h4>
-                            <p className="text-xs text-zinc-400 mt-1 leading-relaxed whitespace-pre-wrap">{u.description}</p>
-                        </div>
-                    )) : (
-                        <p className="text-xs text-zinc-300 text-center py-4">Sin actualizaciones</p>
-                    )}
-                </div>
-            </div>
+                            <ChevronRight size={18} className={`text-zinc-300 transition-transform ${updatesOpen ? 'rotate-90' : ''}`} />
+                        </button>
+                        {updatesOpen && (
+                            <div className="max-h-[240px] overflow-y-auto space-y-2 px-4 pb-4">
+                                {appUpdates.length > 0 ? appUpdates.slice(0, 3).map((u: any) => (
+                                    <div key={u.id} className="bg-zinc-50 border border-zinc-100 rounded-2xl p-3">
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="text-[9px] font-black bg-zinc-900 text-white px-2 py-0.5 rounded-full">v{u.version}</span>
+                                            <span className="text-[8px] font-bold text-zinc-300">{u.published_at}</span>
+                                        </div>
+                                        <h4 className="text-sm font-black text-zinc-800 mt-1">{u.title}</h4>
+                                        <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed whitespace-pre-wrap">{u.description}</p>
+                                    </div>
+                                )) : (
+                                    <p className="text-xs text-zinc-300 text-center py-4">Sin actualizaciones</p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                );
+            })()}
 
             {/* Logout */}
             <button
