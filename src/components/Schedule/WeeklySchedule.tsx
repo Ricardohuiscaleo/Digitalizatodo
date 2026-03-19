@@ -13,6 +13,35 @@ const DAY_COLORS = [
 ];
 const DAY_INDEX = [1, 2, 3, 4, 5];
 
+// Paleta estándar chilena + extras
+const SUBJECT_COLORS: { label: string; hex: string; bg: string; text: string }[] = [
+    { label: "Lenguaje",   hex: "#ef4444", bg: "bg-red-500",    text: "text-white" },
+    { label: "Matemáticas",hex: "#3b82f6", bg: "bg-blue-500",   text: "text-white" },
+    { label: "Ciencias",   hex: "#22c55e", bg: "bg-green-500",  text: "text-white" },
+    { label: "Historia",   hex: "#eab308", bg: "bg-yellow-400", text: "text-yellow-900" },
+    { label: "Inglés",     hex: "#a855f7", bg: "bg-purple-500", text: "text-white" },
+    { label: "Religión",   hex: "#7dd3fc", bg: "bg-sky-300",    text: "text-sky-900" },
+    { label: "Artes",      hex: "#f9fafb", bg: "bg-zinc-100",   text: "text-zinc-700" },
+    { label: "Tecnología", hex: "#92400e", bg: "bg-amber-800",  text: "text-white" },
+    { label: "Ed. Física", hex: "#ec4899", bg: "bg-pink-500",   text: "text-white" },
+    { label: "Música",     hex: "#f97316", bg: "bg-orange-500", text: "text-white" },
+    { label: "Otro",       hex: "#71717a", bg: "bg-zinc-500",   text: "text-white" },
+];
+
+const getColorStyle = (hex?: string | null) => {
+    if (!hex) return { backgroundColor: "#f4f4f5", color: "#52525b" };
+    return { backgroundColor: hex, color: getContrastColor(hex) };
+};
+
+// Contraste simple blanco/negro
+function getContrastColor(hex: string): string {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.55 ? "#1a1a1a" : "#ffffff";
+}
+
 export interface ScheduleEntry {
     id: number;
     day_of_week: number;
@@ -20,6 +49,7 @@ export interface ScheduleEntry {
     end_time: string;
     subject: string | null;
     name: string | null;
+    color?: string | null;
 }
 
 interface Props {
@@ -30,14 +60,7 @@ interface Props {
     onDelete?: (id: number) => Promise<void>;
 }
 
-// "14:00:00" → "14:00"
 const fmtTime = (t: string) => t.slice(0, 5);
-
-// "14:00:00|14:45:00" → "14:00\n14:45"
-const fmtSlotCompact = (slot: string) => {
-    const [s, e] = slot.split("|");
-    return `${fmtTime(s)}\n${fmtTime(e)}`;
-};
 
 function timeSlots(schedules: ScheduleEntry[]): string[] {
     const slots = new Set<string>();
@@ -50,13 +73,14 @@ interface CellModalProps {
     slot: string;
     existing: ScheduleEntry | undefined;
     editable: boolean;
-    onSave: (value: string) => Promise<void>;
+    onSave: (value: string, color: string) => Promise<void>;
     onDelete: () => Promise<void>;
     onClose: () => void;
 }
 
 function CellModal({ day, slot, existing, editable, onSave, onDelete, onClose }: CellModalProps) {
     const [value, setValue] = useState(existing?.subject || "");
+    const [color, setColor] = useState(existing?.color || SUBJECT_COLORS[10].hex);
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [start, end] = slot.split("|");
@@ -64,7 +88,7 @@ function CellModal({ day, slot, existing, editable, onSave, onDelete, onClose }:
 
     const handleSave = async () => {
         setSaving(true);
-        await onSave(value);
+        await onSave(value, color);
         setSaving(false);
         onClose();
     };
@@ -85,12 +109,10 @@ function CellModal({ day, slot, existing, editable, onSave, onDelete, onClose }:
                 className="bg-white w-full max-w-sm rounded-t-[2rem] pb-10 shadow-2xl animate-in slide-in-from-bottom-4 duration-200"
                 onClick={e => e.stopPropagation()}
             >
-                {/* Handle */}
                 <div className="flex justify-center pt-4 pb-3">
                     <div className="w-10 h-1.5 bg-zinc-200 rounded-full" />
                 </div>
 
-                {/* Header */}
                 <div className="px-6 pb-4 border-b border-zinc-100">
                     <div className="flex items-center justify-between">
                         <div>
@@ -123,6 +145,33 @@ function CellModal({ day, slot, existing, editable, onSave, onDelete, onClose }:
                             />
                         </div>
 
+                        {/* Color picker */}
+                        <div>
+                            <label className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-2 block">
+                                Color de asignatura
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                                {SUBJECT_COLORS.map(c => (
+                                    <button
+                                        key={c.hex}
+                                        onClick={() => setColor(c.hex)}
+                                        title={c.label}
+                                        className={`w-8 h-8 rounded-full border-2 transition-all active:scale-90 ${
+                                            color === c.hex ? "border-zinc-950 scale-110 shadow-md" : "border-transparent"
+                                        }`}
+                                        style={{ backgroundColor: c.hex }}
+                                    />
+                                ))}
+                            </div>
+                            {/* Preview */}
+                            <div
+                                className="mt-3 h-9 rounded-xl flex items-center justify-center text-[10px] font-black uppercase tracking-widest transition-all"
+                                style={getColorStyle(color)}
+                            >
+                                {value || "ASIGNATURA"}
+                            </div>
+                        </div>
+
                         <div className="flex gap-2">
                             {existing && (
                                 <button
@@ -145,9 +194,12 @@ function CellModal({ day, slot, existing, editable, onSave, onDelete, onClose }:
                     </div>
                 ) : (
                     <div className="px-6 pt-5">
-                        <p className="text-sm text-zinc-500 font-bold">
-                            {existing?.subject || "Sin asignatura asignada"}
-                        </p>
+                        <div
+                            className="h-10 rounded-xl flex items-center justify-center text-[11px] font-black uppercase tracking-widest"
+                            style={getColorStyle(existing?.color)}
+                        >
+                            {existing?.subject || "Sin asignatura"}
+                        </div>
                     </div>
                 )}
             </div>
@@ -170,14 +222,14 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
         return schedules.find(s => s.day_of_week === day && s.start_time === start && s.end_time === end);
     };
 
-    const handleCellSave = async (value: string) => {
+    const handleCellSave = async (value: string, color: string) => {
         if (!modalCell) return;
         const [start, end] = modalCell.slot.split("|");
         const existing = getCell(modalCell.day, modalCell.slot);
         if (existing) {
-            await onUpdate?.(existing.id, { subject: value });
+            await onUpdate?.(existing.id, { subject: value, color });
         } else if (value.trim()) {
-            await onSave?.({ day_of_week: modalCell.day, start_time: start, end_time: end, subject: value, name: null });
+            await onSave?.({ day_of_week: modalCell.day, start_time: start, end_time: end, subject: value, color, name: null });
         }
     };
 
@@ -191,7 +243,7 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
         if (!newStart || !newEnd) return;
         setAddSaving(true);
         for (const day of DAY_INDEX) {
-            await onSave?.({ day_of_week: day, start_time: newStart, end_time: newEnd, subject: "", name: null });
+            await onSave?.({ day_of_week: day, start_time: newStart, end_time: newEnd, subject: "", color: null, name: null });
         }
         setAddSaving(false);
         setShowAddRow(false);
@@ -214,7 +266,6 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
                 {/* ── DESKTOP: tabla grid ── */}
                 <div className="hidden md:block overflow-x-auto">
                     <div className="min-w-[400px]">
-                        {/* Header días */}
                         <div className="grid gap-1 mb-1" style={{ gridTemplateColumns: "56px repeat(5, 1fr)" }}>
                             <div />
                             {DAYS.map((day, i) => (
@@ -226,10 +277,13 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
 
                         {slots.map(slot => (
                             <div key={slot} className="grid gap-1 mb-1 group/row" style={{ gridTemplateColumns: "56px repeat(5, 1fr)" }}>
-                                {/* Hora compacta */}
                                 <div className="flex flex-col items-center justify-center gap-0.5 relative">
-                                    <span className="text-[9px] font-black text-zinc-500 text-center leading-tight whitespace-pre-line">
-                                        {fmtSlotCompact(slot)}
+                                    <span className="text-[9px] font-black text-zinc-500 text-center leading-tight">
+                                        {fmtTime(slot.split("|")[0])}
+                                    </span>
+                                    <div className="w-px h-2 bg-zinc-200" />
+                                    <span className="text-[9px] font-black text-zinc-400 text-center leading-tight">
+                                        {fmtTime(slot.split("|")[1])}
                                     </span>
                                     {editable && (
                                         <button
@@ -248,12 +302,13 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
                                         <div
                                             key={day}
                                             onClick={() => editable && setModalCell({ day, slot })}
-                                            className={`min-h-[36px] rounded-lg border flex items-center justify-center p-1 transition-all ${
-                                                editable ? "cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/50" : ""
-                                            } ${cell?.subject ? "bg-white border-zinc-200 shadow-sm" : "bg-zinc-50 border-zinc-100"}`}
+                                            className={`min-h-[36px] rounded-lg flex items-center justify-center p-1 transition-all border ${
+                                                editable ? "cursor-pointer hover:opacity-80" : ""
+                                            }`}
+                                            style={cell?.subject ? getColorStyle(cell.color) : { backgroundColor: "#f9fafb", borderColor: "#f4f4f5" }}
                                         >
-                                            <span className="text-[8px] font-black uppercase text-center text-zinc-700 leading-tight">
-                                                {cell?.subject || (editable ? <span className="text-zinc-200">+</span> : "–")}
+                                            <span className="text-[8px] font-black uppercase text-center leading-tight">
+                                                {cell?.subject || (editable ? <span style={{ opacity: 0.3 }}>+</span> : "–")}
                                             </span>
                                         </div>
                                     );
@@ -284,7 +339,7 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
                 </div>
 
                 {/* ── MOBILE: columnas por día ── */}
-                <div className="md:hidden space-y-3">
+                <div className="md:hidden space-y-4">
                     {slots.length === 0 ? (
                         <div className="text-center py-10 text-zinc-300">
                             <p className="text-xs font-bold">Sin bloques horarios</p>
@@ -304,18 +359,18 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
                                             <div
                                                 key={slot}
                                                 onClick={() => editable && setModalCell({ day: dayIdx, slot })}
-                                                className={`flex items-center gap-3 bg-white border border-zinc-100 rounded-2xl px-4 py-3 shadow-sm ${editable ? "cursor-pointer active:scale-[0.98] transition-transform" : ""}`}
+                                                className={`flex items-center gap-3 rounded-2xl px-4 py-3 shadow-sm border border-transparent ${editable ? "cursor-pointer active:scale-[0.98] transition-transform" : ""}`}
+                                                style={getColorStyle(cell?.color)}
                                             >
-                                                {/* Hora compacta en columna */}
                                                 <div className="flex flex-col items-center shrink-0 w-10">
-                                                    <span className="text-[10px] font-black text-zinc-500 leading-none">{fmtTime(slot.split("|")[0])}</span>
-                                                    <div className="w-px h-3 bg-zinc-200 my-0.5" />
-                                                    <span className="text-[10px] font-black text-zinc-400 leading-none">{fmtTime(slot.split("|")[1])}</span>
+                                                    <span className="text-[10px] font-black leading-none" style={{ opacity: 0.8 }}>{fmtTime(slot.split("|")[0])}</span>
+                                                    <div className="w-px h-3 my-0.5" style={{ backgroundColor: "currentColor", opacity: 0.3 }} />
+                                                    <span className="text-[10px] font-black leading-none" style={{ opacity: 0.6 }}>{fmtTime(slot.split("|")[1])}</span>
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-black uppercase text-zinc-900 truncate">{cell?.subject || "—"}</p>
+                                                    <p className="text-sm font-black uppercase truncate">{cell?.subject || "—"}</p>
                                                 </div>
-                                                {editable && <Edit2 size={14} className="text-zinc-300 shrink-0" />}
+                                                {editable && <Edit2 size={14} style={{ opacity: 0.5 }} className="shrink-0" />}
                                             </div>
                                         ))}
                                     </div>
@@ -324,7 +379,6 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
                         })
                     )}
 
-                    {/* Días sin clases — mostrar vacíos solo si hay slots */}
                     {slots.length > 0 && DAYS.map((dayName, i) => {
                         const dayIdx = DAY_INDEX[i];
                         const hasCells = slots.some(slot => getCell(dayIdx, slot)?.subject);
@@ -372,7 +426,6 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
                 </div>
             </div>
 
-            {/* Modal de edición */}
             {modalCell && (
                 <CellModal
                     day={modalCell.day}
