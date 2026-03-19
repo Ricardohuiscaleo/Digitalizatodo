@@ -876,14 +876,22 @@ export default function StudentDashboard() {
 
             {/* Status cuotas — school_treasury */}
             {branding?.industry === 'school_treasury' && (() => {
+                const today = new Date();
                 const allPeriods = myFees.flatMap((fd: any) => fd.periods || []);
                 const hasReview  = allPeriods.some((p: any) => p.status === 'review');
-                const hasPending = allPeriods.some((p: any) => p.status === 'pending');
-                const nextDue    = myFees.flatMap((fd: any) =>
-                    (fd.periods || []).filter((p: any) => p.status === 'pending')
+                const hasOverdue = allPeriods.some((p: any) =>
+                    p.status === 'pending' && p.due_date && new Date(p.due_date) < today
+                );
+                // Próximo pendiente no vencido
+                const nextPending = myFees.flatMap((fd: any) =>
+                    (fd.periods || [])
+                        .filter((p: any) => p.status === 'pending')
                         .map((p: any) => ({ ...p, amount: fd.fee.amount, title: fd.fee.title }))
                 ).sort((a: any, b: any) => a.year !== b.year ? a.year - b.year : a.month - b.month)[0];
 
+                const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+                // 1. Amarillo: comprobante en revisión
                 if (hasReview) return (
                     <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-[2.5rem] p-5 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden">
                         <div className="relative z-10">
@@ -900,12 +908,13 @@ export default function StudentDashboard() {
                         <CreditCard className="absolute -right-4 -bottom-4 w-28 h-28 opacity-10 -rotate-12" />
                     </div>
                 );
-                if (hasPending && nextDue) return (
+                // 2. Rojo: cuota vencida sin pagar (moroso)
+                if (hasOverdue && nextPending) return (
                     <div className="bg-gradient-to-br from-red-500 to-orange-600 rounded-[2.5rem] p-5 text-white shadow-xl shadow-red-500/20 relative overflow-hidden">
                         <div className="relative z-10">
-                            <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Cuota pendiente</p>
-                            <h2 className="text-2xl font-black mb-0.5">${Number(nextDue.amount).toLocaleString('es-CL')}</h2>
-                            <p className="text-xs opacity-70 mb-3">{nextDue.title} · {['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][nextDue.month - 1]} {nextDue.year}</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Cuota vencida</p>
+                            <h2 className="text-2xl font-black mb-0.5">${Number(nextPending.amount).toLocaleString('es-CL')}</h2>
+                            <p className="text-xs opacity-70 mb-3">{nextPending.title} · {MONTHS[nextPending.month - 1]} {nextPending.year}</p>
                             <button onClick={() => setActiveSection('payments')} className="bg-white/20 border border-white/30 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2">
                                 Pagar ahora <ChevronRight size={13} />
                             </button>
@@ -913,12 +922,17 @@ export default function StudentDashboard() {
                         <CreditCard className="absolute -right-4 -bottom-4 w-28 h-28 opacity-10 -rotate-12" />
                     </div>
                 );
+                // 3. Verde: al día o pendiente no vencido
                 return (
                     <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-[2.5rem] p-5 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden">
                         <div className="relative z-10">
                             <CheckCircle2 className="w-7 h-7 mb-2" />
                             <h2 className="text-xl font-black">¡Estás al día!</h2>
-                            <p className="text-xs opacity-80 mt-1">No tienes cuotas pendientes.</p>
+                            {nextPending ? (
+                                <p className="text-xs opacity-80 mt-1">Próximo vencimiento: {MONTHS[nextPending.month - 1]} {nextPending.year} · ${Number(nextPending.amount).toLocaleString('es-CL')}</p>
+                            ) : (
+                                <p className="text-xs opacity-80 mt-1">No tienes cuotas pendientes.</p>
+                            )}
                         </div>
                         <CreditCard className="absolute -right-4 -bottom-4 w-28 h-28 opacity-5 -rotate-12" />
                     </div>
@@ -1764,11 +1778,15 @@ function FeeCard({ feeData, primaryColor, onPay, onViewProof }: {
     const paid     = periods.filter((p: any) => p.status === 'paid');
     const total    = periods.length;
 
+    const today = new Date();
+    const overdue  = periods.filter((p: any) => p.status === 'pending' && p.due_date && new Date(p.due_date) < today);
     const overallStatus = paid.length === total && total > 0 ? 'paid'
-        : review.length > 0 ? 'review' : 'pending';
+        : review.length > 0 ? 'review'
+        : overdue.length > 0 ? 'overdue' : 'pending';
 
     const statusConfig: Record<string, { label: string; color: string }> = {
-        pending: { label: 'Pendiente', color: 'text-red-500 bg-red-50 border-red-200' },
+        pending: { label: 'Por vencer', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
+        overdue: { label: 'Vencida', color: 'text-red-500 bg-red-50 border-red-200' },
         review:  { label: 'En Revisión', color: 'text-yellow-600 bg-yellow-50 border-yellow-200' },
         paid:    { label: 'Al día', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
     };
@@ -1797,16 +1815,20 @@ function FeeCard({ feeData, primaryColor, onPay, onViewProof }: {
             {/* Mini progreso */}
             {total > 1 && (
                 <div className="mt-3 flex gap-1 flex-wrap">
-                    {periods.map((p: any, i: number) => (
-                        <div
-                            key={i}
-                            title={`${p.label} — ${p.status}`}
-                            className={`h-2 flex-1 min-w-[8px] rounded-full ${
-                                p.status === 'paid' ? 'bg-emerald-400' :
-                                p.status === 'review' ? 'bg-yellow-400' : 'bg-zinc-200'
-                            }`}
-                        />
-                    ))}
+                    {periods.map((p: any, i: number) => {
+                        const isOverdue = p.status === 'pending' && p.due_date && new Date(p.due_date) < today;
+                        return (
+                            <div
+                                key={i}
+                                title={`${p.label} — ${p.status}`}
+                                className={`h-2 flex-1 min-w-[8px] rounded-full ${
+                                    p.status === 'paid' ? 'bg-emerald-400' :
+                                    p.status === 'review' ? 'bg-yellow-400' :
+                                    isOverdue ? 'bg-red-400' : 'bg-zinc-200'
+                                }`}
+                            />
+                        );
+                    })}
                 </div>
             )}
         </div>
