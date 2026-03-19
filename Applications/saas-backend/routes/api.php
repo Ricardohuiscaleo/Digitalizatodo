@@ -109,8 +109,9 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
             // Gastos públicos (apoderados pueden ver)
             Route::get('expenses', [\App\Http\Controllers\Api\ExpenseController::class, 'index']);
 
-            // Cuotas — apoderado ve las suyas y sube comprobante
+            // Cuotas — apoderado ve las suyas y paga
             Route::get('fees/my', [\App\Http\Controllers\Api\FeeController::class, 'myFees']);
+            Route::post('fees/submit-payment', [\App\Http\Controllers\Api\FeeController::class, 'submitPayment']);
             Route::post('fees/{id}/upload-proof', [\App\Http\Controllers\Api\FeeController::class, 'uploadProof']);
 
             // Web Push — suscripción (requiere auth)

@@ -96,7 +96,7 @@ class FeeController extends Controller
         return response()->json(['fee' => $fee, 'payments' => $payments]);
     }
 
-    // POST /fees — tesorero crea cuota y genera fee_payments para todos los apoderados
+    // POST /fees — tesorero crea cuota (sin generar fee_payments — se crean al pagar)
     public function store(Request $request)
     {
         $tenant = app('currentTenant');
@@ -106,6 +106,7 @@ class FeeController extends Controller
             'description'   => 'nullable|string',
             'amount'        => 'required|numeric|min:0',
             'due_date'      => 'nullable|date',
+            'end_date'      => 'nullable|date',
             'type'          => 'nullable|in:once,recurring',
             'recurring_day' => 'nullable|integer|min:1|max:31',
             'target'        => 'nullable|string|in:all,custom',
@@ -123,32 +124,15 @@ class FeeController extends Controller
             'title'         => $validated['title'],
             'description'   => $validated['description'] ?? null,
             'amount'        => $validated['amount'],
-            'due_date'      => $type === 'once' ? $validated['due_date'] : null,
+            'due_date'      => $validated['due_date'] ?? null,
+            'end_date'      => $type === 'recurring' ? ($validated['end_date'] ?? null) : null,
             'target'        => $validated['target'] ?? 'all',
             'type'          => $type,
             'recurring_day' => $type === 'recurring' ? ($validated['recurring_day'] ?? null) : null,
             'created_by'    => $request->user()->id,
         ]);
 
-        // Generar fee_payments
-        if (($validated['target'] ?? 'all') === 'all') {
-            $guardians = Guardian::where('tenant_id', $tenant->id)->where('active', true)->get();
-        } else {
-            $guardians = Guardian::where('tenant_id', $tenant->id)
-                ->whereIn('id', $validated['guardian_ids'] ?? [])
-                ->get();
-        }
-
-        foreach ($guardians as $guardian) {
-            FeePayment::create([
-                'fee_id'     => $fee->id,
-                'tenant_id'  => $tenant->id,
-                'guardian_id'=> $guardian->id,
-                'status'     => 'pending',
-            ]);
-        }
-
-        return response()->json(['fee' => $fee, 'payments_created' => $guardians->count()], 201);
+        return response()->json(['fee' => $fee], 201);
     }
 
     // DELETE /fees/{id}
@@ -171,7 +155,7 @@ class FeeController extends Controller
         return response()->json(['message' => 'Cuota eliminada']);
     }
 
-    // POST /fees/{id}/approve-payment — tesorero aprueba pago (efectivo o comprobante)
+    // POST /fees/{id}/approve-payment — tesorero aprueba pago (uno o todos los períodos del guardian)
     public function approvePayment(Request $request, $tenant, $id)
     {
         $tenant = app('currentTenant');
@@ -180,22 +164,30 @@ class FeeController extends Controller
             'guardian_id'    => 'required|integer',
             'payment_method' => 'required|in:transfer,cash',
             'notes'          => 'nullable|string',
+            'payment_id'     => 'nullable|integer', // si viene, aprueba solo ese
         ]);
 
-        $payment = FeePayment::where('fee_id', $id)
+        $query = FeePayment::where('fee_id', $id)
             ->where('tenant_id', $tenant->id)
-            ->where('guardian_id', $validated['guardian_id'])
-            ->firstOrFail();
+            ->where('guardian_id', $validated['guardian_id']);
 
-        $payment->update([
-            'status'         => 'paid',
-            'payment_method' => $validated['payment_method'],
-            'paid_at'        => now(),
-            'approved_by'    => $request->user()->id,
-            'notes'          => $validated['notes'] ?? null,
-        ]);
+        if (!empty($validated['payment_id'])) {
+            $query->where('id', $validated['payment_id']);
+        }
 
-        return response()->json(['payment' => $payment]);
+        $payments = $query->get();
+
+        foreach ($payments as $payment) {
+            $payment->update([
+                'status'         => 'paid',
+                'payment_method' => $validated['payment_method'],
+                'paid_at'        => now(),
+                'approved_by'    => $request->user()->id,
+                'notes'          => $validated['notes'] ?? null,
+            ]);
+        }
+
+        return response()->json(['approved' => $payments->count()]);
     }
 
     // POST /fees/{id}/upload-proof — apoderado sube comprobante
@@ -242,31 +234,156 @@ class FeeController extends Controller
         return response()->json(['payment' => $payment]);
     }
 
-    // GET /fees/my — apoderado ve sus cuotas pendientes
+    // GET /fees/my — apoderado ve sus cuotas con períodos calculados
     public function myFees(Request $request)
     {
         $tenant  = app('currentTenant');
         $user    = $request->user();
 
-        // Guardian autentica directamente con guard guardian-api (no tiene user_id)
-        if ($user instanceof Guardian) {
-            $guardian = $user;
-        } else {
-            $guardian = Guardian::where('tenant_id', $tenant->id)
-                ->where('user_id', $user->id)
+        $guardian = $user instanceof Guardian ? $user
+            : Guardian::where('tenant_id', $tenant->id)->where('user_id', $user->id)->first();
+
+        if (!$guardian) return response()->json(['fees' => []]);
+
+        $fees = Fee::where('tenant_id', $tenant->id)->get();
+        $result = [];
+
+        foreach ($fees as $fee) {
+            $periods = $this->calculatePeriods($fee);
+            $paidPeriods = FeePayment::where('fee_id', $fee->id)
+                ->where('guardian_id', $guardian->id)
+                ->whereNotNull('period_month')
+                ->get()
+                ->keyBy(fn($p) => $p->period_year . '-' . $p->period_month);
+
+            // Para fees sin period_month (legacy), buscar el pago único
+            $legacyPayment = FeePayment::where('fee_id', $fee->id)
+                ->where('guardian_id', $guardian->id)
+                ->whereNull('period_month')
                 ->first();
+
+            $periodsWithStatus = array_map(function ($period) use ($paidPeriods, $legacyPayment) {
+                $key = $period['year'] . '-' . $period['month'];
+                $payment = $paidPeriods[$key] ?? null;
+                // Si no hay pago por período, usar legacy
+                if (!$payment && $legacyPayment) $payment = $legacyPayment;
+                return [
+                    ...$period,
+                    'status'         => $payment?->status ?? 'pending',
+                    'payment_id'     => $payment?->id,
+                    'proof_url'      => $payment?->proof_url,
+                    'payment_method' => $payment?->payment_method,
+                    'paid_at'        => $payment?->paid_at,
+                ];
+            }, $periods);
+
+            $result[] = [
+                'fee'     => $fee,
+                'periods' => $periodsWithStatus,
+            ];
         }
 
-        if (!$guardian) {
-            return response()->json(['payments' => []]);
+        return response()->json(['fees' => $result]);
+    }
+
+    // POST /fees/submit-payment — apoderado paga uno o varios períodos de una o varias fees
+    public function submitPayment(Request $request)
+    {
+        $tenant  = app('currentTenant');
+        $user    = $request->user();
+
+        $guardian = $user instanceof Guardian ? $user
+            : Guardian::where('tenant_id', $tenant->id)->where('user_id', $user->id)->first();
+
+        if (!$guardian) return response()->json(['message' => 'No autorizado'], 403);
+
+        $request->validate([
+            'proof'           => 'required|image|mimes:jpeg,png,jpg,webp,heic|max:20480',
+            'items'           => 'required|array|min:1',
+            'items.*.fee_id'  => 'required|integer',
+            'items.*.periods' => 'required|array|min:1',
+            'items.*.periods.*.month' => 'required|integer|min:1|max:12',
+            'items.*.periods.*.year'  => 'required|integer',
+        ]);
+
+        // Subir comprobante una sola vez
+        $file      = $request->file('proof');
+        $optimized = $this->imageService->optimize($file, 1200, 1200, 85);
+        $filename  = "fee_proof_bulk_{$guardian->id}_" . time() . ".webp";
+        $s3Path    = "tenants/{$tenant->id}/fees/{$filename}";
+        Storage::disk('s3')->put($s3Path, file_get_contents($optimized));
+        unlink($optimized);
+        $proofUrl = Storage::disk('s3')->url($s3Path);
+
+        $created = 0;
+        foreach ($request->items as $item) {
+            $fee = Fee::where('tenant_id', $tenant->id)->find($item['fee_id']);
+            if (!$fee) continue;
+
+            foreach ($item['periods'] as $period) {
+                // Evitar duplicados
+                $exists = FeePayment::where('fee_id', $fee->id)
+                    ->where('guardian_id', $guardian->id)
+                    ->where('period_month', $period['month'])
+                    ->where('period_year', $period['year'])
+                    ->whereIn('status', ['review', 'paid'])
+                    ->exists();
+                if ($exists) continue;
+
+                FeePayment::updateOrCreate(
+                    [
+                        'fee_id'       => $fee->id,
+                        'tenant_id'    => $tenant->id,
+                        'guardian_id'  => $guardian->id,
+                        'period_month' => $period['month'],
+                        'period_year'  => $period['year'],
+                    ],
+                    [
+                        'status'         => 'review',
+                        'payment_method' => 'transfer',
+                        'proof_url'      => $proofUrl,
+                    ]
+                );
+                $created++;
+            }
         }
 
-        $payments = FeePayment::where('tenant_id', $tenant->id)
-            ->where('guardian_id', $guardian->id)
-            ->with('fee')
-            ->orderByDesc('created_at')
-            ->get();
+        return response()->json(['created' => $created, 'proof_url' => $proofUrl]);
+    }
 
-        return response()->json(['payments' => $payments]);
+    // Helper: calcula todos los períodos de una fee recurrente
+    private function calculatePeriods(Fee $fee): array
+    {
+        if ($fee->type === 'once') {
+            return [[
+                'month'    => (int) date('m', strtotime($fee->due_date ?? now())),
+                'year'     => (int) date('Y', strtotime($fee->due_date ?? now())),
+                'due_date' => $fee->due_date,
+                'label'    => $fee->due_date ? date('M Y', strtotime($fee->due_date)) : 'Única',
+            ]];
+        }
+
+        // Recurrente: desde due_date hasta end_date
+        $start = $fee->due_date ? new \DateTime($fee->due_date) : new \DateTime('first day of this month');
+        $end   = $fee->end_date ? new \DateTime($fee->end_date) : new \DateTime('last day of december this year');
+
+        $periods = [];
+        $current = clone $start;
+        $current->modify('first day of this month');
+
+        while ($current <= $end) {
+            $month = (int) $current->format('m');
+            $year  = (int) $current->format('Y');
+            $day   = $fee->recurring_day ?? 1;
+            $periods[] = [
+                'month'    => $month,
+                'year'     => $year,
+                'due_date' => sprintf('%04d-%02d-%02d', $year, $month, min($day, cal_days_in_month(CAL_GREGORIAN, $month, $year))),
+                'label'    => $current->format('M Y'),
+            ];
+            $current->modify('+1 month');
+        }
+
+        return $periods;
     }
 }

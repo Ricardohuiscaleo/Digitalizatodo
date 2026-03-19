@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
 import NotificationToast from "@/components/Notifications/NotificationToast";
-import { getProfile, markAttendanceViaQR, resumeSession, getNotifications, markAllNotificationsRead, markNotificationRead, getAppUpdates, deletePaymentProof, getExpenses, getSchedules, updateStudentName, getMyFees, uploadFeeProof } from "@/lib/api";
+import { getProfile, markAttendanceViaQR, resumeSession, getNotifications, markAllNotificationsRead, markNotificationRead, getAppUpdates, deletePaymentProof, getExpenses, getSchedules, updateStudentName, getMyFees, submitFeePayment } from "@/lib/api";
 import { ExpenseCard } from "@/app/dashboard/expenses/page";
 import jsQR from "jsqr";
 import { nowCL } from "@/lib/utils";
@@ -363,8 +363,7 @@ export default function StudentDashboard() {
     const [editingStudentName, setEditingStudentName] = useState("");
     const [savingStudentName, setSavingStudentName] = useState(false);
     const [myFees, setMyFees] = useState<any[]>([]);
-    const [uploadingFeeProof, setUploadingFeeProof] = useState<string | null>(null);
-    const [uploadFeeSuccess, setUploadFeeSuccess] = useState<string | null>(null);
+    const [feePayModal, setFeePayModal] = useState<{ fees: any[] } | null>(null);
 
     const refreshData = useCallback(async () => {
         let token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
@@ -493,7 +492,7 @@ export default function StudentDashboard() {
         const promises: Promise<any>[] = [
             refreshData(),
             slug ? getSchedules(slug, tk).then(d => setSchedulesList(d?.schedules ?? [])) : Promise.resolve(),
-            slug && tk ? getMyFees(slug, tk).then(d => setMyFees(d?.payments ?? [])) : Promise.resolve(),
+            slug && tk ? getMyFees(slug, tk).then(d => setMyFees(d?.fees ?? [])) : Promise.resolve(),
         ];
         Promise.all(promises).then(() => setLoading(false));
     }, []);
@@ -649,19 +648,19 @@ export default function StudentDashboard() {
         }
     };
 
-    const handleUploadFeeProof = async (feeId: string, file: File) => {
-        setUploadingFeeProof(feeId);
-        const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-        const slug = localStorage.getItem("tenant_slug");
-        if (!token || !slug) return;
-        const res = await uploadFeeProof(slug, token, Number(feeId), file);
-        if (res?.payment) {
-            setUploadFeeSuccess(feeId);
-            const updated = await getMyFees(slug, token);
-            setMyFees(updated?.payments ?? []);
-            setTimeout(() => setUploadFeeSuccess(null), 2000);
+    const refreshMyFees = async () => {
+        const slug = localStorage.getItem('tenant_slug') || '';
+        const tk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
+        if (slug && tk) {
+            const d = await getMyFees(slug, tk);
+            setMyFees(d?.fees ?? []);
         }
-        setUploadingFeeProof(null);
+    };
+
+    const handleUploadFeeProof = async (feeId: string, file: File) => {
+        setUploadingPayment(feeId);
+        // handled by FeePayModal
+        setUploadingPayment(null);
     };
 
     const handleDeleteProof = async (paymentId: string) => {
@@ -1075,17 +1074,28 @@ export default function StudentDashboard() {
                                 </button>
                             )}
                         </div>
-                        {myFees.map((fp: any) => (
-                                <FeePaymentRow
-                                    key={fp.id}
-                                    feePayment={fp}
-                                    primaryColor={primaryColor}
-                                    uploading={uploadingFeeProof === String(fp.fee_id)}
-                                    uploadSuccess={uploadFeeSuccess === String(fp.fee_id)}
-                                    onUpload={(file) => handleUploadFeeProof(String(fp.fee_id), file)}
-                                    onViewProof={(url) => setProofModal({ url, canDelete: fp.status !== 'paid', paymentId: String(fp.id) })}
-                                />
-                            ))}
+                        {myFees.length > 0 && (
+                            <>
+                                <div className="flex items-center justify-between ml-2 mb-1">
+                                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Cuotas escolares</h3>
+                                    <button
+                                        onClick={() => setFeePayModal({ fees: myFees })}
+                                        className="bg-zinc-900 text-white text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full flex items-center gap-1.5"
+                                    >
+                                        <CreditCard size={10} /> Pagar cuotas
+                                    </button>
+                                </div>
+                                {myFees.map((feeData: any) => (
+                                    <FeeCard
+                                        key={feeData.fee.id}
+                                        feeData={feeData}
+                                        primaryColor={primaryColor}
+                                        onPay={() => setFeePayModal({ fees: [feeData] })}
+                                        onViewProof={(url) => setProofModal({ url, canDelete: false, paymentId: '0' })}
+                                    />
+                                ))}
+                            </>
+                        )}
                         {students.flatMap((s: any) => s.payments || []).map((payment: any) => (
                             <PaymentRow
                                 key={payment.id}
@@ -1601,6 +1611,14 @@ export default function StudentDashboard() {
                 />
             )}
 
+            {feePayModal && (
+                <FeePayModal
+                    fees={feePayModal.fees}
+                    onClose={() => setFeePayModal(null)}
+                    onSuccess={refreshMyFees}
+                />
+            )}
+
             {proofModal && (
                 <ProofModal
                     url={proofModal.url}
@@ -1682,65 +1700,242 @@ export default function StudentDashboard() {
     );
 }
 
-/* ─── Fee Payment Row Component ─── */
-function FeePaymentRow({
-    feePayment,
-    primaryColor,
-    uploading,
-    uploadSuccess,
-    onUpload,
-    onViewProof,
-}: {
-    feePayment: any;
-    primaryColor: string;
-    uploading: boolean;
-    uploadSuccess: boolean;
-    onUpload: (file: File) => void;
+/* ─── Fee Card Component ─── */
+function FeeCard({ feeData, primaryColor, onPay, onViewProof }: {
+    feeData: any; primaryColor: string;
+    onPay: () => void;
     onViewProof: (url: string) => void;
 }) {
-    const fileRef = useRef<HTMLInputElement>(null);
-    const fee = feePayment.fee;
+    const fee = feeData.fee;
+    const periods: any[] = feeData.periods || [];
+    const pending  = periods.filter((p: any) => p.status === 'pending');
+    const review   = periods.filter((p: any) => p.status === 'review');
+    const paid     = periods.filter((p: any) => p.status === 'paid');
+    const total    = periods.length;
+
+    const overallStatus = paid.length === total && total > 0 ? 'paid'
+        : review.length > 0 ? 'review' : 'pending';
+
     const statusConfig: Record<string, { label: string; color: string }> = {
-        pending: { label: "Pendiente", color: "text-red-500 bg-red-50 border-red-200" },
-        review:  { label: "En Revisión", color: "text-yellow-600 bg-yellow-50 border-yellow-200" },
-        paid:    { label: "Pagado", color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+        pending: { label: 'Pendiente', color: 'text-red-500 bg-red-50 border-red-200' },
+        review:  { label: 'En Revisión', color: 'text-yellow-600 bg-yellow-50 border-yellow-200' },
+        paid:    { label: 'Al día', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
     };
-    const sc = statusConfig[feePayment.status] || statusConfig.pending;
-    const dueLabel = fee?.type === 'recurring' && fee?.recurring_day
-        ? `Día ${fee.recurring_day} c/mes`
-        : fee?.due_date ? new Date(fee.due_date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }) : '—';
+    const sc = statusConfig[overallStatus];
 
     return (
         <div className="bg-white border border-zinc-100 rounded-2xl p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                    <p className="text-sm font-black text-zinc-900">{fee?.title || 'Cuota'}</p>
+                    <p className="text-sm font-black text-zinc-900">{fee.title}</p>
                     <p className="text-[10px] text-zinc-400 font-bold">
-                        ${Number(fee?.amount || 0).toLocaleString('es-CL')} · {fee?.type === 'recurring' && <RefreshCw size={9} className="inline mb-0.5" />} {dueLabel}
+                        ${Number(fee.amount).toLocaleString('es-CL')}/mes
+                        {fee.type === 'recurring' && fee.recurring_day && ` · Día ${fee.recurring_day}`}
+                        {total > 0 && ` · ${paid.length}/${total} pagados`}
                     </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                     <span className={`text-[9px] border rounded-full px-2 py-0.5 font-black uppercase shadow-sm ${sc.color}`}>{sc.label}</span>
-                    {uploadSuccess && <CheckCircle2 className="w-6 h-6 text-emerald-500 animate-in zoom-in duration-300" />}
-                    {feePayment.status === 'pending' && !uploadSuccess && (
-                        <>
-                            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onUpload(f); }} />
-                            <button
-                                onClick={() => fileRef.current?.click()}
-                                disabled={uploading}
-                                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider bg-zinc-900 text-white rounded-xl px-4 py-2 hover:bg-zinc-800 transition-all disabled:opacity-50"
-                            >
-                                {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
-                                {uploading ? '...' : 'Pagar'}
-                            </button>
-                        </>
-                    )}
-                    {feePayment.proof_url && feePayment.status !== 'pending' && (
-                        <button onClick={() => onViewProof(feePayment.proof_url)} className="w-10 h-10 flex items-center justify-center bg-zinc-900 text-white rounded-xl hover:bg-orange-500 transition-all">
-                            <Eye size={18} />
+                    {overallStatus !== 'paid' && (
+                        <button onClick={onPay} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider bg-zinc-900 text-white rounded-xl px-3 py-2">
+                            <CreditCard size={11} /> Pagar
                         </button>
                     )}
                 </div>
+            </div>
+            {/* Mini progreso */}
+            {total > 1 && (
+                <div className="mt-3 flex gap-1 flex-wrap">
+                    {periods.map((p: any, i: number) => (
+                        <div
+                            key={i}
+                            title={`${p.label} — ${p.status}`}
+                            className={`h-2 flex-1 min-w-[8px] rounded-full ${
+                                p.status === 'paid' ? 'bg-emerald-400' :
+                                p.status === 'review' ? 'bg-yellow-400' : 'bg-zinc-200'
+                            }`}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+/* ─── Fee Pay Modal ─── */
+function FeePayModal({ fees, onClose, onSuccess }: {
+    fees: any[];
+    onClose: () => void;
+    onSuccess: () => void;
+}) {
+    // Estado: { [feeId]: Set<'year-month'> }
+    const [selected, setSelected] = useState<Record<number, Set<string>>>(() => {
+        const init: Record<number, Set<string>> = {};
+        fees.forEach(fd => {
+            const pending = (fd.periods || []).filter((p: any) => p.status === 'pending');
+            // Por defecto seleccionar solo el primer mes pendiente
+            init[fd.fee.id] = pending.length > 0 ? new Set([`${pending[0].year}-${pending[0].month}`]) : new Set();
+        });
+        return init;
+    });
+    const [proofFile, setProofFile] = useState<File | null>(null);
+    const [submitting, setSubmitting] = useState(false);
+    const [success, setSuccess] = useState(false);
+    const fileRef = useRef<HTMLInputElement>(null);
+
+    const togglePeriod = (feeId: number, key: string, periods: any[]) => {
+        setSelected(prev => {
+            const set = new Set(prev[feeId] || []);
+            // Regla: solo períodos consecutivos desde el primero pendiente
+            const pendingKeys = periods
+                .filter((p: any) => p.status === 'pending')
+                .map((p: any) => `${p.year}-${p.month}`);
+            const idx = pendingKeys.indexOf(key);
+            if (idx === -1) return prev;
+            // Seleccionar/deseleccionar hasta ese índice
+            const newSet = new Set<string>();
+            if (set.has(key) && [...set].pop() === key) {
+                // Deseleccionar el último
+                pendingKeys.slice(0, idx).forEach(k => newSet.add(k));
+            } else {
+                // Seleccionar hasta este
+                pendingKeys.slice(0, idx + 1).forEach(k => newSet.add(k));
+            }
+            return { ...prev, [feeId]: newSet };
+        });
+    };
+
+    const selectAll = (feeId: number, periods: any[]) => {
+        const pendingKeys = periods
+            .filter((p: any) => p.status === 'pending')
+            .map((p: any) => `${p.year}-${p.month}`);
+        setSelected(prev => ({ ...prev, [feeId]: new Set(pendingKeys) }));
+    };
+
+    const totalAmount = fees.reduce((sum, fd) => {
+        const count = (selected[fd.fee.id] || new Set()).size;
+        return sum + count * Number(fd.fee.amount);
+    }, 0);
+
+    const totalPeriods = fees.reduce((sum, fd) => sum + (selected[fd.fee.id] || new Set()).size, 0);
+
+    const handleSubmit = async () => {
+        if (!proofFile || totalPeriods === 0) return;
+        setSubmitting(true);
+        const slug = localStorage.getItem('tenant_slug') || '';
+        const tk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
+        const items = fees
+            .map(fd => ({
+                fee_id: fd.fee.id,
+                periods: [...(selected[fd.fee.id] || new Set())].map(key => {
+                    const [year, month] = key.split('-').map(Number);
+                    return { month, year };
+                }),
+            }))
+            .filter(item => item.periods.length > 0);
+        const res = await submitFeePayment(slug, tk, items, proofFile);
+        setSubmitting(false);
+        if (res?.created !== undefined) {
+            setSuccess(true);
+            setTimeout(() => { onSuccess(); onClose(); }, 1800);
+        }
+    };
+
+    const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+    return (
+        <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-end justify-center p-0 animate-in fade-in duration-200" onClick={onClose}>
+            <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom-4 duration-200 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                {success ? (
+                    <div className="flex flex-col items-center gap-4 py-12">
+                        <div className="w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+                            <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+                        </div>
+                        <p className="text-lg font-black text-zinc-900">¡Pago enviado!</p>
+                        <p className="text-xs text-zinc-400">El staff revisará tu comprobante pronto.</p>
+                    </div>
+                ) : (
+                    <>
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-black text-zinc-900">Pagar Cuotas</h3>
+                            <button onClick={onClose} className="w-8 h-8 bg-zinc-100 rounded-full flex items-center justify-center"><X size={16} /></button>
+                        </div>
+
+                        {fees.map(fd => {
+                            const fee = fd.fee;
+                            const periods: any[] = fd.periods || [];
+                            const pendingPeriods = periods.filter((p: any) => p.status === 'pending');
+                            const sel = selected[fee.id] || new Set();
+                            if (pendingPeriods.length === 0) return null;
+                            return (
+                                <div key={fee.id} className="mb-6">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div>
+                                            <p className="text-sm font-black text-zinc-900">{fee.title}</p>
+                                            <p className="text-[10px] text-zinc-400">${Number(fee.amount).toLocaleString('es-CL')}/mes</p>
+                                        </div>
+                                        <button
+                                            onClick={() => selectAll(fee.id, periods)}
+                                            className="text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-700 border border-zinc-200 px-3 py-1 rounded-full"
+                                        >
+                                            Todo el año
+                                        </button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {pendingPeriods.map((p: any) => {
+                                            const key = `${p.year}-${p.month}`;
+                                            const isSelected = sel.has(key);
+                                            return (
+                                                <button
+                                                    key={key}
+                                                    onClick={() => togglePeriod(fee.id, key, periods)}
+                                                    className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase border transition-all ${
+                                                        isSelected
+                                                            ? 'bg-zinc-900 text-white border-zinc-900'
+                                                            : 'bg-zinc-50 text-zinc-500 border-zinc-200 hover:border-zinc-400'
+                                                    }`}
+                                                >
+                                                    {MONTHS[p.month - 1]} {p.year}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })}
+
+                        {/* Total */}
+                        {totalPeriods > 0 && (
+                            <div className="bg-zinc-50 rounded-2xl p-4 mb-4 flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Total a pagar</p>
+                                    <p className="text-2xl font-black text-zinc-900">${totalAmount.toLocaleString('es-CL')}</p>
+                                </div>
+                                <p className="text-[10px] text-zinc-400 font-bold">{totalPeriods} {totalPeriods === 1 ? 'mes' : 'meses'}</p>
+                            </div>
+                        )}
+
+                        {/* Comprobante */}
+                        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setProofFile(f); }} />
+                        <button
+                            onClick={() => fileRef.current?.click()}
+                            className={`w-full h-14 rounded-2xl border-2 border-dashed flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest mb-4 transition-all ${
+                                proofFile ? 'border-emerald-400 bg-emerald-50 text-emerald-600' : 'border-zinc-200 text-zinc-400 hover:border-zinc-400'
+                            }`}
+                        >
+                            {proofFile ? <><CheckCircle2 size={14} /> {proofFile.name.slice(0, 30)}</> : <><Upload size={14} /> Adjuntar comprobante</>}
+                        </button>
+
+                        <button
+                            onClick={handleSubmit}
+                            disabled={!proofFile || totalPeriods === 0 || submitting}
+                            className="w-full h-14 bg-zinc-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest disabled:opacity-40 flex items-center justify-center gap-2"
+                        >
+                            {submitting ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />}
+                            {submitting ? 'Enviando...' : `Enviar pago $${totalAmount.toLocaleString('es-CL')}`}
+                        </button>
+                    </>
+                )}
             </div>
         </div>
     );

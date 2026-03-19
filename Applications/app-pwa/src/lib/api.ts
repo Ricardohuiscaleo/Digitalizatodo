@@ -670,7 +670,34 @@ export async function getMyFees(tenantId: string, token: string) {
         });
         return await safeJson(response);
     } catch {
-        return { payments: [] };
+        return { fees: [] };
+    }
+}
+
+export async function submitFeePayment(
+    tenantId: string,
+    token: string,
+    items: { fee_id: number; periods: { month: number; year: number }[] }[],
+    proofFile: File
+) {
+    try {
+        const formData = new FormData();
+        formData.append('proof', proofFile);
+        items.forEach((item, i) => {
+            formData.append(`items[${i}][fee_id]`, String(item.fee_id));
+            item.periods.forEach((p, j) => {
+                formData.append(`items[${i}][periods][${j}][month]`, String(p.month));
+                formData.append(`items[${i}][periods][${j}][year]`, String(p.year));
+            });
+        });
+        const response = await fetch(`${API_URL}/${tenantId}/fees/submit-payment`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+            body: formData,
+        });
+        return await safeJson(response);
+    } catch {
+        return { message: 'Error de conexión' };
     }
 }
 
