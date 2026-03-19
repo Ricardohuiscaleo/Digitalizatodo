@@ -32,6 +32,7 @@ import {
 import { useBranding } from "@/context/BrandingContext";
 import NotificationToast from "@/components/Notifications/NotificationToast";
 import { getProfile, markAttendanceViaQR, resumeSession, getNotifications, markAllNotificationsRead, markNotificationRead, getAppUpdates, deletePaymentProof, getExpenses, getSchedules, updateStudentName } from "@/lib/api";
+import { ExpenseCard } from "@/app/dashboard/expenses/page";
 import jsQR from "jsqr";
 import { nowCL } from "@/lib/utils";
 import BottomNav, { NavSection } from "@/components/Navigation/BottomNav";
@@ -1137,15 +1138,6 @@ export default function StudentDashboard() {
     );
 
     const renderRendicion = () => {
-        const EXPENSE_CAT_COLORS: Record<string, string> = {
-            alimentacion: 'bg-orange-100 text-orange-700',
-            materiales: 'bg-blue-100 text-blue-700',
-            infraestructura: 'bg-slate-100 text-slate-700',
-            actividades: 'bg-purple-100 text-purple-700',
-            administrativo: 'bg-zinc-100 text-zinc-700',
-            insumos: 'bg-green-100 text-green-700',
-            otros: 'bg-rose-100 text-rose-700',
-        };
         const fmt = (n: number) => `$${Number(n).toLocaleString('es-CL')}`;
         return (
             <div className="space-y-4 pb-24 px-4 pt-4">
@@ -1181,35 +1173,11 @@ export default function StudentDashboard() {
                 ) : (
                     <div className="space-y-3">
                         {expensesList.map((exp: any) => (
-                            <div key={exp.id} className="bg-white rounded-[20px] p-4 border border-zinc-100 shadow-sm">
-                                <div className="flex items-start gap-3">
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${EXPENSE_CAT_COLORS[exp.category] ?? 'bg-zinc-100 text-zinc-600'}`}>{exp.category}</span>
-                                            <span className="text-[9px] text-zinc-400 font-bold">{exp.expense_date}</span>
-                                        </div>
-                                        <p className="text-sm font-black text-zinc-900 truncate">{exp.title}</p>
-                                        {exp.description && <p className="text-[11px] text-zinc-500 mt-0.5 line-clamp-2">{exp.description}</p>}
-                                        <p className="text-base font-black text-zinc-900 mt-1">{fmt(exp.amount)}</p>
-                                    </div>
-                                </div>
-                                {(exp.receipt_photo || exp.product_photo) && (
-                                    <div className="flex gap-2 mt-3">
-                                        {exp.receipt_photo && (
-                                            <button onClick={() => setExpenseLightbox(exp.receipt_photo)} className="relative h-16 w-16 rounded-xl overflow-hidden border border-zinc-100 flex-shrink-0">
-                                                <img src={exp.receipt_photo} className="w-full h-full object-cover" />
-                                                <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-[7px] text-white font-black text-center py-0.5">BOLETA</div>
-                                            </button>
-                                        )}
-                                        {exp.product_photo && (
-                                            <button onClick={() => setExpenseLightbox(exp.product_photo)} className="relative h-16 w-16 rounded-xl overflow-hidden border border-zinc-100 flex-shrink-0">
-                                                <img src={exp.product_photo} className="w-full h-full object-cover" />
-                                                <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-[7px] text-white font-black text-center py-0.5">PRODUCTO</div>
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
+                            <ExpenseCard
+                                key={exp.id}
+                                exp={exp}
+                                onLightbox={setExpenseLightbox}
+                            />
                         ))}
                     </div>
                 )}
