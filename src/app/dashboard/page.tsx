@@ -1495,161 +1495,209 @@ export default function App() {
                         Crear primera cuota
                     </button>
                 </div>
-            ) : feesList.map(fee => {
-                const paidCount = fee.paid_count || 0;
-                const reviewCount = fee.review_count || 0;
-                const totalCount = fee.total_count || 0;
-                const pendingCount = totalCount - paidCount - reviewCount;
-                const progress = totalCount > 0 ? Math.round((paidCount / totalCount) * 100) : 0;
-                return (
-                    <div key={fee.id} className="bg-white border border-zinc-100 rounded-[1.8rem] p-4 shadow-sm">
-                        <div className="flex items-start justify-between gap-3 mb-3">
-                            <div className="flex-1 min-w-0">
-                                <h3 className="text-sm font-black text-zinc-900 uppercase leading-tight">{fee.title}</h3>
-                                {fee.description && <p className="text-[10px] text-zinc-400 mt-0.5 line-clamp-1">{fee.description}</p>}
-                                <div className="flex items-center gap-3 mt-1.5">
-                                    <span className="text-base font-black text-zinc-950">{formatMoney(fee.amount)}</span>
-                                    {fee.type === 'recurring' ? (
-                                        <span className="flex items-center gap-1 text-[9px] font-bold text-violet-500 uppercase bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-full">
-                                            <RefreshCw size={9} /> Día {fee.recurring_day} c/mes
-                                        </span>
-                                    ) : fee.due_date ? (
-                                        <span className="flex items-center gap-1 text-[9px] font-bold text-zinc-400 uppercase">
-                                            <Calendar size={10} /> Vence {new Date(fee.due_date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                        </span>
-                                    ) : null}
-                                </div>
-                            </div>
-                            <button onClick={() => handleDeleteFee(fee.id)}
-                                className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center text-rose-400 active:scale-95 border border-rose-100 shrink-0">
-                                <Trash2 size={14} />
-                            </button>
-                        </div>
-                        <div className="mb-3">
-                            <div className="flex justify-between text-[9px] font-black uppercase text-zinc-400 mb-1">
-                                <span>{paidCount} pagados</span>
-                                <span>{progress}%</span>
-                            </div>
-                            <div className="h-2 bg-zinc-100 rounded-full overflow-hidden">
-                                <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2 mb-3">
-                            {paidCount > 0 && <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">{paidCount} pagados</span>}
-                            {reviewCount > 0 && <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100">{reviewCount} en revisión</span>}
-                            {pendingCount > 0 && <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100">{pendingCount} pendientes</span>}
-                        </div>
-                        <button onClick={() => openFee(fee)}
-                            className="w-full h-9 bg-zinc-50 border border-zinc-100 rounded-xl text-[10px] font-black uppercase text-zinc-600 flex items-center justify-center gap-2 active:scale-95 transition-all">
-                            <Users size={13} /> Ver apoderados
-                        </button>
-                    </div>
-                );
-            })}
-
-            {/* Modal crear cuota */}
-            {showCreateFee && (
-                <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end justify-center p-0 animate-in fade-in duration-200" onClick={() => setShowCreateFee(false)}>
-                    <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom-4 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-center mb-4"><div className="w-10 h-1.5 bg-zinc-200 rounded-full" /></div>
-                        <h2 className="text-base font-black uppercase tracking-tighter text-zinc-900 mb-5">Nueva Cuota</h2>
-                        <form onSubmit={handleCreateFee} className="space-y-3">
-                            {feeFormError && <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{feeFormError}</p>}
-
-                            {/* Tipo: Única / Recurrente */}
-                            <div className="grid grid-cols-2 gap-2">
-                                {(['once', 'recurring'] as const).map(t => (
-                                    <button key={t} type="button"
-                                        onClick={() => setFeeForm({ ...feeForm, type: t, due_date: '', recurring_day: '', start_month: '', start_year: '', end_month: '', end_year: '' })}
-                                        className={`h-10 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
-                                            feeForm.type === t
-                                                ? 'bg-zinc-950 text-white border-zinc-950'
-                                                : 'bg-zinc-50 text-zinc-400 border-zinc-100'
-                                        }`}>
-                                        <span className="flex items-center justify-center gap-1.5">{t === 'once' ? <><CalendarCheck size={12} /> Única</> : <><RefreshCw size={12} /> Recurrente</>}</span>
+            ) : (
+                <div className="space-y-3">
+                    {feesList.map(fee => {
+                        const paidCount = fee.paid_count || 0;
+                        const reviewCount = fee.review_count || 0;
+                        const totalCount = fee.total_count || 0;
+                        const pendingCount = totalCount - paidCount - reviewCount;
+                        const progress = totalCount > 0 ? Math.round((paidCount / totalCount) * 100) : 0;
+                        return (
+                            <div key={fee.id} className="bg-white border border-zinc-100 rounded-[1.8rem] p-4 shadow-sm">
+                                <div className="flex items-start justify-between gap-3 mb-3">
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="text-sm font-black text-zinc-900 uppercase leading-tight">{fee.title}</h3>
+                                        {fee.description && <p className="text-[10px] text-zinc-400 mt-0.5 line-clamp-1">{fee.description}</p>}
+                                        <div className="flex items-center gap-3 mt-1.5">
+                                            <span className="text-base font-black text-zinc-950">{formatMoney(fee.amount)}</span>
+                                            {fee.type === 'recurring' ? (
+                                                <span className="flex items-center gap-1 text-[9px] font-bold text-violet-500 uppercase bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-full">
+                                                    <RefreshCw size={9} /> Día {fee.recurring_day} c/mes
+                                                </span>
+                                            ) : fee.due_date ? (
+                                                <span className="flex items-center gap-1 text-[9px] font-bold text-zinc-400 uppercase">
+                                                    <Calendar size={10} /> Vence {new Date(fee.due_date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                </span>
+                                            ) : null}
+                                        </div>
+                                    </div>
+                                    <button onClick={() => handleDeleteFee(fee.id)}
+                                        className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center text-rose-400 active:scale-95 border border-rose-100 shrink-0">
+                                        <Trash2 size={14} />
                                     </button>
-                                ))}
-                            </div>
-
-                            <input placeholder="Título (ej: Gira de estudios)" value={feeForm.title}
-                                onChange={e => setFeeForm({ ...feeForm, title: e.target.value })}
-                                className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm font-bold text-zinc-900 placeholder:text-zinc-300 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950" />
-
-                            {/* Monto + Fecha/Día */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="text-[9px] font-black uppercase text-zinc-400 ml-1">Monto ($)</label>
-                                    <input type="text" inputMode="numeric" placeholder="$ 0" value={feeForm.amount ? formatCLP(parseInt(feeForm.amount)) : ''}
-                                        onChange={e => setFeeForm({ ...feeForm, amount: String(parseCLP(e.target.value)) })}
-                                        className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm font-black text-zinc-900 placeholder:text-zinc-300 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950 mt-1" />
                                 </div>
-                                <div>
-                                    {feeForm.type === 'once' ? (
-                                        <>
-                                            <label className="text-[9px] font-black uppercase text-zinc-400 ml-1">Fecha límite</label>
-                                            <input type="date" value={feeForm.due_date}
-                                                onChange={e => setFeeForm({ ...feeForm, due_date: e.target.value })}
-                                                className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm font-bold text-zinc-900 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950 mt-1" />
-                                        </>
-                                    ) : (
-                                        <>
-                                            <label className="text-[9px] font-black uppercase text-zinc-400 ml-1">Día del mes</label>
-                                            <select value={feeForm.recurring_day}
-                                                onChange={e => setFeeForm({ ...feeForm, recurring_day: e.target.value })}
-                                                className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm font-bold text-zinc-900 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950 mt-1">
-                                                <option value="">Día...</option>
-                                                {Array.from({ length: 28 }, (_, i) => i + 1).map(d => (
-                                                    <option key={d} value={d}>Día {d}</option>
-                                                ))}
-                                            </select>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-
-                            {feeForm.type === 'recurring' && (
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="text-[9px] font-black uppercase text-zinc-400 ml-1">Desde (mes/año)</label>
-                                        <div className="grid grid-cols-2 gap-1 mt-1">
-                                            <select value={feeForm.start_month} onChange={e => setFeeForm({ ...feeForm, start_month: e.target.value })}
-                                                className="h-11 bg-zinc-50 rounded-xl px-2 text-sm font-bold text-zinc-900 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950">
-                                                <option value="">Mes</option>
-                                                {['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'].map((m,i) => <option key={i+1} value={i+1}>{m}</option>)}
-                                            </select>
-                                            <select value={feeForm.start_year} onChange={e => setFeeForm({ ...feeForm, start_year: e.target.value })}
-                                                className="h-11 bg-zinc-50 rounded-xl px-2 text-sm font-bold text-zinc-900 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950">
-                                                <option value="">Año</option>
-                                                {[2024,2025,2026,2027].map(y => <option key={y} value={y}>{y}</option>)}
-                                            </select>
-                                        </div>
+                                <div className="mb-3">
+                                    <div className="flex justify-between text-[9px] font-black uppercase text-zinc-400 mb-1">
+                                        <span>{paidCount} pagados</span>
+                                        <span>{progress}%</span>
                                     </div>
-                                    <div>
-                                        <label className="text-[9px] font-black uppercase text-zinc-400 ml-1">Hasta (mes/año)</label>
-                                        <div className="grid grid-cols-2 gap-1 mt-1">
-                                            <select value={feeForm.end_month} onChange={e => setFeeForm({ ...feeForm, end_month: e.target.value })}
-                                                className="h-11 bg-zinc-50 rounded-xl px-2 text-sm font-bold text-zinc-900 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950">
-                                                <option value="">Mes</option>
-                                                {['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'].map((m,i) => <option key={i+1} value={i+1}>{m}</option>)}
-                                            </select>
-                                            <select value={feeForm.end_year} onChange={e => setFeeForm({ ...feeForm, end_year: e.target.value })}
-                                                className="h-11 bg-zinc-50 rounded-xl px-2 text-sm font-bold text-zinc-900 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950">
-                                                <option value="">Año</option>
-                                                {[2024,2025,2026,2027].map(y => <option key={y} value={y}>{y}</option>)}
-                                            </select>
-                                        </div>
+                                    <div className="h-2 bg-zinc-100 rounded-full overflow-hidden">
+                                        <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
                                     </div>
                                 </div>
-                            )}
-
-                            <button type="submit" disabled={feeSubmitting}
-                                className="w-full h-12 bg-zinc-950 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-40">
-                                {feeSubmitting ? <Loader2 className="animate-spin" size={16} /> : <><Plus size={16} /> Crear Cuota</>}
-                            </button>
-                        </form>
-                    </div>
+                                <div className="flex items-center gap-2 mb-3">
+                                    {paidCount > 0 && <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">{paidCount} pagados</span>}
+                                    {reviewCount > 0 && <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100">{reviewCount} en revisión</span>}
+                                    {pendingCount > 0 && <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100">{pendingCount} pendientes</span>}
+                                </div>
+                                <button onClick={() => openFee(fee)}
+                                    className="w-full h-9 bg-zinc-50 border border-zinc-100 rounded-xl text-[10px] font-black uppercase text-zinc-600 flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                    <Users size={13} /> Ver apoderados
+                                </button>
+                            </div>
+                        );
+                    })}
                 </div>
             )}
+
+            {/* Modal crear cuota */}
+            {showCreateFee && (() => {
+                const nowM = nowCL().getMonth() + 1;
+                const nowY = nowCL().getFullYear();
+                const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+                const YEARS = [nowY, nowY + 1, nowY + 2];
+                const startY = parseInt(feeForm.start_year || String(nowY));
+
+                return (
+                    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end justify-center animate-in fade-in duration-200" onClick={() => setShowCreateFee(false)}>
+                        <div
+                            className="bg-white w-full max-w-lg rounded-t-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom-4 duration-200 max-h-[94vh] overflow-y-auto"
+                            onClick={e => e.stopPropagation()}
+                            onTouchStart={(e) => { (e.currentTarget as any)._touchStartY = e.touches[0].pageY; }}
+                            onTouchEnd={(e) => { 
+                                const st = (e.currentTarget as any)._touchStartY; 
+                                if (e.changedTouches[0].pageY - st > 90) setShowCreateFee(false); 
+                            }}
+                        >
+                            <div className="flex justify-center mb-4"><div className="w-10 h-1.5 bg-zinc-200 rounded-full" /></div>
+                            <h2 className="text-base font-black uppercase tracking-tighter text-zinc-900 mb-5">Nueva Cuota</h2>
+                            <form onSubmit={handleCreateFee} className="space-y-4">
+                                {feeFormError && <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{feeFormError}</p>}
+
+                                <div className="grid grid-cols-2 gap-2">
+                                    {(['once', 'recurring'] as const).map(t => (
+                                        <button key={t} type="button"
+                                            onClick={() => setFeeForm({ ...feeForm, type: t, due_date: '', recurring_day: '', start_month: String(nowM), start_year: String(nowY), end_month: '', end_year: '' })}
+                                            className={`h-12 rounded-2xl text-[11px] font-black uppercase tracking-widest border-2 transition-all flex items-center justify-center gap-1.5 ${
+                                                feeForm.type === t
+                                                    ? (t === 'once' ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg shadow-indigo-100' : 'bg-violet-500 text-white border-violet-500 shadow-lg shadow-violet-100')
+                                                    : 'bg-zinc-50 text-zinc-400 border-zinc-100 hover:border-zinc-300'
+                                            }`}>
+                                            {t === 'once' ? <><CalendarCheck size={13} /> Única</> : <><RefreshCw size={13} /> Recurrente</>}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <input placeholder="Título · ej: Gira de estudios" value={feeForm.title}
+                                    onChange={e => setFeeForm({ ...feeForm, title: e.target.value })}
+                                    className={`w-full h-12 bg-zinc-50 rounded-2xl px-4 text-sm font-bold text-zinc-900 placeholder:text-zinc-300 border-2 border-zinc-100 outline-none transition-all ${feeForm.type === 'once' ? 'focus:border-indigo-400' : 'focus:border-violet-400'} focus:bg-white`} />
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="text-[9px] font-black uppercase text-zinc-400 ml-1">Monto ($)</label>
+                                        <input type="text" inputMode="numeric" placeholder="$ 0" value={feeForm.amount ? formatCLP(parseInt(feeForm.amount)) : ''}
+                                            onChange={e => setFeeForm({ ...feeForm, amount: String(parseCLP(e.target.value)) })}
+                                            className={`w-full h-12 bg-zinc-50 rounded-2xl px-4 text-sm font-black text-zinc-900 placeholder:text-zinc-300 border-2 border-zinc-100 outline-none transition-all mt-1 ${feeForm.type === 'once' ? 'focus:border-indigo-400' : 'focus:border-violet-400'} focus:bg-white`} />
+                                    </div>
+                                    <div>
+                                        {feeForm.type === 'once' ? (
+                                            <>
+                                                <label className="text-[9px] font-black uppercase text-zinc-400 ml-1">Fecha límite</label>
+                                                <input type="date" value={feeForm.due_date}
+                                                    onChange={e => setFeeForm({ ...feeForm, due_date: e.target.value })}
+                                                    className="w-full h-12 bg-zinc-50 rounded-2xl px-4 text-sm font-bold text-zinc-900 border-2 border-zinc-100 outline-none focus:border-indigo-400 focus:bg-white transition-all mt-1" />
+                                            </>
+                                        ) : (
+                                            <>
+                                                <label className="text-[9px] font-black uppercase text-zinc-400 ml-1">Día del mes</label>
+                                                <select value={feeForm.recurring_day}
+                                                    onChange={e => setFeeForm({ ...feeForm, recurring_day: e.target.value })}
+                                                    className="w-full h-12 bg-zinc-50 rounded-2xl px-4 text-sm font-bold text-zinc-900 border-2 border-zinc-100 outline-none focus:border-violet-400 focus:bg-white transition-all mt-1">
+                                                    <option value="">Día...</option>
+                                                    {Array.from({ length: 28 }, (_, i) => i + 1).map(d => (
+                                                        <option key={d} value={d}>Día {d}</option>
+                                                    ))}
+                                                </select>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {feeForm.type === 'recurring' && (
+                                    <div className="space-y-4 bg-violet-50 border-2 border-violet-100 rounded-2xl p-4">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-violet-500">📅 Período de cobro</p>
+                                        <div>
+                                            <p className="text-[9px] font-black uppercase text-zinc-400 mb-2">▶ Desde</p>
+                                            <div className="flex flex-wrap gap-1.5 mb-2">
+                                                {MONTHS.map((m, i) => {
+                                                    const mn = i + 1;
+                                                    const isPast = startY === nowY && mn < nowM;
+                                                    const active = feeForm.start_month === String(mn);
+                                                    return (
+                                                        <button key={m} type="button" disabled={isPast}
+                                                            onClick={() => setFeeForm({ ...feeForm, start_month: String(mn) })}
+                                                            className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border-2 transition-all ${
+                                                                isPast ? 'opacity-20 cursor-not-allowed bg-zinc-100 text-zinc-400 border-transparent'
+                                                                : active ? 'bg-violet-500 text-white border-violet-500'
+                                                                : 'bg-white text-zinc-500 border-zinc-200 hover:border-violet-300'
+                                                            }`}>{m}</button>
+                                                    );
+                                                })}
+                                            </div>
+                                            <div className="flex gap-2">
+                                                {YEARS.map(y => (
+                                                    <button key={y} type="button"
+                                                        onClick={() => setFeeForm({ ...feeForm, start_year: String(y) })}
+                                                        className={`flex-1 h-9 rounded-xl text-[11px] font-black border-2 transition-all ${
+                                                            feeForm.start_year === String(y) ? 'bg-violet-500 text-white border-violet-500' : 'bg-white text-zinc-500 border-zinc-200 hover:border-violet-300'
+                                                        }`}>{y}</button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black uppercase text-zinc-400 mb-2">■ Hasta <span className="normal-case font-bold text-zinc-300">(opcional)</span></p>
+                                            <div className="flex flex-wrap gap-1.5 mb-2">
+                                                {MONTHS.map((m, i) => {
+                                                    const active = feeForm.end_month === String(i + 1);
+                                                    return (
+                                                        <button key={m} type="button"
+                                                            onClick={() => setFeeForm({ ...feeForm, end_month: feeForm.end_month === String(i + 1) ? '' : String(i + 1) })}
+                                                            className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border-2 transition-all ${
+                                                                active ? 'bg-zinc-800 text-white border-zinc-800' : 'bg-white text-zinc-400 border-zinc-200 hover:border-zinc-400'
+                                                            }`}>{m}</button>
+                                                    );
+                                                })}
+                                            </div>
+                                            <div className="flex gap-2">
+                                                {YEARS.map(y => (
+                                                    <button key={y} type="button"
+                                                        onClick={() => setFeeForm({ ...feeForm, end_year: feeForm.end_year === String(y) ? '' : String(y) })}
+                                                        className={`flex-1 h-9 rounded-xl text-[11px] font-black border-2 transition-all ${
+                                                            feeForm.end_year === String(y) ? 'bg-zinc-800 text-white border-zinc-800' : 'bg-white text-zinc-500 border-zinc-200 hover:border-zinc-400'
+                                                        }`}>{y}</button>
+                                                ))}
+                                                <button type="button"
+                                                    onClick={() => setFeeForm({ ...feeForm, end_month: '', end_year: '' })}
+                                                    className={`flex-1 h-9 rounded-xl text-[10px] font-black border-2 transition-all ${
+                                                        !feeForm.end_month && !feeForm.end_year ? 'bg-zinc-200 text-zinc-600 border-zinc-300' : 'bg-white text-zinc-400 border-zinc-200'
+                                                    }`}>Sin fin</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <button type="submit" disabled={feeSubmitting}
+                                    className={`w-full py-4 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-40 shadow-lg ${
+                                        feeForm.type === 'once' ? 'bg-indigo-500 shadow-indigo-200' : 'bg-violet-500 shadow-violet-200'
+                                    }`}>
+                                    {feeSubmitting ? <Loader2 className="animate-spin" size={16} /> : <><Plus size={16} /> Crear Cuota</>}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                );
+            })()}
 
             {/* Modal detalle cuota */}
             {selectedFee && (
@@ -1673,7 +1721,7 @@ export default function App() {
                             ) : feePayments.length === 0 ? (
                                 <p className="text-center text-[10px] text-zinc-400 font-black uppercase py-10">Sin apoderados asignados</p>
                             ) : feePayments.map(p => {
-                                const st = STATUS_LABEL[p.status] || STATUS_LABEL.pending;
+                                const st = (STATUS_LABEL as any)[p.status] || (STATUS_LABEL as any).pending;
                                 return (
                                     <div key={p.id} className="bg-zinc-50 rounded-2xl p-3 border border-zinc-100 flex items-center gap-3">
                                         <img src={p.guardian?.photo || '/icon.webp'} className="w-10 h-10 rounded-full object-cover border border-white shadow-sm shrink-0" />
@@ -1709,7 +1757,7 @@ export default function App() {
             {/* Modal aprobar pago */}
             {approvingFeePayment && (
                 <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setApprovingFeePayment(null)}>
-                    <div className="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                    <div className="bg-white w-full max-sm mb-4 sm:max-w-sm rounded-[2rem] p-6 shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                         <h3 className="text-sm font-black uppercase tracking-tighter text-zinc-900 mb-1">Confirmar Pago</h3>
                         <p className="text-[10px] text-zinc-400 font-bold mb-5">{approvingFeePayment.guardian?.name}</p>
                         <div className="space-y-3 mb-5">
