@@ -96,7 +96,35 @@ git push
 | `POST /api/{tenant}/push/subscribe` | Guardar suscripción Web Push |
 ---
 
-## Solución de Errores de Memoria (OOM / Exit code 4)
+## Debugging en Producción
+
+### Ver logs de Laravel en el container
+
+```bash
+# Encontrar el container del backend (el que tiene /var/www/html)
+for c in $(docker ps --format '{{.Names}}'); do docker exec $c ls /var/www/html 2>/dev/null && echo "=== $c ===" && break; done
+
+# Ejecutar código en tinker para ver error exacto de un endpoint
+docker exec <container> php /var/www/html/artisan tinker --execute="..."
+```
+
+### Errores Conocidos y Soluciones
+
+| Error | Causa | Solución |
+|-------|-------|----------|
+| `Column 'tenant_id' is ambiguous` | JOIN entre tablas que ambas tienen `tenant_id` | Calificar con nombre de tabla: `fee_payments.tenant_id` |
+| 500 en endpoint con modelos | Modelo Eloquent no existe en `app/Models/` | Crear el modelo faltante |
+| 404 en rutas que antes funcionaban | Controlador o ruta se perdió en un update | Recrear controlador y registrar ruta en `api.php` |
+| `ShouldBroadcast` sin notificaciones | Queue worker no corre | Usar `ShouldBroadcastNow` siempre |
+
+### Modelos que deben existir (críticos)
+Si alguno falta, los endpoints dan 500:
+- `Fee`, `FeePayment`, `Expense` — para school_treasury
+- `PushSubscription` — para Web Push
+- `Schedule` — para horarios
+
+---
+
 
 Si el deploy falla durante el build de la imagen (específicamente en `composer install`):
 
