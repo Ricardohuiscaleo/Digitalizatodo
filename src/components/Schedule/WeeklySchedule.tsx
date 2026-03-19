@@ -266,11 +266,11 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
                 {/* ── DESKTOP: tabla grid ── */}
                 <div className="hidden md:block overflow-x-auto">
                     <div className="min-w-[400px]">
-                        <div className="grid gap-1 mb-1" style={{ gridTemplateColumns: "56px repeat(5, 1fr)" }}>
+                        <div className="grid gap-1 mb-2" style={{ gridTemplateColumns: "56px repeat(5, 1fr)" }}>
                             <div />
-                            {DAYS.map((day, i) => (
-                                <div key={day} className={`${DAY_COLORS[i]} text-[8px] font-black uppercase tracking-wider text-center py-1.5 rounded-lg`}>
-                                    {day.slice(0, 3)}
+                            {DAYS.map((day) => (
+                                <div key={day} className="bg-zinc-800 text-white text-[10px] font-black uppercase tracking-wider text-center py-2.5 rounded-xl">
+                                    {day}
                                 </div>
                             ))}
                         </div>
@@ -347,11 +347,10 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
                     ) : (
                         DAYS.map((dayName, i) => {
                             const dayIdx = DAY_INDEX[i];
-                            const dayCells = slots.map(slot => ({ slot, cell: getCell(dayIdx, slot) })).filter(({ cell }) => cell?.subject);
-                            if (dayCells.length === 0) return null;
+                            const dayCells = slots.map(slot => ({ slot, cell: getCell(dayIdx, slot) }));
                             return (
                                 <div key={dayName}>
-                                    <div className={`${DAY_COLORS[i]} text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl inline-block mb-2`}>
+                                    <div className="bg-zinc-800 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl inline-block mb-2">
                                         {dayName}
                                     </div>
                                     <div className="space-y-1.5">
@@ -359,18 +358,29 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
                                             <div
                                                 key={slot}
                                                 onClick={() => editable && setModalCell({ day: dayIdx, slot })}
-                                                className={`flex items-center gap-3 rounded-2xl px-4 py-3 shadow-sm border border-transparent ${editable ? "cursor-pointer active:scale-[0.98] transition-transform" : ""}`}
-                                                style={getColorStyle(cell?.color)}
+                                                className={`flex items-center gap-3 rounded-2xl px-4 py-3 border ${
+                                                    editable ? "cursor-pointer active:scale-[0.98] transition-transform" : ""
+                                                } ${
+                                                    cell?.subject ? "shadow-sm border-transparent" : "border-dashed border-zinc-200 bg-zinc-50"
+                                                }`}
+                                                style={cell?.subject ? getColorStyle(cell.color) : {}}
                                             >
                                                 <div className="flex flex-col items-center shrink-0 w-10">
-                                                    <span className="text-[10px] font-black leading-none" style={{ opacity: 0.8 }}>{fmtTime(slot.split("|")[0])}</span>
-                                                    <div className="w-px h-3 my-0.5" style={{ backgroundColor: "currentColor", opacity: 0.3 }} />
-                                                    <span className="text-[10px] font-black leading-none" style={{ opacity: 0.6 }}>{fmtTime(slot.split("|")[1])}</span>
+                                                    <span className="text-[10px] font-black leading-none" style={{ opacity: cell?.subject ? 0.8 : 1, color: cell?.subject ? undefined : '#a1a1aa' }}>{fmtTime(slot.split("|")[0])}</span>
+                                                    <div className="w-px h-3 my-0.5" style={{ backgroundColor: cell?.subject ? "currentColor" : "#d4d4d8", opacity: 0.3 }} />
+                                                    <span className="text-[10px] font-black leading-none" style={{ opacity: cell?.subject ? 0.6 : 1, color: cell?.subject ? undefined : '#a1a1aa' }}>{fmtTime(slot.split("|")[1])}</span>
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-black uppercase truncate">{cell?.subject || "—"}</p>
+                                                    {cell?.subject ? (
+                                                        <p className="text-sm font-black uppercase truncate">{cell.subject}</p>
+                                                    ) : (
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300">
+                                                            {editable ? "Toca para agregar" : "Libre"}
+                                                        </p>
+                                                    )}
                                                 </div>
-                                                {editable && <Edit2 size={14} style={{ opacity: 0.5 }} className="shrink-0" />}
+                                                {editable && cell?.subject && <Edit2 size={14} style={{ opacity: 0.5 }} className="shrink-0" />}
+                                                {editable && !cell?.subject && <Plus size={14} className="text-zinc-300 shrink-0" />}
                                             </div>
                                         ))}
                                     </div>
@@ -378,20 +388,6 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
                             );
                         })
                     )}
-
-                    {slots.length > 0 && DAYS.map((dayName, i) => {
-                        const dayIdx = DAY_INDEX[i];
-                        const hasCells = slots.some(slot => getCell(dayIdx, slot)?.subject);
-                        if (hasCells) return null;
-                        return (
-                            <div key={`empty-${dayName}`} className="flex items-center gap-3 opacity-40">
-                                <div className={`${DAY_COLORS[i]} text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl`}>
-                                    {dayName.slice(0, 3)}
-                                </div>
-                                <p className="text-[10px] font-bold text-zinc-400 uppercase">Sin clases</p>
-                            </div>
-                        );
-                    })}
 
                     {editable && (
                         <div className="pt-2">
