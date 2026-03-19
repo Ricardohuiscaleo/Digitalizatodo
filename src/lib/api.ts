@@ -702,3 +702,14 @@ export async function deleteSchedule(tenantSlug: string, token: string, id: numb
         return await safeJson(response);
     } catch { return null; }
 }
+
+export async function updateStudentName(tenantId: string, token: string, studentId: string | number, name: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/students/${studentId}/name`, {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ name }),
+        });
+        return await safeJson(response);
+    } catch { return null; }
+}
