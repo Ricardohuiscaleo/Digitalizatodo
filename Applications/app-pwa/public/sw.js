@@ -43,6 +43,10 @@ self.addEventListener('fetch', event => {
 
 // App Badging desde Service Worker (requerido por iOS)
 self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+    return;
+  }
   if (event.data?.type === 'SET_BADGE') {
     const count = event.data.count || 0;
     if ('setAppBadge' in self.registration) {
