@@ -1813,12 +1813,13 @@ export default function App() {
     const [paymentDropdownOpen, setPaymentDropdownOpen] = useState(false);
     const [longPressPayerId, setLongPressPayerId] = useState<string | null>(null);
     const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [bubbleModalPayer, setBubbleModalPayer] = useState<any>(null);
 
     const handleLongPressStart = (payerId: string) => {
         longPressTimer.current = setTimeout(() => {
             const payer = payers.find(p => p.id === payerId);
-            if (payer) setPaymentActionPayer(payer);
-        }, 500);
+            if (payer) setBubbleModalPayer(payer);
+        }, 600);
     };
     const handleLongPressEnd = () => {
         if (longPressTimer.current) clearTimeout(longPressTimer.current);
@@ -2040,193 +2041,167 @@ export default function App() {
                     </table>
                 </div>
 
-                {/* VISTA MOBILE: LISTA DE TARJETAS */}
-                <div className="space-y-3 pb-6">
-                    {filteredPayers.map(payer => {
-                        const { displayAmount, reviewAmount, pendingAmount, approvedAmount, numEnrollments } = getPayerRealStats(payer);
-                        const isExpanded = expandedPayerId === payer.id;
-                        const isPaid = (payer.status === 'paid') || (paymentFilter === 'history' && approvedAmount > 0 && pendingAmount === 0 && reviewAmount === 0);
-                        const hasReview = reviewAmount > 0;
-                        const proofUrl = payer.proof_image;
+                {/* VISTA MOBILE: GLOBOS POR ESTUDIANTE */}
+                <div className="md:hidden">
+                    {filteredPayers.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-16 gap-3">
+                            <Users size={32} className="text-zinc-200" />
+                            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Sin resultados</p>
+                        </div>
+                    ) : (
+                        <div className="flex flex-wrap gap-4 justify-start px-1 pb-6">
+                            {filteredPayers.flatMap(payer => {
+                                const { reviewAmount, pendingAmount, approvedAmount } = getPayerRealStats(payer);
+                                const isPaid = (payer.status === 'paid') || (paymentFilter === 'history' && approvedAmount > 0 && pendingAmount === 0 && reviewAmount === 0);
+                                const isReview = !isPaid && (payer.status === 'review' || reviewAmount > 0);
 
-                        return (
-                            <div
-                                key={payer.id}
-                                className={`bg-white rounded-[2.2rem] shadow-sm border transition-all duration-150 overflow-hidden ${
-                                    isExpanded ? 'border-zinc-300 ring-1 ring-zinc-100 mb-6' : 
-                                    isPaid ? 'border-emerald-300 bg-emerald-100 shadow-emerald-50' : 
-                                    (payer.status === 'review' || reviewAmount > 0) ? 'border-amber-300 bg-amber-100 shadow-amber-50' : 
-                                    'border-rose-300 bg-rose-100 shadow-rose-50'
-                                }`}
-                            >
-                                <div
-                                    className="p-4 flex items-center gap-3 cursor-pointer select-none"
-                                    onClick={() => setExpandedPayerId(isExpanded ? null : payer.id)}
-                                    onMouseDown={() => handleLongPressStart(payer.id)}
-                                    onMouseUp={handleLongPressEnd}
-                                    onMouseLeave={handleLongPressEnd}
-                                    onTouchStart={() => handleLongPressStart(payer.id)}
-                                    onTouchEnd={handleLongPressEnd}
-                                >
-                                    <div className="relative shrink-0">
-                                        <img src={payer.photo} className="w-14 h-14 rounded-full object-cover shadow-sm grayscale-[0.3]" />
-                                        <div className="absolute -bottom-1.5 -right-1 text-white text-[7px] font-black px-1 py-0.5 rounded border border-white uppercase" style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}>Titular</div>
-                                    </div>
+                                // Mostrar un globo por cada estudiante inscrito
+                                return payer.enrolledStudents.map((student: any) => {
+                                    // Buscar el payment específico de este estudiante
+                                    const studentPayment = payer.payments?.find((p: any) => p.student_id === student.id || p.student_name === student.name);
+                                    const studentStatus = studentPayment?.status || (isPaid ? 'paid' : isReview ? 'review' : 'pending');
+                                    const isStudentPaid = studentStatus === 'approved' || studentStatus === 'paid';
+                                    const isStudentReview = studentStatus === 'review';
 
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex justify-between items-start">
-                                            <h4 className="font-black text-zinc-900 text-[13px] uppercase truncate pr-2 leading-tight">{payer.name}</h4>
-                                            {isExpanded ? <ChevronUp size={18} className="text-zinc-300" /> : <ChevronDown size={18} className="text-zinc-300" />}
+                                    const ringColor = isStudentPaid
+                                        ? 'ring-4 ring-emerald-400 shadow-emerald-100'
+                                        : isStudentReview
+                                        ? 'ring-4 ring-amber-400 shadow-amber-100'
+                                        : 'ring-4 ring-rose-400 shadow-rose-100';
+
+                                    const dotColor = isStudentPaid
+                                        ? 'bg-emerald-500'
+                                        : isStudentReview
+                                        ? 'bg-amber-400'
+                                        : 'bg-rose-500';
+
+                                    return (
+                                        <div
+                                            key={`${payer.id}-${student.id}`}
+                                            className="flex flex-col items-center gap-1.5 cursor-pointer select-none active:scale-95 transition-transform"
+                                            onMouseDown={() => handleLongPressStart(payer.id)}
+                                            onMouseUp={handleLongPressEnd}
+                                            onMouseLeave={handleLongPressEnd}
+                                            onTouchStart={() => handleLongPressStart(payer.id)}
+                                            onTouchEnd={handleLongPressEnd}
+                                            onClick={() => setBubbleModalPayer({ ...payer, _focusStudent: student })}
+                                        >
+                                            <div className="relative">
+                                                <img
+                                                    src={student.photo || payer.photo}
+                                                    className={`w-16 h-16 rounded-full object-cover shadow-md ${ringColor}`}
+                                                    alt={student.name}
+                                                />
+                                                <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white shadow-sm ${dotColor}`} />
+                                            </div>
+                                            <p className="text-[9px] font-black uppercase text-zinc-700 text-center leading-tight max-w-[72px] line-clamp-2">
+                                                {student.name.split(' ')[0]}
+                                            </p>
                                         </div>
+                                    );
+                                });
+                            })}
+                        </div>
+                    )}
+                </div>
 
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <div className="flex items-center -space-x-3">
-                                                {payer.enrolledStudents.slice(0, 5).map((r: any) => (
-                                                    <img 
-                                                        key={r.id} 
-                                                        src={r.photo} 
-                                                        className="w-8 h-8 rounded-full border-2 border-white object-cover shadow-sm group-hover:translate-y-[-2px] transition-transform" 
-                                                        alt={r.name}
-                                                    />
-                                                ))}
-                                                {payer.enrolledStudents.length > 5 && (
-                                                    <div className="w-8 h-8 rounded-full bg-zinc-100 border-2 border-white flex items-center justify-center shrink-0 shadow-sm z-10">
-                                                        <span className="text-[8px] font-black text-zinc-500">+{payer.enrolledStudents.length - 5}</span>
-                                                    </div>
-                                                )}
-                                                <ChevronRight size={14} className="text-zinc-300 ml-2 group-hover:translate-x-1 transition-transform" />
-                                            </div>
-                                            <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest leading-none">{numEnrollments} {vocab.memberLabel}s</span>
-                                        </div>
+                {/* Modal desglose por globo */}
+                {bubbleModalPayer && (
+                    <div
+                        className="fixed inset-0 z-[200] bg-zinc-950/70 backdrop-blur-md flex items-end justify-center animate-in fade-in duration-200"
+                        onClick={() => setBubbleModalPayer(null)}
+                    >
+                        <div
+                            className="bg-white w-full max-w-sm rounded-t-[2.5rem] pb-10 shadow-2xl animate-in slide-in-from-bottom-4 duration-200"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            {/* Handle */}
+                            <div className="flex justify-center pt-4 pb-2">
+                                <div className="w-10 h-1.5 bg-zinc-200 rounded-full" />
+                            </div>
 
-                                        <div className="flex items-center gap-2 mt-1.5 overflow-x-auto hide-scrollbar">
-                                            <span className="font-black text-zinc-950 text-sm tracking-tighter shrink-0">
-                                                {formatMoney(displayAmount)}
-                                            </span>
-                                            {!isPaid && !(payer.status === 'review' || reviewAmount > 0) && (
-                                                <span className="text-[7px] font-black text-rose-600 uppercase tracking-widest whitespace-nowrap px-1.5 py-0.5 rounded bg-rose-50 border border-rose-100">
-                                                    Deuda pendiente
-                                                </span>
-                                            )}
-                                            {(payer.status === 'review' || reviewAmount > 0) && !isPaid && (
-                                                <span className="text-[7px] font-black text-amber-600 uppercase tracking-widest whitespace-nowrap px-1.5 py-0.5 rounded bg-amber-50 border border-amber-100">
-                                                    Por validar
-                                                </span>
-                                            )}
-                                            {isPaid && (
-                                                <span className="text-[7px] font-black text-emerald-600 uppercase tracking-widest whitespace-nowrap px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-100">
-                                                    Pagado
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-2 shrink-0">
-                                        {isPaid ? (
-                                            <div className="bg-emerald-500 rounded-xl p-1.5 shadow-sm">
-                                                <CheckCircle2 size={16} className="text-white" />
-                                            </div>
-                                        ) : (payer.status === 'review' || reviewAmount > 0) ? (
-                                            <div className="bg-amber-500 rounded-xl p-1.5 shadow-sm">
-                                                <RefreshCw size={16} className="text-white" />
-                                            </div>
-                                        ) : (
-                                            <div className="w-8 h-8 rounded-xl bg-zinc-100 border border-zinc-200 flex items-center justify-center">
-                                                <Clock size={14} className="text-zinc-400" />
-                                            </div>
-                                        )}
+                            {/* Header titular */}
+                            <div className="px-6 pb-4 border-b border-zinc-100">
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-1">Desglose del Pago</p>
+                                <div className="flex items-center gap-3">
+                                    <img src={bubbleModalPayer.photo} className="w-10 h-10 rounded-full object-cover border border-zinc-100" />
+                                    <div>
+                                        <p className="text-sm font-black uppercase text-zinc-900 leading-none">{bubbleModalPayer.name}</p>
+                                        <p className="text-[9px] text-zinc-400 font-bold mt-0.5">{bubbleModalPayer.enrolledStudents?.length} {vocab.memberLabel}s</p>
                                     </div>
                                 </div>
+                            </div>
 
-                                {isExpanded && (
-                                    <div className="px-4 pb-5 pt-4 bg-zinc-50 border-t border-zinc-100 animate-in slide-in-from-top-2 duration-150">
-                                        <div className="flex justify-between items-center mb-3">
-                                            <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]">Desglose del Pago:</p>
-                                            {payer.status === 'review' && (
-                                                <span className="text-[8px] font-black bg-amber-50 text-amber-600 px-2 py-1 rounded-full uppercase">Esperando Validación</span>
+                            {/* Lista de pagos por estudiante */}
+                            <div className="px-6 pt-4 space-y-3 max-h-[50vh] overflow-y-auto">
+                                {(bubbleModalPayer.payments && bubbleModalPayer.payments.length > 0
+                                    ? bubbleModalPayer.payments
+                                    : bubbleModalPayer.enrolledStudents?.map((s: any) => ({
+                                        student_name: s.name,
+                                        student_photo: s.photo,
+                                        due_date: '—',
+                                        status: bubbleModalPayer.status === 'paid' ? 'approved' : bubbleModalPayer.status,
+                                        amount: 0,
+                                    }))
+                                ).map((payment: any, idx: number) => {
+                                    const statusLabel = payment.status === 'approved' || payment.status === 'paid'
+                                        ? 'Pagado'
+                                        : payment.status === 'review'
+                                        ? 'Por Aprobar'
+                                        : 'Por Pagar';
+                                    const statusColor = payment.status === 'approved' || payment.status === 'paid'
+                                        ? 'text-emerald-600'
+                                        : payment.status === 'review'
+                                        ? 'text-amber-600'
+                                        : 'text-rose-600';
+
+                                    return (
+                                        <div key={idx} className="flex items-center gap-3 bg-zinc-50 rounded-2xl p-3 border border-zinc-100">
+                                            <img
+                                                src={payment.student_photo || bubbleModalPayer.photo}
+                                                className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm shrink-0"
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[11px] font-black uppercase text-zinc-900 leading-none truncate">{payment.student_name}</p>
+                                                <p className="text-[9px] text-zinc-400 font-bold mt-1 uppercase">
+                                                    Vence: {payment.due_date} • <span className={statusColor}>{statusLabel}</span>
+                                                </p>
+                                                <p className="text-base font-black text-zinc-950 mt-0.5">{formatMoney(payment.amount)}</p>
+                                            </div>
+                                            {payment.proof_url && (
+                                                <button
+                                                    onClick={() => { setBubbleModalPayer(null); setProofModalUrl(payment.proof_url); }}
+                                                    className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500 shrink-0"
+                                                >
+                                                    <Eye size={14} />
+                                                </button>
                                             )}
                                         </div>
-                                        <div className="space-y-2 mb-4">
-                                            {payer.payments?.map((payment: any) => (
-                                                <div key={payment.id} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-zinc-100 shadow-sm">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="relative">
-                                                            {payment.student_photo ? (
-                                                                <img src={payment.student_photo} className="w-10 h-10 rounded-full object-cover shadow-sm" />
-                                                            ) : (
-                                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-xs ${payment.status === 'review' ? 'bg-amber-500 text-white' : 'bg-rose-50 text-rose-500'}`}>
-                                                                    {payment.status === 'review' ? <RefreshCw size={14} className="animate-spin-slow" /> : <Clock size={14} />}
-                                                                </div>
-                                                            )}
-                                                            {payment.status === 'review' && (
-                                                                <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full border-2 border-white flex items-center justify-center shadow-sm">
-                                                                    <RefreshCw size={8} className="text-white animate-spin-slow" />
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-xs font-black uppercase text-zinc-900 leading-none">{payment.student_name}</span>
-                                                            <span className="text-[8px] text-zinc-400 font-bold uppercase mt-1">
-                                                                Vence: {payment.due_date} • {
-                                                                    payment.status === 'review' ? 'En Revisión' : 
-                                                                    payment.status === 'approved' ? 'Pagado' : 
-                                                                    'Por Pagar'
-                                                                }
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right flex flex-col items-end gap-1">
-                                                        <span className="text-xs font-black text-zinc-900">{formatMoney(payment.amount)}</span>
-                                                        {(payment.status === 'review' || payment.status === 'approved') && payment.proof_url && (
-                                                            <button 
-                                                                onClick={(e) => { e.stopPropagation(); setProofModalUrl(payment.proof_url); }}
-                                                                style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
-                                                                className="text-[7px] font-black text-white px-3 py-1.5 rounded-lg uppercase flex items-center gap-1 shadow-md active:scale-95 transition-all"
-                                                            >
-                                                                <Eye size={10} /> Ver Boucher
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                        {/* ACCIONES DEL PIE - Solo si no está pagado */}
-                                        {!isPaid && (
-                                            <div className="flex gap-2 pt-3 border-t border-zinc-200/60">
-                                                {proofUrl && (
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); setProofModalUrl(proofUrl); }}
-                                                        className="flex-1 h-12 bg-white border-2 border-zinc-200 text-zinc-500 rounded-xl flex items-center justify-center gap-2 hover:bg-zinc-50 active:scale-95 transition-all shadow-sm font-black text-[9px] uppercase tracking-widest"
-                                                    >
-                                                        <Eye size={18} /> Ver Comprobante
-                                                    </button>
-                                                )}
-                                                <button
-                                                    className="flex-[2] h-12 text-white rounded-xl text-[10px] font-black uppercase shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
-                                                    style={{ backgroundColor: (payer.status === 'review' || reviewAmount > 0) ? '#f59e0b' : (branding?.primaryColor || '#6366f1') }}
-                                                    onClick={(e) => { e.stopPropagation(); handlePaymentApprove(payer.id); }}
-                                                >
-                                                    {(payer.status === 'review' || reviewAmount > 0) ? (
-                                                        <>
-                                                            <RefreshCw size={18} className="animate-spin-slow" />
-                                                            <span>Aprobar Pago</span>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <DollarSign size={18} />
-                                                            <span>Marcar como Pagado</span>
-                                                        </>
-                                                    )}
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                                    );
+                                })}
                             </div>
-                        );
-                    })}
-                </div>
+
+                            {/* Botón acción */}
+                            {(() => {
+                                const { reviewAmount, pendingAmount, approvedAmount } = getPayerRealStats(bubbleModalPayer);
+                                const isPaid = (bubbleModalPayer.status === 'paid') || (approvedAmount > 0 && pendingAmount === 0 && reviewAmount === 0);
+                                if (isPaid) return null;
+                                const isReview = bubbleModalPayer.status === 'review' || reviewAmount > 0;
+                                return (
+                                    <div className="px-6 pt-4">
+                                        <button
+                                            onClick={() => { setBubbleModalPayer(null); handlePaymentApprove(bubbleModalPayer.id); }}
+                                            className="w-full h-14 rounded-2xl text-white font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg"
+                                            style={{ backgroundColor: isReview ? '#f59e0b' : (branding?.primaryColor || '#6366f1') }}
+                                        >
+                                            {isReview ? <><RefreshCw size={18} /> Aprobar Pago</> : <><DollarSign size={18} /> Marcar como Pagado</>}
+                                        </button>
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    </div>
+                )}
             </div>
         );
     };
