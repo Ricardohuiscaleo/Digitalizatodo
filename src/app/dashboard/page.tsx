@@ -562,7 +562,7 @@ export default function App() {
     const [feePayments, setFeePayments] = useState<any[]>([]);
     const [feeDetailLoading, setFeeDetailLoading] = useState(false);
     const [feeProofUrl, setFeeProofUrl] = useState<string | null>(null);
-    const [feeForm, setFeeForm] = useState({ title: '', description: '', amount: '', due_date: '', target: 'all' });
+    const [feeForm, setFeeForm] = useState({ title: '', description: '', amount: '', due_date: '', target: 'all', type: 'once', recurring_day: '' });
     const [feeSubmitting, setFeeSubmitting] = useState(false);
     const [feeFormError, setFeeFormError] = useState('');
     const [approvingFeePayment, setApprovingFeePayment] = useState<any>(null);
@@ -1203,13 +1203,20 @@ export default function App() {
 
     const handleCreateFee = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!feeForm.title || !feeForm.amount || !feeForm.due_date) { setFeeFormError('Completa todos los campos requeridos'); return; }
+        if (!feeForm.title || !feeForm.amount) { setFeeFormError('Completa todos los campos requeridos'); return; }
+        if (feeForm.type === 'once' && !feeForm.due_date) { setFeeFormError('La fecha límite es requerida'); return; }
+        if (feeForm.type === 'recurring' && !feeForm.recurring_day) { setFeeFormError('Indica el día del mes'); return; }
         setFeeSubmitting(true); setFeeFormError('');
-        const result = await createFee(branding?.slug || '', token || '', { ...feeForm, amount: parseFloat(feeForm.amount) });
+        const result = await createFee(branding?.slug || '', token || '', {
+                ...feeForm,
+                amount: parseFloat(feeForm.amount),
+                recurring_day: feeForm.type === 'recurring' ? parseInt(feeForm.recurring_day) : undefined,
+                due_date: feeForm.type === 'once' ? feeForm.due_date : undefined,
+            });
         setFeeSubmitting(false);
         if (result?.fee) {
             setShowCreateFee(false);
-            setFeeForm({ title: '', description: '', amount: '', due_date: '', target: 'all' });
+            setFeeForm({ title: '', description: '', amount: '', due_date: '', target: 'all', type: 'once', recurring_day: '' });
             loadFees();
         } else {
             setFeeFormError(result?.message || 'Error al crear cuota');
@@ -1281,9 +1288,15 @@ export default function App() {
                                 {fee.description && <p className="text-[10px] text-zinc-400 mt-0.5 line-clamp-1">{fee.description}</p>}
                                 <div className="flex items-center gap-3 mt-1.5">
                                     <span className="text-base font-black text-zinc-950">{formatMoney(fee.amount)}</span>
-                                    <span className="flex items-center gap-1 text-[9px] font-bold text-zinc-400 uppercase">
-                                        <Calendar size={10} /> Vence {new Date(fee.due_date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                    </span>
+                                    {fee.type === 'recurring' ? (
+                                        <span className="flex items-center gap-1 text-[9px] font-bold text-violet-500 uppercase bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-full">
+                                            🔁 Día {fee.recurring_day} c/mes
+                                        </span>
+                                    ) : fee.due_date ? (
+                                        <span className="flex items-center gap-1 text-[9px] font-bold text-zinc-400 uppercase">
+                                            <Calendar size={10} /> Vence {new Date(fee.due_date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                        </span>
+                                    ) : null}
                                 </div>
                             </div>
                             <button onClick={() => handleDeleteFee(fee.id)}
@@ -1321,13 +1334,27 @@ export default function App() {
                         <h2 className="text-base font-black uppercase tracking-tighter text-zinc-900 mb-5">Nueva Cuota</h2>
                         <form onSubmit={handleCreateFee} className="space-y-3">
                             {feeFormError && <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{feeFormError}</p>}
+
+                            {/* Tipo: Única / Recurrente */}
+                            <div className="grid grid-cols-2 gap-2">
+                                {(['once', 'recurring'] as const).map(t => (
+                                    <button key={t} type="button"
+                                        onClick={() => setFeeForm({ ...feeForm, type: t, due_date: '', recurring_day: '' })}
+                                        className={`h-10 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                                            feeForm.type === t
+                                                ? 'bg-zinc-950 text-white border-zinc-950'
+                                                : 'bg-zinc-50 text-zinc-400 border-zinc-100'
+                                        }`}>
+                                        {t === 'once' ? '📌 Única' : '🔁 Recurrente'}
+                                    </button>
+                                ))}
+                            </div>
+
                             <input placeholder="Título (ej: Gira de estudios)" value={feeForm.title}
                                 onChange={e => setFeeForm({ ...feeForm, title: e.target.value })}
                                 className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm font-bold text-zinc-900 placeholder:text-zinc-300 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950" />
-                            <textarea placeholder="Descripción (opcional)" value={feeForm.description}
-                                onChange={e => setFeeForm({ ...feeForm, description: e.target.value })}
-                                rows={2}
-                                className="w-full bg-zinc-50 rounded-xl px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-300 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950 resize-none" />
+
+                            {/* Monto + Fecha/Día */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="text-[9px] font-black uppercase text-zinc-400 ml-1">Monto ($)</label>
@@ -1336,12 +1363,35 @@ export default function App() {
                                         className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm font-black text-zinc-900 placeholder:text-zinc-300 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950 mt-1" />
                                 </div>
                                 <div>
-                                    <label className="text-[9px] font-black uppercase text-zinc-400 ml-1">Fecha límite</label>
-                                    <input type="date" value={feeForm.due_date}
-                                        onChange={e => setFeeForm({ ...feeForm, due_date: e.target.value })}
-                                        className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm font-bold text-zinc-900 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950 mt-1" />
+                                    {feeForm.type === 'once' ? (
+                                        <>
+                                            <label className="text-[9px] font-black uppercase text-zinc-400 ml-1">Fecha límite</label>
+                                            <input type="date" value={feeForm.due_date}
+                                                onChange={e => setFeeForm({ ...feeForm, due_date: e.target.value })}
+                                                className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm font-bold text-zinc-900 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950 mt-1" />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <label className="text-[9px] font-black uppercase text-zinc-400 ml-1">Día del mes</label>
+                                            <select value={feeForm.recurring_day}
+                                                onChange={e => setFeeForm({ ...feeForm, recurring_day: e.target.value })}
+                                                className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm font-bold text-zinc-900 border border-zinc-100 outline-none focus:ring-2 ring-zinc-950 mt-1">
+                                                <option value="">Día...</option>
+                                                {Array.from({ length: 28 }, (_, i) => i + 1).map(d => (
+                                                    <option key={d} value={d}>Día {d}</option>
+                                                ))}
+                                            </select>
+                                        </>
+                                    )}
                                 </div>
                             </div>
+
+                            {feeForm.type === 'recurring' && feeForm.recurring_day && (
+                                <p className="text-[10px] text-zinc-400 bg-zinc-50 rounded-xl px-3 py-2 border border-zinc-100">
+                                    🔁 Se cobrará el <strong>día {feeForm.recurring_day}</strong> de cada mes. Los recordatorios se envían 1 y 2 días antes.
+                                </p>
+                            )}
+
                             <button type="submit" disabled={feeSubmitting}
                                 className="w-full h-12 bg-zinc-950 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-40">
                                 {feeSubmitting ? <Loader2 className="animate-spin" size={16} /> : <><Plus size={16} /> Crear Cuota</>}
