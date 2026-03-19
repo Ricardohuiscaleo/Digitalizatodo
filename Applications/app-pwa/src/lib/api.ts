@@ -573,6 +573,18 @@ export async function deleteExpense(tenantId: string, token: string, id: number)
 
 // ─── Fees / Cuotas (Tesorero) ─────────────────────────────────────────────────
 
+export async function getFeesGuardiansSummary(tenantId: string, token: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/fees/guardians-summary`, {
+            cache: 'no-store' as RequestCache,
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+        });
+        return await safeJson(response);
+    } catch {
+        return { guardians: [] };
+    }
+}
+
 export async function getFees(tenantId: string, token: string) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/fees`, {
