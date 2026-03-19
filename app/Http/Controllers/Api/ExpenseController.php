@@ -44,9 +44,11 @@ class ExpenseController extends Controller
         $totalGastado = $expenses->sum('amount');
 
         // Recaudado = suma de fee_payments pagados en este tenant
-        $recaudado = \App\Models\FeePayment::where('tenant_id', $tenant->id)
-            ->where('status', 'paid')
+        // Filtramos por fees.tenant_id (no fee_payments.tenant_id, que puede no existir)
+        $recaudado = \App\Models\FeePayment::query()
             ->join('fees', 'fee_payments.fee_id', '=', 'fees.id')
+            ->where('fees.tenant_id', $tenant->id)
+            ->where('fee_payments.status', 'paid')
             ->sum('fees.amount');
 
         return response()->json([
