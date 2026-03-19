@@ -74,6 +74,6 @@ class SendFeeReminders extends Command
             $candidate = $next->day(min($day, $next->daysInMonth));
         }
 
-        return $candidate;
+        return Carbon::instance($candidate);
     }
 }
