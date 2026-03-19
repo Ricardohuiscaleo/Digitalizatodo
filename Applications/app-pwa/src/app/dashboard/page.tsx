@@ -1622,41 +1622,41 @@ export default function App() {
             <div className="space-y-6 text-zinc-950">
                 {/* Dashboard Summary - Sistema de Tarjetas Premium */}
                 {/* Dashboard Summary - Sistema de Tarjetas Premium Horizontal Grid 2x2 */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                <div className="grid grid-cols-4 gap-2">
                     {/* Total */}
                     <div className="bg-white rounded-[1.8rem] px-4 py-3 border border-zinc-100 shadow-sm flex items-center justify-between min-h-[75px]">
                         <div className="flex flex-col gap-1.5 shrink-0">
-                            <Users style={{ color: branding?.primaryColor || '#6366f1' }} size={22} strokeWidth={2.5} />
-                            <p className="text-[7.5px] font-black text-zinc-400 uppercase tracking-widest leading-none">Total</p>
+                            <Users style={{ color: branding?.primaryColor || '#6366f1' }} size={18} strokeWidth={2.5} />
+                            <p className="text-[7px] font-black text-zinc-400 uppercase tracking-widest leading-none">Total</p>
                         </div>
-                        <p className="text-2xl font-black text-zinc-950 tracking-tighter leading-none shrink-0">{totalStudents}</p>
+                        <p className="text-xl font-black text-zinc-950 tracking-tighter leading-none shrink-0">{totalStudents}</p>
                     </div>
 
                     {/* Pagados */}
                     <div className="bg-emerald-50/40 rounded-[1.8rem] px-4 py-3 border border-emerald-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
                         <div className="flex flex-col gap-1.5 shrink-0">
-                            <CheckCircle2 className="text-emerald-600" size={26} strokeWidth={2.5} />
-                            <p className="text-[7.5px] font-black text-emerald-600/60 uppercase tracking-widest leading-none">Pagados</p>
+                            <CheckCircle2 className="text-emerald-600" size={18} strokeWidth={2.5} />
+                            <p className="text-[7px] font-black text-emerald-600/60 uppercase tracking-widest leading-none">Pagados</p>
                         </div>
-                        <p className="text-2xl font-black text-emerald-700 tracking-tighter leading-none shrink-0">{paidStudents}</p>
+                        <p className="text-xl font-black text-emerald-700 tracking-tighter leading-none shrink-0">{paidStudents}</p>
                     </div>
 
                     {/* Revisión */}
                     <div className="bg-amber-50/40 rounded-[1.8rem] px-4 py-3 border border-amber-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
                         <div className="flex flex-col gap-1.5 shrink-0">
-                            <RefreshCw className="text-amber-600 animate-spin-slow" size={24} strokeWidth={2.5} />
-                            <p className="text-[7.5px] font-black text-amber-600/60 uppercase tracking-widest leading-none">Revisión</p>
+                            <RefreshCw className="text-amber-600 animate-spin-slow" size={18} strokeWidth={2.5} />
+                            <p className="text-[7px] font-black text-amber-600/60 uppercase tracking-widest leading-none">Revisión</p>
                         </div>
-                        <p className="text-2xl font-black text-amber-700 tracking-tighter leading-none shrink-0">{allStudents.filter(s => s.payerStatus === 'review').length}</p>
+                        <p className="text-xl font-black text-amber-700 tracking-tighter leading-none shrink-0">{allStudents.filter(s => s.payerStatus === 'review').length}</p>
                     </div>
 
                     {/* Deuda */}
                     <div className="bg-rose-50/40 rounded-[1.8rem] px-4 py-3 border border-rose-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
                         <div className="flex flex-col gap-1.5 shrink-0">
-                            <XCircle className="text-rose-600" size={24} strokeWidth={2.5} />
-                            <p className="text-[7.5px] font-black text-rose-600/60 uppercase tracking-widest leading-none">Deuda</p>
+                            <XCircle className="text-rose-600" size={18} strokeWidth={2.5} />
+                            <p className="text-[7px] font-black text-rose-600/60 uppercase tracking-widest leading-none">Deuda</p>
                         </div>
-                        <p className="text-2xl font-black text-rose-700 tracking-tighter leading-none shrink-0">{allStudents.filter(s => s.payerStatus === 'pending').length}</p>
+                        <p className="text-xl font-black text-rose-700 tracking-tighter leading-none shrink-0">{allStudents.filter(s => s.payerStatus === 'pending').length}</p>
                     </div>
                 </div>
 
