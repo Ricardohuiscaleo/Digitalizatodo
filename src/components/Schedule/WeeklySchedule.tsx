@@ -222,6 +222,8 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
         return schedules.find(s => s.day_of_week === day && s.start_time === start && s.end_time === end);
     };
 
+    const toHHMM = (t: string) => t.slice(0, 5);
+
     const handleCellSave = async (value: string, color: string) => {
         if (!modalCell) return;
         const [start, end] = modalCell.slot.split("|");
@@ -229,7 +231,7 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
         if (existing) {
             await onUpdate?.(existing.id, { subject: value, color });
         } else if (value.trim()) {
-            await onSave?.({ day_of_week: modalCell.day, start_time: start, end_time: end, subject: value, color, name: null });
+            await onSave?.({ day_of_week: modalCell.day, start_time: toHHMM(start), end_time: toHHMM(end), subject: value, color, name: null });
         }
     };
 
@@ -243,7 +245,7 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
         if (!newStart || !newEnd) return;
         setAddSaving(true);
         for (const day of DAY_INDEX) {
-            await onSave?.({ day_of_week: day, start_time: newStart, end_time: newEnd, subject: "", color: null, name: null });
+            await onSave?.({ day_of_week: day, start_time: toHHMM(newStart), end_time: toHHMM(newEnd), subject: "", color: null, name: null });
         }
         setAddSaving(false);
         setShowAddRow(false);
