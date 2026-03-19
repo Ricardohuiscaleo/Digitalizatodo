@@ -661,3 +661,44 @@ export async function getMyFees(tenantId: string, token: string) {
         return { payments: [] };
     }
 }
+
+export async function getSchedules(tenantSlug: string, token?: string) {
+    try {
+        const headers: any = { 'Accept': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const response = await fetch(`${API_URL}/${tenantSlug}/schedules`, { cache: 'no-store', headers });
+        return await safeJson(response);
+    } catch { return { schedules: [] }; }
+}
+
+export async function createSchedule(tenantSlug: string, token: string, data: any) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantSlug}/schedules`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        return await safeJson(response);
+    } catch { return null; }
+}
+
+export async function updateSchedule(tenantSlug: string, token: string, id: number, data: any) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantSlug}/schedules/${id}`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        return await safeJson(response);
+    } catch { return null; }
+}
+
+export async function deleteSchedule(tenantSlug: string, token: string, id: number) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantSlug}/schedules/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+        });
+        return await safeJson(response);
+    } catch { return null; }
+}

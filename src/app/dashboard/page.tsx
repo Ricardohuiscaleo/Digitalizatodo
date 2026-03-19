@@ -69,8 +69,13 @@ import {
     approveFeePayment,
     getExpenses,
     createExpense,
-    deleteExpense
+    deleteExpense,
+    getSchedules,
+    createSchedule,
+    updateSchedule,
+    deleteSchedule
 } from "@/lib/api";
+import WeeklySchedule from "@/components/Schedule/WeeklySchedule";
 import { unlockAudio, setAppBadge } from "@/lib/audio";
 import { subscribeToPush } from "@/lib/push";
 
@@ -379,6 +384,8 @@ export default function App() {
     const [expensesLoading, setExpensesLoading] = useState(false);
     const [showCreateExpense, setShowCreateExpense] = useState(false);
     const [expenseForm, setExpenseForm] = useState({ title: '', description: '', amount: '', category: 'insumos', expense_date: new Date().toISOString().split('T')[0] });
+    const [schedulesList, setSchedulesList] = useState<any[]>([]);
+    const [schedulesLoading, setSchedulesLoading] = useState(false);
     const [expenseReceiptPhoto, setExpenseReceiptPhoto] = useState<File | null>(null);
     const [expenseProductPhoto, setExpenseProductPhoto] = useState<File | null>(null);
     const [expenseSubmitting, setExpenseSubmitting] = useState(false);
@@ -546,7 +553,7 @@ export default function App() {
         };
     }, [branding?.slug, user?.id]);
 
-    const tabs = ['dashboard', 'attendance', 'payments', 'settings', 'profile', 'fees', 'expenses'];
+    const tabs = ['dashboard', 'attendance', 'payments', 'settings', 'profile', 'fees', 'expenses', 'schedule'];
 
     const changeTab = (newTab: string) => {
         const currentIndex = tabs.indexOf(activeTab);
@@ -778,7 +785,10 @@ export default function App() {
         }
         if (activeTab === 'expenses' && !loading && branding?.slug && token) {
             loadExpenses();
-            if (feesList.length === 0) loadFees(); // necesario para el arqueo
+            if (feesList.length === 0) loadFees();
+        }
+        if (activeTab === 'schedule' && !loading && branding?.slug && token) {
+            loadSchedules();
         }
     }, [paymentFilter, selectedMonth, selectedYear, activeTab]);
 
@@ -947,6 +957,13 @@ export default function App() {
         setExpensesTotal(data?.total ?? 0);
         setExpensesSummary(data?.summary ?? []);
         setExpensesLoading(false);
+    };
+
+    const loadSchedules = async () => {
+        setSchedulesLoading(true);
+        const data = await getSchedules(branding?.slug || '', token || '');
+        setSchedulesList(data?.schedules ?? []);
+        setSchedulesLoading(false);
     };
 
     const handleCreateExpense = async (e: React.FormEvent) => {
@@ -2183,6 +2200,39 @@ export default function App() {
         );
     };
 
+    const renderSchedule = () => (
+        <div className="space-y-4 pb-24">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-xl font-black text-zinc-900">Horario de Clases</h2>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mt-0.5">Toca una celda para editar</p>
+                </div>
+            </div>
+            {schedulesLoading ? (
+                <div className="flex justify-center py-12"><span className="animate-spin text-zinc-300">&#9696;</span></div>
+            ) : (
+                <div className="bg-white rounded-[20px] p-4 border border-zinc-100 shadow-sm">
+                    <WeeklySchedule
+                        schedules={schedulesList}
+                        editable
+                        onSave={async (entry) => {
+                            await createSchedule(branding?.slug || '', token || '', entry);
+                            await loadSchedules();
+                        }}
+                        onUpdate={async (id, entry) => {
+                            await updateSchedule(branding?.slug || '', token || '', id, entry);
+                            await loadSchedules();
+                        }}
+                        onDelete={async (id) => {
+                            await deleteSchedule(branding?.slug || '', token || '', id);
+                            await loadSchedules();
+                        }}
+                    />
+                </div>
+            )}
+        </div>
+    );
+
     const renderSettings = () => {
         return (
             <div className="space-y-3 px-0 pb-10">
@@ -2729,6 +2779,7 @@ export default function App() {
                             {activeTab === 'profile' && renderProfile()}
                             {activeTab === 'fees' && renderFees()}
                             {activeTab === 'expenses' && renderExpenses()}
+                            {activeTab === 'schedule' && renderSchedule()}
                         </div>
                     </div>
                 </main>
@@ -2822,6 +2873,9 @@ export default function App() {
                 <TabButton icon={CreditCard} label="Pagos" active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} />
                 {branding?.industry === 'school_treasury' && (
                     <TabButton icon={ShoppingCart} label="Compras" active={activeTab === 'expenses'} onClick={() => changeTab('expenses')} primaryColor={branding?.primaryColor} />
+                )}
+                {branding?.industry === 'school_treasury' && (
+                    <TabButton icon={Calendar} label="Horario" active={activeTab === 'schedule'} onClick={() => changeTab('schedule')} primaryColor={branding?.primaryColor} />
                 )}
                 {/* Profile tab con foto */}
                 <button
