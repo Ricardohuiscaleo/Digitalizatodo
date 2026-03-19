@@ -2685,7 +2685,22 @@ export default function App() {
         </div>
     );
 
-    if (loading) return null;
+    if (loading) return (
+        <div className="min-h-screen bg-stone-50 px-4 pt-6 pb-32 max-w-lg mx-auto space-y-4 animate-pulse">
+            <div className="flex items-center justify-between mb-2">
+                <div className="space-y-2">
+                    <div className="h-7 w-36 bg-zinc-200 rounded-xl" />
+                    <div className="h-3 w-48 bg-zinc-100 rounded-lg" />
+                </div>
+                <div className="w-14 h-14 bg-zinc-200 rounded-full" />
+            </div>
+            <div className="h-36 bg-zinc-200 rounded-[2.5rem]" />
+            <div className="h-4 w-32 bg-zinc-100 rounded-lg" />
+            <div className="h-24 bg-zinc-100 rounded-[2rem]" />
+            <div className="h-24 bg-zinc-100 rounded-[2rem]" />
+            <div className="h-24 bg-zinc-100 rounded-[2rem]" />
+        </div>
+    );
 
     return (
         <div className="flex flex-col h-screen bg-white font-sans relative overflow-hidden text-zinc-950">

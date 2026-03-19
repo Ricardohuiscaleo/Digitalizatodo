@@ -67,6 +67,9 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
     // Horario público (apoderados pueden ver sin auth)
     Route::get('schedules', [\App\Http\Controllers\Api\ScheduleController::class, 'index']);
 
+    // Web Push VAPID (público para obtener clave)
+    Route::get('push/vapid-public-key', [\App\Http\Controllers\Api\PushController::class, 'vapidPublicKey']);
+
     // Registro público de alumnos
     Route::post('register-student', [StudentRegistrationController::class , 'register']);
 
@@ -108,6 +111,9 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
             // Cuotas — apoderado ve las suyas y sube comprobante
             Route::get('fees/my', [\App\Http\Controllers\Api\FeeController::class, 'myFees']);
             Route::post('fees/{id}/upload-proof', [\App\Http\Controllers\Api\FeeController::class, 'uploadProof']);
+
+            // Web Push — suscripción (requiere auth)
+            Route::post('push/subscribe', [\App\Http\Controllers\Api\PushController::class, 'subscribe']);
 
             // Asistencia (solo teachers/admins - Escritura)
             Route::middleware('role:teacher,admin,owner')->group(function () {
