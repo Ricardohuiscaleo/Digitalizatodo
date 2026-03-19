@@ -145,6 +145,7 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
 
                     // Cuotas (Tesorero)
                     Route::get('fees', [\App\Http\Controllers\Api\FeeController::class, 'index']);
+                    Route::get('fees/guardians-summary', [\App\Http\Controllers\Api\FeeController::class, 'guardiansSummary']);
                     Route::post('fees', [\App\Http\Controllers\Api\FeeController::class, 'store']);
                     Route::get('fees/{id}', [\App\Http\Controllers\Api\FeeController::class, 'show']);
                     Route::delete('fees/{id}', [\App\Http\Controllers\Api\FeeController::class, 'destroy']);

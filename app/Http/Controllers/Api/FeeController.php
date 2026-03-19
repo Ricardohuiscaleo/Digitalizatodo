@@ -14,6 +14,51 @@ class FeeController extends Controller
 {
     public function __construct(protected ImageService $imageService) {}
 
+    // GET /fees/guardians-summary — staff ve todos los apoderados con su estado de cuotas
+    public function guardiansSummary(Request $request)
+    {
+        $tenant = app('currentTenant');
+
+        $guardians = Guardian::where('tenant_id', $tenant->id)
+            ->where('active', true)
+            ->get();
+
+        $result = $guardians->map(function ($guardian) use ($tenant) {
+            $payments = FeePayment::where('tenant_id', $tenant->id)
+                ->where('guardian_id', $guardian->id)
+                ->with('fee:id,title,amount,type,recurring_day,due_date')
+                ->get();
+
+            $pending  = $payments->where('status', 'pending')->count();
+            $review   = $payments->where('status', 'review')->count();
+            $paid     = $payments->where('status', 'paid')->count();
+            $total    = $payments->count();
+
+            $status = 'pending';
+            if ($total === 0)        $status = 'none';
+            elseif ($review > 0)     $status = 'review';
+            elseif ($pending === 0)  $status = 'paid';
+
+            $students = $guardian->students()->select('students.id', 'students.name', 'students.photo')->get();
+
+            return [
+                'id'       => $guardian->id,
+                'name'     => $guardian->name,
+                'email'    => $guardian->email,
+                'photo'    => $guardian->photo,
+                'status'   => $status,
+                'pending'  => $pending,
+                'review'   => $review,
+                'paid'     => $paid,
+                'total'    => $total,
+                'students' => $students,
+                'payments' => $payments,
+            ];
+        });
+
+        return response()->json(['guardians' => $result]);
+    }
+
     // GET /fees — staff ve todas las cuotas con resumen de pagos
     public function index(Request $request)
     {
@@ -200,15 +245,20 @@ class FeeController extends Controller
     // GET /fees/my — apoderado ve sus cuotas pendientes
     public function myFees(Request $request)
     {
-        $tenant = app('currentTenant');
-        $user   = $request->user();
+        $tenant  = app('currentTenant');
+        $user    = $request->user();
 
-        $guardian = Guardian::where('tenant_id', $tenant->id)
-            ->where('user_id', $user->id)
-            ->first();
+        // Guardian autentica directamente con guard guardian-api (no tiene user_id)
+        if ($user instanceof Guardian) {
+            $guardian = $user;
+        } else {
+            $guardian = Guardian::where('tenant_id', $tenant->id)
+                ->where('user_id', $user->id)
+                ->first();
+        }
 
         if (!$guardian) {
-            return response()->json(['fees' => []]);
+            return response()->json(['payments' => []]);
         }
 
         $payments = FeePayment::where('tenant_id', $tenant->id)
