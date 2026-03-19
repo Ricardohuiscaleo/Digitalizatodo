@@ -57,22 +57,32 @@ class FeeController extends Controller
         $tenant = app('currentTenant');
 
         $validated = $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'amount'      => 'required|numeric|min:0',
-            'due_date'    => 'required|date',
-            'target'      => 'nullable|string|in:all,custom',
-            'guardian_ids'=> 'nullable|array',
+            'title'         => 'required|string|max:255',
+            'description'   => 'nullable|string',
+            'amount'        => 'required|numeric|min:0',
+            'due_date'      => 'nullable|date',
+            'type'          => 'nullable|in:once,recurring',
+            'recurring_day' => 'nullable|integer|min:1|max:31',
+            'target'        => 'nullable|string|in:all,custom',
+            'guardian_ids'  => 'nullable|array',
         ]);
 
+        $type = $validated['type'] ?? 'once';
+
+        if ($type === 'once' && empty($validated['due_date'])) {
+            return response()->json(['message' => 'La fecha límite es requerida para cuotas únicas.'], 422);
+        }
+
         $fee = Fee::create([
-            'tenant_id'   => $tenant->id,
-            'title'       => $validated['title'],
-            'description' => $validated['description'] ?? null,
-            'amount'      => $validated['amount'],
-            'due_date'    => $validated['due_date'],
-            'target'      => $validated['target'] ?? 'all',
-            'created_by'  => $request->user()->id,
+            'tenant_id'     => $tenant->id,
+            'title'         => $validated['title'],
+            'description'   => $validated['description'] ?? null,
+            'amount'        => $validated['amount'],
+            'due_date'      => $type === 'once' ? $validated['due_date'] : null,
+            'target'        => $validated['target'] ?? 'all',
+            'type'          => $type,
+            'recurring_day' => $type === 'recurring' ? ($validated['recurring_day'] ?? null) : null,
+            'created_by'    => $request->user()->id,
         ]);
 
         // Generar fee_payments
