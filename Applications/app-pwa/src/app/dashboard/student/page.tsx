@@ -404,13 +404,7 @@ export default function StudentDashboard() {
 
         if (profile) {
             setData(profile);
-            if (profile.tenant?.industry) {
-                localStorage.setItem('tenant_industry', profile.tenant.industry);
-                // Si es school_treasury y schedules aún no cargados, cargarlos ahora
-                if (profile.tenant.industry === 'school_treasury' && tenantSlug) {
-                    getSchedules(tenantSlug, token).then(d => setSchedulesList(d?.schedules ?? []));
-                }
-            }
+            if (profile.tenant?.industry) localStorage.setItem('tenant_industry', profile.tenant.industry);
         } else {
             // Si después de intentar reanudar sigue sin haber perfil, al login
             window.location.href = "/";
@@ -487,15 +481,14 @@ export default function StudentDashboard() {
     }, [branding?.slug, data?.guardian?.id]);
 
     useEffect(() => {
-        const isSchoolTreasury = localStorage.getItem('tenant_industry') === 'school_treasury';
         const slug = localStorage.getItem('tenant_slug') || '';
         const tk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
-        const promises: Promise<any>[] = [refreshData()];
-        if (isSchoolTreasury && slug && tk) {
-            promises.push(getSchedules(slug, tk).then(d => setSchedulesList(d?.schedules ?? [])));
-        }
+        const promises: Promise<any>[] = [
+            refreshData(),
+            slug ? getSchedules(slug, tk).then(d => setSchedulesList(d?.schedules ?? [])) : Promise.resolve(),
+        ];
         Promise.all(promises).then(() => setLoading(false));
-    }, [refreshData]);
+    }, []);
 
     // Desbloquear AudioContext en primer gesto
     useEffect(() => {

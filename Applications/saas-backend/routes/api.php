@@ -79,7 +79,7 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
         );
 
         // ── Rutas protegidas (requieren token Sanctum) ─────────────────────
-        Route::middleware('auth:sanctum')->group(function () {
+        Route::middleware('auth:sanctum,guardian-api')->group(function () {
             // Perfil
             Route::get('me', [AuthController::class , 'me']);
             Route::post('me/photo', [GuardianController::class, 'updatePhoto']);
@@ -127,14 +127,12 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
                     Route::delete('settings/registration-page', [RegistrationPageController::class , 'deactivate']);
 
                     // Gestión de Horarios
-                    Route::get('schedules', [\App\Http\Controllers\Api\ScheduleController::class, 'index']);
                     Route::post('schedules', [\App\Http\Controllers\Api\ScheduleController::class, 'store']);
                     Route::put('schedules/{id}', [\App\Http\Controllers\Api\ScheduleController::class, 'update']);
                     Route::delete('schedules/{id}', [\App\Http\Controllers\Api\ScheduleController::class, 'destroy']);
                     Route::post('schedules/{id}/students', [\App\Http\Controllers\Api\ScheduleController::class, 'assignStudents']);
 
                     // Gastos (Tesorero)
-                    Route::get('expenses', [\App\Http\Controllers\Api\ExpenseController::class, 'index']);
                     Route::post('expenses', [\App\Http\Controllers\Api\ExpenseController::class, 'store']);
                     Route::delete('expenses/{id}', [\App\Http\Controllers\Api\ExpenseController::class, 'destroy']);
 
