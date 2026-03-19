@@ -20,7 +20,21 @@ class ExpenseController extends Controller
             ->with('creator:id,name')
             ->orderByDesc('expense_date')
             ->orderByDesc('created_at')
-            ->get();
+            ->get()
+            ->map(function ($expense) {
+                foreach (['receipt_photo', 'product_photo'] as $field) {
+                    if ($expense->$field) {
+                        $path = parse_url($expense->$field, PHP_URL_PATH);
+                        $path = ltrim($path, '/');
+                        try {
+                            $expense->$field = Storage::disk('s3')->temporaryUrl($path, now()->addHours(24));
+                        } catch (\Throwable $e) {
+                            // mantener URL original si falla
+                        }
+                    }
+                }
+                return $expense;
+            });
 
         $summary = Expense::where('tenant_id', $tenant->id)
             ->selectRaw('category, SUM(amount) as total, COUNT(*) as count')
@@ -106,7 +120,7 @@ class ExpenseController extends Controller
             Storage::disk('s3')->put($s3Path, file_get_contents($optimized));
             unlink($optimized);
 
-            return Storage::disk('s3')->url($s3Path);
+            return Storage::disk('s3')->temporaryUrl($s3Path, now()->addHours(24));
         } catch (\Exception $e) {
             \Log::error("Error subiendo {$field}: " . $e->getMessage());
             return null;
