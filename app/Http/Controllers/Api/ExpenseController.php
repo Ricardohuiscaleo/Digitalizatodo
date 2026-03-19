@@ -27,10 +27,20 @@ class ExpenseController extends Controller
             ->groupBy('category')
             ->get();
 
+        $totalGastado = $expenses->sum('amount');
+
+        // Recaudado = suma de fee_payments pagados en este tenant
+        $recaudado = \App\Models\FeePayment::where('tenant_id', $tenant->id)
+            ->where('status', 'paid')
+            ->join('fees', 'fee_payments.fee_id', '=', 'fees.id')
+            ->sum('fees.amount');
+
         return response()->json([
-            'expenses' => $expenses,
-            'summary'  => $summary,
-            'total'    => $expenses->sum('amount'),
+            'expenses'   => $expenses,
+            'summary'    => $summary,
+            'total'      => $totalGastado,
+            'collected'  => $recaudado,
+            'balance'    => $recaudado - $totalGastado,
         ]);
     }
 

@@ -34,23 +34,25 @@ class ScheduleController extends Controller
         }
 
         $validated = $request->validate([
-            'name' => 'nullable|string|max:255',
+            'name'        => 'nullable|string|max:255',
+            'subject'     => 'nullable|string|max:100',
             'day_of_week' => 'required|integer|min:0|max:6',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-            'capacity' => 'nullable|integer|min:1',
+            'start_time'  => 'required|date_format:H:i',
+            'end_time'    => 'required|date_format:H:i|after:start_time',
+            'capacity'    => 'nullable|integer|min:1',
             'student_ids' => 'nullable|array',
             'student_ids.*' => 'exists:students,id'
         ]);
 
         return DB::transaction(function () use ($validated, $tenant) {
             $schedule = Schedule::create([
-                'tenant_id' => $tenant->id,
-                'name' => $validated['name'] ?? null,
+                'tenant_id'   => $tenant->id,
+                'name'        => $validated['name'] ?? null,
+                'subject'     => $validated['subject'] ?? null,
                 'day_of_week' => $validated['day_of_week'],
-                'start_time' => $validated['start_time'],
-                'end_time' => $validated['end_time'],
-                'capacity' => $validated['capacity'] ?? null,
+                'start_time'  => $validated['start_time'],
+                'end_time'    => $validated['end_time'],
+                'capacity'    => $validated['capacity'] ?? null,
             ]);
 
             if (!empty($validated['student_ids'])) {
@@ -70,22 +72,24 @@ class ScheduleController extends Controller
         $schedule = Schedule::where('tenant_id', $tenant->id)->findOrFail($id);
 
         $validated = $request->validate([
-            'name' => 'nullable|string|max:255',
+            'name'        => 'nullable|string|max:255',
+            'subject'     => 'nullable|string|max:100',
             'day_of_week' => 'required|integer|min:0|max:6',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-            'capacity' => 'nullable|integer|min:1',
+            'start_time'  => 'required|date_format:H:i',
+            'end_time'    => 'required|date_format:H:i|after:start_time',
+            'capacity'    => 'nullable|integer|min:1',
             'student_ids' => 'nullable|array',
             'student_ids.*' => 'exists:students,id'
         ]);
 
         return DB::transaction(function () use ($validated, $schedule) {
             $schedule->update([
-                'name' => $validated['name'] ?? null,
+                'name'        => $validated['name'] ?? null,
+                'subject'     => $validated['subject'] ?? null,
                 'day_of_week' => $validated['day_of_week'],
-                'start_time' => $validated['start_time'],
-                'end_time' => $validated['end_time'],
-                'capacity' => $validated['capacity'] ?? null,
+                'start_time'  => $validated['start_time'],
+                'end_time'    => $validated['end_time'],
+                'capacity'    => $validated['capacity'] ?? null,
             ]);
 
             if (isset($validated['student_ids'])) {
