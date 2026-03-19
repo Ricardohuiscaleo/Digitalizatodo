@@ -14,6 +14,8 @@ class Schedule extends Model
     protected $fillable = [
         'tenant_id',
         'name',
+        'subject',
+        'color',
         'day_of_week',
         'start_time',
         'end_time',

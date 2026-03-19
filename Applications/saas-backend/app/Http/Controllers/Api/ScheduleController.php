@@ -36,9 +36,10 @@ class ScheduleController extends Controller
         $validated = $request->validate([
             'name'        => 'nullable|string|max:255',
             'subject'     => 'nullable|string|max:100',
+            'color'       => 'nullable|string|max:20',
             'day_of_week' => 'required|integer|min:0|max:6',
-            'start_time'  => 'required|date_format:H:i',
-            'end_time'    => 'required|date_format:H:i|after:start_time',
+            'start_time'  => ['required', 'regex:/^\d{2}:\d{2}(:\d{2})?$/'],
+            'end_time'    => ['required', 'regex:/^\d{2}:\d{2}(:\d{2})?$/'],
             'capacity'    => 'nullable|integer|min:1',
             'student_ids' => 'nullable|array',
             'student_ids.*' => 'exists:students,id'
@@ -49,9 +50,10 @@ class ScheduleController extends Controller
                 'tenant_id'   => $tenant->id,
                 'name'        => $validated['name'] ?? null,
                 'subject'     => $validated['subject'] ?? null,
+                'color'       => $validated['color'] ?? null,
                 'day_of_week' => $validated['day_of_week'],
-                'start_time'  => $validated['start_time'],
-                'end_time'    => $validated['end_time'],
+                'start_time'  => substr($validated['start_time'], 0, 5),
+                'end_time'    => substr($validated['end_time'], 0, 5),
                 'capacity'    => $validated['capacity'] ?? null,
             ]);
 
@@ -74,9 +76,10 @@ class ScheduleController extends Controller
         $validated = $request->validate([
             'name'        => 'nullable|string|max:255',
             'subject'     => 'nullable|string|max:100',
-            'day_of_week' => 'required|integer|min:0|max:6',
-            'start_time'  => 'required|date_format:H:i',
-            'end_time'    => 'required|date_format:H:i|after:start_time',
+            'color'       => 'nullable|string|max:20',
+            'day_of_week' => 'sometimes|integer|min:0|max:6',
+            'start_time'  => ['sometimes', 'regex:/^\d{2}:\d{2}(:\d{2})?$/'],
+            'end_time'    => ['sometimes', 'regex:/^\d{2}:\d{2}(:\d{2})?$/'],
             'capacity'    => 'nullable|integer|min:1',
             'student_ids' => 'nullable|array',
             'student_ids.*' => 'exists:students,id'
@@ -84,12 +87,13 @@ class ScheduleController extends Controller
 
         return DB::transaction(function () use ($validated, $schedule) {
             $schedule->update([
-                'name'        => $validated['name'] ?? null,
-                'subject'     => $validated['subject'] ?? null,
-                'day_of_week' => $validated['day_of_week'],
-                'start_time'  => $validated['start_time'],
-                'end_time'    => $validated['end_time'],
-                'capacity'    => $validated['capacity'] ?? null,
+                'name'        => array_key_exists('name', $validated) ? $validated['name'] : $schedule->name,
+                'subject'     => array_key_exists('subject', $validated) ? $validated['subject'] : $schedule->subject,
+                'color'       => array_key_exists('color', $validated) ? $validated['color'] : $schedule->color,
+                'day_of_week' => $validated['day_of_week'] ?? $schedule->day_of_week,
+                'start_time'  => $validated['start_time'] ?? $schedule->start_time,
+                'end_time'    => $validated['end_time'] ?? $schedule->end_time,
+                'capacity'    => $validated['capacity'] ?? $schedule->capacity,
             ]);
 
             if (isset($validated['student_ids'])) {
