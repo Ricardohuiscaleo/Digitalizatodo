@@ -53,11 +53,12 @@ export default function TodaySchedule({ schedules, primaryColor }: TodaySchedule
             <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2 uppercase tracking-tighter mb-4">
                 <CalendarCheck style={{ color: primaryColor || '#6366f1' }} size={18} />
                 Clases de hoy
+                {/* título normalizado con student */}
                 <span className="text-[9px] font-bold text-zinc-400 normal-case tracking-normal capitalize">{dayName}</span>
             </h3>
             {grouped.length === 0 ? (
                 <div className="flex items-center gap-3 py-8 px-4 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200 justify-center">
-                    <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest text-center">Sin clases programadas para hoy</p>
+                    <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest text-center">Sin clases hoy</p>
                 </div>
             ) : (
                 <div className="space-y-1.5">

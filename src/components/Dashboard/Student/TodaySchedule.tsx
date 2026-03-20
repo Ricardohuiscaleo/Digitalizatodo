@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Calendar } from "lucide-react";
+import { CalendarCheck } from "lucide-react";
 import { nowCL } from "@/lib/utils";
 
 interface TodayScheduleProps {
@@ -55,8 +55,8 @@ export function TodaySchedule({ schedules, primaryColor, vocab }: TodayScheduleP
     return (
         <div className="bg-white rounded-3xl p-5 shadow-sm border border-zinc-100">
             <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2 uppercase tracking-tighter mb-4">
-                <Calendar style={{ color: primaryColor || '#6366f1' }} size={18} />
-                {vocab?.attendance ? `${vocab.attendance} de hoy` : 'Clases de hoy'}
+                <CalendarCheck style={{ color: primaryColor || '#6366f1' }} size={18} />
+                Clases de hoy
                 <span className="text-[9px] font-bold text-zinc-400 normal-case tracking-normal capitalize">{dayName}</span>
             </h3>
             {grouped.length === 0 ? (
