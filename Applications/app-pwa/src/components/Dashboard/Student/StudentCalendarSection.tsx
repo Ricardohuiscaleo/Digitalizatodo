@@ -29,7 +29,7 @@ export function StudentCalendarSection({
                     {schedulesList.length === 0 ? (
                         <p className="text-center text-xs text-zinc-300 py-8 font-bold">Sin horario cargado aún</p>
                     ) : (
-                        <WeeklySchedule schedules={schedulesList} editable={false} />
+                        <WeeklySchedule key={schedulesList.length + schedulesList.map(s=>s.id).join(',')} schedules={schedulesList} editable={false} />
                     )}
                 </div>
             </div>
