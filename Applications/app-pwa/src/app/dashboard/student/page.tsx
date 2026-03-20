@@ -179,7 +179,17 @@ export default function StudentDashboard() {
         attChannel.listen('.schedule.updated', (ev: any) => {
             console.log('[WS] 📅 schedule.updated recibido', ev);
             const slug = localStorage.getItem('tenant_slug') || '';
-            if (slug) getSchedules(slug).then(d => { console.log('[WS] 📅 horario recargado', d?.schedules?.length, 'bloques'); setSchedulesList(d?.schedules ?? []); });
+            if (slug) getSchedules(slug).then(d => {
+                const newList = d?.schedules ?? [];
+                console.log('[WS] 📅 horario recargado', newList.length, 'bloques');
+                console.log('[WS] 📅 primer bloque:', newList[0]?.subject, newList[0]?.color);
+                setSchedulesList(prev => {
+                    console.log('[WS] 📅 prev bloques:', prev.length, '→ new:', newList.length);
+                    console.log('[WS] 📅 key prev:', prev.map((s:any)=>`${s.id}-${s.subject}-${s.color}`).join(',').slice(0,80));
+                    console.log('[WS] 📅 key new: ', newList.map((s:any)=>`${s.id}-${s.subject}-${s.color}`).join(',').slice(0,80));
+                    return newList;
+                });
+            });
         });
 
         const payChannel = echo.channel(`payments.${branding.slug}`);
