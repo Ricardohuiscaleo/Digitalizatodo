@@ -176,23 +176,10 @@ export default function StudentDashboard() {
         const attChannel = echo.channel(`attendance.${branding.slug}`);
         attChannel.listen('.student.checked-in', () => refreshDataRef.current());
         attChannel.listen('.student.checked-out', () => refreshDataRef.current());
-        attChannel.listen('.schedule.updated', (ev: any) => {
-            console.log('[WS] 📅 schedule.updated recibido', ev);
+        attChannel.listen('.schedule.updated', () => {
             const slug = localStorage.getItem('tenant_slug') || '';
             const tk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
-            if (slug) getSchedules(slug, tk).then(d => {
-                const newList = d?.schedules ?? [];
-                console.log('[WS] 📅 horario recargado', newList.length, 'bloques');
-                console.log('[WS] 📅 primer bloque:', newList[0]?.subject, newList[0]?.color);
-                setSchedulesList(prev => {
-                    const kPrev = prev.map((s:any)=>`${s.id}-${s.subject}-${s.color}`).join(',');
-                    const kNew  = newList.map((s:any)=>`${s.id}-${s.subject}-${s.color}`).join(',');
-                    console.log('[WS] 📅 keys iguales:', kPrev === kNew);
-                    if (kPrev !== kNew) console.log('[WS] 📅 DIFF detectado ✅');
-                    else console.log('[WS] 📅 SIN DIFF — API devuelve datos viejos ❌');
-                    return newList;
-                });
-            });
+            if (slug) getSchedules(slug, tk).then(d => setSchedulesList(d?.schedules ?? []));
         });
 
         const payChannel = echo.channel(`payments.${branding.slug}`);
@@ -201,12 +188,11 @@ export default function StudentDashboard() {
             if (!guardianId || String(ev.payerId) === String(guardianId)) refreshDataRef.current();
         });
         payChannel.listen('.fee.updated', (ev: any) => {
-            console.log('[WS] 💰 fee.updated recibido', ev);
             const guardianId = data?.guardian?.id;
             if (!guardianId || String(ev.guardianId) === String(guardianId)) {
                 const slug = localStorage.getItem('tenant_slug') || '';
                 const tk = localStorage.getItem('auth_token') || '';
-                if (slug && tk) getMyFees(slug, tk).then(d => { console.log('[WS] 💰 fees recargadas', d?.fees?.length); setMyFees(d?.fees ?? []); });
+                if (slug && tk) getMyFees(slug, tk).then(d => setMyFees(d?.fees ?? []));
             }
         });
 
