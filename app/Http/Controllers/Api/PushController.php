@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\PushSubscription;
 use Illuminate\Http\Request;
 
 class PushController extends Controller
@@ -34,10 +35,15 @@ class PushController extends Controller
             'auth_token' => 'required|string',
         ]);
 
-        \Log::info('[Push] Suscripción recibida', [
-            'user_id' => $request->user()?->id,
-            'tenant'  => $tenant->slug,
-        ]);
+        PushSubscription::updateOrCreate(
+            ['endpoint' => $request->endpoint],
+            [
+                'user_id'    => $request->user()?->id,
+                'tenant_id'  => $tenant->id,
+                'public_key' => $request->public_key,
+                'auth_token' => $request->auth_token,
+            ]
+        );
 
         return response()->json(['ok' => true]);
     }
