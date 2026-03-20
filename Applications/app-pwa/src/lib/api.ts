@@ -718,7 +718,7 @@ export async function getSchedules(tenantSlug: string, token?: string) {
     try {
         const headers: any = { 'Accept': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        const response = await fetch(`${API_URL}/${tenantSlug}/schedules`, { cache: 'no-store', headers });
+        const response = await fetch(`${API_URL}/${tenantSlug}/schedules?_t=${Date.now()}`, { cache: 'no-store', headers });
         return await safeJson(response);
     } catch { return { schedules: [] }; }
 }

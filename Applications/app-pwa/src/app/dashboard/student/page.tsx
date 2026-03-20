@@ -210,16 +210,6 @@ export default function StudentDashboard() {
             }
         });
 
-        const guardianId = data?.guardian?.id;
-        if (guardianId) {
-            const notifChannel = echo.channel(`notifications.${branding.slug}.${guardianId}`);
-            notifChannel.listen('.notification.sent', (ev: any) => {
-                setToastNotification({ id: ev.notificationId, title: ev.title, body: ev.body, type: ev.type });
-                setUnreadCount(c => c + 1);
-                setNotifications(prev => [{ id: ev.notificationId, title: ev.title, body: ev.body, type: ev.type, read: false, created_at: 'Ahora' }, ...prev]);
-            });
-        }
-
         const handleVisibility = () => { if (document.visibilityState === 'visible') { reconnect(); refreshDataRef.current(); } };
         document.addEventListener('visibilitychange', handleVisibility);
 
@@ -227,7 +217,27 @@ export default function StudentDashboard() {
             document.removeEventListener('visibilitychange', handleVisibility);
             echo.leaveChannel(`attendance.${branding.slug}`);
             echo.leaveChannel(`payments.${branding.slug}`);
-            if (data?.guardian?.id) echo.leaveChannel(`notifications.${branding.slug}.${data.guardian.id}`);
+        };
+    }, [branding?.slug]);
+
+    // ─── Notificaciones WS (canal separado, depende de guardianId) ───
+    useEffect(() => {
+        const guardianId = data?.guardian?.id;
+        if (!guardianId || !branding?.slug) return;
+        const echo = getEcho();
+        if (!echo) return;
+
+        const channelName = `notifications.${branding.slug}.${guardianId}`;
+        const notifChannel = echo.channel(channelName);
+        notifChannel.listen('.notification.sent', (ev: any) => {
+            setToastNotification({ id: ev.notificationId, title: ev.title, body: ev.body, type: ev.type });
+            setUnreadCount(c => c + 1);
+            setNotifications(prev => [{ id: ev.notificationId, title: ev.title, body: ev.body, type: ev.type, read: false, created_at: 'Ahora' }, ...prev]);
+        });
+
+        return () => {
+            notifChannel.stopListening('.notification.sent');
+            echo.leaveChannel(channelName);
         };
     }, [branding?.slug, data?.guardian?.id]);
 
