@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Events\FeeUpdated;
 use App\Models\Fee;
 use App\Models\FeePayment;
 use App\Models\Guardian;
@@ -193,6 +194,9 @@ class FeeController extends Controller
             ]);
         }
 
+        $guardianId = $validated['guardian_id'];
+        event(new FeeUpdated($tenant->slug, $tenant->id, $guardianId));
+
         return response()->json(['approved' => $payments->count()]);
     }
 
@@ -342,6 +346,8 @@ class FeeController extends Controller
                 $created++;
             }
         }
+
+        event(new FeeUpdated($tenant->slug, $tenant->id, $guardian->id));
 
         return response()->json(['created' => $created, 'proof_url' => $proofUrl]);
     }

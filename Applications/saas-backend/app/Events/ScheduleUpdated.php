@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\Models\Schedule;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
@@ -13,10 +14,15 @@ class ScheduleUpdated implements ShouldBroadcastNow
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public string $tenantSlug;
+    public array $schedules;
 
-    public function __construct(string $tenantSlug)
+    public function __construct(string $tenantSlug, int $tenantId)
     {
         $this->tenantSlug = $tenantSlug;
+        $this->schedules = Schedule::where('tenant_id', $tenantId)
+            ->with('students:id,name,photo,category')
+            ->get()
+            ->toArray();
     }
 
     public function broadcastOn(): array
