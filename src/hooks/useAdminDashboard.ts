@@ -531,6 +531,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
                     getSchedules(tenantSlug || '', storedToken || '').then(d => setSchedulesList(d?.schedules || []));
                     getFees(tenantSlug || '', storedToken || '').then(d => setFeesList(d?.fees || []));
                 }
+                getAppUpdates('staff', profile.tenant?.industry || undefined).then(d => setAppUpdates(d?.updates ?? []));
             } else {
                 localStorage.clear();
                 window.location.href = "/";

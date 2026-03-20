@@ -226,7 +226,7 @@ export default function StudentDashboard() {
             Promise.all([
                 slug ? getSchedules(slug, freshTk).then(d => setSchedulesList(d?.schedules ?? [])) : Promise.resolve(),
                 slug && freshTk ? getMyFees(slug, freshTk).then(d => setMyFees(d?.fees ?? [])) : Promise.resolve(),
-                getAppUpdates('student').then(d => setAppUpdates(d?.updates ?? [])),
+                getAppUpdates('student', localStorage.getItem('tenant_industry') || undefined).then(d => setAppUpdates(d?.updates ?? [])),
             ]).then(() => setLoading(false));
         });
     }, []);
