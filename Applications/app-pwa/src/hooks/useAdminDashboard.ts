@@ -313,6 +313,9 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         if (newTab === 'settings' && !regPageCode) {
             getRegistrationPageCode(user?.tenant_slug ?? '', token ?? '').then(r => { if (r?.code) setRegPageCode(r.code); });
         }
+        if (newTab === 'expenses') loadExpenses();
+        if (newTab === 'schedule') loadSchedules();
+        if (newTab === 'fees') loadFees();
     };
 
     // Derived State
@@ -578,6 +581,8 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
 
     useRealtimeChannel(`payments.${branding?.slug}`, {
         'payment.updated': () => refreshPayers(),
+        'fee.updated': () => refreshPayers(),
+        'expense.updated': () => { if (activeTab === 'expenses') loadExpenses(); },
     }, !!branding?.slug);
 
     useRealtimeChannel(`dashboard.${branding?.slug}`, {
