@@ -44,7 +44,9 @@ import {
     Banknote,
     Receipt,
     Package,
-    ShoppingCart
+    ShoppingCart,
+    UserPlus,
+    ClipboardCheck
 } from 'lucide-react';
 import { useBranding } from "@/context/BrandingContext";
 import NotificationToast from "@/components/Notifications/NotificationToast";
@@ -579,39 +581,79 @@ export default function App() {
 
             {/* MODAL PUSH PERMISSIONS */}
             {showPushModal && (
-                <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-end justify-center p-4 animate-in fade-in duration-200" onClick={() => setShowPushModal(false)}>
-                    <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom-4 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className={`w-4 h-4 rounded-full shrink-0 ${
-                                pushPermission === 'granted' ? 'bg-emerald-500' :
-                                pushPermission === 'denied'  ? 'bg-red-500' :
-                                'bg-amber-400'
-                            }`} />
-                            <h3 className="text-sm font-black uppercase tracking-tighter text-zinc-900">
-                                {pushPermission === 'granted' ? 'Notificaciones activas' :
-                                 pushPermission === 'denied'  ? 'Notificaciones bloqueadas' :
-                                 'Notificaciones desactivadas'}
-                            </h3>
-                        </div>
-                        <p className="text-xs text-zinc-400 leading-relaxed mb-6">
-                            {pushPermission === 'granted'
-                                ? 'Recibirás alertas de pagos y asistencia aunque la app esté cerrada.'
-                                : pushPermission === 'denied'
-                                ? 'Bloqueaste las notificaciones. Para activarlas ve a Ajustes → Safari → Notificaciones.'
-                                : 'Activa las notificaciones para recibir alertas de pagos y asistencia aunque la app esté cerrada.'}
-                        </p>
-                        {pushPermission === 'default' && (
-                            <button
-                                onClick={handleActivatePush}
-                                style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
-                                className="w-full py-4 rounded-2xl text-white font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all"
-                            >
-                                Activar notificaciones
+                <div className="fixed inset-0 z-[300] bg-black/70 backdrop-blur-sm flex items-end justify-center p-4 animate-in fade-in duration-200" onClick={() => setShowPushModal(false)}>
+                    <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl animate-in slide-in-from-bottom-4 duration-300 overflow-hidden" onClick={e => e.stopPropagation()}>
+
+                        {/* Header */}
+                        <div className="relative px-6 pt-8 pb-6" style={{ background: `linear-gradient(135deg, ${branding?.primaryColor || '#6366f1'}15, ${branding?.primaryColor || '#6366f1'}05)` }}>
+                            <button onClick={() => setShowPushModal(false)} className="absolute top-4 right-4 w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center">
+                                <X size={14} className="text-zinc-400" />
                             </button>
+                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-sm ${
+                                pushPermission === 'granted' ? 'bg-emerald-100' :
+                                pushPermission === 'denied'  ? 'bg-red-100' : ''
+                            }`} style={pushPermission === 'default' ? { backgroundColor: `${branding?.primaryColor || '#6366f1'}20` } : {}}>
+                                <Bell size={26} className={`${
+                                    pushPermission === 'granted' ? 'text-emerald-500' :
+                                    pushPermission === 'denied'  ? 'text-red-400' : ''
+                                }`} style={pushPermission === 'default' ? { color: branding?.primaryColor || '#6366f1' } : {}} />
+                            </div>
+                            <h3 className="text-base font-black text-zinc-900 leading-tight">
+                                {pushPermission === 'granted' ? 'Notificaciones activas ✓' :
+                                 pushPermission === 'denied'  ? 'Notificaciones bloqueadas' :
+                                 'Activa las alertas del panel'}
+                            </h3>
+                            <p className="text-xs text-zinc-400 mt-1 font-medium">
+                                {pushPermission === 'granted'
+                                    ? 'Recibirás alertas aunque la app esté cerrada.'
+                                    : pushPermission === 'denied'
+                                    ? 'Ve a Ajustes → Safari → Notificaciones para activarlas.'
+                                    : 'Entérate al instante de lo que pasa en tu academia.'}
+                            </p>
+                        </div>
+
+                        {/* Beneficios — solo si no está activado/bloqueado */}
+                        {pushPermission === 'default' && (
+                            <div className="px-6 pb-2 space-y-3">
+                                {(branding?.industry === 'school_treasury' ? [
+                                    { icon: <CreditCard size={16} style={{ color: branding?.primaryColor || '#6366f1' }} />, text: 'Pagos y comprobantes de cuotas' },
+                                    { icon: <UserPlus size={16} style={{ color: branding?.primaryColor || '#6366f1' }} />, text: 'Nuevos alumnos registrados' },
+                                    { icon: <Calendar size={16} style={{ color: branding?.primaryColor || '#6366f1' }} />, text: 'Cambios de horario y actividades' },
+                                    { icon: <ClipboardCheck size={16} style={{ color: branding?.primaryColor || '#6366f1' }} />, text: 'Recordatorios y reuniones' },
+                                ] : [
+                                    { icon: <CreditCard size={16} style={{ color: branding?.primaryColor || '#6366f1' }} />, text: 'Pagos recibidos y comprobantes' },
+                                    { icon: <ClipboardCheck size={16} style={{ color: branding?.primaryColor || '#6366f1' }} />, text: 'Asistencia marcada por QR' },
+                                    { icon: <UserPlus size={16} style={{ color: branding?.primaryColor || '#6366f1' }} />, text: 'Nuevos alumnos registrados' },
+                                    { icon: <Calendar size={16} style={{ color: branding?.primaryColor || '#6366f1' }} />, text: 'Recordatorios y actividades' },
+                                ]).map((item, i) => (
+                                    <div key={i} className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${branding?.primaryColor || '#6366f1'}12` }}>
+                                            {item.icon}
+                                        </div>
+                                        <span className="text-xs font-semibold text-zinc-700">{item.text}</span>
+                                    </div>
+                                ))}
+                            </div>
                         )}
-                        <button onClick={() => setShowPushModal(false)} className="w-full py-3 text-zinc-400 font-black text-[9px] uppercase tracking-widest mt-2">
-                            Cerrar
-                        </button>
+
+                        {/* Botones */}
+                        <div className="px-6 pt-4 pb-8 space-y-2">
+                            {pushPermission === 'default' && (
+                                <button
+                                    onClick={handleActivatePush}
+                                    style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
+                                    className="w-full py-4 rounded-2xl text-white font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all shadow-lg"
+                                >
+                                    Activar notificaciones
+                                </button>
+                            )}
+                            <button
+                                onClick={() => { setShowPushModal(false); localStorage.setItem('push_banner_dismissed', '1'); }}
+                                className="w-full py-3 text-zinc-400 font-bold text-[10px] uppercase tracking-widest"
+                            >
+                                {pushPermission === 'default' ? 'Ahora no' : 'Cerrar'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
