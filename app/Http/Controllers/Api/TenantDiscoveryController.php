@@ -41,7 +41,7 @@ class TenantDiscoveryController extends Controller
         $allTenantsMap = [];
 
         foreach ($guardianTenants as $g) {
-            if ($g->tenant && $g->tenant->active) {
+            if ($g->tenant) {
                 $tid = $g->tenant->id;
                 if (!isset($allTenantsMap[$tid])) {
                     $allTenantsMap[$tid] = ['tenant' => $g->tenant, 'roles' => []];
