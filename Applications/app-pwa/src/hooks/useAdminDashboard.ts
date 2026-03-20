@@ -598,9 +598,22 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
             setUnreadCount(c => c + 1);
             setNotifications(prev => [{ id: data.notificationId, title: data.title, body: data.body, type: data.type, read: false, created_at: 'Ahora' }, ...prev]);
         });
+
+        // SW manda REFRESH_NOTIFICATIONS cuando llega push con app cerrada
+        const handleSwMessage = (event: MessageEvent) => {
+            if (event.data?.type !== 'REFRESH_NOTIFICATIONS') return;
+            const tk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
+            if (slug && tk) getNotifications(slug, tk).then(d => {
+                if (d?.unread !== undefined) setUnreadCount(d.unread);
+                if (d?.notifications) setNotifications(d.notifications);
+            });
+        };
+        navigator.serviceWorker?.addEventListener('message', handleSwMessage);
+
         return () => {
             channel.stopListening('.notification.sent');
             echo.leaveChannel(channelName);
+            navigator.serviceWorker?.removeEventListener('message', handleSwMessage);
         };
     }, [branding?.slug, user?.id]);
 
