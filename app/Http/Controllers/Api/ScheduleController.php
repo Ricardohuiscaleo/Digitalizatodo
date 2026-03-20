@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Events\ScheduleUpdated;
+use App\Models\Guardian;
+use App\Models\Notification;
 use App\Models\Schedule;
 use App\Models\Student;
 use Illuminate\Http\Request;
@@ -61,6 +64,9 @@ class ScheduleController extends Controller
                 $schedule->students()->sync($validated['student_ids']);
             }
 
+            event(new ScheduleUpdated($tenant->slug));
+            $this->notifyGuardians($tenant, 'Horario actualizado', 'El horario de clases ha sido modificado.');
+
             return response()->json([
                 'message' => 'Schedule created successfully',
                 'schedule' => $schedule->load('students:id,name,photo')
@@ -100,6 +106,9 @@ class ScheduleController extends Controller
                 $schedule->students()->sync($validated['student_ids']);
             }
 
+            event(new ScheduleUpdated($tenant->slug));
+            $this->notifyGuardians($tenant, 'Horario actualizado', 'El horario de clases ha sido modificado.');
+
             return response()->json([
                 'message' => 'Schedule updated successfully',
                 'schedule' => $schedule->load('students:id,name,photo')
@@ -113,6 +122,9 @@ class ScheduleController extends Controller
         $schedule = Schedule::where('tenant_id', $tenant->id)->findOrFail($id);
         
         $schedule->delete();
+
+        event(new ScheduleUpdated($tenant->slug));
+        $this->notifyGuardians($tenant, 'Horario actualizado', 'El horario de clases ha sido modificado.');
 
         return response()->json([
             'message' => 'Schedule deleted successfully'
@@ -135,5 +147,12 @@ class ScheduleController extends Controller
             'message' => 'Students assigned successfully',
             'schedule' => $schedule->load('students:id,name,photo')
         ]);
+    }
+
+    private function notifyGuardians($tenant, string $title, string $body): void
+    {
+        Guardian::where('tenant_id', $tenant->id)->each(function ($g) use ($tenant, $title, $body) {
+            Notification::send($tenant->id, $g->id, $title, $body, 'schedule', $tenant->slug);
+        });
     }
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Fee;
 use App\Models\FeePayment;
 use App\Models\Guardian;
+use App\Models\Notification;
 use App\Services\ImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -131,6 +132,11 @@ class FeeController extends Controller
             'recurring_day' => $type === 'recurring' ? ($validated['recurring_day'] ?? null) : null,
             'created_by'    => $request->user()->id,
         ]);
+
+        $amount = number_format((float)$validated['amount'], 0, ',', '.');
+        Guardian::where('tenant_id', $tenant->id)->each(function ($g) use ($tenant, $validated, $amount) {
+            Notification::send($tenant->id, $g->id, 'Nueva cuota publicada', "{$validated['title']} — $" . $amount, 'fee', $tenant->slug);
+        });
 
         return response()->json(['fee' => $fee], 201);
     }
