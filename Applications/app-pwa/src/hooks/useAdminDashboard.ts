@@ -589,12 +589,8 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         {
             'notification.sent': (data: any) => {
                 setToastNotification({ id: data.notificationId, title: data.title, body: data.body, type: data.type });
-                const slug = localStorage.getItem('tenant_slug') || '';
-                const tk = localStorage.getItem('staff_token') || localStorage.getItem('auth_token') || '';
-                if (slug && tk) getNotifications(slug, tk).then(d => {
-                    if (d?.unread !== undefined) setUnreadCount(d.unread);
-                    if (d?.notifications) setNotifications(d.notifications);
-                });
+                setUnreadCount(c => c + 1);
+                setNotifications(prev => [{ id: data.notificationId, title: data.title, body: data.body, type: data.type, read: false, created_at: 'Ahora' }, ...prev]);
             },
         },
         !!branding?.slug && !!user?.id
