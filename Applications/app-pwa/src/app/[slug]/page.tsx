@@ -40,7 +40,7 @@ export default function TenantEntryPage() {
     return (
         <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center space-y-4">
             <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
-            <p className="text-gray-500 text-sm animate-pulse">Cargando academia...</p>
+            <p className="text-gray-500 text-sm animate-pulse">Cargando institución...</p>
         </div>
     );
 }

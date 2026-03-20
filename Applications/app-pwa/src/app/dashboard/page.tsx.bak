@@ -1,0 +1,1490 @@
+"use client";
+
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { getEcho, reconnect } from '@/lib/echo';
+import { todayCL, nowCL } from '@/lib/utils';
+import { QRCodeCanvas } from 'qrcode.react';
+import DynamicQRModal from '@/components/Dashboard/DynamicQRModal';
+import FeesSection from '@/components/Dashboard/FeesSection';
+import ExpensesSection from '@/components/Dashboard/ExpensesSection';
+import OverviewSection from '@/components/Dashboard/OverviewSection';
+import {
+    Users,
+    CreditCard,
+    Settings,
+    LayoutDashboard,
+    CheckCircle2,
+    XCircle,
+    CalendarCheck,
+    Search,
+    ChevronDown,
+    ChevronUp,
+    Camera,
+    LogOut,
+    RefreshCw,
+    ChevronRight,
+    Plus,
+    Loader2,
+    ClipboardPaste,
+    QrCode,
+    Eye,
+    X,
+    Clock,
+    UserCheck,
+    Check,
+    Sparkles,
+    Edit2,
+    Save,
+    Calendar,
+    DollarSign,
+    User,
+    Bell,
+    ChevronLeft,
+    Trash2,
+    Banknote,
+    Receipt,
+    Package,
+    ShoppingCart
+} from 'lucide-react';
+import { useBranding } from "@/context/BrandingContext";
+import NotificationToast from "@/components/Notifications/NotificationToast";
+import {
+    getProfile,
+    getPayers,
+    storeAttendance,
+    approvePayment,
+    updateLogo,
+    updatePricing,
+    generateRegistrationPage,
+    getRegistrationPageCode,
+    deleteRegistrationPage,
+    getAttendanceHistory,
+    resumeSession,
+    updateBankInfo,
+    deleteAttendance,
+    getNotifications,
+    markAllNotificationsRead,
+    markNotificationRead,
+    getAppUpdates,
+    getFees,
+    getFeeDetail,
+    createFee,
+    deleteFee,
+    approveFeePayment,
+    getFeesGuardiansSummary,
+    getExpenses,
+    createExpense,
+    deleteExpense,
+    getSchedules,
+    createSchedule,
+    updateSchedule,
+    deleteSchedule
+} from "@/lib/api";
+import WeeklySchedule from "@/components/Schedule/WeeklySchedule";
+import { ExpenseCard } from "@/app/dashboard/expenses/page";
+import { unlockAudio, setAppBadge } from "@/lib/audio";
+import { subscribeToPush } from "@/lib/push";
+import PaymentsSection from "@/components/Dashboard/PaymentsSection";
+import AppUpdatesAccordion from "@/components/Dashboard/AppUpdatesAccordion";
+import AttendanceSection from "@/components/Dashboard/AttendanceSection";
+import FeesGuardiansSection from "@/components/Dashboard/FeesGuardiansSection";
+import ScheduleSection from "@/components/Dashboard/ScheduleSection";
+import SettingsSection from "@/components/Dashboard/SettingsSection";
+import ProfileSection from "@/components/Dashboard/ProfileSection";
+
+import { 
+    PaymentActionModal, 
+    HistoryDetailModal, 
+    ProofModal 
+} from '@/components/Dashboard/Admin/AdminModals';
+
+const EXPENSE_CATEGORIES = ["Alimentación", "Materiales", "Mantenimiento", "Publicidad", "Sueldos", "Servicios", "Otros"];
+
+export default function App() {
+    const { branding, setBranding } = useBranding();
+
+    // Vocabulario adaptado por industria
+    const beltColors: Record<string, string> = {
+        blanco: 'bg-white border border-zinc-200 text-zinc-600',
+        amarillo: 'bg-yellow-400 text-yellow-900',
+        naranja: 'bg-orange-400 text-white',
+        verde: 'bg-green-500 text-white',
+        azul: 'bg-blue-500 text-white',
+        rojo: 'bg-red-500 text-white',
+        negro: 'bg-zinc-800 text-white shadow-sm',
+        cafe: 'bg-amber-800 text-white',
+        marron: 'bg-amber-800 text-white',
+    };
+    const getBeltColor = (belt: string) => beltColors[belt?.toLowerCase()] ?? 'bg-zinc-100 text-zinc-500';
+
+    const industryConfig: Record<string, { attendance: string; cat1: string; cat2: string; memberLabel: string; placeLabel: string }> = {
+        martial_arts: { attendance: 'Tatami', cat1: 'Kids', cat2: 'Adultos', memberLabel: 'Alumno', placeLabel: 'Dojo' },
+        fitness: { attendance: 'Clase', cat1: 'Mensual', cat2: 'Trimestral', memberLabel: 'Socio', placeLabel: 'Clientes' },
+        dance: { attendance: 'Sala', cat1: 'Infantil', cat2: 'Adultos', memberLabel: 'Alumno', placeLabel: 'Clientes' },
+        music: { attendance: 'Sala', cat1: 'Infantil', cat2: 'Adultos', memberLabel: 'Alumno', placeLabel: 'Clientes' },
+        default: { attendance: 'Clase', cat1: 'Categoría 1', cat2: 'Categoría 2', memberLabel: 'Miembro', placeLabel: 'Clientes' },
+    };
+    const vocab = industryConfig[branding?.industry || 'default'] || industryConfig.default;
+    const [activeTab, setActiveTab] = useState('dashboard');
+    const [tabDirection, setTabDirection] = useState(0);
+    const [payers, setPayers] = useState<any[]>([]);
+    const [attendance, setAttendance] = useState<Set<string>>(new Set());
+    const [loading, setLoading] = useState(true);
+    const [token, setToken] = useState<string | null>(null);
+    const [user, setUser] = useState<any>(null);
+    const [isDemo, setIsDemo] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const [prices, setPrices] = useState({
+        kids: 25000,
+        adult: 35000,
+        discountThreshold: 2,
+        discountPercentage: 15
+    });
+
+    const [bankData, setBankData] = useState<any>({});
+
+    const [searchTerm, setSearchTerm] = useState('');
+    const [paymentFilter, setPaymentFilter] = useState('pending');
+    const [selectedMonth, setSelectedMonth] = useState(nowCL().getMonth() + 1);
+    const [selectedYear, setSelectedYear] = useState(nowCL().getFullYear());
+    const [expandedPayerId, setExpandedPayerId] = useState<string | null>(null);
+    const [historyPage, setHistoryPage] = useState(0);
+    const [historyMonth, setHistoryMonth] = useState(nowCL().getMonth());
+    const [historyYear, setHistoryYear] = useState(nowCL().getFullYear());
+    const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
+    const [now, setNow] = useState(nowCL());
+    const [copied, setCopied] = useState(false);
+    const [paymentDropdownOpen, setPaymentDropdownOpen] = useState(false);
+    const [longPressPayerId, setLongPressPayerId] = useState<string | null>(null);
+    const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [bubbleModalPayer, setBubbleModalPayer] = useState<any>(null);
+    const [regPageCode, setRegPageCode] = useState<string | null>(null);
+    const [generatingPage, setGeneratingPage] = useState(false);
+    const [showQRModal, setShowQRModal] = useState(false);
+    const [proofModalUrl, setProofModalUrl] = useState<string | null>(null);
+    const [paymentActionPayer, setPaymentActionPayer] = useState<any>(null);
+    const [selectedHistoryDate, setSelectedHistoryDate] = useState<string | null>(null);
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [appUpdates, setAppUpdates] = useState<any[]>([]);
+    const [toastNotification, setToastNotification] = useState<any>(null);
+    const [feesSummary, setFeesSummary] = useState<{ total: number; pending: number; review: number } | null>(null);
+    const [feesList, setFeesList] = useState<any[]>([]);
+    const [feesLoading, setFeesLoading] = useState(false);
+    const [expensesList, setExpensesList] = useState<any[]>([]);
+    const [expensesTotal, setExpensesTotal] = useState(0);
+    const [expensesSummary, setExpensesSummary] = useState<any[]>([]);
+    const [expensesLoading, setExpensesLoading] = useState(false);
+    const [showCreateExpense, setShowCreateExpense] = useState(false);
+    const [expenseForm, setExpenseForm] = useState({ title: '', description: '', amount: '', category: 'insumos', expense_date: new Date().toISOString().split('T')[0] });
+    const [schedulesList, setSchedulesList] = useState<any[]>([]);
+    const [schedulesLoading, setSchedulesLoading] = useState(false);
+    const [expenseReceiptPhoto, setExpenseReceiptPhoto] = useState<File | null>(null);
+    const [expenseProductPhoto, setExpenseProductPhoto] = useState<File | null>(null);
+    const [expenseSubmitting, setExpenseSubmitting] = useState(false);
+    const [expenseFormError, setExpenseFormError] = useState('');
+    const [expenseDeletingId, setExpenseDeletingId] = useState<number | null>(null);
+    const [expenseLightbox, setExpenseLightbox] = useState<string | null>(null);
+    const [showCreateFee, setShowCreateFee] = useState(false);
+    const [selectedFee, setSelectedFee] = useState<any>(null);
+    const [feePayments, setFeePayments] = useState<any[]>([]);
+    const [feeDetailLoading, setFeeDetailLoading] = useState(false);
+    const [feeProofUrl, setFeeProofUrl] = useState<string | null>(null);
+    const [feeForm, setFeeForm] = useState({ title: '', description: '', amount: '', due_date: '', target: 'all', type: 'once', recurring_day: '', start_month: '', start_year: '', end_month: '', end_year: '' });
+    const [feeSubmitting, setFeeSubmitting] = useState(false);
+    const [feeFormError, setFeeFormError] = useState('');
+    const [approvingFeePayment, setApprovingFeePayment] = useState<any>(null);
+    const [feeApproveMethod, setFeeApproveMethod] = useState<'cash' | 'transfer'>('cash');
+    const [feeApproveNotes, setFeeApproveNotes] = useState('');
+    const [feeApprovingLoading, setFeeApprovingLoading] = useState(false);
+    const [feesGuardians, setFeesGuardians] = useState<any[]>([]);
+    const [feesGuardiansLoading, setFeesGuardiansLoading] = useState(false);
+    const [feesGuardianFilter, setFeesGuardianFilter] = useState('pending');
+    const [feesGuardianSearch, setFeesGuardianSearch] = useState('');
+    const [feesGuardianDropdown, setFeesGuardianDropdown] = useState(false);
+    const [feesBubbleModal, setFeesBubbleModal] = useState<any>(null);
+
+    const [showInactivePayers, setShowInactivePayers] = useState(false);
+    const [loadingSync, setLoadingSync] = useState(false);
+
+    const handleLogout = () => {
+        const slug = localStorage.getItem("tenant_slug");
+        const brandingData = localStorage.getItem("tenant_branding");
+        localStorage.clear();
+        if (slug) localStorage.setItem("tenant_slug", slug);
+        if (brandingData) localStorage.setItem("tenant_branding", brandingData);
+        window.location.href = "/";
+    };
+
+    const forceSync = async () => {
+        if (!token || !branding?.slug) return;
+        setLoadingSync(true);
+        try {
+            // await syncCloud(branding.slug, token);
+            await refreshPayers();
+            alert("✓ Sincronización completada");
+        } catch (e) {
+            alert("Error al sincronizar");
+        } finally {
+            setLoadingSync(false);
+        }
+    };
+
+    // --- PERSISTENCE & DATA FETCHING ---
+
+    const refreshPayers = useCallback(async (customToken?: string, slug?: string) => {
+        const storedToken = customToken || token || localStorage.getItem("staff_token") || localStorage.getItem("auth_token");
+        const tenantSlug = slug || localStorage.getItem("tenant_slug")?.trim();
+        if (!storedToken || !tenantSlug) return;
+
+        const isHistory = paymentFilter === 'history';
+        const data = await getPayers(tenantSlug, storedToken, {
+            month: selectedMonth,
+            year: selectedYear,
+            history: isHistory
+        });
+        
+        if (data?.payers) {
+            setPayers(data.payers);
+            const currentAttendance = new Set<string>();
+            data.payers.forEach((p: any) => {
+                if (p.enrolledStudents) {
+                    p.enrolledStudents.forEach((s: any) => {
+                        if (s.today_status === 'present') currentAttendance.add(String(s.id));
+                    });
+                }
+            });
+            setAttendance(currentAttendance);
+        }
+    }, [token, paymentFilter, selectedMonth, selectedYear]);
+
+    useEffect(() => {
+        const t = setInterval(() => setNow(nowCL()), 60000);
+        return () => clearInterval(t);
+    }, []);
+
+    // Estado para estudiante detectado via QR (se pasa al modal)
+    const [lastCheckedInStudent, setLastCheckedInStudent] = useState<any>(null);
+
+    // Refs estables para usar dentro de callbacks sin causar re-suscripciones
+    const tokenRef = useRef(token);
+    useEffect(() => { tokenRef.current = token; }, [token]);
+    const brandingSlugRef = useRef(branding?.slug);
+    useEffect(() => { brandingSlugRef.current = branding?.slug; }, [branding?.slug]);
+    const userRef = useRef(user);
+    useEffect(() => { userRef.current = user; }, [user]);
+
+    // REAL-TIME WEBSOCKETS (LARAVEL REVERB)
+    // Suscripción única. Pusher-js maneja reconexión automática.
+    // Al volver de background (móvil), forzamos reconexión + refresh.
+    useEffect(() => {
+        if (!branding?.slug) return;
+        const echo = getEcho();
+        if (!echo) return;
+
+        const slug = branding.slug;
+        console.log('[WS] Subscribing to channels for:', slug);
+
+        const safeRefresh = () => {
+            const t = tokenRef.current;
+            const s = brandingSlugRef.current;
+            if (!t || !s || !localStorage.getItem('staff_token')) return;
+            getPayers(s, t, { month: nowCL().getMonth() + 1, year: nowCL().getFullYear() })
+                .then(d => { if (d?.payers) setPayers(d.payers); })
+                .catch(() => {});
+            getAttendanceHistory(s, t)
+                .then(h => { if (h?.attendance) setAttendanceHistory(h.attendance); })
+                .catch(() => {});
+            
+            // Refrescar notificaciones también
+            if (slug && token) {
+                getNotifications(slug, token).then(d => {
+                    if (d?.notifications) setNotifications(d.notifications);
+                    if (d?.unread !== undefined) setUnreadCount(d.unread);
+                });
+            }
+        };
+
+        echo.channel(`attendance.${slug}`)
+            .listen('.student.checked-in', (data: { studentId: string | number; studentName?: string; studentPhoto?: string }) => {
+                console.log('[WS] ✅ student.checked-in:', data);
+                setAttendance(prev => new Set(prev).add(String(data.studentId)));
+                setLastCheckedInStudent({ id: data.studentId, name: data.studentName || 'Alumno', photo: data.studentPhoto, _ts: Date.now() });
+                // Optimistic: inyectar registro en historial inmediatamente
+                setAttendanceHistory(prev => [{
+                    id: `ws-${Date.now()}`,
+                    student_id: data.studentId,
+                    student: { id: data.studentId, name: data.studentName || 'Alumno', photo: data.studentPhoto },
+                    date: todayCL(),
+                    status: 'present',
+                    created_at: new Date().toISOString(),
+                    registration_method: 'qr',
+                }, ...prev]);
+                safeRefresh();
+            })
+            .listen('.student.checked-out', (data: { studentId: string | number }) => {
+                console.log('[WS] ❌ student.checked-out:', data);
+                setAttendance(prev => { const next = new Set(prev); next.delete(String(data.studentId)); return next; });
+                const todayStr = todayCL();
+                setAttendanceHistory(prev => prev.filter(r => !(String(r.student_id) === String(data.studentId) && (r.date || r.created_at?.split('T')[0]) === todayStr)));
+                safeRefresh();
+            });
+
+        echo.channel(`payments.${slug}`)
+            .listen('.payment.updated', () => { console.log('[WS] payment.updated'); safeRefresh(); });
+        echo.channel(`dashboard.${slug}`)
+            .listen('.student.registered', () => { console.log('[WS] student.registered'); safeRefresh(); });
+
+        // Escuchar mensajes del Service Worker (Push Sync)
+        let handleMessage: ((event: MessageEvent) => void) | null = null;
+        if ('serviceWorker' in navigator) {
+            handleMessage = (event: MessageEvent) => {
+                if (event.data?.type === 'REFRESH_NOTIFICATIONS') {
+                    console.log('[Staff PWA] 🔄 Push received — refreshing notifications');
+                    safeRefresh();
+                }
+            };
+            navigator.serviceWorker.addEventListener('message', handleMessage);
+        }
+
+        // Notificaciones en tiempo real
+        const userId = userRef.current?.id;
+        if (userId) {
+            echo.channel(`notifications.${slug}.${userId}`)
+                .listen('.notification.sent', (data: any) => {
+                    console.log('[WS] 🔔 notification.sent:', data);
+                    setToastNotification({ id: data.notificationId, title: data.title, body: data.body, type: data.type });
+                    setUnreadCount(c => c + 1);
+                    setNotifications(prev => [{ id: data.notificationId, title: data.title, body: data.body, type: data.type, read: false, created_at: 'Ahora' }, ...prev]);
+                });
+        }
+
+        // Móvil: cuando la app vuelve de background, reconectar y refrescar
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                console.log('[WS] App visible — reconnecting');
+                reconnect();
+                safeRefresh();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibility);
+            echo.leaveChannel(`attendance.${slug}`);
+            echo.leaveChannel(`payments.${slug}`);
+            echo.leaveChannel(`dashboard.${slug}`);
+            if (userRef.current?.id) echo.leaveChannel(`notifications.${slug}.${userRef.current.id}`);
+        };
+    }, [branding?.slug, user?.id]);
+
+    const tabs = ['dashboard', 'attendance', 'payments', 'settings', 'profile', 'fees', 'expenses', 'schedule'];
+
+    const changeTab = (newTab: string) => {
+        const currentIndex = tabs.indexOf(activeTab);
+        const newIndex = tabs.indexOf(newTab);
+        setTabDirection(newIndex > currentIndex ? 1 : -1);
+        setActiveTab(newTab);
+        if (newTab === 'settings' && !regPageCode) {
+            getRegistrationPageCode(user?.tenant_slug ?? '', token ?? '').then(r => { if (r?.code) setRegPageCode(r.code); });
+        }
+    };
+
+
+    useEffect(() => {
+        const init = async () => {
+            let storedToken = localStorage.getItem("staff_token") || localStorage.getItem("auth_token");
+            let tenantSlug = localStorage.getItem("tenant_slug")?.trim();
+            const tenantId = localStorage.getItem("tenant_id")?.trim();
+
+            if (!storedToken && tenantSlug) {
+                const rememberToken = localStorage.getItem("remember_token");
+                if (rememberToken) {
+                    const resumed = await resumeSession(tenantSlug, rememberToken);
+                    if (resumed?.token) {
+                        storedToken = resumed.token;
+                        const key = resumed.user_type === 'staff' ? 'staff_token' : 'auth_token';
+                        localStorage.setItem(key, storedToken!);
+                    }
+                }
+            }
+
+            if (!storedToken || !tenantSlug) {
+                window.location.href = "/";
+                return;
+            }
+
+            setToken(storedToken!);
+
+            // Detectar industry desde branding en contexto para decidir qué cargar
+            const cachedIndustry = localStorage.getItem('tenant_industry');
+            const isSchoolTreasury = cachedIndustry === 'school_treasury';
+
+            const baseRequests: Promise<any>[] = [
+                getProfile(tenantSlug, storedToken!),
+                getPayers(tenantSlug, storedToken!, { month: selectedMonth, year: selectedYear, history: paymentFilter === 'history' }),
+                getAttendanceHistory(tenantSlug, storedToken!),
+            ];
+            if (isSchoolTreasury) baseRequests.push(getSchedules(tenantSlug, storedToken!));
+
+            let [profile, payersData, attendanceHistoryData, schedulesData]: any[] = await Promise.all(baseRequests);
+
+            // Si el token falló (ej: expiró) pero tenemos un remember_token, intentamos recuperar la sesión una vez
+            if (!profile) {
+                const rememberToken = localStorage.getItem("remember_token");
+                if (rememberToken && tenantSlug) {
+                    const resumed = await resumeSession(tenantSlug, rememberToken);
+                    if (resumed?.token) {
+                        const newToken = resumed.token;
+                        const key = resumed.user_type === 'staff' ? 'staff_token' : 'auth_token';
+                        localStorage.setItem(key, newToken);
+                        setToken(newToken);
+                        
+                        // Re-intentamos las peticiones con el nuevo token
+                        const retryRequests: Promise<any>[] = [
+                            getProfile(tenantSlug, newToken),
+                            getPayers(tenantSlug, newToken, { month: selectedMonth, year: selectedYear, history: paymentFilter === 'history' }),
+                            getAttendanceHistory(tenantSlug, newToken),
+                        ];
+                        if (isSchoolTreasury) retryRequests.push(getSchedules(tenantSlug, newToken));
+                        [profile, payersData, attendanceHistoryData, schedulesData] = await Promise.all(retryRequests);
+                    }
+                }
+            }
+
+            if (profile) {
+                if (profile.user_type === 'guardian') {
+                    window.location.href = '/dashboard/student';
+                    return;
+                }
+
+                setUser({
+                    ...profile,
+                    tenant_id: profile.tenant_id || tenantId,
+                    tenant_slug: profile.tenant?.slug || tenantSlug
+                });
+                if (profile.tenant?.data?.pricing) {
+                    const p = profile.tenant.data.pricing;
+                    setPrices(p.prices || p);
+                }
+                if (profile.tenant?.data?.bank_info) {
+                    setBankData(profile.tenant.data.bank_info);
+                }
+                if (profile.tenant) {
+                    localStorage.setItem('tenant_industry', profile.tenant.industry || '');
+                    if (!branding?.name || !branding?.industry) {
+                        setBranding({
+                            id: String(profile.tenant.id),
+                            slug: profile.tenant.slug,
+                            name: profile.tenant.name,
+                            industry: profile.tenant.industry,
+                            logo: profile.tenant.logo,
+                            primaryColor: profile.tenant.primary_color
+                        });
+                    }
+                }
+                setPayers(payersData?.payers || []);
+
+                if (attendanceHistoryData?.attendance) {
+                    setAttendanceHistory(attendanceHistoryData.attendance);
+                }
+                if (schedulesData?.schedules) {
+                    setSchedulesList(schedulesData.schedules);
+                }
+
+                if (payersData?.payers) {
+                    const currentAttendance = new Set<string>();
+                    payersData.payers.forEach((p: any) => {
+                        if (p.enrolledStudents) {
+                            p.enrolledStudents.forEach((s: any) => {
+                                if (s.today_status === 'present') currentAttendance.add(String(s.id));
+                            });
+                        }
+                    });
+                    setAttendance(currentAttendance);
+                }
+            } else {
+                localStorage.clear();
+                window.location.href = "/";
+            }
+            setLoading(false);
+        };
+
+        init();
+    }, [setBranding]);
+
+    // Desbloquear AudioContext en primer gesto
+    useEffect(() => {
+        document.addEventListener('click', unlockAudio, { once: true });
+        document.addEventListener('touchstart', unlockAudio, { once: true });
+    }, []);
+
+    const [showPushBanner, setShowPushBanner] = useState(false);
+    const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
+    const [showPushModal, setShowPushModal] = useState(false);
+
+    // Leer estado de permisos + mostrar banner reactivo
+    useEffect(() => {
+        if (typeof Notification === 'undefined') {
+            setPushPermission('denied'); // iOS sin soporte → rojo, no mostrar banner
+            return;
+        }
+
+        const updatePermission = () => {
+            const perm = Notification.permission;
+            setPushPermission(perm);
+            
+            if (token && branding?.slug) {
+                const dismissed = localStorage.getItem('push_banner_dismissed');
+                if (perm === 'default' && !dismissed) {
+                    setShowPushBanner(true);
+                } else {
+                    setShowPushBanner(false);
+                    if (perm === 'granted') {
+                        subscribeToPush(branding.slug, token);
+                    }
+                }
+            }
+        };
+
+        // Primera comprobación
+        updatePermission();
+
+        // 1. Escuchar cuando la PWA vuelve al primer plano
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                updatePermission();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        // 2. Escuchar cambios de permisos directo (API)
+        let permStatus: PermissionStatus | null = null;
+        if (navigator.permissions && navigator.permissions.query) {
+            navigator.permissions.query({ name: 'notifications' })
+                .then(status => {
+                    permStatus = status;
+                    status.onchange = updatePermission;
+                })
+                .catch(() => {});
+        }
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            if (permStatus) {
+                permStatus.onchange = null;
+            }
+        };
+    }, [token, branding?.slug]);
+
+    const handleActivatePush = () => {
+        setShowPushBanner(false);
+        setShowPushModal(false);
+        if (typeof Notification !== 'undefined') {
+            Notification.requestPermission().then(permission => {
+                setPushPermission(permission);
+                if (permission === 'granted' && token && branding?.slug) {
+                    subscribeToPush(branding.slug, token);
+                }
+            });
+        }
+    };
+
+    // App Badge — sincronizar contador con ícono PWA
+    useEffect(() => { setAppBadge(unreadCount); }, [unreadCount]);
+
+    // Cargar notificaciones y app updates
+    useEffect(() => {
+        if (!token || !branding?.slug) return;
+        getNotifications(branding.slug, token).then(data => {
+            if (data?.notifications) setNotifications(data.notifications);
+            if (data?.unread !== undefined) setUnreadCount(data.unread);
+        });
+        getAppUpdates('staff').then(data => {
+            if (data?.updates) setAppUpdates(data.updates);
+        });
+        // Cuotas — solo school_treasury
+        if (branding?.industry === 'school_treasury') {
+            getFees(branding.slug, token).then(data => {
+                if (data?.fees) {
+                    const total = data.fees.length;
+                    const pending = data.fees.reduce((a: number, f: any) => a + (f.total_count - f.paid_count - f.review_count), 0);
+                    const review = data.fees.reduce((a: number, f: any) => a + (f.review_count || 0), 0);
+                    setFeesSummary({ total, pending, review });
+                }
+            });
+        }
+    }, [token, branding?.slug]);
+
+    useEffect(() => {
+        if (activeTab === 'payments' && !loading) {
+            if (branding?.industry === 'school_treasury') {
+                setFeesGuardiansLoading(true);
+                getFeesGuardiansSummary(branding.slug || '', token || '')
+                    .then(d => { setFeesGuardians(d?.guardians ?? []); setFeesGuardiansLoading(false); });
+            } else {
+                refreshPayers();
+            }
+        }
+        if (activeTab === 'fees' && !loading && branding?.slug && token) {
+            loadFees();
+        }
+        if (activeTab === 'expenses' && !loading && branding?.slug && token) {
+            loadExpenses();
+            if (feesList.length === 0) loadFees();
+        }
+        if (activeTab === 'schedule' && !loading && branding?.slug && token) {
+            loadSchedules();
+        }
+        if (activeTab === 'dashboard' && !loading && branding?.slug && token && branding?.industry === 'school_treasury' && schedulesList.length === 0) {
+            loadSchedules();
+        }    }, [paymentFilter, selectedMonth, selectedYear, activeTab]);
+
+    // --- LÓGICA DE DATOS ---
+
+    const allStudents = useMemo(() => {
+        return payers.flatMap(payer =>
+            payer.enrolledStudents.map((student: any) => ({
+                ...student,
+                payerId: payer.id,
+                payerStatus: payer.status
+            }))
+        );
+    }, [payers]);
+
+    const formatMoney = (amount: number) => {
+        return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount);
+    };
+
+    const formatCLP = (value: number) => {
+        if (!value || value === 0) return '';
+        return `$ ${new Intl.NumberFormat('es-CL').format(value)}`;
+    };
+
+    const parseCLP = (str: string) => {
+        const digits = str.replace(/\D/g, '');
+        return digits === '' ? 0 : parseInt(digits, 10);
+    };
+
+    const handlePriceInput = (field: 'kids' | 'adult', raw: string) => {
+        const num = parseCLP(raw);
+        setPrices(p => ({ ...p, [field]: num }));
+    };
+
+    // --- ACCIONES ---
+
+    const handleLoadDemo = () => {
+        setIsDemo(true);
+        const demoPayers = [
+            {
+                id: 'p1',
+                name: 'Javier Muñoz',
+                photo: 'https://i.pravatar.cc/150?u=7',
+                status: 'paid',
+                enrolledStudents: [
+                    { id: 's1', name: 'Ana Muñoz', category: 'kids', photo: 'https://i.pravatar.cc/150?img=1' },
+                    { id: 's2', name: 'Luis Muñoz', category: 'kids', photo: 'https://i.pravatar.cc/150?img=2' },
+                    { id: 's3', name: 'Mía Muñoz', category: 'kids', photo: 'https://i.pravatar.cc/150?img=3' }
+                ]
+            },
+            {
+                id: 'p2',
+                name: 'Valentina Rojas',
+                photo: 'https://i.pravatar.cc/150?u=4',
+                status: 'pending',
+                enrolledStudents: [
+                    { id: 's4', name: 'Valentina Rojas', category: 'adults', photo: 'https://i.pravatar.cc/150?u=4' },
+                    { id: 's5', name: 'Pedro Rojas', category: 'kids', photo: 'https://i.pravatar.cc/150?img=5' }
+                ]
+            }
+        ];
+        setPayers(demoPayers);
+        setUser({ name: 'Admin Demo', tenant_id: 'DEMO' });
+    };
+
+    const toggleAttendance = async (rawId: string | number) => {
+        const studentId = String(rawId);
+        const isPresent = attendance.has(studentId);
+        const student = allStudents.find(s => String(s.id) === studentId);
+
+        const newAttendance = new Set(attendance);
+        if (isPresent) {
+            newAttendance.delete(studentId);
+            // Optimistic: remover del historial
+            const today = todayCL();
+            setAttendanceHistory(prev => prev.filter(r => !(String(r.student_id) === String(studentId) && (r.date || r.created_at?.split('T')[0]) === today)));
+        } else {
+            newAttendance.add(studentId);
+            // Optimistic: inyectar en historial
+            setAttendanceHistory(prev => [{
+                id: `local-${Date.now()}`,
+                student_id: studentId,
+                student: { id: studentId, name: student?.name || 'Alumno', photo: student?.photo },
+                date: todayCL(),
+                status: 'present',
+                created_at: new Date().toISOString(),
+                registration_method: 'manual',
+            }, ...prev]);
+        }
+        setAttendance(newAttendance);
+
+        if (!isDemo && token && (user?.tenant_slug || user?.tenant_id)) {
+            if (isPresent) {
+                await deleteAttendance(user.tenant_slug || user.tenant_id, token, studentId);
+            } else {
+                await storeAttendance(user.tenant_slug || user.tenant_id, token, { student_id: studentId, status: 'present' });
+            }
+        }
+    };
+
+    const handlePaymentApprove = (payerId: string) => {
+        const payer = payers.find(p => p.id === payerId);
+        if (payer) setPaymentActionPayer(payer);
+    };
+
+    const handleConfirmPayment = async () => {
+        if (!paymentActionPayer) return;
+        const payerId = paymentActionPayer.id;
+
+        if (isDemo) {
+            setPayers(payers.map(p => p.id === payerId ? { ...p, status: 'paid' } : p));
+            setPaymentActionPayer(null);
+            return;
+        }
+
+        if (token && (user?.tenant_slug || user?.tenant_id)) {
+            await approvePayment(user.tenant_slug || user.tenant_id, token, payerId);
+            setPaymentActionPayer(null);
+            refreshPayers();
+        }
+    };
+
+    const handleSavePrices = async () => {
+        if (isDemo) {
+            alert("Precios guardados localmente (Modo Demo)");
+            return;
+        }
+        if (token && (user?.tenant_slug || user?.tenant_id)) {
+            await updatePricing(user.tenant_slug || user.tenant_id, token, prices);
+            alert("Configuración de precios actualizada con éxito");
+        }
+    };
+
+    const handleSaveBankInfo = async () => {
+        if (isDemo) {
+            alert("Datos bancarios guardados localmente (Modo Demo)");
+            return;
+        }
+        if (token && (user?.tenant_slug || user?.tenant_id)) {
+            await updateBankInfo(user.tenant_slug || user.tenant_id, token, bankData);
+            alert("Datos bancarios actualizados con éxito");
+        }
+    };
+
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !token || (!user?.tenant_slug && !user?.tenant_id)) return;
+
+        const result: any = await updateLogo(user.tenant_slug || user.tenant_id, token, file);
+        if (result?.logo_url && branding) {
+            setBranding({
+                ...branding,
+                id: String(branding.id),
+                logo: String(result.logo_url)
+            });
+            alert("Logo actualizado con éxito");
+        }
+    };
+
+    // --- VISTAS DE LA APP ---
+
+    const loadExpenses = async () => {
+        setExpensesLoading(true);
+        const data = await getExpenses(branding?.slug || '', token || '');
+        setExpensesList(data?.expenses ?? []);
+        setExpensesTotal(data?.total ?? 0);
+        setExpensesSummary(data?.summary ?? []);
+        setExpensesLoading(false);
+    };
+
+    const loadSchedules = async () => {
+        setSchedulesLoading(true);
+        const data = await getSchedules(branding?.slug || '', token || '');
+        setSchedulesList(data?.schedules ?? []);
+        setSchedulesLoading(false);
+    };
+
+    const handleCreateExpense = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!expenseForm.title || !expenseForm.amount) { setExpenseFormError('Completa los campos requeridos'); return; }
+        setExpenseSubmitting(true); setExpenseFormError('');
+        const fd = new FormData();
+        fd.append('title', expenseForm.title);
+        fd.append('description', expenseForm.description);
+        fd.append('amount', expenseForm.amount);
+        fd.append('category', expenseForm.category);
+        fd.append('expense_date', expenseForm.expense_date);
+        if (expenseReceiptPhoto) fd.append('receipt_photo', expenseReceiptPhoto);
+        if (expenseProductPhoto) fd.append('product_photo', expenseProductPhoto);
+        const res = await createExpense(branding?.slug || '', token || '', fd);
+        if (res?.expense) {
+            setShowCreateExpense(false);
+            setExpenseForm({ title: '', description: '', amount: '', category: 'insumos', expense_date: new Date().toISOString().split('T')[0] });
+            setExpenseReceiptPhoto(null); setExpenseProductPhoto(null);
+            await loadExpenses();
+        } else {
+            setExpenseFormError(res?.message ?? 'Error al guardar');
+        }
+        setExpenseSubmitting(false);
+    };
+
+    const handleDeleteExpense = async (id: number) => {
+        if (!confirm('¿Eliminar este gasto?')) return;
+        setExpenseDeletingId(id);
+        await deleteExpense(branding?.slug || '', token || '', id);
+        await loadExpenses();
+        setExpenseDeletingId(null);
+    };
+
+    const loadFees = async () => {
+        setFeesLoading(true);
+        const data = await getFees(branding?.slug || '', token || '');
+        setFeesList(data?.fees || []);
+        if (data?.fees) {
+            const total = data.fees.length;
+            const pending = data.fees.reduce((a: number, f: any) => a + (f.total_count - f.paid_count - f.review_count), 0);
+            const review = data.fees.reduce((a: number, f: any) => a + (f.review_count || 0), 0);
+            setFeesSummary({ total, pending, review });
+        }
+        setFeesLoading(false);
+    };
+
+    const openFee = async (fee: any) => {
+        setSelectedFee(fee);
+        setFeeDetailLoading(true);
+        const data = await getFeeDetail(branding?.slug || '', token || '', fee.id);
+        setFeePayments(data?.payments || []);
+        setFeeDetailLoading(false);
+    };
+
+    const handleCreateFee = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!feeForm.title || !feeForm.amount) { setFeeFormError('Completa todos los campos requeridos'); return; }
+        if (feeForm.type === 'once' && !feeForm.due_date) { setFeeFormError('La fecha límite es requerida'); return; }
+        if (feeForm.type === 'recurring' && !feeForm.recurring_day) { setFeeFormError('Indica el día del mes'); return; }
+        setFeeSubmitting(true); setFeeFormError('');
+        const startDate = feeForm.type === 'recurring' && feeForm.start_month && feeForm.start_year
+            ? `${feeForm.start_year}-${String(feeForm.start_month).padStart(2,'0')}-01` : undefined;
+        const endDate = feeForm.type === 'recurring' && feeForm.end_month && feeForm.end_year
+            ? `${feeForm.end_year}-${String(feeForm.end_month).padStart(2,'0')}-28` : undefined;
+        const result = await createFee(branding?.slug || '', token || '', {
+                ...feeForm,
+                amount: parseFloat(feeForm.amount),
+                recurring_day: feeForm.type === 'recurring' ? parseInt(feeForm.recurring_day) : undefined,
+                due_date: feeForm.type === 'once' ? feeForm.due_date : startDate,
+                end_date: endDate,
+            });
+        setFeeSubmitting(false);
+        if (result?.fee) {
+            setShowCreateFee(false);
+            setFeeForm({ title: '', description: '', amount: '', due_date: '', target: 'all', type: 'once', recurring_day: '', start_month: '', start_year: '', end_month: '', end_year: '' });
+            loadFees();
+        } else {
+            setFeeFormError(result?.message || 'Error al crear cuota');
+        }
+    };
+
+    const handleDeleteFee = async (feeId: number) => {
+        if (!confirm('¿Eliminar esta cuota y todos sus pagos?')) return;
+        await deleteFee(branding?.slug || '', token || '', feeId);
+        loadFees();
+    };
+
+    const handleApproveFeePayment = async () => {
+        if (!approvingFeePayment || !selectedFee) return;
+        setFeeApprovingLoading(true);
+        await approveFeePayment(branding?.slug || '', token || '', selectedFee.id, {
+            guardian_id: approvingFeePayment.guardian_id,
+            payment_method: feeApproveMethod,
+            notes: feeApproveNotes,
+        });
+        setFeeApprovingLoading(false);
+        setApprovingFeePayment(null);
+        setFeeApproveNotes('');
+        const data = await getFeeDetail(branding?.slug || '', token || '', selectedFee.id);
+        setFeePayments(data?.payments || []);
+        loadFees();
+    };
+
+    const STATUS_LABEL: Record<string, { label: string; color: string }> = {
+        pending: { label: 'Pendiente', color: 'bg-rose-50 text-rose-600 border-rose-100' },
+        review:  { label: 'En revisión', color: 'bg-amber-50 text-amber-600 border-amber-100' },
+        paid:    { label: 'Pagado', color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+    };
+
+
+    const handleLongPressStart = (payerId: string) => {
+        longPressTimer.current = setTimeout(() => {
+            const payer = payers.find(p => p.id === payerId);
+            if (payer) setBubbleModalPayer(payer);
+        }, 600);
+    };
+    const handleLongPressEnd = () => {
+        if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    };
+
+
+
+
+
+
+
+
+
+    if (loading) return (
+        <div className="min-h-screen bg-stone-50 px-4 pt-6 pb-32 max-w-lg mx-auto space-y-4 animate-pulse">
+            <div className="flex items-center justify-between mb-2">
+                <div className="space-y-2">
+                    <div className="h-7 w-36 bg-zinc-200 rounded-xl" />
+                    <div className="h-3 w-48 bg-zinc-100 rounded-lg" />
+                </div>
+                <div className="w-14 h-14 bg-zinc-200 rounded-full" />
+            </div>
+            <div className="h-36 bg-zinc-200 rounded-[2.5rem]" />
+            <div className="h-4 w-32 bg-zinc-100 rounded-lg" />
+            <div className="h-24 bg-zinc-100 rounded-[2rem]" />
+            <div className="h-24 bg-zinc-100 rounded-[2rem]" />
+            <div className="h-24 bg-zinc-100 rounded-[2rem]" />
+        </div>
+    );
+
+    return (
+        <div className="flex flex-col h-screen bg-white font-sans relative overflow-hidden text-zinc-950">
+            {/* Banner Web Push — aparece una sola vez si nunca ha dado permiso */}
+            {showPushBanner && (
+                <div className="fixed bottom-24 left-3 right-3 z-[200] animate-in slide-in-from-bottom-4 duration-300">
+                    <div className="bg-zinc-900 rounded-2xl p-4 flex items-center gap-3 shadow-2xl border border-white/10">
+                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                            <Bell size={20} className="text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-black text-white leading-tight">Activa las notificaciones</p>
+                            <p className="text-[9px] text-white/50 font-bold mt-0.5">Recibe alertas de pagos y asistencia</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                            <button
+                                onClick={() => {
+                                    localStorage.setItem('push_banner_dismissed', '1');
+                                    setShowPushBanner(false);
+                                }}
+                                className="text-[9px] font-black text-white/40 uppercase tracking-widest px-2 py-1"
+                            >
+                                Ahora no
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowPushBanner(false);
+                                    if (token && branding?.slug) subscribeToPush(branding.slug, token);
+                                }}
+                                style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
+                                className="text-[9px] font-black text-white uppercase tracking-widest px-3 py-2 rounded-xl"
+                            >
+                                Activar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            <NotificationToast
+                notification={toastNotification}
+                onDismiss={() => setToastNotification(null)}
+                onNavigate={(type) => {
+                    if (type === 'attendance') setActiveTab('attendance');
+                    else if (type === 'payment') setActiveTab('payments');
+                    else setActiveTab('profile');
+                }}
+            />
+            {/* HEADER DINÁMICO - Oculto en Desktop ya que se integra en el Content */}
+            <header className="bg-white px-2 py-3 flex items-center justify-between sticky top-0 z-50 border-b border-zinc-50 shrink-0 md:hidden">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full overflow-hidden border border-zinc-100 shadow-sm">
+                        {branding?.logo ? (
+                            <img src={branding.logo} className="w-full h-full object-cover" alt="L" />
+                        ) : (
+                            <span className="font-black text-xl uppercase tracking-tighter text-zinc-950">{branding?.name?.[0] || 'D'}</span>
+                        )}
+                    </div>
+                    <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-lg font-black uppercase tracking-tighter text-zinc-950 leading-none">{branding?.name || 'Academy'}</h1>
+                            <button onClick={() => setShowPushModal(true)} className="shrink-0 mt-0.5">
+                                <div className={`w-3 h-3 rounded-full border-2 border-white shadow-sm transition-colors duration-500 ${
+                                    pushPermission === 'granted' ? 'bg-emerald-500 animate-pulse' :
+                                    pushPermission === 'denied'  ? 'bg-red-500' :
+                                    'bg-amber-400'
+                                }`} />
+                            </button>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: branding?.primaryColor || '#6366f1' }}>{activeTab === 'dashboard' ? 'Resumen' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? (branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos') : activeTab === 'settings' ? 'Ajustes' : 'Perfil'}</span>
+                            {isDemo && <span className="bg-emerald-500/10 text-emerald-600 text-[6px] font-black px-1 py-0.5 rounded uppercase tracking-widest">DEMO</span>}
+                        </div>
+                    </div>
+                </div>
+                {/* Notification Bell */}
+                <button 
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className="relative w-10 h-10 flex items-center justify-center rounded-full border border-zinc-100 shadow-sm bg-white"
+                >
+                    <Bell size={20} className="text-zinc-600" />
+                    {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                    )}
+                </button>
+            </header>
+
+            {/* Notification Dropdown */}
+            {showNotifications && (
+                <div className="fixed inset-0 z-[100] md:hidden" onClick={() => setShowNotifications(false)}>
+                    <div className="absolute top-16 right-2 w-80 max-h-96 bg-white rounded-2xl shadow-2xl border border-zinc-100 overflow-hidden animate-in slide-in-from-top-2 fade-in duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="p-4 border-b border-zinc-50 flex items-center justify-between">
+                            <span className="text-xs font-black uppercase tracking-widest text-zinc-400">Notificaciones</span>
+                            {unreadCount > 0 && (
+                                <button onClick={async () => {
+                                    if (branding?.slug && token) {
+                                        await markAllNotificationsRead(branding.slug, token);
+                                        setUnreadCount(0);
+                                        setNotifications(n => n.map(x => ({ ...x, read: true })));
+                                    }
+                                }} className="text-[9px] font-black text-zinc-400 hover:text-zinc-600">Marcar leídas</button>
+                            )}
+                        </div>
+                        <div className="max-h-72 overflow-y-auto">
+                            {notifications.length > 0 ? notifications.map((n: any) => (
+                                <div
+                                    key={n.id}
+                                    onClick={async () => {
+                                        if (!n.read && branding?.slug && token) {
+                                            markNotificationRead(branding.slug, token, n.id);
+                                            setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
+                                            setUnreadCount(c => Math.max(0, c - 1));
+                                        }
+                                        if (n.type === 'attendance') setActiveTab('attendance');
+                                        else if (n.type === 'payment') setActiveTab('payments');
+                                        setShowNotifications(false);
+                                    }}
+                                    className={`p-4 border-b border-zinc-50 cursor-pointer hover:bg-zinc-50 transition-colors ${!n.read ? 'bg-blue-50/50' : ''}`}
+                                >
+                                    <div className="flex items-start gap-3">
+                                        <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${!n.read ? 'bg-blue-500' : 'bg-zinc-200'}`} />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-bold text-zinc-800 truncate">{n.title}</p>
+                                            <p className="text-xs text-zinc-400 mt-0.5 line-clamp-2">{n.body}</p>
+                                            <p className="text-[9px] text-zinc-300 mt-1">{n.created_at}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )) : (
+                                <div className="p-8 text-center">
+                                    <Bell size={24} className="text-zinc-200 mx-auto mb-2" />
+                                    <p className="text-xs text-zinc-300">Sin notificaciones</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="flex flex-1 overflow-hidden">
+                {/* SIDEBAR DESKTOP */}
+                <aside className="hidden md:flex flex-col w-64 bg-white border-r border-zinc-100 p-6 gap-8">
+                    <div className="flex items-center gap-3 px-2">
+                        <div className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full overflow-hidden border-2 border-zinc-100">
+                            {branding?.logo ? (
+                                <img src={branding.logo} className="w-full h-full object-cover" alt="L" />
+                            ) : (
+                                <span className="font-black text-xl uppercase tracking-tighter text-zinc-950">{branding?.name?.[0] || 'D'}</span>
+                            )}
+                        </div>
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-sm font-black uppercase tracking-tighter text-zinc-950 truncate leading-none">{branding?.name || 'Academy'}</h2>
+                                <button onClick={() => setShowPushModal(true)} className="shrink-0">
+                                    <div className={`w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm transition-colors duration-500 ${
+                                        pushPermission === 'granted' ? 'bg-emerald-500 animate-pulse' :
+                                        pushPermission === 'denied'  ? 'bg-red-500' :
+                                        'bg-amber-400'
+                                    }`} />
+                                </button>
+                            </div>
+                            <p className="text-[8px] font-black uppercase tracking-widest mt-1" style={{ color: branding?.primaryColor || '#6366f1' }}>Software de Gestión</p>
+                        </div>
+                    </div>
+
+                    <nav className="flex flex-col gap-2">
+                        <SidebarButton icon={LayoutDashboard} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} primaryColor={branding?.primaryColor} />
+                        <SidebarButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} />
+                        <SidebarButton icon={CreditCard} label={branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos'} active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} />
+                        <SidebarButton icon={Settings} label="Ajustes" active={activeTab === 'settings'} onClick={() => changeTab('settings')} primaryColor={branding?.primaryColor} />
+                    </nav>
+
+                    <div className="mt-auto pt-6 border-t border-zinc-50 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full overflow-hidden border border-zinc-100">
+                            <img src="/DLogo-v2.webp" className="w-full h-full object-cover" alt="D" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-black text-zinc-900 truncate leading-none uppercase">{user?.name || 'Admin'}</p>
+                            <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">Administrator</p>
+                        </div>
+                        <button onClick={() => { localStorage.clear(); window.location.href = "/"; }} className="text-zinc-300 hover:text-rose-500 transition-colors">
+                            <LogOut size={16} />
+                        </button>
+                    </div>
+                </aside>
+
+                {/* CONTENIDO PRINCIPAL */}
+                <main className="flex-1 overflow-y-auto pb-28 md:pb-8 hide-scrollbar relative bg-white">
+                    <div className="max-w-6xl mx-auto py-2 md:py-8 px-2 md:px-8">
+                        <div key={activeTab} className="w-full animate-in fade-in duration-150">
+                            <div className="hidden md:flex justify-between items-center mb-8">
+                                <h2 className="text-2xl font-black uppercase tracking-tighter text-zinc-950">
+                                    {activeTab === 'dashboard' ? 'Resumen General' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? (branding?.industry === 'school_treasury' ? 'Cuotas' : 'Estado de Pagos') : activeTab === 'settings' ? 'Configuración' : 'Mi Perfil'}
+                                </h2>
+                                {isDemo && <span className="bg-emerald-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Modo Demo Activo</span>}
+                            </div>
+                            {activeTab === 'dashboard' && (
+                                <OverviewSection 
+                                    allStudents={allStudents}
+                                    attendance={attendance}
+                                    attendanceHistory={attendanceHistory}
+                                    historyMonth={historyMonth}
+                                    setHistoryMonth={setHistoryMonth}
+                                    historyYear={historyYear}
+                                    setHistoryYear={setHistoryYear}
+                                    historyPage={historyPage}
+                                    setHistoryPage={setHistoryPage}
+                                    branding={branding}
+                                    now={now}
+                                    setSelectedHistoryDate={setSelectedHistoryDate}
+                                    schedulesList={schedulesList}
+                                />
+                            )}
+                            {activeTab === 'attendance' && (
+                                <AttendanceSection 
+                                    allStudents={allStudents}
+                                    attendance={attendance}
+                                    searchTerm={searchTerm}
+                                    setSearchTerm={setSearchTerm}
+                                    attendanceHistory={attendanceHistory}
+                                    formatMoney={formatMoney}
+                                    toggleAttendance={toggleAttendance}
+                                    setSelectedHistoryDate={setSelectedHistoryDate}
+                                    setShowQRModal={setShowQRModal}
+                                    branding={branding}
+                                    vocab={vocab}
+                                />
+                            )}
+                            {activeTab === 'payments' && (
+                                branding?.industry === 'school_treasury' ? (
+                                    <FeesGuardiansSection 
+                                        payers={payers}
+                                        searchTerm={searchTerm}
+                                        feesGuardiansLoading={feesGuardiansLoading}
+                                        feesBubbleModal={feesBubbleModal}
+                                        setFeesBubbleModal={setFeesBubbleModal}
+                                        approvingFeePayment={approvingFeePayment}
+                                        setApprovingFeePayment={setApprovingFeePayment}
+                                        selectedFee={selectedFee}
+                                        setSelectedFee={setSelectedFee}
+                                        feeApproveMethod={feeApproveMethod}
+                                        setFeeApproveMethod={setFeeApproveMethod}
+                                        feeApproveNotes={feeApproveNotes}
+                                        setFeeApproveNotes={setFeeApproveNotes}
+                                        feeApprovingLoading={feeApprovingLoading}
+                                        handleApproveFeePayment={handleApproveFeePayment}
+                                        setProofModalUrl={setProofModalUrl}
+                                        formatMoney={formatMoney}
+                                        vocab={vocab}
+                                    />
+                                ) : (
+                                    <PaymentsSection 
+                                        payers={payers}
+                                        searchTerm={searchTerm}
+                                        setSearchTerm={setSearchTerm}
+                                        paymentFilter={paymentFilter}
+                                        setPaymentFilter={setPaymentFilter}
+                                        selectedMonth={selectedMonth}
+                                        setSelectedMonth={setSelectedMonth}
+                                        selectedYear={selectedYear}
+                                        setSelectedYear={setSelectedYear}
+                                        paymentDropdownOpen={paymentDropdownOpen}
+                                        setPaymentDropdownOpen={setPaymentDropdownOpen}
+                                        expandedPayerId={expandedPayerId}
+                                        setExpandedPayerId={setExpandedPayerId}
+                                        branding={branding}
+                                        formatMoney={formatMoney}
+                                        handlePaymentApprove={handlePaymentApprove}
+                                        handleLongPressStart={handleLongPressStart}
+                                        handleLongPressEnd={handleLongPressEnd}
+                                        setBubbleModalPayer={setBubbleModalPayer}
+                                        setProofModalUrl={setProofModalUrl}
+                                        bubbleModalPayer={bubbleModalPayer}
+                                        vocab={vocab}
+                                    />
+                                )
+                            )}
+                            {activeTab === 'settings' && (
+                                <SettingsSection 
+                                    branding={branding}
+                                    user={user}
+                                    token={token}
+                                    vocab={vocab}
+                                    fileInputRef={fileInputRef}
+                                    handleLogoUpload={handleLogoUpload}
+                                    handleLoadDemo={handleLoadDemo}
+                                    regPageCode={regPageCode}
+                                    setRegPageCode={setRegPageCode}
+                                    generatingPage={generatingPage}
+                                    setGeneratingPage={setGeneratingPage}
+                                    prices={prices}
+                                    setPrices={setPrices}
+                                    handlePriceInput={handlePriceInput}
+                                    handleSavePrices={handleSavePrices}
+                                    bankData={bankData}
+                                    setBankData={setBankData}
+                                    handleSaveBankData={handleSaveBankInfo}
+                                    formatCLP={formatCLP}
+                                    showInactivePayers={showInactivePayers}
+                                    setShowInactivePayers={setShowInactivePayers}
+                                    loadingSync={loadingSync}
+                                    forceSync={forceSync}
+                                    handleLogout={handleLogout}
+                                />
+                            )}
+                            {activeTab === 'profile' && (
+                                <ProfileSection 
+                                    user={user}
+                                    branding={branding}
+                                    appUpdates={appUpdates}
+                                    changeTab={changeTab}
+                                />
+                            )}
+                            {activeTab === 'fees' && (
+                                <FeesSection 
+                                    feesList={feesList}
+                                    feesLoading={feesLoading}
+                                    feeSubmitting={feeSubmitting}
+                                    feeForm={feeForm}
+                                    setFeeForm={setFeeForm}
+                                    feeFormError={feeFormError}
+                                    showCreateFee={showCreateFee}
+                                    setShowCreateFee={setShowCreateFee}
+                                    loadFees={loadFees}
+                                    handleCreateFee={handleCreateFee}
+                                    handleDeleteFee={handleDeleteFee}
+                                    formatMoney={formatMoney}
+                                    formatCLP={formatCLP}
+                                    parseCLP={parseCLP}
+                                    nowCL={nowCL}
+                                    STATUS_LABEL={STATUS_LABEL}
+                                    selectedFee={selectedFee}
+                                    setSelectedFee={setSelectedFee}
+                                    feeDetailLoading={feeDetailLoading}
+                                    feePayments={feePayments}
+                                    openFee={openFee}
+                                    approvingFeePayment={approvingFeePayment}
+                                    setApprovingFeePayment={setApprovingFeePayment}
+                                    feeApproveMethod={feeApproveMethod}
+                                    setFeeApproveMethod={setFeeApproveMethod}
+                                    feeApproveNotes={feeApproveNotes}
+                                    setFeeApproveNotes={setFeeApproveNotes}
+                                    handleApproveFeePayment={handleApproveFeePayment}
+                                    feeApprovingLoading={feeApprovingLoading}
+                                    feeProofUrl={feeProofUrl}
+                                    setFeeProofUrl={setFeeProofUrl}
+                                />
+                            )}
+                            {activeTab === 'expenses' && (
+                                <ExpensesSection 
+                                    feesList={feesList}
+                                    expensesTotal={expensesTotal}
+                                    expensesSummary={expensesSummary}
+                                    expensesList={expensesList}
+                                    expensesLoading={expensesLoading}
+                                    showCreateExpense={showCreateExpense}
+                                    setShowCreateExpense={setShowCreateExpense}
+                                    expenseLightbox={expenseLightbox}
+                                    setExpenseLightbox={setExpenseLightbox}
+                                    handleDeleteExpense={handleDeleteExpense}
+                                    expenseDeletingId={expenseDeletingId}
+                                    expenseFormError={expenseFormError}
+                                    handleCreateExpense={handleCreateExpense}
+                                    expenseForm={expenseForm}
+                                    setExpenseForm={setExpenseForm}
+                                    setExpenseReceiptPhoto={setExpenseReceiptPhoto}
+                                    setExpenseProductPhoto={setExpenseProductPhoto}
+                                    expenseSubmitting={expenseSubmitting}
+                                    formatCLP={formatCLP}
+                                    parseCLP={parseCLP}
+                                    EXPENSE_CATEGORIES={EXPENSE_CATEGORIES}
+                                />
+                            )}
+                            {activeTab === 'schedule' && (
+                                <ScheduleSection 
+                                    schedulesLoading={schedulesLoading}
+                                    schedulesList={schedulesList}
+                                    branding={branding}
+                                    token={token}
+                                    loadSchedules={loadSchedules}
+                                />
+                            )}
+                        </div>
+                    </div>
+                </main>
+            </div>
+
+            {/* QR DINAMICO MODAL */}
+            {showQRModal && (
+                <DynamicQRModal 
+                    tenantSlug={branding?.slug ?? ''} 
+                    authToken={token ?? ''} 
+                    onClose={() => { setShowQRModal(false); setLastCheckedInStudent(null); }}
+                    primaryColor={branding?.primaryColor || '#a855f7'}
+                    payers={payers}
+                    checkedInStudent={lastCheckedInStudent}
+                    onStudentAcknowledged={() => setLastCheckedInStudent(null)}
+                />
+            )}
+
+            {/* MODAL PUSH PERMISSIONS */}
+            {showPushModal && (
+                <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-end justify-center p-4 animate-in fade-in duration-200" onClick={() => setShowPushModal(false)}>
+                    <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom-4 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className={`w-4 h-4 rounded-full shrink-0 ${
+                                pushPermission === 'granted' ? 'bg-emerald-500' :
+                                pushPermission === 'denied'  ? 'bg-red-500' :
+                                'bg-amber-400'
+                            }`} />
+                            <h3 className="text-sm font-black uppercase tracking-tighter text-zinc-900">
+                                {pushPermission === 'granted' ? 'Notificaciones activas' :
+                                 pushPermission === 'denied'  ? 'Notificaciones bloqueadas' :
+                                 'Notificaciones desactivadas'}
+                            </h3>
+                        </div>
+                        <p className="text-xs text-zinc-400 leading-relaxed mb-6">
+                            {pushPermission === 'granted'
+                                ? 'Recibirás alertas de pagos y asistencia aunque la app esté cerrada.'
+                                : pushPermission === 'denied'
+                                ? 'Bloqueaste las notificaciones. Para activarlas ve a Ajustes → Safari → Notificaciones.'
+                                : 'Activa las notificaciones para recibir alertas de pagos y asistencia aunque la app esté cerrada.'}
+                        </p>
+                        {pushPermission === 'default' && (
+                            <button
+                                onClick={handleActivatePush}
+                                style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
+                                className="w-full py-4 rounded-2xl text-white font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all"
+                            >
+                                Activar notificaciones
+                            </button>
+                        )}
+                        <button onClick={() => setShowPushModal(false)} className="w-full py-3 text-zinc-400 font-black text-[9px] uppercase tracking-widest mt-2">
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL DE COMPROBANTE */}
+            {proofModalUrl && (
+                <ProofModal 
+                    url={proofModalUrl} 
+                    onClose={() => setProofModalUrl(null)} 
+                />
+            )}
+
+            {/* Modal de Detalle de Historial */}
+            {selectedHistoryDate && (
+                <HistoryDetailModal 
+                    date={selectedHistoryDate}
+                    records={attendanceHistory.filter((r: any) => (r.date || r.created_at?.split('T')[0]) === selectedHistoryDate)}
+                    branding={branding}
+                    onClose={() => setSelectedHistoryDate(null)}
+                />
+            )}
+
+            {/* MODAL DE ACCIÓN DE PAGO */}
+            {paymentActionPayer && (
+                <PaymentActionModal 
+                    payer={paymentActionPayer} 
+                    onConfirm={handleConfirmPayment} 
+                    onCancel={() => setPaymentActionPayer(null)} 
+                    primaryColor={branding?.primaryColor || '#6366f1'}
+                    formatMoney={formatMoney}
+                />
+            )}
+
+            {/* NAV CON ESTILO PREMIUM - Solo visible en Mobile */}
+            <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-50 pt-3 pb-8 px-6 flex justify-between items-center h-22 z-50 md:hidden text-zinc-950">
+                <TabButton icon={LayoutDashboard} label="Inicio" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} primaryColor={branding?.primaryColor} />
+                {branding?.industry !== 'school_treasury' && (
+                    <TabButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} />
+                )}
+                <TabButton icon={CreditCard} label={branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos'} active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} />
+                {branding?.industry === 'school_treasury' && (
+                    <TabButton icon={ShoppingCart} label="Compras" active={activeTab === 'expenses'} onClick={() => changeTab('expenses')} primaryColor={branding?.primaryColor} />
+                )}
+                {branding?.industry === 'school_treasury' && (
+                    <TabButton icon={Calendar} label="Horario" active={activeTab === 'schedule'} onClick={() => changeTab('schedule')} primaryColor={branding?.primaryColor} />
+                )}
+                {/* Profile tab con foto */}
+                <button
+                    onClick={() => changeTab('profile')}
+                    className={`flex flex-col items-center gap-0.5 transition-all duration-150 ${activeTab === 'profile' ? 'opacity-100' : 'opacity-30 hover:opacity-60'}`}
+                >
+                    <div className={`w-7 h-7 rounded-full overflow-hidden border-2 ${activeTab === 'profile' ? '' : 'border-transparent'}`} style={activeTab === 'profile' ? { borderColor: branding?.primaryColor || '#6366f1' } : {}}>
+                        <img src={user?.photo || '/DLogo-v2.webp'} className="w-full h-full object-cover" alt="" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest" style={activeTab === 'profile' ? { color: branding?.primaryColor || '#6366f1' } : {}}>Perfil</span>
+                </button>
+            </nav>
+
+            <style dangerouslySetInnerHTML={{
+                __html: `
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}} />
+        </div>
+    );
+}
+
+function SidebarButton({ icon: Icon, label, active, onClick, primaryColor }: { icon: any, label: string, active: boolean, onClick: () => void, primaryColor?: string }) {
+    return (
+        <button onClick={onClick} 
+            style={active ? { backgroundColor: primaryColor || '#6366f1' } : {}}
+            className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 w-full group ${active ? 'text-white shadow-lg' : 'text-zinc-400 hover:bg-zinc-50 hover:text-zinc-600'}`}>
+            <Icon size={20} strokeWidth={active ? 3 : 2} className={`transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`} />
+            <span className="text-[11px] font-black uppercase tracking-widest">{label}</span>
+        </button>
+    );
+}
+
+function TabButton({ icon: Icon, label, active, onClick, primaryColor = '#000' }: { icon: any, label: string, active: boolean, onClick: () => void, primaryColor?: string }) {
+    return (
+        <button 
+            onClick={onClick} 
+            className={`flex flex-col items-center gap-1 transition-all duration-200 ${active ? '' : 'text-zinc-400 hover:text-zinc-600'}`}
+            style={active ? { color: primaryColor } : {}}
+        >
+            <div 
+                className={`p-2 transition-all duration-300 ${active ? 'rounded-2xl shadow-sm' : 'bg-transparent'}`}
+                style={active ? { backgroundColor: `${primaryColor}15` } : {}}
+            >
+                <Icon size={22} strokeWidth={active ? 3 : 2.5} />
+            </div>
+            <span className={`text-[7px] font-black uppercase tracking-[0.2em] transition-all ${active ? 'opacity-100' : 'opacity-60'}`}>{label}</span>
+        </button>
+    );
+}

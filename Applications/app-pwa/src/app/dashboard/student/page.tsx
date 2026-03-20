@@ -2,338 +2,58 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
-    Calendar,
-    User,
-    AlertCircle,
-    LogOut,
-    QrCode,
-    Loader2,
-    Upload,
-    CheckCircle2,
-    Clock,
-    Eye,
-    X,
-    Copy,
-    Check,
-    Camera,
-    CreditCard,
-    Settings,
-    ShieldCheck,
-    ChevronRight,
-    MapPin,
-    RefreshCw,
     Bell,
-    Sparkles,
-    Trash2,
-    Minus,
-    ShoppingCart,
-    ImageIcon
+    X,
+    Camera,
+    Loader2
 } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
 import NotificationToast from "@/components/Notifications/NotificationToast";
-import { getProfile, markAttendanceViaQR, resumeSession, getNotifications, markAllNotificationsRead, markNotificationRead, getAppUpdates, deletePaymentProof, getExpenses, getSchedules, updateStudentName, getMyFees, submitFeePayment } from "@/lib/api";
-import { ExpenseCard } from "@/app/dashboard/expenses/page";
-import jsQR from "jsqr";
+import { StudentQRScanner } from "@/components/Dashboard/Student/StudentQRScanner";
+import { ConfirmDialog, ProofModal } from "@/components/Dashboard/Student/StudentUIHelpers";
+import { StudentHomeSection } from "@/components/Dashboard/Student/StudentHomeSection";
+import { StudentPaymentsSection } from "@/components/Dashboard/Student/StudentPaymentsSection";
+import { FeePayModal } from "@/components/Dashboard/Student/StudentPaymentComponents";
+import { StudentCalendarSection } from "@/components/Dashboard/Student/StudentCalendarSection";
+import { StudentProfileSection } from "@/components/Dashboard/Student/StudentProfileSection";
+import { StudentRendicionSection } from "@/components/Dashboard/Student/StudentRendicionSection";
+import {
+    getProfile,
+    resumeSession,
+    getNotifications,
+    markAllNotificationsRead,
+    markNotificationRead,
+    getAppUpdates,
+    deletePaymentProof,
+    getExpenses,
+    getSchedules,
+    updateStudentName,
+    getMyFees,
+    submitFeePayment
+} from "@/lib/api";
 import { nowCL } from "@/lib/utils";
 import BottomNav, { NavSection } from "@/components/Navigation/BottomNav";
-import WeeklySchedule from "@/components/Schedule/WeeklySchedule";
-import { todayCL } from "@/lib/utils";
-import StudentCalendar from "@/components/Calendar/StudentCalendar";
 import { getEcho, reconnect } from "@/lib/echo";
 import { unlockAudio, setAppBadge } from "@/lib/audio";
 import { subscribeToPush } from "@/lib/push";
-
-/* ─── QR Camera Scanner ─── */
-function StudentQRScanner({
-    studentId,
-    onComplete,
-    onCancel,
-    primaryColor,
-}: {
-    studentId: string;
-    onComplete: () => void;
-    onCancel: () => void;
-    primaryColor: string;
-}) {
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const streamRef = useRef<MediaStream | null>(null);
-    const rafRef = useRef<number>(0);
-    const [status, setStatus] = useState<"scanning" | "loading" | "success" | "error" | "denied">("scanning");
-    const [errorMsg, setErrorMsg] = useState("");
-
-    const stopCamera = useCallback(() => {
-        cancelAnimationFrame(rafRef.current);
-        streamRef.current?.getTracks().forEach((t) => t.stop());
-    }, []);
-
-    const playBeep = (type: 'success' | 'error') => {
-        try {
-            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            
-            if (type === 'success') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, ctx.currentTime);
-                gain.gain.setValueAtTime(0.5, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-                osc.start(ctx.currentTime);
-                osc.stop(ctx.currentTime + 0.1);
-            } else {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, ctx.currentTime);
-                gain.gain.setValueAtTime(0.5, ctx.currentTime);
-                gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-                osc.start(ctx.currentTime);
-                osc.stop(ctx.currentTime + 0.3);
-            }
-        } catch(e) { console.error("Audio error", e) }
-    };
-
-    const processFrame = useCallback(() => {
-        const video = videoRef.current;
-        const canvas = canvasRef.current;
-        if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) {
-            rafRef.current = requestAnimationFrame(processFrame);
-            return;
-        }
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-            inversionAttempts: "dontInvert",
-        });
-        if (code?.data) {
-            stopCamera();
-            setStatus("loading");
-            const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-            const tenantSlug = localStorage.getItem("tenant_slug");
-            if (token && tenantSlug) {
-                markAttendanceViaQR(tenantSlug, token, code.data, studentId).then((res) => {
-                    if (res?.attendance) {
-                        playBeep('success');
-                        setStatus("success");
-                        setTimeout(onComplete, 1500);
-                    } else {
-                        playBeep('error');
-                        setStatus("error");
-                        setErrorMsg(res?.message || "Código inválido o expirado");
-                    }
-                });
-            }
-        } else {
-            rafRef.current = requestAnimationFrame(processFrame);
-        }
-    }, [studentId, stopCamera, onComplete]);
-
-    useEffect(() => {
-        navigator.mediaDevices
-            .getUserMedia({ video: { facingMode: "environment" } })
-            .then((stream) => {
-                streamRef.current = stream;
-                if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
-                    videoRef.current.play().then(() => {
-                        rafRef.current = requestAnimationFrame(processFrame);
-                    });
-                }
-            })
-            .catch(() => setStatus("denied"));
-        return () => stopCamera();
-    }, [processFrame, stopCamera]);
-
-    return (
-        <div className="fixed inset-0 z-[100] bg-black/98 flex flex-col items-center justify-center p-6 animate-in fade-in duration-300">
-            <div className="w-full max-w-sm space-y-6 text-center">
-                <div className="w-16 h-16 bg-white/5 rounded-[2rem] border border-white/10 flex items-center justify-center mx-auto">
-                    <QrCode className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                    <h2 className="text-2xl font-black text-white">Marcar Asistencia</h2>
-                    <p className="text-sm text-gray-500 mt-1">Apunta al QR del profesor</p>
-                </div>
-
-                {status === "scanning" && (
-                    <div className="relative rounded-3xl overflow-hidden border-2 border-white/10 aspect-square">
-                        <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
-                        <canvas ref={canvasRef} className="hidden" />
-                        <div className="absolute inset-0 pointer-events-none">
-                            <div className="absolute top-4 left-4 w-10 h-10 border-l-4 border-t-4 border-white/60 rounded-tl-lg" />
-                            <div className="absolute top-4 right-4 w-10 h-10 border-r-4 border-t-4 border-white/60 rounded-tr-lg" />
-                            <div className="absolute bottom-4 left-4 w-10 h-10 border-l-4 border-b-4 border-white/60 rounded-bl-lg" />
-                            <div className="absolute bottom-4 right-4 w-10 h-10 border-r-4 border-b-4 border-white/60 rounded-br-lg" />
-                            <div className="absolute left-4 right-4 h-0.5 bg-gradient-to-r from-transparent via-white to-transparent opacity-60 animate-[scan_2s_ease-in-out_infinite]" style={{ top: "50%" }} />
-                        </div>
-                    </div>
-                )}
-
-                {status === "loading" && (
-                    <div className="flex flex-col items-center gap-4 py-12">
-                        <Loader2 className="w-12 h-12 text-white animate-spin" />
-                        <p className="text-gray-400 text-sm">Validando asistencia...</p>
-                    </div>
-                )}
-
-                {status === "success" && (
-                    <div className="flex flex-col items-center gap-4 py-12">
-                        <div className="w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-                            <CheckCircle2 className="w-10 h-10 text-emerald-400" />
-                        </div>
-                        <p className="text-white font-bold text-lg">¡Asistencia registrada!</p>
-                    </div>
-                )}
-
-                {status === "error" && (
-                    <div className="flex flex-col items-center gap-4 py-8">
-                        <div className="w-16 h-16 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center">
-                            <AlertCircle className="w-8 h-8 text-red-400" />
-                        </div>
-                        <p className="text-red-400 font-bold">{errorMsg}</p>
-                        <button
-                            onClick={() => setStatus("scanning")}
-                            className="text-xs text-gray-400 underline"
-                        >
-                            Intentar de nuevo
-                        </button>
-                    </div>
-                )}
-
-                {status === "denied" && (
-                    <div className="flex flex-col items-center gap-4 py-8">
-                        <p className="text-red-400 text-sm">Sin acceso a la cámara. Activa los permisos en tu navegador.</p>
-                    </div>
-                )}
-
-                <button
-                    onClick={() => { stopCamera(); onCancel(); }}
-                    className="w-full h-14 text-gray-500 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors"
-                >
-                    Cancelar
-                </button>
-            </div>
-        </div>
-    );
-}
-
-/* ─── Today Schedule ─── */
-function TodaySchedule({ schedules, primaryColor }: { schedules: any[], primaryColor?: string }) {
-    const dow = nowCL().getDay();
-    const today = schedules.filter(s => s.day_of_week === dow).sort((a, b) => a.start_time.localeCompare(b.start_time));
-    const dayName = nowCL().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
-    return (
-        <div className="bg-white rounded-3xl p-5 shadow-sm border border-zinc-100">
-            <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2 uppercase tracking-tighter mb-4">
-                <Calendar style={{ color: primaryColor || '#6366f1' }} size={18} />
-                Clases de hoy
-                <span className="text-[9px] font-bold text-zinc-400 normal-case tracking-normal capitalize">{dayName}</span>
-            </h3>
-            {today.length === 0 ? (
-                <div className="flex items-center gap-3 py-8 px-4 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200 justify-center">
-                    <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">Sin clases hoy</p>
-                </div>
-            ) : (
-                <div className="space-y-2">
-                    {today.map((s: any) => {
-                        const bg = s.color || '#f4f4f5';
-                        const lum = bg !== '#f4f4f5' ? (() => { const r=parseInt(bg.slice(1,3),16),g=parseInt(bg.slice(3,5),16),b=parseInt(bg.slice(5,7),16); return (0.299*r+0.587*g+0.114*b)/255; })() : 1;
-                        const fg = lum > 0.55 ? '#18181b' : '#ffffff';
-                        return (
-                            <div key={s.id} className="flex items-center gap-3 px-4 py-3 rounded-2xl" style={{ backgroundColor: bg, color: fg }}>
-                                <div className="flex flex-col items-center shrink-0 w-10">
-                                    <span className="text-[10px] font-black leading-none">{s.start_time.slice(0,5)}</span>
-                                    <div className="w-px h-3 my-0.5" style={{ backgroundColor: fg, opacity: 0.3 }} />
-                                    <span className="text-[10px] font-black leading-none opacity-70">{s.end_time.slice(0,5)}</span>
-                                </div>
-                                <span className="text-sm font-black uppercase tracking-tight">{s.subject || s.name || 'Clase'}</span>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
-        </div>
-    );
-}
-
-/* ─── Confirm Dialog ─── */
-function ConfirmDialog({ title, message, onConfirm, onCancel }: { title: string; message: string; onConfirm: () => void; onCancel: () => void }) {
-    return (
-        <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200" onClick={onCancel}>
-            <div className="bg-white rounded-3xl p-6 max-w-xs w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center mx-auto">
-                    <Trash2 className="w-6 h-6 text-red-500" />
-                </div>
-                <div className="text-center">
-                    <h3 className="text-base font-black text-zinc-900">{title}</h3>
-                    <p className="text-xs text-zinc-400 mt-1">{message}</p>
-                </div>
-                <div className="flex gap-2">
-                    <button onClick={onCancel} className="flex-1 h-11 bg-zinc-100 text-zinc-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-zinc-200 transition-all">Cancelar</button>
-                    <button onClick={onConfirm} className="flex-1 h-11 bg-red-500 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-600 transition-all">Eliminar</button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-/* ─── Payment Proof Modal ─── */
-function ProofModal({ url, canDelete, onClose, onDelete }: { url: string; canDelete: boolean; onClose: () => void; onDelete?: () => void }) {
-    return (
-        <div
-            className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4 animate-in fade-in duration-200"
-            onClick={onClose}
-        >
-            <div className="relative max-w-sm w-full space-y-3" onClick={(e) => e.stopPropagation()}>
-                <button
-                    onClick={onClose}
-                    className="absolute -top-4 -right-4 z-10 w-9 h-9 bg-white/10 border border-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-all"
-                >
-                    <X className="w-4 h-4" />
-                </button>
-                <div className="rounded-3xl overflow-hidden border border-white/10">
-                    <img src={url} alt="Comprobante de pago" className="w-full object-contain max-h-[60vh]" />
-                </div>
-                {/* Footer con acciones */}
-                <div className="flex gap-2">
-                    {canDelete && onDelete && (
-                        <button
-                            onClick={onDelete}
-                            className="flex-1 h-12 bg-red-500/20 border border-red-500/30 text-red-400 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/30 transition-all"
-                        >
-                            <Trash2 size={14} /> Eliminar comprobante
-                        </button>
-                    )}
-                    <button
-                        onClick={onClose}
-                        className={`${canDelete ? '' : 'flex-1'} h-12 bg-white/10 border border-white/20 text-white rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest hover:bg-white/20 transition-all ${canDelete ? 'flex-1' : 'w-full'}`}
-                    >
-                        Cerrar
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
+import { industryConfig } from "@/lib/constants";
 
 /* ─── Main Dashboard ─── */
 export default function StudentDashboard() {
-    const { branding } = useBranding();
+    const { branding, setBranding } = useBranding();
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [activeSection, setActiveSection] = useState<NavSection>("home");
+    
+    // Rendición State
     const [expensesList, setExpensesList] = useState<any[]>([]);
     const [expensesTotal, setExpensesTotal] = useState(0);
-    const [expensesCollected, setExpensesCollected] = useState(0);
     const [expensesBalance, setExpensesBalance] = useState(0);
     const [expensesSummary, setExpensesSummary] = useState<any[]>([]);
     const [expensesLoading, setExpensesLoading] = useState(false);
     const [expenseLightbox, setExpenseLightbox] = useState<string | null>(null);
+    
+    // UI Helpers State
     const [schedulesList, setSchedulesList] = useState<any[]>([]);
     const [activeScanner, setActiveScanner] = useState<string | null>(null);
     const [uploadingPayment, setUploadingPayment] = useState<string | null>(null);
@@ -341,34 +61,55 @@ export default function StudentDashboard() {
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
     const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
     const [copiedBank, setCopiedBank] = useState(false);
-    
-    // Subida de foto de perfil
+
+    // Profile & Photos State
     const profileFileInputRef = useRef<HTMLInputElement>(null);
     const bulkFileInputRef = useRef<HTMLInputElement>(null);
     const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
     const [studentPhotoLoadingId, setStudentPhotoLoadingId] = useState<string | null>(null);
     const studentForPhotoRef = useRef<string | null>(null);
+    
+    // Payments State
     const [selectedPayments, setSelectedPayments] = useState<string[]>([]);
     const [paymentTab, setPaymentTab] = useState<"pending" | "history">("pending");
-    const refreshDataRef = useRef<() => void>(() => {});
+    const [myFees, setMyFees] = useState<any[]>([]);
+    const [feePayModal, setFeePayModal] = useState<{ fees: any[] } | null>(null);
+    
+    // Notifications & Updates State
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
-    const [appUpdates, setAppUpdates] = useState<any[]>([]);
     const [toastNotification, setToastNotification] = useState<any>(null);
-    const [showPushBanner, setShowPushBanner] = useState(false);
     const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
     const [showPushModal, setShowPushModal] = useState(false);
+    
+    // Editing State
     const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
     const [editingStudentName, setEditingStudentName] = useState("");
     const [savingStudentName, setSavingStudentName] = useState(false);
-    const [myFees, setMyFees] = useState<any[]>([]);
-    const [feePayModal, setFeePayModal] = useState<{ fees: any[] } | null>(null);
+
+    const refreshDataRef = useRef<() => void>(() => {});
+
+    const handleAccountSwitch = (tenant: any) => {
+        // Limpiar sesión actual preservando datos multi-tenant
+        const availableTenants = localStorage.getItem("available_tenants");
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("staff_token");
+        localStorage.removeItem("remember_token");
+        
+        // Cargar nuevo tenant
+        localStorage.setItem("tenant_id", String(tenant.id));
+        localStorage.setItem("tenant_slug", tenant.slug);
+        if (availableTenants) localStorage.setItem("available_tenants", availableTenants);
+        
+        // Redirigir al inicio para re-identificarse o re-activar sesión
+        window.location.href = "/";
+    };
 
     const refreshData = useCallback(async () => {
         let token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
         const tenantSlug = localStorage.getItem("tenant_slug");
-        
+
         if (!token && !tenantSlug) return;
 
         if (!token && tenantSlug) {
@@ -409,65 +150,54 @@ export default function StudentDashboard() {
 
         if (profile) {
             setData(profile);
-            if (profile.tenant?.industry) localStorage.setItem('tenant_industry', profile.tenant.industry);
+            if (profile.tenant) {
+                localStorage.setItem('tenant_industry', profile.tenant.industry || '');
+                setBranding({
+                    id: String(profile.tenant.id),
+                    slug: profile.tenant.slug,
+                    name: profile.tenant.name,
+                    industry: profile.tenant.industry,
+                    logo: profile.tenant.logo,
+                    primaryColor: profile.tenant.primary_color
+                });
+            }
         } else {
             window.location.href = "/";
         }
     }, []);
 
-    // Mantener ref actualizado
     refreshDataRef.current = refreshData;
 
-    // REAL-TIME CON WEBSOCKETS (LARAVEL REVERB)
+    // REAL-TIME CON WEBSOCKETS
     useEffect(() => {
         const key = process.env.NEXT_PUBLIC_REVERB_APP_KEY;
-        if (!key || !branding?.slug) {
-            console.log('[Student WS] Skip: key=', !!key, 'slug=', branding?.slug);
-            return;
-        }
+        if (!key || !branding?.slug) return;
 
         const echo = getEcho();
-        if (!echo) {
-            console.log('[Student WS] No echo instance');
-            return;
-        }
+        if (!echo) return;
 
-        console.log('[Student WS] Subscribing to attendance.' + branding.slug);
-
-        // Canal de Asistencia
         const attChannel = echo.channel(`attendance.${branding.slug}`);
-        attChannel.listen('.student.checked-in', (data: any) => {
-            console.log('[Student WS] ✅ checked-in:', data);
-            refreshDataRef.current();
-        });
-        attChannel.listen('.student.checked-out', (data: any) => {
-            console.log('[Student WS] ❌ checked-out:', data);
-            refreshDataRef.current();
-        });
+        attChannel.listen('.student.checked-in', () => refreshDataRef.current());
+        attChannel.listen('.student.checked-out', () => refreshDataRef.current());
 
-        // Canal de Pagos (Vital para el apoderado: ver aprobación en segundos)
         const payChannel = echo.channel(`payments.${branding.slug}`);
         payChannel.listen('.payment.updated', (ev: any) => {
-            console.log('[Student WS] 💳 payment.updated:', ev);
             const guardianId = data?.guardian?.id;
             if (!guardianId || String(ev.payerId) === String(guardianId)) {
                 refreshDataRef.current();
             }
         });
 
-        // Canal de Notificaciones en tiempo real
         const guardianId = data?.guardian?.id;
         if (guardianId) {
             const notifChannel = echo.channel(`notifications.${branding.slug}.${guardianId}`);
             notifChannel.listen('.notification.sent', (ev: any) => {
-                console.log('[Student WS] 🔔 notification.sent:', ev);
                 setToastNotification({ id: ev.notificationId, title: ev.title, body: ev.body, type: ev.type });
                 setUnreadCount(c => c + 1);
                 setNotifications(prev => [{ id: ev.notificationId, title: ev.title, body: ev.body, type: ev.type, read: false, created_at: 'Ahora' }, ...prev]);
             });
         }
 
-        // Móvil: reconectar cuando la app vuelve de background
         const handleVisibility = () => {
             if (document.visibilityState === 'visible') {
                 reconnect();
@@ -495,46 +225,22 @@ export default function StudentDashboard() {
         Promise.all(promises).then(() => setLoading(false));
     }, []);
 
-    // Desbloquear AudioContext en primer gesto
     useEffect(() => {
         document.addEventListener('click', unlockAudio, { once: true });
         document.addEventListener('touchstart', unlockAudio, { once: true });
     }, []);
 
-    // App Badge — sincronizar contador con ícono PWA
     useEffect(() => { setAppBadge(unreadCount); }, [unreadCount]);
 
-    // Escuchar mensajes del Service Worker (Push Sync)
     useEffect(() => {
         if (!('serviceWorker' in navigator)) return;
-
         const handleMessage = (event: MessageEvent) => {
-            if (event.data?.type === 'REFRESH_NOTIFICATIONS') {
-                console.log('[Student PWA] 🔄 Push received — refreshing notifications');
-                refreshData();
-            }
+            if (event.data?.type === 'REFRESH_NOTIFICATIONS') refreshData();
         };
-
         navigator.serviceWorker.addEventListener('message', handleMessage);
         return () => navigator.serviceWorker.removeEventListener('message', handleMessage);
     }, [refreshData]);
 
-    // Cargar notificaciones y app updates
-    useEffect(() => {
-        const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-        const slug = localStorage.getItem("tenant_slug");
-        if (!token || !slug) return;
-        getNotifications(slug, token).then(d => {
-            if (d?.notifications) setNotifications(d.notifications);
-            if (d?.unread !== undefined) setUnreadCount(d.unread);
-        });
-        getAppUpdates('student').then(d => {
-            if (d?.updates) setAppUpdates(d.updates);
-
-        });
-    }, []);
-
-    // Leer estado de permisos + mostrar banner reactivo
     useEffect(() => {
         if (typeof Notification === 'undefined') {
             setPushPermission('denied');
@@ -544,7 +250,7 @@ export default function StudentDashboard() {
         const updatePermission = () => {
             const perm = Notification.permission;
             setPushPermission(perm);
-            
+
             const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
             if (token && branding?.slug) {
                 const dismissed = localStorage.getItem('push_banner_dismissed');
@@ -560,26 +266,8 @@ export default function StudentDashboard() {
         };
 
         updatePermission();
-
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible') updatePermission();
-        };
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-
-        let permStatus: PermissionStatus | null = null;
-        if (navigator.permissions && navigator.permissions.query) {
-            navigator.permissions.query({ name: 'notifications' })
-                .then(status => {
-                    permStatus = status;
-                    status.onchange = updatePermission;
-                })
-                .catch(() => {});
-        }
-
-        return () => {
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-            if (permStatus) permStatus.onchange = null;
-        };
+        document.addEventListener('visibilitychange', updatePermission);
+        return () => document.removeEventListener('visibilitychange', updatePermission);
     }, [branding?.slug]);
 
     useEffect(() => {
@@ -589,20 +277,14 @@ export default function StudentDashboard() {
             getExpenses(branding.slug, token).then(data => {
                 setExpensesList(data?.expenses ?? []);
                 setExpensesTotal(data?.total ?? 0);
-                setExpensesCollected(data?.collected ?? 0);
                 setExpensesBalance(data?.balance ?? 0);
                 setExpensesSummary(data?.summary ?? []);
                 setExpensesLoading(false);
             });
         }
-        if (activeSection === 'calendar' && branding?.slug && schedulesList.length === 0) {
-            const token = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
-            getSchedules(branding.slug, token).then(data => setSchedulesList(data?.schedules ?? []));
-        }
     }, [activeSection, branding?.slug]);
 
     const handleActivatePush = () => {
-        setShowPushBanner(false);
         setShowPushModal(false);
         if (typeof Notification !== 'undefined') {
             Notification.requestPermission().then(permission => {
@@ -618,28 +300,22 @@ export default function StudentDashboard() {
     const handleUploadProof = async (paymentId: string, file: File) => {
         setUploadingPayment(paymentId);
         const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-        const tenantId = localStorage.getItem("tenant_id");
-        if (!token || !tenantId) return;
+        const tenantSlug = localStorage.getItem("tenant_slug");
+        if (!token || !tenantSlug) return;
 
         const formData = new FormData();
         formData.append("proof", file);
 
         try {
             const API = process.env.NEXT_PUBLIC_API_URL || "https://admin.digitalizatodo.cl/api";
-            const tenantSlug = localStorage.getItem("tenant_slug");
             const res = await fetch(`${API}/${tenantSlug}/payments/${paymentId}/upload-proof`, {
                 method: "POST",
-                headers: { 
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                },
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
                 body: formData,
             });
             if (res.ok) {
                 setUploadSuccess(paymentId);
                 setTimeout(() => { setUploadSuccess(null); refreshData(); }, 2000);
-            } else {
-                alert("No se pudo subir el comprobante. Por favor intenta de nuevo.");
             }
         } finally {
             setUploadingPayment(null);
@@ -655,12 +331,6 @@ export default function StudentDashboard() {
         }
     };
 
-    const handleUploadFeeProof = async (feeId: string, file: File) => {
-        setUploadingPayment(feeId);
-        // handled by FeePayModal
-        setUploadingPayment(null);
-    };
-
     const handleDeleteProof = async (paymentId: string) => {
         setConfirmDelete(null);
         setProofModal(null);
@@ -671,44 +341,38 @@ export default function StudentDashboard() {
         if (result) refreshData();
     };
 
-
     const handleProfilePhotoUpload = async (file: File) => {
         if (!file) return;
         setIsUploadingPhoto(true);
         const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
         const tenantSlug = localStorage.getItem("tenant_slug");
-        
+
         try {
             const API = process.env.NEXT_PUBLIC_API_URL || "https://admin.digitalizatodo.cl/api";
             const formData = new FormData();
             formData.append("photo", file);
-            
+
             const response = await fetch(`${API}/${tenantSlug}/me/photo`, {
                 method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Accept": "application/json"
-                },
+                headers: { "Authorization": `Bearer ${token}`, "Accept": "application/json" },
                 body: formData
             });
 
-            if (!response.ok) throw new Error("Error al subir foto de perfil");
-            
-            alert("Foto de perfil actualizada con éxito");
-            refreshData();
-        } catch (error) {
-            console.error(error);
-            alert("Error al subir la foto de perfil");
+            if (response.ok) {
+                alert("Foto de perfil actualizada con éxito");
+                refreshData();
+            }
         } finally {
             setIsUploadingPhoto(false);
         }
     };
+
     const handleBulkUploadProof = async (file: File) => {
         if (selectedPayments.length === 0) return;
         setUploadingPayment("bulk");
         const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-        const tenantId = localStorage.getItem("tenant_id");
-        if (!token || !tenantId) return;
+        const tenantSlug = localStorage.getItem("tenant_slug");
+        if (!token || !tenantSlug) return;
 
         const formData = new FormData();
         formData.append("proof", file);
@@ -716,24 +380,16 @@ export default function StudentDashboard() {
 
         try {
             const API = process.env.NEXT_PUBLIC_API_URL || "https://admin.digitalizatodo.cl/api";
-            const tenantSlug = localStorage.getItem("tenant_slug");
             const res = await fetch(`${API}/${tenantSlug}/payments/bulk-upload-proof`, {
                 method: "POST",
-                headers: { 
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                },
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
                 body: formData
             });
             if (res.ok) {
                 setUploadSuccess("bulk");
                 setSelectedPayments([]);
                 setTimeout(() => { setUploadSuccess(null); refreshData(); }, 2000);
-            } else {
-                alert("Error al subir comprobante masivo.");
             }
-        } catch (e) {
-            console.error("Bulk upload error", e);
         } finally {
             setUploadingPayment(null);
         }
@@ -742,31 +398,20 @@ export default function StudentDashboard() {
     const handleUploadPhoto = async (studentId: string, file: File) => {
         setStudentPhotoLoadingId(studentId);
         const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-        const tenantId = localStorage.getItem("tenant_id");
-        if (!token || !tenantId) return;
+        const tenantSlug = localStorage.getItem("tenant_slug");
+        if (!token || !tenantSlug) return;
 
         const formData = new FormData();
         formData.append("photo", file);
 
         try {
             const API = process.env.NEXT_PUBLIC_API_URL || "https://admin.digitalizatodo.cl/api";
-            const tenantSlug = localStorage.getItem("tenant_slug") || tenantId;
             const res = await fetch(`${API}/${tenantSlug}/students/${studentId}/photo`, {
                 method: "POST",
-                headers: { 
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                },
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
                 body: formData,
             });
-            if (res.ok) {
-                refreshData();
-            } else {
-                const err = await res.text();
-                alert(`Error al subir la foto: ${err.substring(0, 100)}`);
-            }
-        } catch (error) {
-            alert("Error de conexión al subir foto.");
+            if (res.ok) refreshData();
         } finally {
             setStudentPhotoLoadingId(null);
         }
@@ -774,6 +419,18 @@ export default function StudentDashboard() {
 
     const primaryColor = branding?.primaryColor || "#f97316";
     const isSchoolTreasury = branding?.industry === 'school_treasury';
+    const guardian = data?.guardian || { name: "Usuario", email: "", phone: "" };
+    const students = data?.students || [];
+    const paymentHistory = data?.payment_history || [];
+    const bankInfo = data?.bank_info;
+    const totalDue = data?.total_due || 0;
+
+    const hasPendingReview = students.some((s: any) =>
+        (s.payments || []).some((p: any) => p.status === 'pending_review')
+    );
+    const totalDueOrReview = totalDue > 0 || hasPendingReview;
+
+    const vocab = industryConfig[branding?.industry || 'default'] || industryConfig.default;
 
     if (loading) return (
         <div className="min-h-screen bg-stone-50 px-4 pt-6 pb-32 max-w-lg mx-auto space-y-4 animate-pulse">
@@ -791,767 +448,16 @@ export default function StudentDashboard() {
         </div>
     );
 
-    const guardian = data?.guardian || { name: "Usuario", email: "", phone: "" };
-    const students = data?.students || [];
-    const paymentHistory = data?.payment_history || [];
-    const bankInfo = data?.bank_info;
-    const totalDue = data?.total_due || 0;
-
-    const hasPendingReview = students.some((s: any) => 
-        (s.payments || []).some((p: any) => p.status === 'pending_review')
-    );
-    const totalDueOrReview = totalDue > 0 || hasPendingReview;
-
-    /* ─── Sections Rendering ─── */
-
-    const renderHome = () => (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Header Mini */}
-            <div className="flex items-center justify-between mb-4">
-                <div>
-                    <h1 className="text-2xl font-black text-zinc-900 leading-tight">Hola, {guardian.name.split(' ')[0]}</h1>
-                    <p className="text-[11px] font-bold text-zinc-500 mt-1">{isSchoolTreasury ? 'Bienvenid@ gestiona tus pagos y horario 😊' : 'Bienvenid@ gestiona tu asistencia y pagos 😊.'}</p>
-                </div>
-                <div className="w-14 h-14 bg-white rounded-full border-2 border-zinc-50 shadow-md flex items-center justify-center overflow-hidden shrink-0 relative p-0.5">
-                    {branding?.logo ? (
-                        <img src={branding.logo} className="w-full h-full object-cover rounded-full" />
-                    ) : (
-                        <div className="w-full h-full bg-zinc-50 flex items-center justify-center">
-                            <User className="text-zinc-200 w-6 h-6" />
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Deuda / Status Card — solo para academias con mensualidades */}
-            {branding?.industry !== 'school_treasury' && (totalDueOrReview ? (
-                hasPendingReview ? (
-                    /* ESTADO 2: EN REVISIÓN (AMARILLO/NARANJA) */
-                    <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-[2.5rem] p-6 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden group">
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-2 mb-1">
-                                <RefreshCw size={12} className="animate-[spin_3s_linear_infinite]" />
-                                <p className="text-[10px] font-black uppercase tracking-widest opacity-90">Pago en revisión</p>
-                            </div>
-                            <h2 className="text-4xl font-black mb-2">${Number(totalDue).toLocaleString("es-CL")}</h2>
-                            <p className="text-xs opacity-80 mb-4">Te notificaremos cuando sea aprobado 🔔</p>
-                            <button 
-                                onClick={() => setActiveSection("payments")}
-                                className="bg-white/20 backdrop-blur-md border border-white/30 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-white/30 transition-all flex items-center gap-2"
-                            >
-                                Ver mis pagos <ChevronRight size={14} />
-                            </button>
-                        </div>
-                        <CreditCard className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10 -rotate-12 group-hover:scale-110 transition-transform duration-700" />
-                    </div>
-                ) : (
-                    /* ESTADO 1: DEUDA CRÍTICA (ROJO) */
-                    <div className="bg-gradient-to-br from-red-500 to-orange-600 rounded-[2.5rem] p-6 text-white shadow-xl shadow-red-500/20 relative overflow-hidden group">
-                        <div className="relative z-10">
-                            <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Saldo pendiente</p>
-                            <h2 className="text-4xl font-black mb-4">${Number(totalDue).toLocaleString("es-CL")}</h2>
-                            <button 
-                                onClick={() => setActiveSection("payments")}
-                                className="bg-white/20 backdrop-blur-md border border-white/30 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-white/30 transition-all flex items-center gap-2"
-                            >
-                                Pagar ahora <ChevronRight size={14} />
-                            </button>
-                        </div>
-                        <CreditCard className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10 -rotate-12 group-hover:scale-110 transition-transform duration-700" />
-                    </div>
-                )
-            ) : (
-                /* ESTADO 3: AL DÍA (VERDE) */
-                <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-[2.5rem] p-6 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden">
-                    <div className="relative z-10">
-                        <CheckCircle2 className="w-8 h-8 mb-2" />
-                        <h2 className="text-xl font-black">¡Estás al día!</h2>
-                        <p className="text-xs opacity-80 mt-1">No tienes mensualidades pendientes.</p>
-                    </div>
-                    <CreditCard className="absolute -right-4 -bottom-4 w-32 h-32 opacity-5 -rotate-12" />
-                </div>
-            ))}
-
-            {/* Status cuotas — school_treasury */}
-            {branding?.industry === 'school_treasury' && (() => {
-                const today = new Date();
-                const allPeriods = myFees.flatMap((fd: any) => fd.periods || []);
-                const hasReview  = allPeriods.some((p: any) => p.status === 'review');
-                const hasOverdue = allPeriods.some((p: any) =>
-                    p.status === 'pending' && p.due_date && new Date(p.due_date) < today
-                );
-                // Próximo pendiente no vencido
-                const nextPending = myFees.flatMap((fd: any) =>
-                    (fd.periods || [])
-                        .filter((p: any) => p.status === 'pending')
-                        .map((p: any) => ({ ...p, amount: fd.fee.amount, title: fd.fee.title }))
-                ).sort((a: any, b: any) => a.year !== b.year ? a.year - b.year : a.month - b.month)[0];
-
-                const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-
-                // 1. Amarillo: comprobante en revisión
-                if (hasReview) return (
-                    <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-[2.5rem] p-5 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden">
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-2 mb-1">
-                                <RefreshCw size={11} className="animate-[spin_3s_linear_infinite]" />
-                                <p className="text-[10px] font-black uppercase tracking-widest opacity-90">Comprobante en revisión</p>
-                            </div>
-                            <h2 className="text-xl font-black mb-1">Pago enviado</h2>
-                            <p className="text-xs opacity-80 mb-3">Te notificaremos cuando sea aprobado 🔔</p>
-                            <button onClick={() => setActiveSection('payments')} className="bg-white/20 border border-white/30 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2">
-                                Ver cuotas <ChevronRight size={13} />
-                            </button>
-                        </div>
-                        <CreditCard className="absolute -right-4 -bottom-4 w-28 h-28 opacity-10 -rotate-12" />
-                    </div>
-                );
-                // 2. Rojo: cuota vencida sin pagar (moroso)
-                if (hasOverdue && nextPending) return (
-                    <div className="bg-gradient-to-br from-red-500 to-orange-600 rounded-[2.5rem] p-5 text-white shadow-xl shadow-red-500/20 relative overflow-hidden">
-                        <div className="relative z-10">
-                            <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Cuota vencida</p>
-                            <h2 className="text-2xl font-black mb-0.5">${Number(nextPending.amount).toLocaleString('es-CL')}</h2>
-                            <p className="text-xs opacity-70 mb-3">{nextPending.title} · {MONTHS[nextPending.month - 1]} {nextPending.year}</p>
-                            <button onClick={() => setActiveSection('payments')} className="bg-white/20 border border-white/30 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2">
-                                Pagar ahora <ChevronRight size={13} />
-                            </button>
-                        </div>
-                        <CreditCard className="absolute -right-4 -bottom-4 w-28 h-28 opacity-10 -rotate-12" />
-                    </div>
-                );
-                // 3. Verde: al día o pendiente no vencido
-                return (
-                    <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-[2.5rem] p-5 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden">
-                        <div className="relative z-10">
-                            <CheckCircle2 className="w-7 h-7 mb-2" />
-                            <h2 className="text-xl font-black">¡Estás al día!</h2>
-                            {nextPending ? (
-                                <p className="text-xs opacity-80 mt-1">Próximo vencimiento: {MONTHS[nextPending.month - 1]} {nextPending.year} · ${Number(nextPending.amount).toLocaleString('es-CL')}</p>
-                            ) : (
-                                <p className="text-xs opacity-80 mt-1">No tienes cuotas pendientes.</p>
-                            )}
-                        </div>
-                        <CreditCard className="absolute -right-4 -bottom-4 w-28 h-28 opacity-5 -rotate-12" />
-                    </div>
-                );
-            })()}
-
-            {/* Horario del día — school_treasury */}
-            {branding?.industry === 'school_treasury' && (
-                <TodaySchedule schedules={schedulesList} primaryColor={primaryColor} />
-            )}
-
-            {/* Mis Alumnos Cards */}
-            {branding?.industry !== 'school_treasury' && (
-            <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-1">
-                    <div className="w-1 h-4 bg-orange-500 rounded-full" />
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.1em] text-zinc-400">
-                        Registrar asistencia {new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })}
-                    </h3>
-                </div>
-                {students.map((student: any) => {
-                    const todayStr = todayCL();
-                    const isPresentToday = (student.recent_attendance || []).some((a: any) => a.date === todayStr && a.status === 'present');
-                    return (
-                    <div
-                        key={student.id}
-                        className={`bg-white rounded-[2.5rem] p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition-all border-2 ${isPresentToday ? 'border-emerald-400 shadow-emerald-50' : 'border-zinc-100'}`}
-                    >
-                        <div className="flex items-center gap-4 relative z-10">
-                            <button 
-                                type="button"
-                                className={`w-16 h-16 rounded-full overflow-hidden bg-zinc-100 shadow-md shrink-0 relative cursor-pointer z-30 active:scale-95 transition-transform touch-none border-2 ${isPresentToday ? 'border-emerald-400' : 'border-zinc-50'}`}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    studentForPhotoRef.current = student.id;
-                                    profileFileInputRef.current?.click();
-                                }}
-                            >
-                                {(isUploadingPhoto && !studentPhotoLoadingId) || studentPhotoLoadingId === student.id ? (
-                                    <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] flex flex-col items-center justify-center z-20">
-                                        <Loader2 className="animate-spin text-orange-500" size={18} />
-                                    </div>
-                                ) : null}
-                                {student.photo ? (
-                                    <img src={student.photo} alt={student.name} className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-2xl font-black text-zinc-200">
-                                        {student.name[0]}
-                                    </div>
-                                )}
-                                <div className="absolute bottom-0 right-0 w-6 h-6 bg-white rounded-full shadow-lg flex items-center justify-center text-zinc-400 border border-zinc-100 z-10">
-                                    <Camera className="w-3.5 h-3.5" />
-                                </div>
-                            </button>
-                            <div className="flex-1 min-w-0">
-                                <h4 className="font-black text-zinc-900 truncate">{student.name}</h4>
-                                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider mb-2">{student.category}</p>
-                                {isPresentToday ? (
-                                    <p className="text-[8px] font-black text-emerald-600 uppercase tracking-tighter flex items-center gap-1.5 bg-emerald-50 w-fit px-2 py-1 rounded-full border border-emerald-200">
-                                        <CheckCircle2 size={10} /> Presente
-                                    </p>
-                                ) : (
-                                    <p className="text-[8px] font-black text-indigo-500 uppercase tracking-tighter flex items-center gap-1.5 bg-indigo-50/50 w-fit px-2 py-1 rounded-full border border-indigo-100/50">
-                                        Registra tu asistencia 👉🏻
-                                    </p>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <button 
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setActiveScanner(student.id);
-                                    }}
-                                    className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center shadow-lg shadow-zinc-200 active:scale-90 transition-all shrink-0 relative group/qr z-20 border border-zinc-300"
-                                >
-                                    <QrCode size={28} className="text-orange-400 group-hover/qr:scale-110 transition-transform" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    );
-                })}
-            </div>
-            )}
-        </div>
-    );
-
-    const renderCalendar = () => {
-        // school_treasury: mostrar horario de clases
-        if (branding?.industry === 'school_treasury') {
-            return (
-                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-                    <div>
-                        <h2 className="text-2xl font-black text-zinc-900">Mi Horario</h2>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mt-1">Horario semanal de clases</p>
-                    </div>
-                    <div className="bg-white rounded-[20px] p-4 border border-zinc-100 shadow-sm">
-                        {schedulesList.length === 0 ? (
-                            <p className="text-center text-xs text-zinc-300 py-8 font-bold">Sin horario cargado aún</p>
-                        ) : (
-                            <WeeklySchedule schedules={schedulesList} editable={false} />
-                        )}
-                    </div>
-                </div>
-            );
-        }
-
-        // Otros: calendario de asistencia
-        const combinedAttendance = students.flatMap((s: any) =>
-            (s.recent_attendance || []).map((a: any) => ({
-                ...a,
-                studentName: s.name,
-                studentPhoto: s.photo,
-                studentCategory: s.category
-            }))
-        );
-        return (
-            <div className="h-[calc(100vh-120px)] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
-                <header className="mb-4 shrink-0 px-1">
-                    <h2 className="text-2xl font-black text-zinc-900">Asistencia</h2>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mt-1">Actividad de todos tus alumnos</p>
-                </header>
-                <div className="flex-1 min-h-0">
-                    <StudentCalendar attendance={combinedAttendance} primaryColor={primaryColor} />
-                </div>
-            </div>
-        );
-    };
-
-    const renderPayments = () => (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-            <h2 className="text-2xl font-black text-zinc-900">Pagos</h2>
-            
-            {/* Tabs Selector */}
-            <div className="flex bg-zinc-100 p-1.5 rounded-[2.2rem] gap-1 shadow-inner">
-                <button 
-                    onClick={() => setPaymentTab("pending")}
-                    className={`flex-1 py-3 px-4 rounded-[2rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
-                        paymentTab === "pending" ? "bg-white text-zinc-900 shadow-md scale-[1.02]" : "text-zinc-400 hover:text-zinc-600"
-                    }`}
-                >
-                    Pendientes
-                </button>
-                <button 
-                    onClick={() => setPaymentTab("history")}
-                    className={`flex-1 py-3 px-4 rounded-[2rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
-                        paymentTab === "history" ? "bg-white text-zinc-900 shadow-md scale-[1.02]" : "text-zinc-400 hover:text-zinc-600"
-                    }`}
-                >
-                    Historial
-                </button>
-            </div>
-            
-            {paymentTab === "pending" ? (
-                <div className="space-y-6 animate-in fade-in duration-300">
-                    {/* Metodos de pago / Banco */}
-                    {bankInfo && (
-                        <div className="bg-zinc-900 text-white rounded-[2.5rem] p-6 shadow-xl relative overflow-hidden group">
-                            <div className="relative z-10">
-                                <div className="flex items-center justify-between mb-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md">
-                                            <ShieldCheck size={20} className="text-orange-400" />
-                                        </div>
-                                        <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Datos de Transferencia</span>
-                                    </div>
-                                    <button 
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(`${bankInfo.bank_name}\n${bankInfo.account_type}\n${bankInfo.account_number}\n${bankInfo.holder_name}\n${bankInfo.holder_rut}`);
-                                            setCopiedBank(true);
-                                            setTimeout(() => setCopiedBank(false), 2000);
-                                        }}
-                                        className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border border-white/5"
-                                    >
-                                        {copiedBank ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
-                                        {copiedBank ? 'Copiado' : 'Copiar'}
-                                    </button>
-                                </div>
-                                <div className="space-y-2">
-                                    <p className="text-lg font-black">{bankInfo.bank_name}</p>
-                                    <p className="text-sm opacity-60">{bankInfo.account_type}</p>
-                                    <p className="text-2xl font-mono font-black tracking-wider text-orange-400">{bankInfo.account_number}</p>
-                                    <p className="text-xs opacity-60">{bankInfo.holder_name} · {bankInfo.holder_rut}</p>
-                                </div>
-                            </div>
-                            <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl" />
-                        </div>
-                    )}
-
-                    {/* Pagos pendientes — cuotas (school_treasury) + mensualidades */}
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between ml-2">
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
-                                Pagos
-                            </h3>
-                            {selectedPayments.length > 0 && (
-                                <button 
-                                    onClick={() => bulkFileInputRef.current?.click()}
-                                    disabled={uploadingPayment === "bulk"}
-                                    className="bg-orange-500 text-white text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg shadow-orange-200 animate-in zoom-in duration-200 flex items-center gap-2"
-                                >
-                                    {uploadingPayment === "bulk" ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
-                                    Pagar {selectedPayments.length} Masivamente
-                                </button>
-                            )}
-                        </div>
-                        {myFees.length > 0 && (
-                            <>
-                                <div className="flex items-center justify-between ml-2 mb-1">
-                                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Cuotas escolares</h3>
-                                    <button
-                                        onClick={() => setFeePayModal({ fees: myFees })}
-                                        className="bg-zinc-900 text-white text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full flex items-center gap-1.5"
-                                    >
-                                        <CreditCard size={10} /> Pagar cuotas
-                                    </button>
-                                </div>
-                                {myFees.map((feeData: any) => (
-                                    <FeeCard
-                                        key={feeData.fee.id}
-                                        feeData={feeData}
-                                        primaryColor={primaryColor}
-                                        onPay={() => setFeePayModal({ fees: [feeData] })}
-                                        onViewProof={(url) => setProofModal({ url, canDelete: false, paymentId: '0' })}
-                                    />
-                                ))}
-                            </>
-                        )}
-                        {students.flatMap((s: any) => s.payments || []).map((payment: any) => (
-                            <PaymentRow
-                                key={payment.id}
-                                payment={payment}
-                                primaryColor={primaryColor}
-                                uploading={uploadingPayment === String(payment.id)}
-                                uploadSuccess={uploadSuccess === String(payment.id) || (uploadSuccess === "bulk" && selectedPayments.includes(String(payment.id)))}
-                                onUpload={(file) => handleUploadProof(String(payment.id), file)}
-                                onViewProof={(url) => setProofModal({ url, canDelete: payment.status !== 'approved', paymentId: String(payment.id) })}
-                                onDeleteProof={() => setConfirmDelete(String(payment.id))}
-                                isSelected={selectedPayments.includes(String(payment.id))}
-                                onToggleSelect={() => {
-                                    setSelectedPayments(prev => 
-                                        prev.includes(String(payment.id)) 
-                                            ? prev.filter(id => id !== String(payment.id))
-                                            : [...prev, String(payment.id)]
-                                    );
-                                }}
-                            />
-                        ))}
-                        {students.every((s: any) => (s.payments || []).length === 0) && myFees.length === 0 && (
-                            <div className="bg-white border border-dashed border-zinc-200 rounded-[2rem] p-8 text-center">
-                                <p className="text-sm text-zinc-400 font-bold italic">No hay pagos pendientes</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            ) : (
-                <div className="space-y-4 animate-in fade-in duration-300">
-                    {paymentHistory.length > 0 ? (
-                        paymentHistory.map((p: any) => (
-                            <div key={p.id} className="flex items-center justify-between bg-white border border-zinc-100 rounded-[2rem] px-6 py-5 shadow-sm hover:shadow-md transition-all group">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-zinc-50 rounded-2xl flex items-center justify-center text-zinc-400 group-hover:bg-orange-50 transition-colors">
-                                        <CreditCard size={20} />
-                                    </div>
-                                    <div>
-                                        <p className="text-base font-black text-zinc-900">${Number(p.amount).toLocaleString("es-CL")}</p>
-                                        <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{p.paid_at || p.due_date}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full border shadow-sm ${
-                                        p.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-yellow-50 text-yellow-600 border-yellow-100'
-                                    }`}>
-                                        {p.status === 'approved' ? 'Pagado' : 'En Revisión'}
-                                    </span>
-                                    {p.proof_image && (
-                                        <button 
-                                            onClick={() => setProofModal({ url: p.proof_image, canDelete: false, paymentId: String(p.id) })} 
-                                            className="w-10 h-10 flex items-center justify-center bg-zinc-900 text-white rounded-xl hover:bg-orange-500 transition-all shadow-lg shadow-zinc-200"
-                                        >
-                                            <Eye size={18} />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <div className="bg-white border border-dashed border-zinc-200 rounded-[2.5rem] p-12 text-center">
-                            <Clock className="w-12 h-12 text-zinc-200 mx-auto mb-3" />
-                            <p className="text-sm text-zinc-400 font-bold italic">No hay registro de pagos anteriores</p>
-                        </div>
-                    )}
-                </div>
-            )}
-            
-            <input 
-                type="file"
-                ref={bulkFileInputRef}
-                className="hidden"
-                accept="image/*"
-                onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleBulkUploadProof(file);
-                    if (e.target) e.target.value = "";
-                }}
-            />
-        </div>
-    );
-
-    const renderRendicion = () => {
-        const fmt = (n: number) => `$${Number(n).toLocaleString('es-CL')}`;
-        return (
-            <div className="space-y-4 pb-24 px-4 pt-4">
-                <div className="bg-zinc-950 rounded-[24px] p-5 text-white">
-                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-3">Rendición de Caja</p>
-                    <div className="grid grid-cols-2 gap-3 mb-3">
-                        <div>
-                            <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">Total Gastado</p>
-                            <p className="text-xl font-black text-rose-400">{fmt(expensesTotal)}</p>
-                        </div>
-                        <div>
-                            <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">Saldo Caja</p>
-                            <p className={`text-xl font-black ${expensesBalance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{fmt(expensesBalance)}</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className="bg-white/10 rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-wider">{expensesList.length} compras</span>
-                        {expensesSummary.map((s: any) => (
-                            <span key={s.category} className="bg-white/10 rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-wider">
-                                {s.category} {fmt(s.total)}
-                            </span>
-                        ))}
-                    </div>
-                </div>
-
-                {expensesLoading ? (
-                    <div className="flex justify-center py-12"><Loader2 className="animate-spin text-zinc-300" size={24} /></div>
-                ) : expensesList.length === 0 ? (
-                    <div className="text-center py-12 text-zinc-300">
-                        <ShoppingCart size={32} className="mx-auto mb-2" />
-                        <p className="text-xs font-bold">Sin compras registradas</p>
-                    </div>
-                ) : (
-                    <div className="space-y-3">
-                        {expensesList.map((exp: any) => (
-                            <ExpenseCard
-                                key={exp.id}
-                                exp={exp}
-                                onLightbox={setExpenseLightbox}
-                            />
-                        ))}
-                    </div>
-                )}
-
-                {expenseLightbox && (
-                    <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setExpenseLightbox(null)}>
-                        <img src={expenseLightbox} className="max-w-full max-h-full rounded-2xl object-contain" />
-                        <button className="absolute top-4 right-4 p-2 bg-white/20 rounded-full"><X size={18} className="text-white" /></button>
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    const renderProfile = () => (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h2 className="text-2xl font-black text-zinc-900">Mi Perfil</h2>
-            
-            <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-8 text-center shadow-sm relative overflow-hidden">
-                <div className="relative w-24 h-24 mx-auto mb-4 group">
-                    <div 
-                        onClick={() => profileFileInputRef.current?.click()}
-                        className="w-24 h-24 bg-stone-100 rounded-[2.5rem] flex items-center justify-center border border-zinc-100 text-zinc-300 overflow-hidden cursor-pointer hover:border-orange-200 transition-all"
-                    >
-                        {guardian.photo ? (
-                            <img src={guardian.photo} alt={guardian.name} className="w-full h-full object-cover" />
-                        ) : (
-                            <User size={40} />
-                        )}
-                        
-                        {isUploadingPhoto && (
-                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-[2.5rem]">
-                                <Loader2 className="text-white animate-spin" />
-                            </div>
-                        )}
-                    </div>
-                    
-                    <button 
-                        onClick={() => profileFileInputRef.current?.click()}
-                        className="absolute -bottom-1 -right-1 w-8 h-8 bg-orange-500 text-white rounded-xl flex items-center justify-center border-4 border-white shadow-sm active:scale-90 transition-transform"
-                    >
-                        <Camera size={14} />
-                    </button>
-                </div>
-                <h3 className="text-xl font-black text-zinc-900">{guardian.name}</h3>
-                <p className="text-sm text-zinc-400 font-bold mb-2">{guardian.email}</p>
-                <span className="inline-block bg-zinc-900 text-white text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full">Apoderado</span>
-            </div>
-
-            <div className="space-y-4">
-
-                {/* Mis hijos */}
-                {students.length > 0 && (
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2 px-1">
-                            <div className="w-1 h-4 rounded-full" style={{ backgroundColor: primaryColor }} />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Mis hijos</span>
-                        </div>
-                        {students.map((s: any) => (
-                            <div key={s.id} className="bg-white border border-zinc-100 rounded-3xl p-4 flex items-center gap-4 shadow-sm">
-                                <button
-                                    type="button"
-                                    className="w-14 h-14 rounded-full overflow-hidden bg-zinc-100 shrink-0 border-2 border-zinc-50 shadow-sm relative"
-                                    onClick={() => { studentForPhotoRef.current = s.id; profileFileInputRef.current?.click(); }}
-                                >
-                                    {studentPhotoLoadingId === s.id ? (
-                                        <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                                            <Loader2 className="animate-spin text-orange-500" size={16} />
-                                        </div>
-                                    ) : s.photo ? (
-                                        <img src={s.photo} alt={s.name} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-xl font-black text-zinc-300">
-                                            {s.name[0]}
-                                        </div>
-                                    )}
-                                    <div className="absolute bottom-0 right-0 w-5 h-5 bg-white rounded-full shadow flex items-center justify-center border border-zinc-100">
-                                        <Camera className="w-3 h-3 text-zinc-400" />
-                                    </div>
-                                </button>
-                                <div className="flex-1 min-w-0">
-                                    {editingStudentId === s.id ? (
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                autoFocus
-                                                value={editingStudentName}
-                                                onChange={e => setEditingStudentName(e.target.value)}
-                                                onKeyDown={async e => {
-                                                    if (e.key === 'Enter') {
-                                                        setSavingStudentName(true);
-                                                        const tk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
-                                                        const slug = localStorage.getItem('tenant_slug') || '';
-                                                        await updateStudentName(slug, tk, s.id, editingStudentName);
-                                                        setSavingStudentName(false);
-                                                        setEditingStudentId(null);
-                                                        refreshData();
-                                                    } else if (e.key === 'Escape') {
-                                                        setEditingStudentId(null);
-                                                    }
-                                                }}
-                                                className="flex-1 text-sm font-black text-zinc-900 bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-1.5 outline-none focus:border-orange-400"
-                                            />
-                                            <button
-                                                disabled={savingStudentName}
-                                                onClick={async () => {
-                                                    setSavingStudentName(true);
-                                                    const tk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
-                                                    const slug = localStorage.getItem('tenant_slug') || '';
-                                                    await updateStudentName(slug, tk, s.id, editingStudentName);
-                                                    setSavingStudentName(false);
-                                                    setEditingStudentId(null);
-                                                    refreshData();
-                                                }}
-                                                className="w-8 h-8 bg-orange-500 text-white rounded-xl flex items-center justify-center shrink-0 active:scale-90 transition-transform"
-                                            >
-                                                {savingStudentName ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-                                            </button>
-                                            <button onClick={() => setEditingStudentId(null)} className="w-8 h-8 bg-zinc-100 text-zinc-400 rounded-xl flex items-center justify-center shrink-0">
-                                                <X size={14} />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center gap-2">
-                                            <p className="text-sm font-black text-zinc-900 truncate">{s.name}</p>
-                                            <button
-                                                onClick={() => { setEditingStudentId(s.id); setEditingStudentName(s.name); }}
-                                                className="w-6 h-6 bg-zinc-100 text-zinc-400 rounded-lg flex items-center justify-center shrink-0 hover:bg-zinc-200 transition-colors"
-                                            >
-                                                <Settings size={12} />
-                                            </button>
-                                        </div>
-                                    )}
-                                    <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider mt-0.5">{s.category}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                <div className="bg-white border border-zinc-100 rounded-3xl p-2">
-                    <button className="w-full flex items-center justify-between p-4 hover:bg-stone-50 rounded-2xl transition-all group">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400 group-hover:text-orange-500 transition-colors">
-                                <User size={20} />
-                            </div>
-                            <span className="font-black text-sm text-zinc-700">Editar Perfil</span>
-                        </div>
-                        <ChevronRight size={18} className="text-zinc-300" />
-                    </button>
-                    <div className="h-px bg-zinc-50 mx-4" />
-                    <button 
-                        onClick={() => setActiveSection("calendar")}
-                        className="w-full flex items-center justify-between p-4 hover:bg-stone-50 rounded-2xl transition-all group"
-                    >
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400 group-hover:text-orange-500 transition-colors">
-                                <Calendar size={20} />
-                            </div>
-                            <span className="font-black text-sm text-zinc-700">Historial de Asistencia</span>
-                        </div>
-                        <ChevronRight size={18} className="text-zinc-300" />
-                    </button>
-                    <div className="h-px bg-zinc-50 mx-4" />
-                    <button 
-                        onClick={() => { setActiveSection("payments"); setPaymentTab("history"); }}
-                        className="w-full flex items-center justify-between p-4 hover:bg-stone-50 rounded-2xl transition-all group"
-                    >
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400 group-hover:text-orange-500 transition-colors">
-                                <CreditCard size={20} />
-                            </div>
-                            <span className="font-black text-sm text-zinc-700">Historial de Pagos</span>
-                        </div>
-                        <ChevronRight size={18} className="text-zinc-300" />
-                    </button>
-                    <div className="h-px bg-zinc-50 mx-4" />
-                    <button className="w-full flex items-center justify-between p-4 hover:bg-stone-50 rounded-2xl transition-all group">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400 group-hover:text-orange-500 transition-colors">
-                                <Settings size={20} />
-                            </div>
-                            <span className="font-black text-sm text-zinc-700">Ajustes</span>
-                        </div>
-                        <ChevronRight size={18} className="text-zinc-300" />
-                    </button>
-                </div>
-
-                {/* Changelog */}
-                <div className="space-y-3">
-                    <div className="flex items-center gap-2 px-1">
-                        <Sparkles size={14} className="text-zinc-300" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Actualizaciones</span>
-                    </div>
-                    <div className="max-h-[340px] overflow-y-auto space-y-2 pr-1">
-                        {appUpdates.length > 0 ? appUpdates.map((u: any) => (
-                            <div key={u.id} className="bg-white border border-zinc-100 rounded-2xl p-4">
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-[9px] font-black bg-zinc-900 text-white px-2 py-0.5 rounded-full">v{u.version}</span>
-                                    <span className="text-[8px] font-bold text-zinc-300">{u.published_at}</span>
-                                </div>
-                                <h4 className="text-sm font-black text-zinc-800 mt-2">{u.title}</h4>
-                                <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{u.description}</p>
-                            </div>
-                        )) : (
-                            <p className="text-xs text-zinc-300 text-center py-4">Sin actualizaciones</p>
-                        )}
-                    </div>
-                </div>
-
-                <button
-                    onClick={() => { localStorage.clear(); window.location.href = "/"; }}
-                    className="w-full h-16 bg-red-50 text-red-600 rounded-3xl flex items-center justify-center gap-3 text-xs font-black uppercase tracking-[0.2em] hover:bg-red-100 transition-all active:scale-[0.98]"
-                >
-                    <LogOut size={18} />
-                    Cerrar Sesión
-                </button>
-            </div>
-
-            <div className="pt-6 text-center space-y-1">
-                <a href="https://digitalizatodo.cl" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-600 transition-colors">
-                    DIGITALIZA TODO® 2026
-                </a>
-                <p className="text-[9px] text-zinc-300">Software Factory a la Medida</p>
-            </div>
-
-        </div>
-    );
-
     return (
-        <>
-            <NotificationToast
-                notification={toastNotification}
-                onDismiss={() => setToastNotification(null)}
-                onNavigate={(type) => {
-                    if (type === 'attendance') setActiveSection('calendar');
-                    else if (type === 'payment') setActiveSection('payments');
-                    else setActiveSection('profile');
-                }}
+        <div className="min-h-screen bg-stone-50 overflow-x-hidden font-sans pb-32">
+            <NotificationToast 
+                notification={toastNotification} 
+                onDismiss={() => setToastNotification(null)} 
             />
-            {/* Desktop Only Guard (Fintoc Style Inverso) */}
-            <div className="hidden lg:flex fixed inset-0 z-[9999] bg-stone-50 items-center justify-center p-8 text-center animate-in fade-in duration-700">
-                <div className="max-w-md space-y-10">
-                    <div className="flex justify-center">
-                        <div className="h-24 w-24 rounded-[2rem] bg-white border border-zinc-100 flex items-center justify-center overflow-hidden shadow-xl animate-bounce">
-                            <img src="/DLogo-v2.webp" className="w-12 h-12 object-contain" alt="logo" />
-                        </div>
-                    </div>
-                    <div className="space-y-6">
-                        <h1 className="text-5xl font-black text-zinc-900 tracking-tighter uppercase leading-[0.85]">
-                            Ecosistema <br/> <span className="text-indigo-600">Móvil</span>
-                        </h1>
-                        <p className="text-sm font-black text-zinc-400 uppercase tracking-[0.2em] leading-relaxed max-w-[280px] mx-auto">
-                            El portal de apoderados está optimizado para dispositivos móviles.
-                        </p>
-                        <div className="bg-zinc-900 text-white p-6 rounded-[2rem] shadow-2xl space-y-3">
-                             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Paso a seguir</p>
-                             <p className="text-sm font-bold">Por favor, accede desde tu smartphone para una mejor experiencia.</p>
-                        </div>
-                    </div>
-                    <div className="pt-12">
-                        <p className="text-[9px] font-black text-zinc-200 uppercase tracking-[0.5em]">DIGITALIZA TODO® 2026</p>
-                        <p className="text-[8px] text-zinc-200 mt-1">Software Factory a la Medida</p>
-                    </div>
-                </div>
-            </div>
-
-            <div className="min-h-screen bg-stone-50 text-zinc-900 pb-32 md:pb-12 max-w-lg mx-auto md:max-w-7xl lg:hidden">
-            {/* Header */}
-            <header className="bg-white px-2 py-3 flex items-center justify-between sticky top-0 z-50 border-b border-zinc-50 shrink-0">
+            
+            <header className="flex items-center justify-between px-6 py-4 sticky top-0 bg-stone-50/80 backdrop-blur-md z-[80] border-b border-zinc-100">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full overflow-hidden border border-zinc-100 shadow-sm">
+                    <div className="w-10 h-10 rounded-xl overflow-hidden bg-white border border-zinc-100 flex items-center justify-center shadow-sm">
                         {branding?.logo ? (
                             <img src={branding.logo} className="w-full h-full object-cover" alt="L" />
                         ) : (
@@ -1564,17 +470,15 @@ export default function StudentDashboard() {
                             <button onClick={() => setShowPushModal(true)} className="shrink-0 mt-0.5">
                                 <div className={`w-3 h-3 rounded-full border-2 border-white shadow-sm transition-colors duration-500 ${
                                     pushPermission === 'granted' ? 'bg-emerald-500 animate-pulse' :
-                                    pushPermission === 'denied'  ? 'bg-red-500' :
-                                    'bg-amber-400'
+                                    pushPermission === 'denied'  ? 'bg-red-500' : 'bg-amber-400'
                                 }`} />
                             </button>
                         </div>
                         <span className="text-[9px] font-black uppercase tracking-widest mt-0.5" style={{ color: primaryColor }}>
-                            {activeSection === 'home' ? 'Inicio' : activeSection === 'calendar' ? (branding?.industry === 'school_treasury' ? 'Horario' : 'Asistencia') : activeSection === 'payments' ? 'Pagos' : activeSection === 'rendicion' ? 'Rendición' : 'Perfil'}
+                            {activeSection === 'home' ? 'Inicio' : activeSection === 'calendar' ? (isSchoolTreasury ? 'Horario' : 'Asistencia') : activeSection === 'payments' ? 'Pagos' : activeSection === 'rendicion' ? 'Rendición' : 'Perfil'}
                         </span>
                     </div>
                 </div>
-                {/* Notification Bell */}
                 <button 
                     onClick={() => setShowNotifications(!showNotifications)}
                     className="relative w-10 h-10 flex items-center justify-center rounded-full border border-zinc-100 shadow-sm bg-white"
@@ -1632,29 +536,102 @@ export default function StudentDashboard() {
                                     </div>
                                 </div>
                             )) : (
-                                <div className="p-8 text-center">
-                                    <Bell size={24} className="text-zinc-200 mx-auto mb-2" />
-                                    <p className="text-xs text-zinc-300">Sin notificaciones</p>
-                                </div>
+                                <div className="p-8 text-center text-zinc-300 text-xs">Sin notificaciones</div>
                             )}
                         </div>
                     </div>
                 </div>
             )}
 
-            <div className="px-2 md:px-8 pt-4">
-            {/* Dashboard Sections - Mobile Responsive */}
-            <div className="animate-in fade-in duration-500">
-                {activeSection === "home" && renderHome()}
-                {activeSection === "calendar" && renderCalendar()}
-                {activeSection === "payments" && renderPayments()}
-                {activeSection === "profile" && renderProfile()}
-                {activeSection === "rendicion" && renderRendicion()}
-            </div>
+            <main className="px-2 md:px-8 pt-4">
+                {activeSection === "home" && (
+                    <StudentHomeSection
+                        guardian={guardian}
+                        isSchoolTreasury={isSchoolTreasury}
+                        branding={branding}
+                        totalDueOrReview={totalDueOrReview}
+                        hasPendingReview={hasPendingReview}
+                        totalDue={totalDue}
+                        setActiveSection={setActiveSection}
+                        myFees={myFees}
+                        schedulesList={schedulesList}
+                        primaryColor={primaryColor}
+                        students={students}
+                        isUploadingPhoto={isUploadingPhoto}
+                        studentPhotoLoadingId={studentPhotoLoadingId}
+                        studentForPhotoRef={studentForPhotoRef}
+                        profileFileInputRef={profileFileInputRef}
+                        setActiveScanner={setActiveScanner}
+                        vocab={vocab}
+                    />
+                )}
+                {activeSection === "calendar" && (
+                    <StudentCalendarSection
+                        branding={branding}
+                        schedulesList={schedulesList}
+                        students={students}
+                        primaryColor={primaryColor}
+                    />
+                )}
+                {activeSection === "payments" && (
+                    <StudentPaymentsSection
+                        paymentTab={paymentTab}
+                        setPaymentTab={setPaymentTab}
+                        bankInfo={bankInfo}
+                        copiedBank={copiedBank}
+                        setCopiedBank={setCopiedBank}
+                        selectedPayments={selectedPayments}
+                        setSelectedPayments={setSelectedPayments}
+                        uploadingPayment={uploadingPayment}
+                        bulkFileInputRef={bulkFileInputRef as any}
+                        myFees={myFees}
+                        setFeePayModal={setFeePayModal}
+                        students={students}
+                        primaryColor={primaryColor}
+                        uploadSuccess={uploadSuccess}
+                        handleUploadProof={handleUploadProof}
+                        setProofModal={setProofModal}
+                        setConfirmDelete={setConfirmDelete}
+                        handleBulkUploadProof={handleBulkUploadProof}
+                        paymentHistory={paymentHistory}
+                        vocab={vocab}
+                    />
+                )}
+                {activeSection === "profile" && (
+                    <StudentProfileSection
+                        guardian={guardian}
+                        primaryColor={primaryColor}
+                        isUploadingPhoto={isUploadingPhoto}
+                        profileFileInputRef={profileFileInputRef as any}
+                        students={students}
+                        editingStudentId={editingStudentId}
+                        setEditingStudentId={setEditingStudentId}
+                        editingStudentName={editingStudentName}
+                        setEditingStudentName={setEditingStudentName}
+                        savingStudentName={savingStudentName}
+                        setSavingStudentName={setSavingStudentName}
+                        refreshData={refreshData}
+                        studentPhotoLoadingId={studentPhotoLoadingId}
+                        handleUploadPhoto={(id: string, file: File) => handleUploadPhoto(id, file)}
+                        studentForPhotoRef={studentForPhotoRef}
+                        setActiveSection={setActiveSection}
+                        setPaymentTab={setPaymentTab}
+                        vocab={vocab}
+                        onAccountSwitch={handleAccountSwitch}
+                    />
+                )}
+                {activeSection === "rendicion" && (
+                    <StudentRendicionSection
+                        expensesTotal={expensesTotal}
+                        expensesBalance={expensesBalance}
+                        expensesList={expensesList}
+                        expensesSummary={expensesSummary}
+                        expensesLoading={expensesLoading}
+                        setExpenseLightbox={setExpenseLightbox}
+                    />
+                )}
+            </main>
 
-            </div>
-
-            {/* Shared Components */}
             <BottomNav 
                 activeSection={activeSection} 
                 setActiveSection={setActiveSection} 
@@ -1663,7 +640,6 @@ export default function StudentDashboard() {
                 userName={guardian.name}
                 industry={branding?.industry}
             />
-
 
             {activeScanner && (
                 <StudentQRScanner
@@ -1679,6 +655,7 @@ export default function StudentDashboard() {
                     fees={feePayModal.fees}
                     onClose={() => setFeePayModal(null)}
                     onSuccess={refreshMyFees}
+                    submitFeePayment={submitFeePayment}
                 />
             )}
 
@@ -1703,42 +680,18 @@ export default function StudentDashboard() {
             {showPushModal && (
                 <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-end justify-center p-4 animate-in fade-in duration-200" onClick={() => setShowPushModal(false)}>
                     <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom-4 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className={`w-4 h-4 rounded-full shrink-0 ${
-                                pushPermission === 'granted' ? 'bg-emerald-500' :
-                                pushPermission === 'denied'  ? 'bg-red-500' :
-                                'bg-amber-400'
-                            }`} />
-                            <h3 className="text-sm font-black uppercase tracking-tighter text-zinc-900">
-                                {pushPermission === 'granted' ? 'Alertas Activadas 🔔' :
-                                 pushPermission === 'denied'  ? 'Alertas Bloqueadas 🔕' :
-                                 'Activar Alertas de Seguridad'}
-                            </h3>
-                        </div>
-                        <p className="text-xs text-zinc-500 leading-relaxed mb-6 font-medium">
-                            {pushPermission === 'granted'
-                                ? 'Todo listo. Recibirás avisos instantáneos cuando el alumno registre su asistencia en portería.'
-                                : pushPermission === 'denied'
-                                ? 'Has bloqueado los avisos. Por seguridad, te recomendamos ir a los Ajustes de tu teléfono → Safari y permitir las notificaciones para esta App.'
-                                : 'Es fundamental que actives las notificaciones. Así te avisaremos en tiempo real cuando el alumno ingrese a la academia y cuando tus pagos sean aprobados.'}
-                        </p>
-                        {pushPermission === 'default' && (
-                            <button
-                                onClick={handleActivatePush}
-                                style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
-                                className="w-full py-4 rounded-2xl text-white font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all"
-                            >
-                                Activar notificaciones
-                            </button>
-                        )}
-                        <button onClick={() => setShowPushModal(false)} className="w-full py-3 text-zinc-400 font-black text-[9px] uppercase tracking-widest mt-2">
-                            Cerrar
-                        </button>
+                        <h3 className="text-sm font-black uppercase tracking-tighter text-zinc-900 mb-2">Activar Alertas de Seguridad 🔔</h3>
+                        <p className="text-xs text-zinc-500 leading-relaxed mb-6 font-medium">Es fundamental que actives las notificaciones para avisarte en tiempo real cuando el {vocab.memberLabel.toLowerCase()} ingrese al {vocab.placeLabel.toLowerCase()}.</p>
+                        <button
+                            onClick={handleActivatePush}
+                            style={{ backgroundColor: primaryColor }}
+                            className="w-full py-4 rounded-2xl text-white font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all"
+                        > Activar notificaciones </button>
+                        <button onClick={() => setShowPushModal(false)} className="w-full py-3 text-zinc-400 font-black text-[9px] uppercase tracking-widest mt-2">Cerrar</button>
                     </div>
                 </div>
             )}
 
-            {/* Global File Input for Photos */}
             <input 
                 type="file"
                 ref={profileFileInputRef}
@@ -1747,383 +700,16 @@ export default function StudentDashboard() {
                 onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
-                        const sId = studentForPhotoRef.current;
-                        if (sId) {
-                            handleUploadPhoto(sId, file);
-                        } else {
-                            handleProfilePhotoUpload(file);
-                        }
+                        if (studentForPhotoRef.current) handleUploadPhoto(studentForPhotoRef.current, file);
+                        else handleProfilePhotoUpload(file);
                     }
                     studentForPhotoRef.current = null;
-                    if (e.target) e.target.value = "";
                 }}
             />
-        </div>
-        </>
-    );
-}
 
-/* ─── Fee Card Component ─── */
-function FeeCard({ feeData, primaryColor, onPay, onViewProof }: {
-    feeData: any; primaryColor: string;
-    onPay: () => void;
-    onViewProof: (url: string) => void;
-}) {
-    const fee = feeData.fee;
-    const periods: any[] = feeData.periods || [];
-    const pending  = periods.filter((p: any) => p.status === 'pending');
-    const review   = periods.filter((p: any) => p.status === 'review');
-    const paid     = periods.filter((p: any) => p.status === 'paid');
-    const total    = periods.length;
-
-    const today = new Date();
-    const overdue  = periods.filter((p: any) => p.status === 'pending' && p.due_date && new Date(p.due_date) < today);
-    const overallStatus = paid.length === total && total > 0 ? 'paid'
-        : review.length > 0 ? 'review'
-        : overdue.length > 0 ? 'overdue' : 'pending';
-
-    const statusConfig: Record<string, { label: string; color: string }> = {
-        pending: { label: 'Por vencer', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-        overdue: { label: 'Vencida', color: 'text-red-500 bg-red-50 border-red-200' },
-        review:  { label: 'En Revisión', color: 'text-yellow-600 bg-yellow-50 border-yellow-200' },
-        paid:    { label: 'Al día', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-    };
-    const sc = statusConfig[overallStatus];
-
-    return (
-        <div className="bg-white border border-zinc-100 rounded-2xl p-4 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                    <p className="text-sm font-black text-zinc-900">{fee.title}</p>
-                    <p className="text-[10px] text-zinc-400 font-bold">
-                        ${Number(fee.amount).toLocaleString('es-CL')}/mes
-                        {fee.type === 'recurring' && fee.recurring_day && ` · Día ${fee.recurring_day}`}
-                        {total > 0 && ` · ${paid.length}/${total} pagados`}
-                    </p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                    <span className={`text-[9px] border rounded-full px-2 py-0.5 font-black uppercase shadow-sm ${sc.color}`}>{sc.label}</span>
-                    {overallStatus !== 'paid' && (
-                        <button onClick={onPay} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider bg-zinc-900 text-white rounded-xl px-3 py-2">
-                            <CreditCard size={11} /> Pagar
-                        </button>
-                    )}
-                </div>
-            </div>
-            {/* Mini progreso con etiquetas */}
-            {total > 1 && (
-                <div className="mt-3">
-                    <div className="flex gap-1 flex-wrap">
-                        {periods.map((p: any, i: number) => {
-                            const isOverdue = p.status === 'pending' && p.due_date && new Date(p.due_date) < today;
-                            return (
-                                <div key={i} className="flex flex-col items-center gap-0.5" style={{ flex: '1 1 0', minWidth: 0 }}>
-                                    <div
-                                        title={`${p.label} — ${p.status}`}
-                                        className={`h-2 w-full rounded-full ${
-                                            p.status === 'paid' ? 'bg-emerald-400' :
-                                            p.status === 'review' ? 'bg-yellow-400' :
-                                            isOverdue ? 'bg-red-400' : 'bg-zinc-200'
-                                        }`}
-                                    />
-                                    <span className="text-[7px] font-black text-zinc-400 uppercase leading-none truncate w-full text-center">
-                                        {['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][p.month - 1]}
-                                    </span>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-}
-
-/* ─── Fee Pay Modal ─── */
-function FeePayModal({ fees, onClose, onSuccess }: {
-    fees: any[];
-    onClose: () => void;
-    onSuccess: () => void;
-}) {
-    // Estado: { [feeId]: Set<'year-month'> }
-    const [selected, setSelected] = useState<Record<number, Set<string>>>(() => {
-        const init: Record<number, Set<string>> = {};
-        fees.forEach(fd => {
-            const pending = (fd.periods || []).filter((p: any) => p.status === 'pending');
-            // Por defecto seleccionar solo el primer mes pendiente
-            init[fd.fee.id] = pending.length > 0 ? new Set([`${pending[0].year}-${pending[0].month}`]) : new Set();
-        });
-        return init;
-    });
-    const [proofFile, setProofFile] = useState<File | null>(null);
-    const [submitting, setSubmitting] = useState(false);
-    const [success, setSuccess] = useState(false);
-    const fileRef = useRef<HTMLInputElement>(null);
-
-    const togglePeriod = (feeId: number, key: string, periods: any[]) => {
-        setSelected(prev => {
-            const set = new Set(prev[feeId] || []);
-            // Regla: solo períodos consecutivos desde el primero pendiente
-            const pendingKeys = periods
-                .filter((p: any) => p.status === 'pending')
-                .map((p: any) => `${p.year}-${p.month}`);
-            const idx = pendingKeys.indexOf(key);
-            if (idx === -1) return prev;
-            // Seleccionar/deseleccionar hasta ese índice
-            const newSet = new Set<string>();
-            if (set.has(key) && [...set].pop() === key) {
-                // Deseleccionar el último
-                pendingKeys.slice(0, idx).forEach(k => newSet.add(k));
-            } else {
-                // Seleccionar hasta este
-                pendingKeys.slice(0, idx + 1).forEach(k => newSet.add(k));
-            }
-            return { ...prev, [feeId]: newSet };
-        });
-    };
-
-    const selectAll = (feeId: number, periods: any[]) => {
-        const pendingKeys = periods
-            .filter((p: any) => p.status === 'pending')
-            .map((p: any) => `${p.year}-${p.month}`);
-        setSelected(prev => ({ ...prev, [feeId]: new Set(pendingKeys) }));
-    };
-
-    const totalAmount = fees.reduce((sum, fd) => {
-        const count = (selected[fd.fee.id] || new Set()).size;
-        return sum + count * Number(fd.fee.amount);
-    }, 0);
-
-    const totalPeriods = fees.reduce((sum, fd) => sum + (selected[fd.fee.id] || new Set()).size, 0);
-
-    const handleSubmit = async () => {
-        if (!proofFile || totalPeriods === 0) return;
-        setSubmitting(true);
-        const slug = localStorage.getItem('tenant_slug') || '';
-        const tk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
-        const items = fees
-            .map(fd => ({
-                fee_id: fd.fee.id,
-                periods: [...(selected[fd.fee.id] || new Set())].map(key => {
-                    const [year, month] = key.split('-').map(Number);
-                    return { month, year };
-                }),
-            }))
-            .filter(item => item.periods.length > 0);
-        const res = await submitFeePayment(slug, tk, items, proofFile);
-        setSubmitting(false);
-        if (res?.created !== undefined) {
-            setSuccess(true);
-            setTimeout(() => { onSuccess(); onClose(); }, 1800);
-        }
-    };
-
-    const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-
-    return (
-        <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-end justify-center p-0 animate-in fade-in duration-200" onClick={onClose}>
-            <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom-4 duration-200 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                {success ? (
-                    <div className="flex flex-col items-center gap-4 py-12">
-                        <div className="w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-                            <CheckCircle2 className="w-10 h-10 text-emerald-500" />
-                        </div>
-                        <p className="text-lg font-black text-zinc-900">¡Pago enviado!</p>
-                        <p className="text-xs text-zinc-400">El staff revisará tu comprobante pronto.</p>
-                    </div>
-                ) : (
-                    <>
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-black text-zinc-900">Pagar Cuotas</h3>
-                            <button onClick={onClose} className="w-8 h-8 bg-zinc-100 rounded-full flex items-center justify-center"><X size={16} /></button>
-                        </div>
-
-                        {fees.map(fd => {
-                            const fee = fd.fee;
-                            const periods: any[] = fd.periods || [];
-                            const pendingPeriods = periods.filter((p: any) => p.status === 'pending');
-                            const sel = selected[fee.id] || new Set();
-                            if (pendingPeriods.length === 0) return null;
-                            return (
-                                <div key={fee.id} className="mb-6">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <div>
-                                            <p className="text-sm font-black text-zinc-900">{fee.title}</p>
-                                            <p className="text-[10px] text-zinc-400">${Number(fee.amount).toLocaleString('es-CL')}/mes</p>
-                                        </div>
-                                        <button
-                                            onClick={() => selectAll(fee.id, periods)}
-                                            className="text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-700 border border-zinc-200 px-3 py-1 rounded-full"
-                                        >
-                                            Todo el año
-                                        </button>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {pendingPeriods.map((p: any) => {
-                                            const key = `${p.year}-${p.month}`;
-                                            const isSelected = sel.has(key);
-                                            return (
-                                                <button
-                                                    key={key}
-                                                    onClick={() => togglePeriod(fee.id, key, periods)}
-                                                    className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase border transition-all ${
-                                                        isSelected
-                                                            ? 'bg-zinc-900 text-white border-zinc-900'
-                                                            : 'bg-zinc-50 text-zinc-500 border-zinc-200 hover:border-zinc-400'
-                                                    }`}
-                                                >
-                                                    {MONTHS[p.month - 1]} {p.year}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            );
-                        })}
-
-                        {/* Total */}
-                        {totalPeriods > 0 && (
-                            <div className="bg-zinc-50 rounded-2xl p-4 mb-4 flex items-center justify-between">
-                                <div>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Total a pagar</p>
-                                    <p className="text-2xl font-black text-zinc-900">${totalAmount.toLocaleString('es-CL')}</p>
-                                </div>
-                                <p className="text-[10px] text-zinc-400 font-bold">{totalPeriods} {totalPeriods === 1 ? 'mes' : 'meses'}</p>
-                            </div>
-                        )}
-
-                        {/* Comprobante */}
-                        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) setProofFile(f); }} />
-                        <button
-                            onClick={() => fileRef.current?.click()}
-                            className={`w-full h-14 rounded-2xl border-2 border-dashed flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest mb-4 transition-all ${
-                                proofFile ? 'border-emerald-400 bg-emerald-50 text-emerald-600' : 'border-zinc-200 text-zinc-400 hover:border-zinc-400'
-                            }`}
-                        >
-                            {proofFile ? <><CheckCircle2 size={14} /> {proofFile.name.slice(0, 30)}</> : <><Upload size={14} /> Adjuntar comprobante</>}
-                        </button>
-
-                        <button
-                            onClick={handleSubmit}
-                            disabled={!proofFile || totalPeriods === 0 || submitting}
-                            className="w-full h-14 bg-zinc-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest disabled:opacity-40 flex items-center justify-center gap-2"
-                        >
-                            {submitting ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />}
-                            {submitting ? 'Enviando...' : `Enviar pago $${totalAmount.toLocaleString('es-CL')}`}
-                        </button>
-                    </>
-                )}
-            </div>
-        </div>
-    );
-}
-
-/* ─── Payment Row Component ─── */
-function PaymentRow({
-    payment,
-    primaryColor,
-    uploading,
-    uploadSuccess,
-    onUpload,
-    onViewProof,
-    onDeleteProof,
-    isSelected,
-    onToggleSelect,
-}: {
-    payment: any;
-    primaryColor: string;
-    uploading: boolean;
-    uploadSuccess: boolean;
-    onUpload: (file: File) => void;
-    onViewProof: (url: string) => void;
-    onDeleteProof: () => void;
-    isSelected: boolean;
-    onToggleSelect: () => void;
-}) {
-    const fileRef = useRef<HTMLInputElement>(null);
-
-    const statusConfig: Record<string, { label: string; color: string }> = {
-        pending: { label: "Pendiente", color: "text-red-500 bg-red-50 border-red-200" },
-        pending_review: { label: "En Revisión", color: "text-yellow-600 bg-yellow-50 border-yellow-200" },
-        approved: { label: "Pagado", color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
-    };
-    const sc = statusConfig[payment.status] || statusConfig.pending;
-    const hasProof = !!payment.proof_image;
-    const canDelete = hasProof && payment.status !== 'approved';
-
-    return (
-        <div className={`bg-white border ${isSelected ? 'border-orange-500 shadow-orange-50' : 'border-zinc-100'} rounded-2xl p-4 shadow-sm hover:shadow-md transition-all relative overflow-hidden group/pay`}>
-            {isSelected && <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-500" />}
-            
-            {/* Fila principal: info + status + acción */}
-            <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                    {payment.status === "pending" && (
-                        <div onClick={onToggleSelect} className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer shrink-0 ${
-                            isSelected ? 'bg-orange-500 border-orange-500' : 'border-zinc-200 hover:border-zinc-400'
-                        }`}>
-                            {isSelected && <Check size={12} className="text-white" />}
-                        </div>
-                    )}
-                    <div className="min-w-0">
-                        <p className="text-sm font-black text-zinc-900">${Number(payment.amount).toLocaleString("es-CL")}</p>
-                        <p className="text-[10px] text-zinc-400 font-bold truncate">Vence: {payment.due_date || "—"}</p>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                    <span className={`text-[9px] border rounded-full px-2 py-0.5 font-black uppercase shadow-sm ${sc.color}`}>{sc.label}</span>
-
-                    {uploadSuccess && (
-                        <span className="text-emerald-500 animate-in zoom-in duration-300"><CheckCircle2 className="w-6 h-6" /></span>
-                    )}
-
-                    {payment.status === "pending" && !uploadSuccess && (
-                        <>
-                            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); }} />
-                            <button
-                                onClick={() => fileRef.current?.click()}
-                                disabled={uploading}
-                                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider bg-zinc-900 text-white rounded-xl px-4 py-2 hover:bg-zinc-800 transition-all disabled:opacity-50"
-                            >
-                                {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
-                                {uploading ? "..." : "Pagar"}
-                            </button>
-                        </>
-                    )}
-                </div>
-            </div>
-
-            {/* Mini tarjeta de comprobante */}
-            {hasProof && (
-                <div className="mt-3 pt-3 border-t border-zinc-50">
-                    <div className="flex items-center gap-3">
-                        {/* Thumbnail con badge (-) */}
-                        <div className="relative shrink-0">
-                            <button
-                                onClick={() => onViewProof(payment.proof_image)}
-                                className="w-14 h-14 rounded-xl overflow-hidden border border-zinc-100 bg-zinc-50 shadow-sm active:scale-95 transition-transform"
-                            >
-                                <img src={payment.proof_image} alt="Comprobante" className="w-full h-full object-cover" />
-                            </button>
-                            {canDelete && (
-                                <button
-                                    onClick={onDeleteProof}
-                                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md active:scale-90 transition-transform border-2 border-white"
-                                >
-                                    <Minus size={10} strokeWidth={3} />
-                                </button>
-                            )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-[10px] font-black text-zinc-500 flex items-center gap-1">
-                                <ImageIcon size={10} /> Comprobante adjunto
-                            </p>
-                            <p className="text-[9px] text-zinc-300 mt-0.5">
-                                {payment.status === 'approved' ? 'Aprobado ✓' : 'Toca la imagen para ampliar'}
-                            </p>
-                        </div>
-                    </div>
+            {expenseLightbox && (
+                <div className="fixed inset-0 bg-black/90 z-[300] flex items-center justify-center p-4" onClick={() => setExpenseLightbox(null)}>
+                    <img src={expenseLightbox} className="max-w-full max-h-full rounded-2xl object-contain" alt="Expense" />
                 </div>
             )}
         </div>

@@ -55,7 +55,7 @@ export default function RegisterPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!branding?.id) {
-            setError("No se pudo identificar la academia para este correo.");
+            setError("No se pudo identificar la cuenta para este correo.");
             return;
         }
 
@@ -110,12 +110,12 @@ export default function RegisterPage() {
                             <h3 className="text-white font-bold text-lg flex items-center gap-2">
                                 Soy Dueño de Negocio <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                             </h3>
-                            <p className="text-gray-500 text-xs mt-1">Quiero registrar mi academia, clínica o gimnasio y probar el sistema gratis.</p>
+                            <p className="text-gray-500 text-xs mt-1">Quiero registrar mi institución, centro o negocio y administrar el sistema.</p>
                         </Link>
 
                         <div className="p-6 bg-white/[0.02] border border-white/[0.03] rounded-2xl text-left opacity-60">
                             <h3 className="text-gray-400 font-bold text-lg">Soy Alumno / Apoderado</h3>
-                            <p className="text-gray-600 text-xs mt-1">Para registrarte, debes usar el enlace único que te proporcionó tu academia (ej: digitalizatodo.cl/tu-academia).</p>
+                            <p className="text-gray-600 text-xs mt-1">Para registrarte, debes usar el enlace único que te proporcionó tu institución (ej: digitalizatodo.cl/tu-institucion).</p>
                         </div>
                     </div>
 

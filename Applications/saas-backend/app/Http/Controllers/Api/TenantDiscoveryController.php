@@ -21,16 +21,21 @@ class TenantDiscoveryController extends Controller
 
         $email = $request->email;
 
+        \Log::info("Identifying tenant for email: [{$email}]");
+
         // 1. Buscar Guardianes
         $guardianTenants = \App\Models\Guardian::with('tenant')
-            ->where('email', $email)
-            ->where('active', true)
+            ->where('email', trim($email))
             ->get();
+            
+        \Log::info("Found " . $guardianTenants->count() . " guardian records.");
 
         // 2. Buscar Staff/Owners (User) — via tenant_user (multi-tenant)
         $users = \App\Models\User::with(['tenantUsers.tenant'])
-            ->where('email', $email)
+            ->where('email', trim($email))
             ->get();
+
+        \Log::info("Found " . $users->count() . " user records.");
 
         // Extraer tenants y prepararlos
         $allTenantsMap = [];

@@ -51,7 +51,7 @@ export default function TenantRegisterPage() {
 
   if (!tenant) return (
     <div className="flex min-h-screen items-center justify-center bg-white">
-      <p className="text-zinc-400 text-sm">Academia no encontrada.</p>
+      <p className="text-zinc-400 text-sm">Institución no encontrada.</p>
     </div>
   );
 
