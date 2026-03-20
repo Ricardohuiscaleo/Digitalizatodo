@@ -22,6 +22,7 @@ import {
     getExpenses,
     getSchedules,
     getMyFees,
+    getAppUpdates,
     submitFeePayment
 } from "@/lib/api";
 import { nowCL } from "@/lib/utils";
@@ -74,6 +75,7 @@ export default function StudentDashboard() {
     const [copiedBank, setCopiedBank] = useState(false);
     const [myFees, setMyFees] = useState<any[]>([]);
     const [feePayModal, setFeePayModal] = useState<{ fees: any[] } | null>(null);
+    const [appUpdates, setAppUpdates] = useState<any[]>([]);
 
     // Notificaciones
     const [notifications, setNotifications] = useState<any[]>([]);
@@ -174,6 +176,11 @@ export default function StudentDashboard() {
         const attChannel = echo.channel(`attendance.${branding.slug}`);
         attChannel.listen('.student.checked-in', () => refreshDataRef.current());
         attChannel.listen('.student.checked-out', () => refreshDataRef.current());
+        attChannel.listen('.schedule.updated', () => {
+            const slug = localStorage.getItem('tenant_slug') || '';
+            const tk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
+            if (slug) getSchedules(slug, tk).then(d => setSchedulesList(d?.schedules ?? []));
+        });
 
         const payChannel = echo.channel(`payments.${branding.slug}`);
         payChannel.listen('.payment.updated', (ev: any) => {
@@ -204,13 +211,15 @@ export default function StudentDashboard() {
 
     // ─── Init ───
     useEffect(() => {
-        const slug = localStorage.getItem('tenant_slug') || '';
-        const tk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
-        Promise.all([
-            refreshData(),
-            slug ? getSchedules(slug, tk).then(d => setSchedulesList(d?.schedules ?? [])) : Promise.resolve(),
-            slug && tk ? getMyFees(slug, tk).then(d => setMyFees(d?.fees ?? [])) : Promise.resolve(),
-        ]).then(() => setLoading(false));
+        refreshData().then(() => {
+            const slug = localStorage.getItem('tenant_slug') || '';
+            const freshTk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
+            Promise.all([
+                slug ? getSchedules(slug, freshTk).then(d => setSchedulesList(d?.schedules ?? [])) : Promise.resolve(),
+                slug && freshTk ? getMyFees(slug, freshTk).then(d => setMyFees(d?.fees ?? [])) : Promise.resolve(),
+                getAppUpdates('student').then(d => setAppUpdates(d?.updates ?? [])),
+            ]).then(() => setLoading(false));
+        });
     }, []);
 
     // ─── Unlock Audio ───
@@ -579,6 +588,7 @@ export default function StudentDashboard() {
                         vocab={vocab}
                         onAccountSwitch={handleAccountSwitch}
                         isSchoolTreasury={isSchoolTreasury}
+                        appUpdates={appUpdates}
                     />
                 )}
                 {activeSection === "rendicion" && (

@@ -472,14 +472,11 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
             if (!storedToken || !tenantSlug) { window.location.href = "/"; return; }
 
             setToken(storedToken);
-            const cachedIndustry = localStorage.getItem('tenant_industry');
-            const isSchoolTreasury = cachedIndustry === 'school_treasury';
 
-            let [profile, payersData, attendanceHistoryData, schedulesData]: any[] = await Promise.all([
+            let [profile, payersData, attendanceHistoryData]: any[] = await Promise.all([
                 getProfile(tenantSlug || '', storedToken || ''),
                 getPayers(tenantSlug || '', storedToken || '', { month: selectedMonth, year: selectedYear, history: paymentFilter === 'history' }),
                 getAttendanceHistory(tenantSlug || '', storedToken || ''),
-                isSchoolTreasury ? getSchedules(tenantSlug || '', storedToken || '') : Promise.resolve(null)
             ]);
 
             // Session recovery if token expired but remember_token exists
@@ -490,15 +487,15 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
                     if (resumed?.token) {
                         storedToken = resumed.token;
                         setToken(storedToken || '');
-                        [profile, payersData, attendanceHistoryData, schedulesData] = await Promise.all([
+                        [profile, payersData, attendanceHistoryData] = await Promise.all([
                             getProfile(tenantSlug || '', storedToken || ''),
                             getPayers(tenantSlug || '', storedToken || '', { month: selectedMonth, year: selectedYear, history: paymentFilter === 'history' }),
                             getAttendanceHistory(tenantSlug || '', storedToken || ''),
-                            isSchoolTreasury ? getSchedules(tenantSlug || '', storedToken || '') : Promise.resolve(null)
                         ]);
                     }
                 }
             }
+
 
             if (profile) {
                 if (profile.user_type === 'guardian') { window.location.href = '/dashboard/student'; return; }
@@ -530,7 +527,10 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
                 }
                 setPayers(payersData?.payers || []);
                 setAttendanceHistory(attendanceHistoryData?.attendance || []);
-                setSchedulesList(schedulesData?.schedules || []);
+                if (profile.tenant?.industry === 'school_treasury') {
+                    getSchedules(tenantSlug || '', storedToken || '').then(d => setSchedulesList(d?.schedules || []));
+                    getFees(tenantSlug || '', storedToken || '').then(d => setFeesList(d?.fees || []));
+                }
             } else {
                 localStorage.clear();
                 window.location.href = "/";
@@ -568,6 +568,11 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
                 setAttendance(prev => { const next = new Set(prev); next.delete(String(data.studentId)); return next; });
                 setAttendanceHistory(prev => prev.filter(r => !(String(r.student_id) === String(data.studentId) && (r.date || r.created_at?.split('T')[0]) === todayCL())));
                 safeRefresh();
+            })
+            .listen('.schedule.updated', () => {
+                const s = brandingSlugRef.current || branding?.slug || '';
+                const tk = tokenRef.current || '';
+                if (s && tk) getSchedules(s, tk).then(d => setSchedulesList(d?.schedules || []));
             });
 
         echo.channel(`payments.${slug}`)
