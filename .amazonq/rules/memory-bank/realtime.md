@@ -309,7 +309,68 @@ export default function Dashboard() {
 
 ---
 
-## Tipos de Canales
+## Patrón Canónico: Señal WS + Fetch HTTP
+
+### Regla
+Los eventos WebSocket son **señales** ("algo cambió"), no transportan datos. El frontend siempre hace un fetch HTTP después de recibir la señal para obtener los datos frescos.
+
+```
+Backend guarda en DB → emite evento WS → Frontend recibe señal → fetch HTTP → actualiza UI
+```
+
+### ¿Por qué no mandar los datos en el payload WS?
+- Límite de ~10KB por evento
+- Si llegan múltiples eventos rápido, el último fetch siempre gana (idempotente)
+- El fetch garantiza datos consistentes con la DB
+
+### Anti-patrón: event() dentro de DB::transaction()
+```php
+// ❌ MAL — el evento llega al frontend ANTES de que MySQL commitee
+DB::transaction(function() use ($data) {
+    $model->update($data);
+    event(new ModelUpdated($slug)); // race condition: frontend fetchea datos viejos
+});
+
+// ✅ BIEN — el evento se emite DESPUÉS del commit
+DB::transaction(function() use ($data) {
+    $model->update($data);
+});
+event(new ModelUpdated($slug)); // DB ya commiteó, fetch devuelve datos nuevos
+```
+
+---
+
+## Hook Reutilizable: `useRealtimeChannel`
+
+Ubiación: `app-pwa/src/hooks/useRealtimeChannel.ts`
+
+```typescript
+// Suscribirse a un canal con múltiples eventos
+useRealtimeChannel(`attendance.${slug}`, {
+    'schedule.updated': () => getSchedules(slug, tk).then(setSchedules),
+    'student.checked-in': () => refreshData(),
+    'payment.updated': (ev) => { if (ev.guardianId === myId) refreshFees(); },
+}, !!slug);
+
+// Reconectar al volver del background (usar una vez en el componente raíz)
+useRealtimeVisibility(() => refreshData());
+```
+
+### Características
+- **handlersRef**: los handlers se guardan en ref → los closures siempre tienen valores frescos sin re-suscribir
+- **enabled**: flag para suscribir solo cuando slug/id están disponibles
+- **cleanup automático**: `stopListening` + `leaveChannel` en el return del useEffect
+- **prefijo `.` automático**: puedes pasar `'schedule.updated'` o `'.schedule.updated'`, ambos funcionan
+
+### Canales en uso
+| Canal | Eventos | Quién escucha |
+|-------|---------|---------------|
+| `attendance.{slug}` | `student.checked-in`, `student.checked-out`, `schedule.updated` | staff + student |
+| `payments.{slug}` | `payment.updated`, `fee.updated` | staff + student |
+| `dashboard.{slug}` | `student.registered` | staff |
+| `notifications.{slug}.{userId}` | `notification.sent` | staff + student (canal separado por userId) |
+
+---
 
 | Tipo | Sintaxis | Autenticación | Uso |
 |------|----------|---------------|-----|
