@@ -570,10 +570,11 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
                 setAttendanceHistory(prev => prev.filter(r => !(String(r.student_id) === String(data.studentId) && (r.date || r.created_at?.split('T')[0]) === todayCL())));
                 safeRefresh();
             })
-            .listen('.schedule.updated', () => {
+            .listen('.schedule.updated', (ev: any) => {
+                console.log('[WS] 📅 schedule.updated recibido (staff)', ev);
                 const s = brandingSlugRef.current || branding?.slug || '';
                 const tk = tokenRef.current || '';
-                if (s && tk) getSchedules(s, tk).then(d => setSchedulesList(d?.schedules || []));
+                if (s && tk) getSchedules(s, tk).then(d => { console.log('[WS] 📅 horario recargado (staff)', d?.schedules?.length, 'bloques'); setSchedulesList(d?.schedules || []); });
             });
 
         echo.channel(`payments.${slug}`)

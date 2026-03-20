@@ -176,9 +176,10 @@ export default function StudentDashboard() {
         const attChannel = echo.channel(`attendance.${branding.slug}`);
         attChannel.listen('.student.checked-in', () => refreshDataRef.current());
         attChannel.listen('.student.checked-out', () => refreshDataRef.current());
-        attChannel.listen('.schedule.updated', () => {
+        attChannel.listen('.schedule.updated', (ev: any) => {
+            console.log('[WS] 📅 schedule.updated recibido', ev);
             const slug = localStorage.getItem('tenant_slug') || '';
-            if (slug) getSchedules(slug).then(d => setSchedulesList(d?.schedules ?? []));
+            if (slug) getSchedules(slug).then(d => { console.log('[WS] 📅 horario recargado', d?.schedules?.length, 'bloques'); setSchedulesList(d?.schedules ?? []); });
         });
 
         const payChannel = echo.channel(`payments.${branding.slug}`);
@@ -187,11 +188,12 @@ export default function StudentDashboard() {
             if (!guardianId || String(ev.payerId) === String(guardianId)) refreshDataRef.current();
         });
         payChannel.listen('.fee.updated', (ev: any) => {
+            console.log('[WS] 💰 fee.updated recibido', ev);
             const guardianId = data?.guardian?.id;
             if (!guardianId || String(ev.guardianId) === String(guardianId)) {
                 const slug = localStorage.getItem('tenant_slug') || '';
                 const tk = localStorage.getItem('auth_token') || '';
-                if (slug && tk) getMyFees(slug, tk).then(d => setMyFees(d?.fees ?? []));
+                if (slug && tk) getMyFees(slug, tk).then(d => { console.log('[WS] 💰 fees recargadas', d?.fees?.length); setMyFees(d?.fees ?? []); });
             }
         });
 
