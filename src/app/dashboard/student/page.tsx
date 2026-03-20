@@ -176,13 +176,9 @@ export default function StudentDashboard() {
         const attChannel = echo.channel(`attendance.${branding.slug}`);
         attChannel.listen('.student.checked-in', () => refreshDataRef.current());
         attChannel.listen('.student.checked-out', () => refreshDataRef.current());
-        attChannel.listen('.schedule.updated', (e: any) => {
-            if (e?.schedules) {
-                setSchedulesList(e.schedules);
-            } else {
-                const slug = localStorage.getItem('tenant_slug') || '';
-                if (slug) getSchedules(slug).then(d => setSchedulesList(d?.schedules ?? []));
-            }
+        attChannel.listen('.schedule.updated', () => {
+            const slug = localStorage.getItem('tenant_slug') || '';
+            if (slug) getSchedules(slug).then(d => setSchedulesList(d?.schedules ?? []));
         });
 
         const payChannel = echo.channel(`payments.${branding.slug}`);
@@ -192,8 +188,10 @@ export default function StudentDashboard() {
         });
         payChannel.listen('.fee.updated', (ev: any) => {
             const guardianId = data?.guardian?.id;
-            if (ev?.fees && (!guardianId || String(ev.guardianId) === String(guardianId))) {
-                setMyFees(ev.fees);
+            if (!guardianId || String(ev.guardianId) === String(guardianId)) {
+                const slug = localStorage.getItem('tenant_slug') || '';
+                const tk = localStorage.getItem('auth_token') || '';
+                if (slug && tk) getMyFees(slug, tk).then(d => setMyFees(d?.fees ?? []));
             }
         });
 
