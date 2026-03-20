@@ -62,7 +62,7 @@ export default function LoginPage() {
         setStep("tenant");
       }
     } else {
-      setError("No encontramos una academia asociada a este correo.");
+      setError("No encontramos una cuenta asociada a este correo.");
     }
   };
 
@@ -82,6 +82,15 @@ export default function LoginPage() {
     if (result.token) {
       localStorage.setItem("tenant_id", String(tenant.id));
       localStorage.setItem("tenant_slug", tenant.slug);
+      if (result.tenant) {
+        localStorage.setItem("tenant_industry", result.tenant.industry || "");
+        setBranding({ id: result.tenant.id, slug: result.tenant.slug, name: result.tenant.name, industry: result.tenant.industry, logo: result.tenant.logo, primaryColor: result.tenant.primary_color });
+      }
+      
+      // Persistir otros tenants disponibles si existen
+      if (availableTenants.length > 1) {
+        localStorage.setItem("available_tenants", JSON.stringify(availableTenants));
+      }
       
       if (remember && result.remember_token) {
         localStorage.setItem("remember_token", result.remember_token);

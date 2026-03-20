@@ -52,13 +52,13 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         // Si hay tenantId pero no branding, la página que lo necesite lo pedirá o se quedará el default
     }, []);
 
-    const setBranding = (newBranding: TenantBranding) => {
+    const setBranding = React.useCallback((newBranding: TenantBranding) => {
         setBrandingState(newBranding);
         localStorage.setItem("tenant_branding", JSON.stringify(newBranding));
         if (typeof document !== 'undefined') {
             document.documentElement.style.setProperty('--primary', newBranding.primaryColor);
         }
-    };
+    }, [setBrandingState]);
 
     return (
         <BrandingContext.Provider value={{ branding, setBranding, isLoading }}>
