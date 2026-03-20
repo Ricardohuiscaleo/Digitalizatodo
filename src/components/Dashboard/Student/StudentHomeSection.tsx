@@ -7,7 +7,8 @@ import {
     CheckCircle2, 
     Camera, 
     QrCode, 
-    Loader2 
+    Loader2,
+    CreditCard
 } from "lucide-react";
 import { todayCL } from "@/lib/utils";
 import { TodaySchedule } from "./TodaySchedule";
@@ -203,7 +204,7 @@ export function StudentHomeSection({
 
             {/* Horario del día — school_treasury */}
             {isSchoolTreasury && (
-                <TodaySchedule schedules={schedulesList} primaryColor={primaryColor} vocab={vocab} />
+                <TodaySchedule key={schedulesList.length + schedulesList.map((s:any)=>s.id).join(',')} schedules={schedulesList} primaryColor={primaryColor} vocab={vocab} />
             )}
 
 
