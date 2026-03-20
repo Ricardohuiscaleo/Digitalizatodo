@@ -17,6 +17,7 @@ export function StudentCalendarSection({
     primaryColor,
     isSchoolTreasury
 }: StudentCalendarSectionProps) {
+    console.log('[RENDER] StudentCalendarSection schedulesList[0]:', schedulesList[0]?.subject, schedulesList[0]?.color);
     // school_treasury: mostrar horario de clases
     if (isSchoolTreasury) {
         return (
