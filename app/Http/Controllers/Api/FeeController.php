@@ -195,7 +195,7 @@ class FeeController extends Controller
         }
 
         $guardianId = $validated['guardian_id'];
-        event(new FeeUpdated($tenant->slug, $tenant->id, $guardianId));
+        event(new FeeUpdated($tenant->slug, $guardianId));
 
         return response()->json(['approved' => $payments->count()]);
     }
@@ -347,7 +347,7 @@ class FeeController extends Controller
             }
         }
 
-        event(new FeeUpdated($tenant->slug, $tenant->id, $guardian->id));
+        event(new FeeUpdated($tenant->slug, $guardian->id));
 
         return response()->json(['created' => $created, 'proof_url' => $proofUrl]);
     }

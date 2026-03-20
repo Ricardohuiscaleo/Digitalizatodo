@@ -64,7 +64,7 @@ class ScheduleController extends Controller
                 $schedule->students()->sync($validated['student_ids']);
             }
 
-            event(new ScheduleUpdated($tenant->slug, $tenant->id));
+            event(new ScheduleUpdated($tenant->slug));
             $this->notifyGuardians($tenant, 'Horario actualizado', 'El horario de clases ha sido modificado.');
 
             return response()->json([
@@ -106,7 +106,7 @@ class ScheduleController extends Controller
                 $schedule->students()->sync($validated['student_ids']);
             }
 
-            event(new ScheduleUpdated($tenant->slug, $tenant->id));
+            event(new ScheduleUpdated($tenant->slug));
             $this->notifyGuardians($tenant, 'Horario actualizado', 'El horario de clases ha sido modificado.');
 
             return response()->json([
@@ -123,7 +123,7 @@ class ScheduleController extends Controller
         
         $schedule->delete();
 
-        event(new ScheduleUpdated($tenant->slug, $tenant->id));
+        event(new ScheduleUpdated($tenant->slug));
         $this->notifyGuardians($tenant, 'Horario actualizado', 'El horario de clases ha sido modificado.');
 
         return response()->json([
