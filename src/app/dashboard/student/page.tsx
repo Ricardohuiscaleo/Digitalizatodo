@@ -179,7 +179,8 @@ export default function StudentDashboard() {
         attChannel.listen('.schedule.updated', (ev: any) => {
             console.log('[WS] 📅 schedule.updated recibido', ev);
             const slug = localStorage.getItem('tenant_slug') || '';
-            if (slug) getSchedules(slug).then(d => {
+            const tk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
+            if (slug) getSchedules(slug, tk).then(d => {
                 const newList = d?.schedules ?? [];
                 console.log('[WS] 📅 horario recargado', newList.length, 'bloques');
                 console.log('[WS] 📅 primer bloque:', newList[0]?.subject, newList[0]?.color);
