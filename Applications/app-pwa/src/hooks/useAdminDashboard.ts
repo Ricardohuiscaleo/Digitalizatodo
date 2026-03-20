@@ -533,6 +533,10 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
                     getFees(tenantSlug || '', storedToken || '').then(d => setFeesList(d?.fees || []));
                 }
                 getAppUpdates('staff', profile.tenant?.industry || undefined).then(d => setAppUpdates(d?.updates ?? []));
+                getNotifications(tenantSlug || '', storedToken || '').then(d => {
+                    if (d?.unread !== undefined) setUnreadCount(d.unread);
+                    if (d?.notifications) setNotifications(d.notifications);
+                });
             } else {
                 localStorage.clear();
                 window.location.href = "/";
@@ -581,15 +585,19 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
     }, !!branding?.slug);
 
     useRealtimeChannel(
-        `notifications.${branding?.slug}.${userRef.current?.id}`,
+        `notifications.${branding?.slug}.${user?.id}`,
         {
             'notification.sent': (data: any) => {
                 setToastNotification({ id: data.notificationId, title: data.title, body: data.body, type: data.type });
-                setUnreadCount(c => c + 1);
-                setNotifications(prev => [{ id: data.notificationId, title: data.title, body: data.body, type: data.type, read: false, created_at: 'Ahora' }, ...prev]);
+                const slug = localStorage.getItem('tenant_slug') || '';
+                const tk = localStorage.getItem('staff_token') || localStorage.getItem('auth_token') || '';
+                if (slug && tk) getNotifications(slug, tk).then(d => {
+                    if (d?.unread !== undefined) setUnreadCount(d.unread);
+                    if (d?.notifications) setNotifications(d.notifications);
+                });
             },
         },
-        !!branding?.slug && !!userRef.current?.id
+        !!branding?.slug && !!user?.id
     );
 
     const formatMoney = (amount: number) => {

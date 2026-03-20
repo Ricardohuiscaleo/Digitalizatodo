@@ -411,6 +411,7 @@ return [
 | `EMITTED` pero nada llega | Laravel apunta a host incorrecto | Verificar `broadcasting.php` usa `127.0.0.1` |
 | Reverb no responde | Supervisord no lo inició | Verificar logs de supervisor |
 | Eventos llegan duplicados | Múltiples subscriptions | Limpiar listeners en useEffect cleanup |
+| Badge notificaciones siempre muestra 1 | Ver sección "Anti-patrones de contador" abajo | Fetch desde DB al recibir evento |
 
 ### Logs Útiles
 
@@ -422,6 +423,55 @@ docker exec -it <container> cat /var/log/supervisor/reverb.err.log
 # Estado de supervisord
 docker exec -it <container> supervisorctl status
 ```
+
+---
+
+## Anti-patrones de Contador (Notificaciones)
+
+### ❌ `setUnreadCount(c => c + 1)` en handler WS
+El contador local se desincroniza cuando `refreshData()` (disparado por otros canales) sobreescribe el estado con el valor de la DB, que puede ser menor si el fetch llega antes del commit de la notificación.
+
+```typescript
+// ❌ MAL — se desincroniza con refreshData
+'notification.sent': (ev) => {
+    setUnreadCount(c => c + 1); // refreshData() puede pisarlo con un valor menor
+}
+
+// ✅ BIEN — fetch desde DB garantiza count exacto
+'notification.sent': (ev) => {
+    setToastNotification(...);
+    const slug = localStorage.getItem('tenant_slug') || '';
+    const tk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
+    if (slug && tk) getNotifications(slug, tk).then(d => {
+        if (d?.unread !== undefined) setUnreadCount(d.unread);
+        if (d?.notifications) setNotifications(d.notifications);
+    });
+}
+```
+
+### ❌ Usar `ref.current` en `channelName` de `useRealtimeChannel`
+El hook depende de `channelName` como string para re-suscribirse. Si se construye con `ref.current?.id`, cuando el valor de la ref cambia (ej: después del fetch del perfil), el `channelName` no cambia reactivamente → el canal queda como `notifications.slug.undefined` y nunca recibe eventos.
+
+```typescript
+// ❌ MAL — ref no es reactiva, el canal queda como notifications.slug.undefined
+useRealtimeChannel(
+    `notifications.${branding?.slug}.${userRef.current?.id}`,
+    { ... },
+    !!branding?.slug && !!userRef.current?.id  // siempre false al inicio
+);
+
+// ✅ BIEN — estado es reactivo, el hook re-suscribe cuando user?.id llega
+useRealtimeChannel(
+    `notifications.${branding?.slug}.${user?.id}`,
+    { ... },
+    !!branding?.slug && !!user?.id
+);
+```
+
+### Regla general para canales con IDs dinámicos
+- Usar **estado** (`useState`) en el `channelName`, nunca refs
+- El `enabled` flag debe depender del mismo estado para que la suscripción ocurra cuando el dato esté disponible
+- Cargar el `unreadCount` inicial desde la DB en el `init()` (no asumir que empieza en 0)
 
 ---
 
