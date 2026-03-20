@@ -204,7 +204,7 @@ export function StudentHomeSection({
 
             {/* Horario del día — school_treasury */}
             {isSchoolTreasury && (
-                <TodaySchedule key={schedulesList.length + schedulesList.map((s:any)=>s.id).join(',')} schedules={schedulesList} primaryColor={primaryColor} vocab={vocab} />
+                <TodaySchedule key={schedulesList.map((s:any)=>`${s.id}-${s.subject}-${s.color}`).join(',')} schedules={schedulesList} primaryColor={primaryColor} vocab={vocab} />
             )}
 
 
