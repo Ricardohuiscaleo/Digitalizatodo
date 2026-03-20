@@ -503,10 +503,11 @@ export async function markAllNotificationsRead(tenantId: string, token: string) 
 
 // ─── App Updates ─────────────────────────────────────────────────────────────
 
-export async function getAppUpdates(target?: 'staff' | 'student') {
+export async function getAppUpdates(target?: 'staff' | 'student', industry?: string) {
     try {
         const url = new URL(`${API_URL}/app-updates`);
         if (target) url.searchParams.append('target', target);
+        if (industry) url.searchParams.append('industry', industry);
         const response = await fetch(url.toString(), {
             method: 'GET',
             cache: 'no-store' as RequestCache,
