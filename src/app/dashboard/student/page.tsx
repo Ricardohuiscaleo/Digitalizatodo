@@ -200,8 +200,13 @@ export default function StudentDashboard() {
         {
             'notification.sent': (ev) => {
                 setToastNotification({ id: ev.notificationId, title: ev.title, body: ev.body, type: ev.type });
-                setUnreadCount(c => c + 1);
                 setNotifications(prev => [{ id: ev.notificationId, title: ev.title, body: ev.body, type: ev.type, read: false, created_at: 'Ahora' }, ...prev]);
+                const slug = localStorage.getItem('tenant_slug') || '';
+                const tk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
+                if (slug && tk) getNotifications(slug, tk).then(d => {
+                    if (d?.unread !== undefined) setUnreadCount(d.unread);
+                    if (d?.notifications) setNotifications(d.notifications);
+                });
             },
         },
         !!branding?.slug && !!data?.guardian?.id
