@@ -217,6 +217,50 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
 
     const slots = timeSlots(schedules);
 
+    const toMins = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+    const durationLabel = (start: string, end: string) => {
+        const mins = toMins(end) - toMins(start);
+        if (mins <= 0) return null;
+        const h = Math.floor(mins / 60), m = mins % 60;
+        if (h === 0) return `${m} min`;
+        if (m === 0) return `${h} hora${h > 1 ? 's' : ''}`;
+        return `${h}h ${m}min`;
+    };
+
+    // Agrupar + recreos para un día dado
+    const buildDayItems = (dayIdx: number) => {
+        const daySched = slots
+            .map(slot => ({ slot, cell: getCell(dayIdx, slot) }))
+            .filter(({ cell }) => cell?.subject);
+        type ClassItem = { type: 'class'; slot: string; cell: ScheduleEntry; dur: string | null };
+        type BreakItem = { type: 'break'; start: string; end: string; dur: string };
+        const grouped: ClassItem[] = [];
+        for (const { slot, cell } of daySched) {
+            const last = grouped[grouped.length - 1];
+            const start = fmtTime(slot.split('|')[0]);
+            const end = fmtTime(slot.split('|')[1]);
+            if (last && last.cell.subject === cell!.subject && fmtTime(last.cell.end_time) === start) {
+                (last.cell as any)._end = end;
+            } else {
+                grouped.push({ type: 'class', slot, cell: { ...cell!, _end: end } as any, dur: null });
+            }
+        }
+        // Calcular duración y armar lista con recreos
+        const items: (ClassItem | BreakItem)[] = [];
+        grouped.forEach((g, i) => {
+            const start = fmtTime(g.slot.split('|')[0]);
+            const end = (g.cell as any)._end || fmtTime(g.slot.split('|')[1]);
+            g.dur = durationLabel(start, end);
+            if (i > 0) {
+                const prevEnd = (grouped[i-1].cell as any)._end || fmtTime(grouped[i-1].slot.split('|')[1]);
+                const gap = toMins(start) - toMins(prevEnd);
+                if (gap > 0) items.push({ type: 'break', start: prevEnd, end: start, dur: durationLabel(prevEnd, start) || '' });
+            }
+            items.push({ ...g, _start: start, _end: end } as any);
+        });
+        return items;
+    };
+
     const getCell = (day: number, slot: string) => {
         const [start, end] = slot.split("|");
         return schedules.find(s => s.day_of_week === day && s.start_time === start && s.end_time === end);
@@ -355,42 +399,67 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
                     ) : (
                         DAYS.map((dayName, i) => {
                             const dayIdx = DAY_INDEX[i];
-                            const dayCells = slots.map(slot => ({ slot, cell: getCell(dayIdx, slot) }));
+                            const items = buildDayItems(dayIdx);
+                            const allEmpty = slots.every(slot => !getCell(dayIdx, slot)?.subject);
                             return (
                                 <div key={dayName}>
                                     <div className="bg-zinc-800 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl inline-block mb-2">
                                         {dayName}
                                     </div>
                                     <div className="space-y-1.5">
-                                        {dayCells.map(({ slot, cell }) => (
+                                        {allEmpty && editable && slots.map(slot => (
                                             <div
                                                 key={slot}
-                                                onClick={() => editable && setModalCell({ day: dayIdx, slot })}
-                                                className={`flex items-center gap-3 rounded-2xl px-4 py-3 border ${
-                                                    editable ? "cursor-pointer active:scale-[0.98] transition-transform" : ""
-                                                } ${
-                                                    cell?.subject ? "shadow-sm border-transparent" : "border-dashed border-zinc-200 bg-zinc-50"
-                                                }`}
-                                                style={cell?.subject ? getColorStyle(cell.color) : {}}
+                                                onClick={() => setModalCell({ day: dayIdx, slot })}
+                                                className="flex items-center gap-3 rounded-2xl px-4 py-3 border border-dashed border-zinc-200 bg-zinc-50 cursor-pointer active:scale-[0.98] transition-transform"
                                             >
                                                 <div className="flex flex-col items-center shrink-0 w-10">
-                                                    <span className="text-[10px] font-black leading-none" style={{ opacity: cell?.subject ? 0.8 : 1, color: cell?.subject ? undefined : '#a1a1aa' }}>{fmtTime(slot.split("|")[0])}</span>
-                                                    <div className="w-px h-3 my-0.5" style={{ backgroundColor: cell?.subject ? "currentColor" : "#d4d4d8", opacity: 0.3 }} />
-                                                    <span className="text-[10px] font-black leading-none" style={{ opacity: cell?.subject ? 0.6 : 1, color: cell?.subject ? undefined : '#a1a1aa' }}>{fmtTime(slot.split("|")[1])}</span>
+                                                    <span className="text-[10px] font-black leading-none text-zinc-400">{fmtTime(slot.split('|')[0])}</span>
+                                                    <div className="w-px h-3 my-0.5 bg-zinc-300 opacity-30" />
+                                                    <span className="text-[10px] font-black leading-none text-zinc-400">{fmtTime(slot.split('|')[1])}</span>
                                                 </div>
-                                                <div className="flex-1 min-w-0">
-                                                    {cell?.subject ? (
-                                                        <p className="text-sm font-black uppercase truncate">{cell.subject}</p>
-                                                    ) : (
-                                                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300">
-                                                            {editable ? "Toca para agregar" : "Libre"}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                                {editable && cell?.subject && <Edit2 size={14} style={{ opacity: 0.5 }} className="shrink-0" />}
-                                                {editable && !cell?.subject && <Plus size={14} className="text-zinc-300 shrink-0" />}
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Toca para agregar</p>
+                                                <Plus size={14} className="text-zinc-300 shrink-0 ml-auto" />
                                             </div>
                                         ))}
+                                        {items.map((item: any, idx: number) => {
+                                            if (item.type === 'break') return (
+                                                <div key={`break-${idx}`} className="flex items-center gap-3 px-4 py-1.5 mx-1">
+                                                    <div className="flex flex-col items-center shrink-0 w-10">
+                                                        <span className="text-[9px] font-bold text-zinc-500 leading-none">{item.start}</span>
+                                                    </div>
+                                                    <div className="flex-1 flex items-center gap-2">
+                                                        <div className="flex-1 h-px bg-zinc-300" />
+                                                        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">🍎🧃 {item.dur}</span>
+                                                        <div className="flex-1 h-px bg-zinc-300" />
+                                                    </div>
+                                                </div>
+                                            );
+                                            const cell = item.cell;
+                                            const start = item._start || fmtTime(item.slot.split('|')[0]);
+                                            const end = item._end || fmtTime(item.slot.split('|')[1]);
+                                            return (
+                                                <div
+                                                    key={item.slot}
+                                                    onClick={() => editable && setModalCell({ day: dayIdx, slot: item.slot })}
+                                                    className={`flex items-center gap-3 rounded-2xl px-4 py-3 shadow-sm ${
+                                                        editable ? 'cursor-pointer active:scale-[0.98] transition-transform' : ''
+                                                    }`}
+                                                    style={getColorStyle(cell.color)}
+                                                >
+                                                    <div className="flex flex-col items-center shrink-0 w-10">
+                                                        <span className="text-[10px] font-black leading-none opacity-80">{start}</span>
+                                                        <div className="w-px h-3 my-0.5" style={{ backgroundColor: 'currentColor', opacity: 0.3 }} />
+                                                        <span className="text-[10px] font-black leading-none opacity-60">{end}</span>
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-black uppercase truncate">{cell.subject}</p>
+                                                        {item.dur && <p className="text-[9px] font-bold opacity-60 mt-0.5">{item.dur}</p>}
+                                                    </div>
+                                                    {editable && <Edit2 size={14} style={{ opacity: 0.5 }} className="shrink-0" />}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             );
