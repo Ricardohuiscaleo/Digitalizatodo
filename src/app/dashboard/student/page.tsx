@@ -184,9 +184,11 @@ export default function StudentDashboard() {
                 console.log('[WS] 📅 horario recargado', newList.length, 'bloques');
                 console.log('[WS] 📅 primer bloque:', newList[0]?.subject, newList[0]?.color);
                 setSchedulesList(prev => {
-                    console.log('[WS] 📅 prev bloques:', prev.length, '→ new:', newList.length);
-                    console.log('[WS] 📅 key prev:', prev.map((s:any)=>`${s.id}-${s.subject}-${s.color}`).join(',').slice(0,80));
-                    console.log('[WS] 📅 key new: ', newList.map((s:any)=>`${s.id}-${s.subject}-${s.color}`).join(',').slice(0,80));
+                    const kPrev = prev.map((s:any)=>`${s.id}-${s.subject}-${s.color}`).join(',');
+                    const kNew  = newList.map((s:any)=>`${s.id}-${s.subject}-${s.color}`).join(',');
+                    console.log('[WS] 📅 keys iguales:', kPrev === kNew);
+                    if (kPrev !== kNew) console.log('[WS] 📅 DIFF detectado ✅');
+                    else console.log('[WS] 📅 SIN DIFF — API devuelve datos viejos ❌');
                     return newList;
                 });
             });
