@@ -30,6 +30,7 @@ import {
     createExpense,
     deleteExpense,
     getSchedules,
+    getPlans,
     resumeSession
 } from "@/lib/api";
 
@@ -502,7 +503,19 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
             if (profile) {
                 if (profile.user_type === 'guardian') { window.location.href = '/dashboard/student'; return; }
                 setUser({ ...profile, tenant_id: profile.tenant_id || tenantId, tenant_slug: profile.tenant?.slug || tenantSlug });
-                if (profile.tenant?.data?.pricing) setPrices(profile.tenant.data.pricing.prices || profile.tenant.data.pricing);
+                // Cargar precios desde plans (fuente de verdad)
+                const plansData = await getPlans(tenantSlug || '', storedToken || '');
+                if (Array.isArray(plansData) && plansData.length > 0) {
+                    const kids = plansData.find((p: any) => p.name?.toLowerCase().includes('kid') || p.description?.toLowerCase().includes('kid'));
+                    const adult = plansData.find((p: any) => p.name?.toLowerCase().includes('adult') || p.description?.toLowerCase().includes('adult'));
+                    setPrices((prev: any) => ({
+                        ...prev,
+                        cat1: kids ? Number(kids.price) : prev.cat1,
+                        cat2: adult ? Number(adult.price) : prev.cat2,
+                    }));
+                } else if (profile.tenant?.data?.pricing) {
+                    setPrices(profile.tenant.data.pricing.prices || profile.tenant.data.pricing);
+                }
                 if (profile.tenant?.data?.bank_info) setBankData(profile.tenant.data.bank_info);
                 if (profile.tenant) {
                     localStorage.setItem('tenant_industry', profile.tenant.industry || '');

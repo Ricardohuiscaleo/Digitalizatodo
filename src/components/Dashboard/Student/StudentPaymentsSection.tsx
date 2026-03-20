@@ -32,6 +32,7 @@ interface StudentPaymentsSectionProps {
     handleBulkUploadProof: (file: File) => void;
     paymentHistory: any[];
     vocab: any;
+    isSchoolTreasury?: boolean;
 }
 
 export function StudentPaymentsSection({
@@ -54,13 +55,15 @@ export function StudentPaymentsSection({
     setConfirmDelete,
     handleBulkUploadProof,
     paymentHistory,
-    vocab
+    vocab,
+    isSchoolTreasury
 }: StudentPaymentsSectionProps) {
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-            <h2 className="text-2xl font-black text-zinc-900">Pagos</h2>
+            <h2 className="text-2xl font-black text-zinc-900">{isSchoolTreasury ? 'Cuotas' : 'Pagos'}</h2>
             
-            {/* Tabs Selector */}
+            {/* Tabs — ocultar Historial en school_treasury (las cuotas tienen su propio historial en la rendición) */}
+            {!isSchoolTreasury && (
             <div className="flex bg-zinc-100 p-1.5 rounded-[2.2rem] gap-1 shadow-inner">
                 <button 
                     onClick={() => setPaymentTab("pending")}
@@ -79,6 +82,7 @@ export function StudentPaymentsSection({
                     Historial
                 </button>
             </div>
+            )}
             
             {paymentTab === "pending" ? (
                 <div className="space-y-6 animate-in fade-in duration-300">

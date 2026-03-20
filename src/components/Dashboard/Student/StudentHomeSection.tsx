@@ -2,8 +2,6 @@
 
 import React from "react";
 import { 
-    User, 
-    CreditCard, 
     RefreshCw, 
     ChevronRight, 
     CheckCircle2, 
@@ -55,28 +53,26 @@ export function StudentHomeSection({
     vocab
 }: StudentHomeSectionProps) {
     const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const formatCategory = (cat: string) => {
+        if (!cat) return '';
+        const lower = cat.toLowerCase();
+        if (lower === 'prekinder') return 'Pre-Kinder';
+        if (lower === 'kinder') return 'Kinder';
+        const match = cat.match(/^(\d+)_(.+)$/);
+        if (match) return `${match[1]}° ${match[2].charAt(0).toUpperCase() + match[2].slice(1).toLowerCase()}`;
+        return cat.replace(/_/g, ' ');
+    };
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header Mini */}
-            <div className="flex items-center justify-between mb-4">
-                <div>
-                    <h1 className="text-2xl font-black text-zinc-900 leading-tight">Hola, {guardian.name.split(' ')[0]}</h1>
-                    <p className="text-[11px] font-bold text-zinc-500 mt-1">{isSchoolTreasury ? 'Gestiona tus cuotas y pagos del colegio 😊' : `Gestiona tu asistencia en el ${vocab.placeLabel} 😊`}</p>
-                </div>
-                <div className="w-14 h-14 bg-white rounded-full border-2 border-zinc-50 shadow-md flex items-center justify-center overflow-hidden shrink-0 relative p-0.5">
-                    {branding?.logo ? (
-                        <img src={branding.logo} className="w-full h-full object-cover rounded-full" />
-                    ) : (
-                        <div className="w-full h-full bg-zinc-50 flex items-center justify-center">
-                            <User className="text-zinc-200 w-6 h-6" />
-                        </div>
-                    )}
-                </div>
+            <div className="mb-4">
+                <h1 className="text-2xl font-black text-zinc-900 leading-tight">Hola, {guardian.name.split(' ')[0]}</h1>
+                <p className="text-[11px] font-bold text-zinc-500 mt-1">{isSchoolTreasury ? `Gestiona tus cuotas y pagos del ${vocab.placeLabel.toLowerCase()} 😊` : `Gestiona tu asistencia en el ${vocab.placeLabel} 😊`}</p>
             </div>
 
             {/* Deuda / Status Card — solo para academias con mensualidades */}
-            {branding?.industry !== 'school_treasury' && (totalDueOrReview ? (
+            {!isSchoolTreasury && (totalDueOrReview ? (
                 hasPendingReview ? (
                     /* ESTADO 2: EN REVISIÓN (AMARILLO/NARANJA) */
                     <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-[2.5rem] p-6 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden group">
@@ -125,7 +121,7 @@ export function StudentHomeSection({
             ))}
 
             {/* Status cuotas — school_treasury */}
-            {branding?.industry === 'school_treasury' && (() => {
+            {isSchoolTreasury && (() => {
                 const today = new Date();
                 const allPeriods = myFees.flatMap((fd: any) => fd.periods || []);
                 const hasReview  = allPeriods.some((p: any) => p.status === 'review');
@@ -140,60 +136,80 @@ export function StudentHomeSection({
                 ).sort((a: any, b: any) => a.year !== b.year ? a.year - b.year : a.month - b.month)[0];
 
                 // 1. Amarillo: comprobante en revisión
+                const student = students[0];
+                const StudentAvatar = () => student ? (
+                    <div className="shrink-0">
+                        <div className="w-24 h-24 rounded-full overflow-hidden bg-white/20 border-2 border-white/30">
+                            {student.photo
+                                ? <img src={student.photo} className="w-full h-full object-cover" alt="" />
+                                : <div className="w-full h-full flex items-center justify-center text-white font-black text-2xl">{student.name[0]}</div>
+                            }
+                        </div>
+                    </div>
+                ) : null;
+
                 if (hasReview) return (
-                    <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-[2.5rem] p-5 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden">
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-2 mb-1">
-                                <RefreshCw size={11} className="animate-[spin_3s_linear_infinite]" />
-                                <p className="text-[10px] font-black uppercase tracking-widest opacity-90">Comprobante en revisión</p>
+                    <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-[2rem] p-5 text-white shadow-xl shadow-orange-500/20">
+                        <div className="flex items-center gap-4">
+                            <StudentAvatar />
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 mb-1">
+                                    <RefreshCw size={10} className="animate-[spin_3s_linear_infinite] opacity-80" />
+                                    <p className="text-[9px] font-black uppercase tracking-widest opacity-80">En revisión</p>
+                                </div>
+                                <h2 className="text-lg font-black leading-tight mb-0.5">Pago enviado</h2>
+                                <p className="text-[10px] opacity-70 mb-3">Te avisamos cuando sea aprobado 🔔</p>
+                                <button onClick={() => setActiveSection('payments')} className="bg-white/20 border border-white/30 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5">
+                                    Ver cuotas <ChevronRight size={11} />
+                                </button>
                             </div>
-                            <h2 className="text-xl font-black mb-1">Pago enviado</h2>
-                            <p className="text-xs opacity-80 mb-3">Te notificaremos cuando sea aprobado 🔔</p>
-                            <button onClick={() => setActiveSection('payments')} className="bg-white/20 border border-white/30 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2">
-                                Ver cuotas <ChevronRight size={13} />
-                            </button>
                         </div>
-                        <CreditCard className="absolute -right-4 -bottom-4 w-28 h-28 opacity-10 -rotate-12" />
                     </div>
                 );
-                // 2. Rojo: cuota vencida sin pagar (moroso)
                 if (hasOverdue && nextPending) return (
-                    <div className="bg-gradient-to-br from-red-500 to-orange-600 rounded-[2.5rem] p-5 text-white shadow-xl shadow-red-500/20 relative overflow-hidden">
-                        <div className="relative z-10">
-                            <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Cuota vencida</p>
-                            <h2 className="text-2xl font-black mb-0.5">${Number(nextPending.amount).toLocaleString('es-CL')}</h2>
-                            <p className="text-xs opacity-70 mb-3">{nextPending.title} · {MONTHS[nextPending.month - 1]} {nextPending.year}</p>
-                            <button onClick={() => setActiveSection('payments')} className="bg-white/20 border border-white/30 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2">
-                                Pagar ahora <ChevronRight size={13} />
-                            </button>
+                    <div className="bg-gradient-to-br from-red-500 to-orange-600 rounded-[2rem] p-5 text-white shadow-xl shadow-red-500/20 relative">
+                        <button onClick={() => setActiveSection('payments')} className="absolute bottom-4 right-4 text-[10px] font-black opacity-80">Pagar 👉🏻</button>
+                        <div className="flex items-center gap-4">
+                            <StudentAvatar />
+                            <div className="flex-1 min-w-0">
+                                {student && <>
+                                    <p className="font-black opacity-90 leading-tight" style={{ fontSize: 'clamp(0.65rem, 3.5vw, 0.875rem)' }}>{student.name}</p>
+                                    {student.category && <p className="text-[10px] opacity-70 mb-0.5">{formatCategory(student.category)}</p>}
+                                </>}
+                                <p className="text-[9px] font-black uppercase tracking-widest opacity-80 mb-0.5">Cuota vencida</p>
+                                <h2 className="text-2xl font-black leading-tight">${Number(nextPending.amount).toLocaleString('es-CL')}</h2>
+                                <p className="text-[10px] opacity-70">{nextPending.title} · {MONTHS[nextPending.month - 1]} {nextPending.year}</p>
+                            </div>
                         </div>
-                        <CreditCard className="absolute -right-4 -bottom-4 w-28 h-28 opacity-10 -rotate-12" />
                     </div>
                 );
-                // 3. Verde: al día o pendiente no vencido
                 return (
-                    <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-[2.5rem] p-5 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden">
-                        <div className="relative z-10">
-                            <CheckCircle2 className="w-7 h-7 mb-2" />
-                            <h2 className="text-xl font-black">¡Estás al día!</h2>
-                            {nextPending ? (
-                                <p className="text-xs opacity-80 mt-1">Próximo vencimiento: {MONTHS[nextPending.month - 1]} {nextPending.year} · ${Number(nextPending.amount).toLocaleString('es-CL')}</p>
-                            ) : (
-                                <p className="text-xs opacity-80 mt-1">No tienes cuotas pendientes.</p>
-                            )}
+                    <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-[2rem] p-5 text-white shadow-xl shadow-emerald-500/20">
+                        <div className="flex items-center gap-4">
+                            <StudentAvatar />
+                            <div className="flex-1 min-w-0">
+                                <CheckCircle2 className="w-6 h-6 mb-1.5" />
+                                <h2 className="text-lg font-black leading-tight">¡Estás al día!</h2>
+                                {nextPending ? (
+                                    <p className="text-[10px] opacity-70 mt-1">Próx. venc: {MONTHS[nextPending.month - 1]} {nextPending.year} · ${Number(nextPending.amount).toLocaleString('es-CL')}</p>
+                                ) : (
+                                    <p className="text-[10px] opacity-70 mt-1">No tienes cuotas pendientes.</p>
+                                )}
+                            </div>
                         </div>
-                        <CreditCard className="absolute -right-4 -bottom-4 w-28 h-28 opacity-5 -rotate-12" />
                     </div>
                 );
             })()}
 
             {/* Horario del día — school_treasury */}
-            {branding?.industry === 'school_treasury' && (
-                <TodaySchedule schedules={schedulesList} primaryColor={primaryColor} />
+            {isSchoolTreasury && (
+                <TodaySchedule schedules={schedulesList} primaryColor={primaryColor} vocab={vocab} />
             )}
 
-            {/* Mis Alumnos Cards */}
-            {branding?.industry !== 'school_treasury' && (
+
+
+            {/* Mis Alumnos Cards — otras industrias con QR */}
+            {!isSchoolTreasury && (
             <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-1">
                     <div className="w-1 h-4 bg-orange-500 rounded-full" />
@@ -210,7 +226,7 @@ export function StudentHomeSection({
                         className={`bg-white rounded-[2.5rem] p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition-all border-2 ${isPresentToday ? 'border-emerald-400 shadow-emerald-50' : 'border-zinc-100'}`}
                     >
                         <div className="flex items-center gap-4 relative z-10">
-                            <button 
+                            <button
                                 type="button"
                                 className={`w-16 h-16 rounded-full overflow-hidden bg-zinc-100 shadow-md shrink-0 relative cursor-pointer z-30 active:scale-95 transition-transform touch-none border-2 ${isPresentToday ? 'border-emerald-400' : 'border-zinc-50'}`}
                                 onClick={(e) => {
@@ -249,7 +265,7 @@ export function StudentHomeSection({
                                 )}
                             </div>
                             <div className="flex items-center gap-3">
-                                <button 
+                                <button
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setActiveScanner(student.id);
