@@ -10,6 +10,12 @@ interface StudentCalendarSectionProps {
     isSchoolTreasury?: boolean;
 }
 
+export function StudentCalendarSection({
+    branding,
+    schedulesList,
+    students,
+    primaryColor,
+    isSchoolTreasury
 }: StudentCalendarSectionProps) {
     // school_treasury: mostrar horario de clases
     if (isSchoolTreasury) {
