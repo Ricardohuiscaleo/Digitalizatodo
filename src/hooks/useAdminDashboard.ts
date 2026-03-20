@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { getEcho, reconnect } from '@/lib/echo';
+import { getEcho } from '@/lib/echo';
+import { useRealtimeChannel, useRealtimeVisibility } from '@/hooks/useRealtimeChannel';
 import { todayCL, nowCL } from '@/lib/utils';
 import { unlockAudio, setAppBadge } from "@/lib/audio";
 import { subscribeToPush } from "@/lib/push";
@@ -542,72 +543,54 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
     }, [setBranding]);
 
     // WebSockets
-    useEffect(() => {
-        if (!branding?.slug) return;
-        const echo = getEcho();
-        if (!echo) return;
+    useRealtimeVisibility(() => refreshPayers());
 
-        const slug = branding.slug;
-        const safeRefresh = () => refreshPayers();
+    useRealtimeChannel(`attendance.${branding?.slug}`, {
+        'student.checked-in': (data: any) => {
+            setAttendance(prev => new Set(prev).add(String(data.studentId)));
+            setLastCheckedInStudent({ ...data, _ts: Date.now() });
+            setAttendanceHistory(prev => [{
+                id: `ws-${Date.now()}`,
+                student_id: data.studentId,
+                student: { id: data.studentId, name: data.studentName || 'Alumno', photo: data.studentPhoto },
+                date: todayCL(),
+                status: 'present',
+                created_at: new Date().toISOString(),
+                registration_method: 'qr',
+            }, ...prev]);
+            refreshPayers();
+        },
+        'student.checked-out': (data: any) => {
+            setAttendance(prev => { const next = new Set(prev); next.delete(String(data.studentId)); return next; });
+            setAttendanceHistory(prev => prev.filter(r => !(String(r.student_id) === String(data.studentId) && (r.date || r.created_at?.split('T')[0]) === todayCL())));
+            refreshPayers();
+        },
+        'schedule.updated': () => {
+            const s = brandingSlugRef.current || '';
+            const tk = tokenRef.current || '';
+            if (s && tk) getSchedules(s, tk).then(d => setSchedulesList(d?.schedules || []));
+        },
+    }, !!branding?.slug);
 
-        echo.channel(`attendance.${slug}`)
-            .listen('.student.checked-in', (data: any) => {
-                setAttendance(prev => new Set(prev).add(String(data.studentId)));
-                setLastCheckedInStudent({ ...data, _ts: Date.now() });
-                setAttendanceHistory(prev => [{
-                    id: `ws-${Date.now()}`,
-                    student_id: data.studentId,
-                    student: { id: data.studentId, name: data.studentName || 'Alumno', photo: data.studentPhoto },
-                    date: todayCL(),
-                    status: 'present',
-                    created_at: new Date().toISOString(),
-                    registration_method: 'qr',
-                }, ...prev]);
-                safeRefresh();
-            })
-            .listen('.student.checked-out', (data: any) => {
-                setAttendance(prev => { const next = new Set(prev); next.delete(String(data.studentId)); return next; });
-                setAttendanceHistory(prev => prev.filter(r => !(String(r.student_id) === String(data.studentId) && (r.date || r.created_at?.split('T')[0]) === todayCL())));
-                safeRefresh();
-            })
-            .listen('.schedule.updated', (ev: any) => {
-                console.log('[WS] 📅 schedule.updated recibido (staff)', ev);
-                const s = brandingSlugRef.current || branding?.slug || '';
-                const tk = tokenRef.current || '';
-                if (s && tk) getSchedules(s, tk).then(d => { console.log('[WS] 📅 horario recargado (staff)', d?.schedules?.length, 'bloques'); setSchedulesList(d?.schedules || []); });
-            });
+    useRealtimeChannel(`payments.${branding?.slug}`, {
+        'payment.updated': () => refreshPayers(),
+    }, !!branding?.slug);
 
-        echo.channel(`payments.${slug}`)
-            .listen('.payment.updated', () => { safeRefresh(); });
-        
-        echo.channel(`dashboard.${slug}`)
-            .listen('.student.registered', () => { safeRefresh(); });
+    useRealtimeChannel(`dashboard.${branding?.slug}`, {
+        'student.registered': () => refreshPayers(),
+    }, !!branding?.slug);
 
-        if (userRef.current?.id) {
-            echo.channel(`notifications.${slug}.${userRef.current.id}`)
-                .listen('.notification.sent', (data: any) => {
-                    setToastNotification({ id: data.notificationId, title: data.title, body: data.body, type: data.type });
-                    setUnreadCount(c => c + 1);
-                    setNotifications(prev => [{ id: data.notificationId, title: data.title, body: data.body, type: data.type, read: false, created_at: 'Ahora' }, ...prev]);
-                });
-        }
-
-        const handleVisibility = () => {
-            if (document.visibilityState === 'visible') {
-                reconnect();
-                safeRefresh();
-            }
-        };
-        document.addEventListener('visibilitychange', handleVisibility);
-
-        return () => {
-            document.removeEventListener('visibilitychange', handleVisibility);
-            echo.leaveChannel(`attendance.${slug}`);
-            echo.leaveChannel(`payments.${slug}`);
-            echo.leaveChannel(`dashboard.${slug}`);
-            if (userRef.current?.id) echo.leaveChannel(`notifications.${slug}.${userRef.current.id}`);
-        };
-    }, [branding?.slug, refreshPayers]);
+    useRealtimeChannel(
+        `notifications.${branding?.slug}.${userRef.current?.id}`,
+        {
+            'notification.sent': (data: any) => {
+                setToastNotification({ id: data.notificationId, title: data.title, body: data.body, type: data.type });
+                setUnreadCount(c => c + 1);
+                setNotifications(prev => [{ id: data.notificationId, title: data.title, body: data.body, type: data.type, read: false, created_at: 'Ahora' }, ...prev]);
+            },
+        },
+        !!branding?.slug && !!userRef.current?.id
+    );
 
     const formatMoney = (amount: number) => {
         return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(amount);

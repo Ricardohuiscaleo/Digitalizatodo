@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Bell, Camera, Loader2 } from "lucide-react";
+import { Bell, Camera, Loader2, Calendar, FileText, Users, Backpack, CreditCard, Zap, X } from "lucide-react";
 import { useBranding } from "@/context/BrandingContext";
 import NotificationToast from "@/components/Notifications/NotificationToast";
 import { StudentQRScanner } from "@/components/Dashboard/Student/StudentQRScanner";
@@ -27,7 +27,8 @@ import {
 } from "@/lib/api";
 import { nowCL } from "@/lib/utils";
 import BottomNav, { NavSection } from "@/components/Navigation/BottomNav";
-import { getEcho, reconnect } from "@/lib/echo";
+import { getEcho } from "@/lib/echo";
+import { useRealtimeChannel, useRealtimeVisibility } from "@/hooks/useRealtimeChannel";
 import { unlockAudio, setAppBadge } from "@/lib/audio";
 import { subscribeToPush } from "@/lib/push";
 import { industryConfig } from "@/lib/constants";
@@ -167,65 +168,44 @@ export default function StudentDashboard() {
     refreshDataRef.current = refreshData;
 
     // ─── WebSockets ───
-    useEffect(() => {
-        const key = process.env.NEXT_PUBLIC_REVERB_APP_KEY;
-        if (!key || !branding?.slug) return;
-        const echo = getEcho();
-        if (!echo) return;
+    useRealtimeVisibility(() => refreshDataRef.current());
 
-        const attChannel = echo.channel(`attendance.${branding.slug}`);
-        attChannel.listen('.student.checked-in', () => refreshDataRef.current());
-        attChannel.listen('.student.checked-out', () => refreshDataRef.current());
-        attChannel.listen('.schedule.updated', () => {
+    useRealtimeChannel(`attendance.${branding?.slug}`, {
+        'student.checked-in': () => refreshDataRef.current(),
+        'student.checked-out': () => refreshDataRef.current(),
+        'schedule.updated': () => {
             const slug = localStorage.getItem('tenant_slug') || '';
             const tk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
             if (slug) getSchedules(slug, tk).then(d => setSchedulesList(d?.schedules ?? []));
-        });
+        },
+    }, !!branding?.slug);
 
-        const payChannel = echo.channel(`payments.${branding.slug}`);
-        payChannel.listen('.payment.updated', (ev: any) => {
+    useRealtimeChannel(`payments.${branding?.slug}`, {
+        'payment.updated': (ev) => {
             const guardianId = data?.guardian?.id;
             if (!guardianId || String(ev.payerId) === String(guardianId)) refreshDataRef.current();
-        });
-        payChannel.listen('.fee.updated', (ev: any) => {
+        },
+        'fee.updated': (ev) => {
             const guardianId = data?.guardian?.id;
             if (!guardianId || String(ev.guardianId) === String(guardianId)) {
                 const slug = localStorage.getItem('tenant_slug') || '';
                 const tk = localStorage.getItem('auth_token') || '';
                 if (slug && tk) getMyFees(slug, tk).then(d => setMyFees(d?.fees ?? []));
             }
-        });
+        },
+    }, !!branding?.slug);
 
-        const handleVisibility = () => { if (document.visibilityState === 'visible') { reconnect(); refreshDataRef.current(); } };
-        document.addEventListener('visibilitychange', handleVisibility);
-
-        return () => {
-            document.removeEventListener('visibilitychange', handleVisibility);
-            echo.leaveChannel(`attendance.${branding.slug}`);
-            echo.leaveChannel(`payments.${branding.slug}`);
-        };
-    }, [branding?.slug]);
-
-    // ─── Notificaciones WS (canal separado, depende de guardianId) ───
-    useEffect(() => {
-        const guardianId = data?.guardian?.id;
-        if (!guardianId || !branding?.slug) return;
-        const echo = getEcho();
-        if (!echo) return;
-
-        const channelName = `notifications.${branding.slug}.${guardianId}`;
-        const notifChannel = echo.channel(channelName);
-        notifChannel.listen('.notification.sent', (ev: any) => {
-            setToastNotification({ id: ev.notificationId, title: ev.title, body: ev.body, type: ev.type });
-            setUnreadCount(c => c + 1);
-            setNotifications(prev => [{ id: ev.notificationId, title: ev.title, body: ev.body, type: ev.type, read: false, created_at: 'Ahora' }, ...prev]);
-        });
-
-        return () => {
-            notifChannel.stopListening('.notification.sent');
-            echo.leaveChannel(channelName);
-        };
-    }, [branding?.slug, data?.guardian?.id]);
+    useRealtimeChannel(
+        `notifications.${branding?.slug}.${data?.guardian?.id}`,
+        {
+            'notification.sent': (ev) => {
+                setToastNotification({ id: ev.notificationId, title: ev.title, body: ev.body, type: ev.type });
+                setUnreadCount(c => c + 1);
+                setNotifications(prev => [{ id: ev.notificationId, title: ev.title, body: ev.body, type: ev.type, read: false, created_at: 'Ahora' }, ...prev]);
+            },
+        },
+        !!branding?.slug && !!data?.guardian?.id
+    );
 
     // ─── Init ───
     useEffect(() => {
@@ -667,12 +647,75 @@ export default function StudentDashboard() {
 
             {/* Push Modal */}
             {showPushModal && (
-                <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-end justify-center p-4 animate-in fade-in duration-200" onClick={() => setShowPushModal(false)}>
-                    <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom-4 duration-200" onClick={e => e.stopPropagation()}>
-                        <h3 className="text-sm font-black uppercase tracking-tighter text-zinc-900 mb-2">Activar Alertas de Seguridad 🔔</h3>
-                        <p className="text-xs text-zinc-500 leading-relaxed mb-6 font-medium">Es fundamental que actives las notificaciones para avisarte en tiempo real cuando el {vocab.memberLabel.toLowerCase()} ingrese al {vocab.placeLabel.toLowerCase()}.</p>
-                        <button onClick={handleActivatePush} style={{ backgroundColor: primaryColor }} className="w-full py-4 rounded-2xl text-white font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all">Activar notificaciones</button>
-                        <button onClick={() => setShowPushModal(false)} className="w-full py-3 text-zinc-400 font-black text-[9px] uppercase tracking-widest mt-2">Cerrar</button>
+                <div className="fixed inset-0 z-[300] bg-black/70 backdrop-blur-sm flex items-end justify-center p-4 animate-in fade-in duration-200" onClick={() => setShowPushModal(false)}>
+                    <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl animate-in slide-in-from-bottom-4 duration-300 overflow-hidden" onClick={e => e.stopPropagation()}>
+
+                        {/* Header con gradiente */}
+                        <div className="relative px-6 pt-8 pb-6" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${primaryColor}05)` }}>
+                            <button onClick={() => setShowPushModal(false)} className="absolute top-4 right-4 w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center">
+                                <X size={14} className="text-zinc-400" />
+                            </button>
+                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-sm" style={{ backgroundColor: `${primaryColor}20` }}>
+                                <Bell size={26} style={{ color: primaryColor }} />
+                            </div>
+                            {isSchoolTreasury ? (
+                                <>
+                                    <h3 className="text-base font-black text-zinc-900 leading-tight">Mantente al día con el colegio</h3>
+                                    <p className="text-xs text-zinc-400 mt-1 font-medium">Activa las notificaciones para no perderte nada importante.</p>
+                                </>
+                            ) : (
+                                <>
+                                    <h3 className="text-base font-black text-zinc-900 leading-tight">Alertas en tiempo real</h3>
+                                    <p className="text-xs text-zinc-400 mt-1 font-medium">Sé el primero en saber cuando {vocab.memberLabel.toLowerCase()} llegue al {vocab.placeLabel.toLowerCase()}.</p>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Lista de beneficios */}
+                        <div className="px-6 pb-2 space-y-3">
+                            {isSchoolTreasury ? (
+                                <>
+                                    {[
+                                        { icon: <Calendar size={16} style={{ color: primaryColor }} />, text: 'Cambios de horario al instante' },
+                                        { icon: <FileText size={16} style={{ color: primaryColor }} />, text: 'Pruebas y evaluaciones' },
+                                        { icon: <Users size={16} style={{ color: primaryColor }} />, text: 'Reuniones de apoderados' },
+                                        { icon: <Backpack size={16} style={{ color: primaryColor }} />, text: 'Actividades y eventos del colegio' },
+                                        { icon: <CreditCard size={16} style={{ color: primaryColor }} />, text: 'Recordatorios de cuotas y pagos' },
+                                    ].map((item, i) => (
+                                        <div key={i} className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${primaryColor}12` }}>
+                                                {item.icon}
+                                            </div>
+                                            <span className="text-xs font-semibold text-zinc-700">{item.text}</span>
+                                        </div>
+                                    ))}
+                                </>
+                            ) : (
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${primaryColor}12` }}>
+                                        <Zap size={16} style={{ color: primaryColor }} />
+                                    </div>
+                                    <span className="text-xs font-semibold text-zinc-700">Notificación instantánea de ingreso y salida</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Botones */}
+                        <div className="px-6 pt-4 pb-8 space-y-2">
+                            <button
+                                onClick={handleActivatePush}
+                                style={{ backgroundColor: primaryColor }}
+                                className="w-full py-4 rounded-2xl text-white font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all shadow-lg"
+                            >
+                                Activar notificaciones
+                            </button>
+                            <button
+                                onClick={() => { setShowPushModal(false); localStorage.setItem('push_banner_dismissed', '1'); }}
+                                className="w-full py-3 text-zinc-400 font-bold text-[10px] uppercase tracking-widest"
+                            >
+                                Ahora no
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
