@@ -239,7 +239,8 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
             const last = grouped[grouped.length - 1];
             const start = fmtTime(slot.split('|')[0]);
             const end = fmtTime(slot.split('|')[1]);
-            if (last && last.cell.subject === cell!.subject && fmtTime(last.cell.end_time) === start) {
+            const lastEnd = (last?.cell as any)?._end || (last ? fmtTime(last.cell.end_time) : null);
+            if (last && last.cell.subject === cell!.subject && lastEnd === start) {
                 (last.cell as any)._end = end;
             } else {
                 grouped.push({ type: 'class', slot, cell: { ...cell!, _end: end } as any, dur: null });
