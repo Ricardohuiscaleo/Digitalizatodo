@@ -2,18 +2,14 @@ import React from "react";
 import { 
     User, 
     Settings, 
-    ChevronRight, 
     Camera, 
     Loader2, 
     Check, 
     X, 
-    ShieldCheck, 
-    LogOut, 
-    AlertCircle,
-    CreditCard
+    LogOut
 } from "lucide-react";
 import { updateStudentName } from "@/lib/api";
-import { AccountSwitcher } from "../AccountSwitcher";
+import AppUpdatesAccordion from "../AppUpdatesAccordion";
 
 interface StudentProfileSectionProps {
     guardian: any;
@@ -36,6 +32,7 @@ interface StudentProfileSectionProps {
     vocab: any;
     onAccountSwitch: (tenant: any) => void;
     isSchoolTreasury?: boolean;
+    appUpdates?: any[];
 }
 
 export function StudentProfileSection({
@@ -58,7 +55,8 @@ export function StudentProfileSection({
     setPaymentTab,
     vocab,
     onAccountSwitch,
-    isSchoolTreasury = false
+    isSchoolTreasury = false,
+    appUpdates = []
 }: StudentProfileSectionProps) {
 
     const handleUpdateStudentName = async () => {
@@ -78,36 +76,36 @@ export function StudentProfileSection({
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-            {/* Guardian Profile Card */}
-            <div className="bg-zinc-900 text-white rounded-[2.5rem] p-6 shadow-xl relative overflow-hidden group">
-                <div className="relative z-10 flex items-center gap-4">
+            {/* Guardian Profile Card — compacta */}
+            <div className="bg-zinc-900 text-white rounded-[2rem] px-5 py-4 shadow-xl relative overflow-hidden group">
+                <div className="relative z-10 flex items-center gap-3">
                     <div className="relative flex-shrink-0">
-                        <div className="w-20 h-20 rounded-[2rem] bg-white/10 flex items-center justify-center overflow-hidden border border-white/20 backdrop-blur-md">
+                        <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center overflow-hidden border border-white/20">
                             {guardian.photo ? (
                                 <img src={guardian.photo} className="w-full h-full object-cover" alt="Profile" />
                             ) : (
-                                <User size={40} className="text-white/40" />
+                                <User size={28} className="text-white/40" />
                             )}
                             {isUploadingPhoto && (
                                 <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center">
-                                    <Loader2 className="text-white animate-spin" size={24} />
+                                    <Loader2 className="text-white animate-spin" size={18} />
                                 </div>
                             )}
                         </div>
                         <button 
                             onClick={() => profileFileInputRef.current?.click()}
-                            className="absolute -bottom-1 -right-1 w-8 h-8 bg-orange-500 text-white rounded-xl flex items-center justify-center shadow-lg border-2 border-zinc-900 transition-transform hover:scale-110 active:scale-90"
+                            className="absolute -bottom-1 -right-1 w-6 h-6 bg-orange-500 text-white rounded-lg flex items-center justify-center shadow-lg border-2 border-zinc-900 transition-transform active:scale-90"
                         >
-                            <Camera size={14} />
+                            <Camera size={11} />
                         </button>
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-400 mb-1">Apoderado</p>
-                        <h2 className="text-xl font-black truncate">{guardian.name}</h2>
-                        <p className="text-xs opacity-60 truncate font-medium">{guardian.email}</p>
+                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-orange-400">Apoderado</p>
+                        <h2 className="text-base font-black truncate leading-tight">{guardian.name}</h2>
+                        <p className="text-[10px] opacity-50 truncate">{guardian.email}</p>
                     </div>
                 </div>
-                <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl group-hover:bg-orange-500/20 transition-all" />
+                <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl" />
             </div>
 
             {/* Students List ("Mis hijos") */}
@@ -118,26 +116,28 @@ export function StudentProfileSection({
                 {students.map((student: any) => (
                     <div key={student.id} className="bg-white border border-zinc-100 rounded-[2rem] p-4 flex items-center justify-between group hover:shadow-md transition-all">
                         <div className="flex items-center gap-4 flex-1 min-w-0">
-                            <button 
-                                onClick={() => {
-                                    studentForPhotoRef.current = String(student.id);
-                                    profileFileInputRef.current?.click();
-                                }}
-                                className="w-14 h-14 rounded-2xl bg-zinc-50 flex items-center justify-center overflow-hidden border border-zinc-100 relative group/photo shrink-0 transition-transform active:scale-90"
-                            >
-                                {studentPhotoLoadingId === String(student.id) ? (
-                                    <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
-                                        <Loader2 className="text-orange-500 animate-spin" size={16} />
-                                    </div>
-                                ) : student.photo ? (
-                                    <img src={student.photo} className="w-full h-full object-cover" alt={student.name} />
-                                ) : (
-                                    <User size={20} className="text-zinc-200" />
-                                )}
-                                <div className="absolute inset-0 bg-black/0 group-hover/photo:bg-black/20 flex items-center justify-center opacity-0 group-hover/photo:opacity-100 transition-all">
-                                    <Camera size={14} className="text-white" />
+                            <div className="relative shrink-0">
+                                <button 
+                                    onClick={() => {
+                                        studentForPhotoRef.current = String(student.id);
+                                        profileFileInputRef.current?.click();
+                                    }}
+                                    className="w-14 h-14 rounded-2xl bg-zinc-50 flex items-center justify-center overflow-hidden border border-zinc-100 relative transition-transform active:scale-90"
+                                >
+                                    {studentPhotoLoadingId === String(student.id) ? (
+                                        <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
+                                            <Loader2 className="text-orange-500 animate-spin" size={16} />
+                                        </div>
+                                    ) : student.photo ? (
+                                        <img src={student.photo} className="w-full h-full object-cover" alt={student.name} />
+                                    ) : (
+                                        <User size={20} className="text-zinc-200" />
+                                    )}
+                                </button>
+                                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-orange-500 text-white rounded-lg flex items-center justify-center shadow-lg border-2 border-white pointer-events-none">
+                                    <Camera className="w-3 h-3" />
                                 </div>
-                            </button>
+                            </div>
                             <div className="flex-1 min-w-0">
                                 {editingStudentId === String(student.id) ? (
                                     <div className="flex items-center gap-2">
@@ -176,7 +176,7 @@ export function StudentProfileSection({
                                                 <Settings size={12} />
                                             </button>
                                         </div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{student.category || vocab.memberLabel}</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{student.category ? (() => { const c = student.category; const l = c.toLowerCase(); if (l === 'prekinder') return 'Pre-Kinder'; if (l === 'kinder') return 'Kinder'; const m = c.match(/^(\d+)_(.+)$/); if (m) return `${m[1]}° ${m[2].charAt(0).toUpperCase() + m[2].slice(1).toLowerCase()}`; return c.replace(/_/g, ' '); })() : vocab.memberLabel}</p>
                                     </>
                                 )}
                             </div>
@@ -185,109 +185,34 @@ export function StudentProfileSection({
                 ))}
             </div>
 
-            {/* Quick Actions */}
-            <div className="bg-white border border-zinc-100 rounded-3xl p-2">
-                {isSchoolTreasury ? (
-                    <>
-                        <button
-                            onClick={() => setActiveSection("payments")}
-                            className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 rounded-2xl transition-all group"
-                        >
-                            <div className="flex items-center gap-4 text-zinc-500 group-hover:text-zinc-900 transition-colors">
-                                <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center">
-                                    <CreditCard size={20} />
-                                </div>
-                                <span className="font-black text-sm">Mis {vocab.cat1}s</span>
-                            </div>
-                            <ChevronRight size={18} className="text-zinc-300 group-hover:translate-x-1 transition-transform" />
-                        </button>
-                        <div className="h-px bg-zinc-50 mx-4" />
-                        <button
-                            onClick={() => setActiveSection("calendar")}
-                            className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 rounded-2xl transition-all group"
-                        >
-                            <div className="flex items-center gap-4 text-zinc-500 group-hover:text-zinc-900 transition-colors">
-                                <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center">
-                                    <ShieldCheck size={20} />
-                                </div>
-                                <span className="font-black text-sm">Horario</span>
-                            </div>
-                            <ChevronRight size={18} className="text-zinc-300 group-hover:translate-x-1 transition-transform" />
-                        </button>
-                        <div className="h-px bg-zinc-50 mx-4" />
-                        <button
-                            onClick={() => setActiveSection("rendicion")}
-                            className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 rounded-2xl transition-all group"
-                        >
-                            <div className="flex items-center gap-4 text-zinc-500 group-hover:text-zinc-900 transition-colors">
-                                <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center">
-                                    <AlertCircle size={20} />
-                                </div>
-                                <span className="font-black text-sm">Rendición</span>
-                            </div>
-                            <ChevronRight size={18} className="text-zinc-300 group-hover:translate-x-1 transition-transform" />
-                        </button>
-                    </>
-                ) : (
-                    <>
-                        <button
-                            onClick={() => setActiveSection("calendar")}
-                            className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 rounded-2xl transition-all group"
-                        >
-                            <div className="flex items-center gap-4 text-zinc-500 group-hover:text-zinc-900 transition-colors">
-                                <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center">
-                                    <ShieldCheck size={20} />
-                                </div>
-                                <span className="font-black text-sm">Historial de {vocab.attendance}</span>
-                            </div>
-                            <ChevronRight size={18} className="text-zinc-300 group-hover:translate-x-1 transition-transform" />
-                        </button>
-                        <div className="h-px bg-zinc-50 mx-4" />
-                        <button
-                            onClick={() => { setActiveSection("payments"); setPaymentTab("history"); }}
-                            className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 rounded-2xl transition-all group"
-                        >
-                            <div className="flex items-center gap-4 text-zinc-500 group-hover:text-zinc-900 transition-colors">
-                                <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center">
-                                    <CreditCard size={20} />
-                                </div>
-                                <span className="font-black text-sm">Historial de Pagos</span>
-                            </div>
-                            <ChevronRight size={18} className="text-zinc-300 group-hover:translate-x-1 transition-transform" />
-                        </button>
-                    </>
-                )}
-                <div className="h-px bg-zinc-50 mx-4" />
-                <button
-                    onClick={() => {
-                        localStorage.removeItem("auth_token");
-                        localStorage.removeItem("staff_token");
-                        localStorage.removeItem("remember_token");
-                        window.location.href = "/";
-                    }}
-                    className="w-full flex items-center justify-between p-4 hover:bg-rose-50 rounded-2xl transition-all group text-rose-500"
-                >
-                    <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center">
-                            <LogOut size={20} />
-                        </div>
-                        <span className="font-black text-sm">Cerrar Sesión</span>
-                    </div>
-                    <ChevronRight size={18} className="text-rose-200 group-hover:translate-x-1 transition-transform" />
-                </button>
-            </div>
+            <AppUpdatesAccordion appUpdates={appUpdates} />
 
-            <AccountSwitcher 
-                currentTenantId={localStorage.getItem("tenant_id") || ""} 
-                onSwitch={onAccountSwitch} 
-            />
+            {/* Cerrar Sesión — discreto en rojo */}
+            <button
+                onClick={() => {
+                    localStorage.removeItem("auth_token");
+                    localStorage.removeItem("staff_token");
+                    localStorage.removeItem("remember_token");
+                    window.location.href = "/";
+                }}
+                className="w-full flex items-center justify-center gap-2 py-3 text-[10px] font-black uppercase tracking-widest text-rose-400 hover:text-rose-600 transition-colors"
+            >
+                <LogOut size={13} />
+                Cerrar Sesión
+            </button>
 
-            <div className="bg-orange-50 border border-orange-100 rounded-2xl p-5 flex gap-3 italic">
-                <ShieldCheck className="text-orange-500 shrink-0" size={20} />
-                <p className="text-[10px] text-orange-800 leading-relaxed">
-                    Tu cuenta está protegida con encriptación de extremo a extremo. Los datos son privados y solo accesibles para ti y la administración del {vocab.placeLabel.toLowerCase()}.
-                </p>
-            </div>
+            {/* Crédito — pie de página */}
+            <a
+                href="https://digitalizatodo.cl"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col items-center gap-0.5 pt-4 pb-2 border-t border-zinc-100 group"
+            >
+                <p className="text-[13px] font-black tracking-[0.25em] text-zinc-500 uppercase">Digitaliza Todo</p>
+                <p className="text-[10px] text-zinc-400 text-center mt-1">Somos una empresa de desarrollo de software a la medida</p>
+                <p className="text-[10px] font-semibold text-zinc-500 group-hover:text-zinc-700 transition-colors mt-1">¿Necesitas nuestros servicios? <span className="underline underline-offset-2">Haz click aquí</span></p>
+                <p className="text-[8px] text-orange-400/90 tracking-[0.3em] uppercase mt-2">Digitalizando en Arica, Chile 🇨🇱</p>
+            </a>
         </div>
     );
 }

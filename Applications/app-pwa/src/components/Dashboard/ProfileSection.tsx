@@ -64,17 +64,24 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
             {/* Logout */}
             <button
                 onClick={handleLogout}
-                className="w-full h-16 bg-red-50 text-red-600 rounded-3xl flex items-center justify-center gap-3 text-xs font-black uppercase tracking-[0.2em] hover:bg-red-100 transition-all active:scale-[0.98]"
+                className="w-full flex items-center justify-center gap-2 py-3 text-[10px] font-black uppercase tracking-widest text-rose-400 hover:text-rose-600 transition-colors"
             >
-                <LogOut size={18} /> Cerrar Sesión
+                <LogOut size={13} />
+                Cerrar Sesión
             </button>
 
-            <div className="pt-6 text-center space-y-1">
-                <a href="https://digitalizatodo.cl" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-600 transition-colors">
-                    DIGITALIZA TODO® 2026
-                </a>
-                <p className="text-[9px] text-zinc-300">Software Factory a la Medida</p>
-            </div>
+            {/* Crédito — pie de página */}
+            <a
+                href="https://digitalizatodo.cl"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col items-center gap-0.5 pt-4 pb-2 border-t border-zinc-100 group"
+            >
+                <p className="text-[13px] font-black tracking-[0.25em] text-zinc-500 uppercase">Digitaliza Todo</p>
+                <p className="text-[10px] text-zinc-400 text-center mt-1">Somos una empresa de desarrollo de software a la medida</p>
+                <p className="text-[10px] font-semibold text-zinc-500 group-hover:text-zinc-700 transition-colors mt-1">¿Necesitas nuestros servicios? <span className="underline underline-offset-2">Haz click aquí</span></p>
+                <p className="text-[8px] text-orange-400/90 tracking-[0.3em] uppercase mt-2">Digitalizando en Arica, Chile 🇨🇱</p>
+            </a>
         </div>
     );
 };

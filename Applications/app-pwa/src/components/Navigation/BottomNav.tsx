@@ -34,18 +34,16 @@ export default function BottomNav({ activeSection, setActiveSection, primaryColo
                         <button
                             key={item.id}
                             onClick={() => setActiveSection(item.id)}
-                            className={`flex flex-col items-center gap-0.5 transition-all duration-150 opacity-100`}
+                            className="flex flex-col items-center gap-1 transition-all duration-200"
+                            style={{ color: isActive ? primaryColor : '#a1a1aa' }}
                         >
                             <div
-                                className="p-2 transition-all"
-                                style={{ color: isActive ? primaryColor : '#a1a1aa' }}
+                                className={`p-2 transition-all duration-300 ${isActive ? 'rounded-2xl shadow-sm' : 'bg-transparent'}`}
+                                style={isActive ? { backgroundColor: `${primaryColor}15` } : {}}
                             >
-                                <Icon className="w-6 h-6" strokeWidth={isActive ? 2.5 : 2} />
+                                <Icon className="w-[22px] h-[22px]" strokeWidth={isActive ? 3 : 2.5} />
                             </div>
-                            <span
-                                className="text-[10px] font-black uppercase tracking-widest transition-all"
-                                style={{ color: isActive ? primaryColor : '#a1a1aa' }}
-                            >
+                            <span className={`text-[7px] font-black uppercase tracking-[0.2em] transition-all ${isActive ? 'opacity-100' : 'opacity-60'}`}>
                                 {item.label}
                             </span>
                         </button>
@@ -54,23 +52,20 @@ export default function BottomNav({ activeSection, setActiveSection, primaryColo
                 {/* Profile tab con foto */}
                 <button
                     onClick={() => setActiveSection("profile")}
-                    className="flex flex-col items-center gap-0.5 transition-all duration-150 opacity-100"
+                    className="flex flex-col items-center gap-1 transition-all duration-200"
                 >
-                    <div className="p-2">
-                        <div className={`w-6 h-6 rounded-full overflow-hidden border-2 ${activeSection === "profile" ? '' : 'border-transparent'}`} style={activeSection === "profile" ? { borderColor: primaryColor } : {}}>
+                    <div className={`p-2 transition-all duration-300 ${activeSection === "profile" ? 'rounded-2xl shadow-sm' : 'bg-transparent'}`} style={activeSection === "profile" ? { backgroundColor: `${primaryColor}15` } : {}}>
+                        <div className={`w-[22px] h-[22px] rounded-full overflow-hidden border-2 ${activeSection === "profile" ? '' : 'border-transparent'}`} style={activeSection === "profile" ? { borderColor: primaryColor } : {}}>
                             {userPhoto ? (
                                 <img src={userPhoto} className="w-full h-full object-cover" alt="" />
                             ) : (
-                                <div className="w-full h-full bg-zinc-200 flex items-center justify-center text-zinc-500 text-xs font-black">
+                                <div className="w-full h-full bg-zinc-200 flex items-center justify-center text-zinc-500 text-[9px] font-black">
                                     {userName?.[0] || 'U'}
                                 </div>
                             )}
                         </div>
                     </div>
-                    <span
-                        className="text-[10px] font-black uppercase tracking-widest transition-all"
-                        style={{ color: activeSection === "profile" ? primaryColor : '#a1a1aa' }}
-                    >
+                    <span className={`text-[7px] font-black uppercase tracking-[0.2em] transition-all ${activeSection === "profile" ? 'opacity-100' : 'opacity-60'}`} style={{ color: activeSection === "profile" ? primaryColor : '#a1a1aa' }}>
                         Perfil
                     </span>
                 </button>

@@ -666,12 +666,15 @@ export default function App() {
                 {/* Profile tab con foto */}
                 <button
                     onClick={() => changeTab('profile')}
-                    className={`flex flex-col items-center gap-0.5 transition-all duration-150 ${activeTab === 'profile' ? 'opacity-100' : 'opacity-30 hover:opacity-60'}`}
+                    className="flex flex-col items-center gap-1 transition-all duration-200"
+                    style={{ color: activeTab === 'profile' ? (branding?.primaryColor || '#6366f1') : '#a1a1aa' }}
                 >
-                    <div className={`w-7 h-7 rounded-full overflow-hidden border-2 ${activeTab === 'profile' ? '' : 'border-transparent'}`} style={activeTab === 'profile' ? { borderColor: branding?.primaryColor || '#6366f1' } : {}}>
-                        <img src={user?.photo || '/DLogo-v2.webp'} className="w-full h-full object-cover" alt="" />
+                    <div className={`p-2 transition-all duration-300 ${activeTab === 'profile' ? 'rounded-2xl shadow-sm' : 'bg-transparent'}`} style={activeTab === 'profile' ? { backgroundColor: `${branding?.primaryColor || '#6366f1'}15` } : {}}>
+                        <div className={`w-[22px] h-[22px] rounded-full overflow-hidden border-2 ${activeTab === 'profile' ? '' : 'border-transparent'}`} style={activeTab === 'profile' ? { borderColor: branding?.primaryColor || '#6366f1' } : {}}>
+                            <img src={user?.photo || '/DLogo-v2.webp'} className="w-full h-full object-cover" alt="" />
+                        </div>
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest" style={activeTab === 'profile' ? { color: branding?.primaryColor || '#6366f1' } : {}}>Perfil</span>
+                    <span className={`text-[7px] font-black uppercase tracking-[0.2em] transition-all ${activeTab === 'profile' ? 'opacity-100' : 'opacity-60'}`}>Perfil</span>
                 </button>
             </nav>
 
