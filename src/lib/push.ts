@@ -22,10 +22,9 @@ export async function subscribeToPush(tenantSlug: string, token: string): Promis
         if (!res.ok) return;
         const { key } = await res.json();
 
+        // Reusar suscripción existente si ya hay una — no borrar (permite múltiples dispositivos)
         const existing = await reg.pushManager.getSubscription();
-        if (existing) await existing.unsubscribe();
-
-        const subscription = await reg.pushManager.subscribe({
+        const subscription = existing ?? await reg.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(key) as any,
         });
