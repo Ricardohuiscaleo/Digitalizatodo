@@ -611,6 +611,28 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         if (payer) setPaymentActionPayer(payer);
     };
 
+    // ─── Push Permissions ───
+    useEffect(() => {
+        if (typeof Notification === 'undefined') { setPushPermission('denied'); return; }
+        const updatePermission = () => {
+            const perm = Notification.permission;
+            setPushPermission(perm);
+            const tk = localStorage.getItem('staff_token') || localStorage.getItem('auth_token');
+            if (tk && branding?.slug) {
+                const dismissed = localStorage.getItem('push_banner_dismissed');
+                if (perm === 'default' && !dismissed) {
+                    setShowPushModal(true);
+                } else {
+                    setShowPushModal(false);
+                    if (perm === 'granted') subscribeToPush(branding.slug, tk);
+                }
+            }
+        };
+        updatePermission();
+        document.addEventListener('visibilitychange', updatePermission);
+        return () => document.removeEventListener('visibilitychange', updatePermission);
+    }, [branding?.slug]);
+
     const handleActivatePush = () => {
         setShowPushBanner(false);
         setShowPushModal(false);
