@@ -91,7 +91,7 @@ class ScheduleController extends Controller
             'student_ids.*' => 'exists:students,id'
         ]);
 
-        return DB::transaction(function () use ($validated, $schedule) {
+        return DB::transaction(function () use ($validated, $schedule, $tenant) {
             $schedule->update([
                 'name'        => array_key_exists('name', $validated) ? $validated['name'] : $schedule->name,
                 'subject'     => array_key_exists('subject', $validated) ? $validated['subject'] : $schedule->subject,
