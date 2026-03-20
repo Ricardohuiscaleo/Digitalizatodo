@@ -584,17 +584,25 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         'student.registered': () => refreshPayers(),
     }, !!branding?.slug);
 
-    useRealtimeChannel(
-        `notifications.${branding?.slug}.${user?.id}`,
-        {
-            'notification.sent': (data: any) => {
-                setToastNotification({ id: data.notificationId, title: data.title, body: data.body, type: data.type });
-                setUnreadCount(c => c + 1);
-                setNotifications(prev => [{ id: data.notificationId, title: data.title, body: data.body, type: data.type, read: false, created_at: 'Ahora' }, ...prev]);
-            },
-        },
-        !!branding?.slug && !!user?.id
-    );
+    // Canal notificaciones — useEffect directo para evitar race condition en leaveChannel/re-suscripción
+    useEffect(() => {
+        const slug = branding?.slug;
+        const userId = user?.id;
+        if (!slug || !userId) return;
+        const echo = getEcho();
+        if (!echo) return;
+        const channelName = `notifications.${slug}.${userId}`;
+        const channel = echo.channel(channelName);
+        channel.listen('.notification.sent', (data: any) => {
+            setToastNotification({ id: data.notificationId, title: data.title, body: data.body, type: data.type });
+            setUnreadCount(c => c + 1);
+            setNotifications(prev => [{ id: data.notificationId, title: data.title, body: data.body, type: data.type, read: false, created_at: 'Ahora' }, ...prev]);
+        });
+        return () => {
+            channel.stopListening('.notification.sent');
+            echo.leaveChannel(channelName);
+        };
+    }, [branding?.slug, user?.id]);
 
     const formatMoney = (amount: number) => {
         return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(amount);
