@@ -701,6 +701,18 @@ export async function submitFeePayment(
     }
 }
 
+export async function getPlans(tenantId: string, token: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/plans`, {
+            cache: 'no-store' as RequestCache,
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+        });
+        return await safeJson(response);
+    } catch {
+        return [];
+    }
+}
+
 export async function getSchedules(tenantSlug: string, token?: string) {
     try {
         const headers: any = { 'Accept': 'application/json' };

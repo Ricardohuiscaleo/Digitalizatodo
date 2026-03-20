@@ -169,7 +169,7 @@ const AttendanceSection: React.FC<AttendanceSectionProps> = ({
                         <h3 className="text-[11px] font-black uppercase tracking-widest text-zinc-900">Historial Reciente</h3>
                     </div>
                     <div className="space-y-3">
-                        {attendanceHistory.map((day: any) => (
+                        {Array.from(new Map(attendanceHistory.map((d: any) => [d.date, d])).values()).map((day: any) => (
                             <div 
                                 key={day.date}
                                 className="bg-white border border-zinc-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer active:scale-[0.99]"

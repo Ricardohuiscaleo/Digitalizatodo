@@ -39,6 +39,10 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         if (savedBranding) {
             try {
                 const parsed = JSON.parse(savedBranding);
+                // Fallback: si el objeto guardado no tenía industry, lo recuperamos de tenant_industry
+                if (!parsed.industry) {
+                    parsed.industry = localStorage.getItem('tenant_industry') || undefined;
+                }
                 setBrandingState(parsed);
                 document.documentElement.style.setProperty('--primary', parsed.primaryColor);
             } catch {
@@ -50,6 +54,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
             setIsLoading(false);
         }
         // Si hay tenantId pero no branding, la página que lo necesite lo pedirá o se quedará el default
+
     }, []);
 
     const setBranding = React.useCallback((newBranding: TenantBranding) => {

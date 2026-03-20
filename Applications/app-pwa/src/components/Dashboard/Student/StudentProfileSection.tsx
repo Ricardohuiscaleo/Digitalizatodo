@@ -35,6 +35,7 @@ interface StudentProfileSectionProps {
     setPaymentTab: (tab: "pending" | "history") => void;
     vocab: any;
     onAccountSwitch: (tenant: any) => void;
+    isSchoolTreasury?: boolean;
 }
 
 export function StudentProfileSection({
@@ -56,7 +57,8 @@ export function StudentProfileSection({
     setActiveSection,
     setPaymentTab,
     vocab,
-    onAccountSwitch
+    onAccountSwitch,
+    isSchoolTreasury = false
 }: StudentProfileSectionProps) {
 
     const handleUpdateStudentName = async () => {
@@ -174,7 +176,7 @@ export function StudentProfileSection({
                                                 <Settings size={12} />
                                             </button>
                                         </div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{student.category === 'kids' ? vocab.cat1 : student.category === 'adult' ? vocab.cat2 : student.category || 'Sin categoría'}</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{student.category || vocab.memberLabel}</p>
                                     </>
                                 )}
                             </div>
@@ -185,34 +187,76 @@ export function StudentProfileSection({
 
             {/* Quick Actions */}
             <div className="bg-white border border-zinc-100 rounded-3xl p-2">
-                <button 
-                    onClick={() => setActiveSection("calendar")}
-                    className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 rounded-2xl transition-all group"
-                >
-                    <div className="flex items-center gap-4 text-zinc-500 group-hover:text-zinc-900 transition-colors">
-                        <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center">
-                            <ShieldCheck size={20} />
-                        </div>
-                        <span className="font-black text-sm">Historial de Asistencia</span>
-                    </div>
-                    <ChevronRight size={18} className="text-zinc-300 group-hover:translate-x-1 transition-transform" />
-                </button>
-                <div className="h-px bg-zinc-50 mx-4" />
-                <button 
-                    onClick={() => {
-                        setActiveSection("payments");
-                        setPaymentTab("history");
-                    }}
-                    className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 rounded-2xl transition-all group"
-                >
-                    <div className="flex items-center gap-4 text-zinc-500 group-hover:text-zinc-900 transition-colors">
-                        <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center">
-                            <CreditCard size={20} />
-                        </div>
-                        <span className="font-black text-sm">Historial de Pagos</span>
-                    </div>
-                    <ChevronRight size={18} className="text-zinc-300 group-hover:translate-x-1 transition-transform" />
-                </button>
+                {isSchoolTreasury ? (
+                    <>
+                        <button
+                            onClick={() => setActiveSection("payments")}
+                            className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 rounded-2xl transition-all group"
+                        >
+                            <div className="flex items-center gap-4 text-zinc-500 group-hover:text-zinc-900 transition-colors">
+                                <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center">
+                                    <CreditCard size={20} />
+                                </div>
+                                <span className="font-black text-sm">Mis {vocab.cat1}s</span>
+                            </div>
+                            <ChevronRight size={18} className="text-zinc-300 group-hover:translate-x-1 transition-transform" />
+                        </button>
+                        <div className="h-px bg-zinc-50 mx-4" />
+                        <button
+                            onClick={() => setActiveSection("calendar")}
+                            className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 rounded-2xl transition-all group"
+                        >
+                            <div className="flex items-center gap-4 text-zinc-500 group-hover:text-zinc-900 transition-colors">
+                                <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center">
+                                    <ShieldCheck size={20} />
+                                </div>
+                                <span className="font-black text-sm">Horario</span>
+                            </div>
+                            <ChevronRight size={18} className="text-zinc-300 group-hover:translate-x-1 transition-transform" />
+                        </button>
+                        <div className="h-px bg-zinc-50 mx-4" />
+                        <button
+                            onClick={() => setActiveSection("rendicion")}
+                            className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 rounded-2xl transition-all group"
+                        >
+                            <div className="flex items-center gap-4 text-zinc-500 group-hover:text-zinc-900 transition-colors">
+                                <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center">
+                                    <AlertCircle size={20} />
+                                </div>
+                                <span className="font-black text-sm">Rendición</span>
+                            </div>
+                            <ChevronRight size={18} className="text-zinc-300 group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <button
+                            onClick={() => setActiveSection("calendar")}
+                            className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 rounded-2xl transition-all group"
+                        >
+                            <div className="flex items-center gap-4 text-zinc-500 group-hover:text-zinc-900 transition-colors">
+                                <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center">
+                                    <ShieldCheck size={20} />
+                                </div>
+                                <span className="font-black text-sm">Historial de {vocab.attendance}</span>
+                            </div>
+                            <ChevronRight size={18} className="text-zinc-300 group-hover:translate-x-1 transition-transform" />
+                        </button>
+                        <div className="h-px bg-zinc-50 mx-4" />
+                        <button
+                            onClick={() => { setActiveSection("payments"); setPaymentTab("history"); }}
+                            className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 rounded-2xl transition-all group"
+                        >
+                            <div className="flex items-center gap-4 text-zinc-500 group-hover:text-zinc-900 transition-colors">
+                                <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center">
+                                    <CreditCard size={20} />
+                                </div>
+                                <span className="font-black text-sm">Historial de Pagos</span>
+                            </div>
+                            <ChevronRight size={18} className="text-zinc-300 group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    </>
+                )}
                 <div className="h-px bg-zinc-50 mx-4" />
                 <button
                     onClick={() => {
@@ -241,7 +285,7 @@ export function StudentProfileSection({
             <div className="bg-orange-50 border border-orange-100 rounded-2xl p-5 flex gap-3 italic">
                 <ShieldCheck className="text-orange-500 shrink-0" size={20} />
                 <p className="text-[10px] text-orange-800 leading-relaxed">
-                    Tu cuenta está protegida con encriptación de extremo a extremo. Los datos de asistencia son privados y solo accesibles para ti y la administración.
+                    Tu cuenta está protegida con encriptación de extremo a extremo. Los datos son privados y solo accesibles para ti y la administración del {vocab.placeLabel.toLowerCase()}.
                 </p>
             </div>
         </div>

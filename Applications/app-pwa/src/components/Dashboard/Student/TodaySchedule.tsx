@@ -7,9 +7,10 @@ import { nowCL } from "@/lib/utils";
 interface TodayScheduleProps {
     schedules: any[];
     primaryColor?: string;
+    vocab?: any;
 }
 
-export function TodaySchedule({ schedules, primaryColor }: TodayScheduleProps) {
+export function TodaySchedule({ schedules, primaryColor, vocab }: TodayScheduleProps) {
     const dow = nowCL().getDay();
     const today = schedules.filter(s => s.day_of_week === dow).sort((a, b) => a.start_time.localeCompare(b.start_time));
     const dayName = nowCL().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -18,7 +19,7 @@ export function TodaySchedule({ schedules, primaryColor }: TodayScheduleProps) {
         <div className="bg-white rounded-3xl p-5 shadow-sm border border-zinc-100">
             <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2 uppercase tracking-tighter mb-4">
                 <Calendar style={{ color: primaryColor || '#6366f1' }} size={18} />
-                Clases de hoy
+                {vocab?.attendance ? `${vocab.attendance} de hoy` : 'Clases de hoy'}
                 <span className="text-[9px] font-bold text-zinc-400 normal-case tracking-normal capitalize">{dayName}</span>
             </h3>
             {today.length === 0 ? (

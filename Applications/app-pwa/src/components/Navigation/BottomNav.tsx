@@ -34,19 +34,17 @@ export default function BottomNav({ activeSection, setActiveSection, primaryColo
                         <button
                             key={item.id}
                             onClick={() => setActiveSection(item.id)}
-                            className={`flex flex-col items-center gap-0.5 transition-all duration-150 ${
-                                isActive ? "opacity-100" : "opacity-30 hover:opacity-100"
-                            }`}
+                            className={`flex flex-col items-center gap-0.5 transition-all duration-150 opacity-100`}
                         >
                             <div
                                 className="p-2 transition-all"
-                                style={isActive ? { color: primaryColor } : {}}
+                                style={{ color: isActive ? primaryColor : '#a1a1aa' }}
                             >
                                 <Icon className="w-6 h-6" strokeWidth={isActive ? 2.5 : 2} />
                             </div>
                             <span
                                 className="text-[10px] font-black uppercase tracking-widest transition-all"
-                                style={isActive ? { color: primaryColor } : {}}
+                                style={{ color: isActive ? primaryColor : '#a1a1aa' }}
                             >
                                 {item.label}
                             </span>
@@ -56,22 +54,22 @@ export default function BottomNav({ activeSection, setActiveSection, primaryColo
                 {/* Profile tab con foto */}
                 <button
                     onClick={() => setActiveSection("profile")}
-                    className={`flex flex-col items-center gap-0.5 transition-all duration-150 ${
-                        activeSection === "profile" ? "opacity-100" : "opacity-30 hover:opacity-100"
-                    }`}
+                    className="flex flex-col items-center gap-0.5 transition-all duration-150 opacity-100"
                 >
-                    <div className={`w-7 h-7 rounded-full overflow-hidden border-2 ${activeSection === "profile" ? '' : 'border-transparent'}`} style={activeSection === "profile" ? { borderColor: primaryColor } : {}}>
-                        {userPhoto ? (
-                            <img src={userPhoto} className="w-full h-full object-cover" alt="" />
-                        ) : (
-                            <div className="w-full h-full bg-zinc-200 flex items-center justify-center text-zinc-500 text-xs font-black">
-                                {userName?.[0] || 'U'}
-                            </div>
-                        )}
+                    <div className="p-2">
+                        <div className={`w-6 h-6 rounded-full overflow-hidden border-2 ${activeSection === "profile" ? '' : 'border-transparent'}`} style={activeSection === "profile" ? { borderColor: primaryColor } : {}}>
+                            {userPhoto ? (
+                                <img src={userPhoto} className="w-full h-full object-cover" alt="" />
+                            ) : (
+                                <div className="w-full h-full bg-zinc-200 flex items-center justify-center text-zinc-500 text-xs font-black">
+                                    {userName?.[0] || 'U'}
+                                </div>
+                            )}
+                        </div>
                     </div>
                     <span
                         className="text-[10px] font-black uppercase tracking-widest transition-all"
-                        style={activeSection === "profile" ? { color: primaryColor } : {}}
+                        style={{ color: activeSection === "profile" ? primaryColor : '#a1a1aa' }}
                     >
                         Perfil
                     </span>

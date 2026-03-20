@@ -200,6 +200,19 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                 </table>
             </div>
 
+            {bubbleModalPayer && (
+                <BubblePaymentModal
+                    payer={bubbleModalPayer}
+                    vocab={vocab}
+                    formatMoney={formatMoney}
+                    primaryColor={branding?.primaryColor || '#6366f1'}
+                    getPayerRealStats={getPayerRealStats}
+                    onClose={() => setBubbleModalPayer(null)}
+                    onApprove={(id) => { handlePaymentApprove(id); setBubbleModalPayer(null); }}
+                    onViewProof={(url) => setProofModalUrl(url)}
+                />
+            )}
+
             <div className="md:hidden flex flex-wrap gap-4 px-1 pb-6">
                 {filteredPayers.flatMap(payer => {
                     const stats = getPayerRealStats(payer);

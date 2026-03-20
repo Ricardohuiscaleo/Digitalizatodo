@@ -38,7 +38,9 @@ class GuardianController extends Controller
                     $query->whereMonth('due_date', $month)
                           ->whereYear('due_date', $year);
                 } else {
-                    $query->whereIn('status', ['pending', 'pending_review', 'overdue']);
+                    // Traer pending/review/overdue + el último approved por enrollment
+                    $query->whereIn('status', ['pending', 'pending_review', 'overdue', 'approved'])
+                          ->orderBy('due_date', 'desc');
                 }
             }, 'students.attendances' => function ($query) use ($tenantId) {
                 $query->where('tenant_id', $tenantId)
@@ -65,22 +67,21 @@ class GuardianController extends Controller
             $activePayments = [];
             foreach ($students as $student) {
                 foreach ($student->enrollments as $enrollment) {
-                    foreach ($enrollment->payments as $payment) {
-                        $activePayments[] = [
-                            'id' => $payment->id,
-                            'student_name' => $student->name,
-                            'student_photo' => $student->photo ? (str_starts_with($student->photo, 'http') ? $student->photo : $s3BaseUrl . $student->photo) : "https://i.pravatar.cc/150?u=" . $student->id,
-                            'amount' => (float)$payment->amount,
-                            'status' => $payment->status === 'pending_review' ? 'review' : $payment->status,
-                            'due_date' => $payment->due_date?->format('d M, Y'),
-                            'proof_url' => $payment->proof_image ? (str_starts_with($payment->proof_image, 'http') ? $payment->proof_image : $s3BaseUrl . $payment->proof_image) : null,
-                        ];
-                        
-                        if ($payment->status === 'pending_review') {
-                            $status = 'review';
-                        } elseif ($payment->status === 'pending' || $payment->status === 'overdue') {
-                            if ($status !== 'review') $status = 'pending';
-                        }
+                    $payment = $enrollment->payments->first(); // ya viene ordenado desc por due_date
+                    if (!$payment) continue;
+                    $activePayments[] = [
+                        'id' => $payment->id,
+                        'student_name' => $student->name,
+                        'student_photo' => $student->photo ? (str_starts_with($student->photo, 'http') ? $student->photo : $s3BaseUrl . $student->photo) : "https://i.pravatar.cc/150?u=" . $student->id,
+                        'amount' => (float)$payment->amount,
+                        'status' => $payment->status === 'pending_review' ? 'review' : $payment->status,
+                        'due_date' => $payment->due_date?->format('d M, Y'),
+                        'proof_url' => $payment->proof_image ? (str_starts_with($payment->proof_image, 'http') ? $payment->proof_image : $s3BaseUrl . $payment->proof_image) : null,
+                    ];
+                    if ($payment->status === 'pending_review') {
+                        $status = 'review';
+                    } elseif ($payment->status === 'pending' || $payment->status === 'overdue') {
+                        if ($status !== 'review') $status = 'pending';
                     }
                 }
             }

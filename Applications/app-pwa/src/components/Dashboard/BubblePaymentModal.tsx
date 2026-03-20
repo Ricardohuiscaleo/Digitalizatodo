@@ -58,15 +58,7 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
     const isPaid = (payer.status === 'paid') || (approvedAmount > 0 && pendingAmount === 0 && reviewAmount === 0);
     const isReview = !isPaid && (payer.status === 'review' || reviewAmount > 0);
 
-    const payments = payer.payments && payer.payments.length > 0
-        ? payer.payments
-        : payer.enrolledStudents?.map((s: any) => ({
-            student_name: s.name,
-            student_photo: s.photo,
-            due_date: '—',
-            status: payer.status === 'paid' ? 'approved' : payer.status,
-            amount: 0,
-        }));
+    const payments = payer.payments ?? [];
 
     return (
         <div

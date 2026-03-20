@@ -141,6 +141,14 @@ class AuthController extends Controller
             return response()->json([
                 'user_type' => 'guardian',
                 'guardian'  => $guardian->only('id', 'name', 'email', 'phone', 'photo'),
+                'tenant'    => [
+                    'id'            => $tenant->id,
+                    'slug'          => $tenant->slug,
+                    'name'          => $tenant->name,
+                    'logo'          => $tenant->logo ? (str_starts_with($tenant->logo, 'http') ? $tenant->logo : $toUrl($tenant->logo)) : null,
+                    'primary_color' => $tenant->primary_color,
+                    'industry'      => $tenant->industry,
+                ],
                 'bank_info' => $bankInfo,
                 'students'  => $guardian->students->map(fn($s) => [
                     'id'                => $s->id,

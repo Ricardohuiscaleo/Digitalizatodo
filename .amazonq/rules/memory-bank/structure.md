@@ -87,20 +87,7 @@ app-pwa/src/
 
 ---
 
-## portal-alumno (Next.js 16)
 
-```
-portal-alumno/src/
-├── app/
-│   ├── [tenant]/registro/  # Student self-registration flow
-│   ├── dashboard/          # Guardian/student dashboard
-│   │   └── attendance/     # Attendance history view
-│   └── payment/            # Payment success/failure
-├── context/
-│   └── BrandingContext.tsx # Tenant branding context (mirrors app-pwa)
-└── lib/
-    └── api.ts              # API calls to saas-backend
-```
 
 ---
 
