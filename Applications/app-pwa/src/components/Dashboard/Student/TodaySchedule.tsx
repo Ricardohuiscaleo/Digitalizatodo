@@ -40,6 +40,18 @@ export function TodaySchedule({ schedules, primaryColor, vocab }: TodayScheduleP
         return `${h}h ${m}min`;
     };
 
+    // Construir lista intercalando recreos entre bloques con gap
+    const toMins = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+    const items: ({ type: 'class' } & typeof grouped[0] | { type: 'break'; start: string; end: string; dur: string })[] = [];
+    grouped.forEach((g, i) => {
+        if (i > 0) {
+            const prev = grouped[i - 1];
+            const gap = toMins(g.start) - toMins(prev.end);
+            if (gap > 0) items.push({ type: 'break', start: prev.end, end: g.start, dur: durationLabel(prev.end, g.start) || '' });
+        }
+        items.push({ type: 'class', ...g });
+    });
+
     return (
         <div className="bg-white rounded-3xl p-5 shadow-sm border border-zinc-100">
             <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2 uppercase tracking-tighter mb-4">
@@ -52,21 +64,33 @@ export function TodaySchedule({ schedules, primaryColor, vocab }: TodayScheduleP
                     <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">Sin clases hoy</p>
                 </div>
             ) : (
-                <div className="space-y-2">
-                    {grouped.map((g) => {
-                        const bg = g.color;
+                <div className="space-y-1.5">
+                    {items.map((item, idx) => {
+                        if (item.type === 'break') return (
+                            <div key={`break-${idx}`} className="flex items-center gap-3 px-4 py-1.5 mx-1">
+                                <div className="flex flex-col items-center shrink-0 w-10">
+                                    <span className="text-[9px] font-bold text-zinc-500 leading-none">{item.start}</span>
+                                </div>
+                                <div className="flex-1 flex items-center gap-2">
+                                    <div className="flex-1 h-px bg-zinc-300" />
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">🍎🧃 {item.dur}</span>
+                                    <div className="flex-1 h-px bg-zinc-300" />
+                                </div>
+                            </div>
+                        );
+                        const bg = item.color;
                         const lum = bg !== '#f4f4f5' ? (() => { const r=parseInt(bg.slice(1,3),16),g2=parseInt(bg.slice(3,5),16),b=parseInt(bg.slice(5,7),16); return (0.299*r+0.587*g2+0.114*b)/255; })() : 1;
                         const fg = lum > 0.55 ? '#18181b' : '#ffffff';
-                        const dur = durationLabel(g.start, g.end);
+                        const dur = durationLabel(item.start, item.end);
                         return (
-                            <div key={g.ids.join('-')} className="flex items-center gap-3 px-4 py-3 rounded-2xl" style={{ backgroundColor: bg, color: fg }}>
+                            <div key={item.ids.join('-')} className="flex items-center gap-3 px-4 py-3 rounded-2xl" style={{ backgroundColor: bg, color: fg }}>
                                 <div className="flex flex-col items-center shrink-0 w-10">
-                                    <span className="text-[10px] font-black leading-none">{g.start}</span>
+                                    <span className="text-[10px] font-black leading-none">{item.start}</span>
                                     <div className="w-px h-3 my-0.5" style={{ backgroundColor: fg, opacity: 0.3 }} />
-                                    <span className="text-[10px] font-black leading-none opacity-70">{g.end}</span>
+                                    <span className="text-[10px] font-black leading-none opacity-70">{item.end}</span>
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-sm font-black uppercase tracking-tight">{g.subject}</span>
+                                    <span className="text-sm font-black uppercase tracking-tight">{item.subject}</span>
                                     {dur && <span className="text-[9px] font-bold opacity-60 mt-0.5">{dur}</span>}
                                 </div>
                             </div>
