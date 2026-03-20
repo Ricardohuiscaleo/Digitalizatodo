@@ -48,7 +48,7 @@ class ScheduleController extends Controller
             'student_ids.*' => 'exists:students,id'
         ]);
 
-        return DB::transaction(function () use ($validated, $tenant) {
+        $schedule = DB::transaction(function () use ($validated, $tenant) {
             $schedule = Schedule::create([
                 'tenant_id'   => $tenant->id,
                 'name'        => $validated['name'] ?? null,
@@ -64,14 +64,16 @@ class ScheduleController extends Controller
                 $schedule->students()->sync($validated['student_ids']);
             }
 
-            event(new ScheduleUpdated($tenant->slug));
-            $this->notifyGuardians($tenant, 'Horario actualizado', 'El horario de clases ha sido modificado.');
-
-            return response()->json([
-                'message' => 'Schedule created successfully',
-                'schedule' => $schedule->load('students:id,name,photo')
-            ], 201);
+            return $schedule;
         });
+
+        event(new ScheduleUpdated($tenant->slug));
+        $this->notifyGuardians($tenant, 'Horario actualizado', 'El horario de clases ha sido modificado.');
+
+        return response()->json([
+            'message' => 'Schedule created successfully',
+            'schedule' => $schedule->load('students:id,name,photo')
+        ], 201);
     }
 
     public function update(Request $request, $tenant, $id)
@@ -91,7 +93,7 @@ class ScheduleController extends Controller
             'student_ids.*' => 'exists:students,id'
         ]);
 
-        return DB::transaction(function () use ($validated, $schedule, $tenant) {
+        DB::transaction(function () use ($validated, $schedule) {
             $schedule->update([
                 'name'        => array_key_exists('name', $validated) ? $validated['name'] : $schedule->name,
                 'subject'     => array_key_exists('subject', $validated) ? $validated['subject'] : $schedule->subject,
@@ -105,15 +107,15 @@ class ScheduleController extends Controller
             if (isset($validated['student_ids'])) {
                 $schedule->students()->sync($validated['student_ids']);
             }
-
-            event(new ScheduleUpdated($tenant->slug));
-            $this->notifyGuardians($tenant, 'Horario actualizado', 'El horario de clases ha sido modificado.');
-
-            return response()->json([
-                'message' => 'Schedule updated successfully',
-                'schedule' => $schedule->load('students:id,name,photo')
-            ]);
         });
+
+        event(new ScheduleUpdated($tenant->slug));
+        $this->notifyGuardians($tenant, 'Horario actualizado', 'El horario de clases ha sido modificado.');
+
+        return response()->json([
+            'message' => 'Schedule updated successfully',
+            'schedule' => $schedule->load('students:id,name,photo')
+        ]);
     }
 
     public function destroy($tenant, $id)
