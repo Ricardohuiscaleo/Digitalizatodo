@@ -68,6 +68,21 @@ export async function getTenantInfo(slug: string) {
     }
 }
 
+export async function getCourses(tenantSlug: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantSlug}/courses`, {
+            method: 'GET',
+            cache: 'no-store' as RequestCache,
+            headers: defaultHeaders,
+        });
+
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error fetching courses:', error);
+        return { courses: [] };
+    }
+}
+
 export async function registerTenant(data: any) {
     try {
         const response = await fetch(`${API_URL}/register-tenant`, {
