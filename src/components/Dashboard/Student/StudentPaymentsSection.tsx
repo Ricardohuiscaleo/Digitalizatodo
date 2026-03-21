@@ -170,12 +170,14 @@ export function StudentPaymentsSection({
                         {myFees && myFees.length > 0 && (
                             <>
                                 <div className="flex items-center justify-between ml-2 mb-1">
-                                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">{vocab.cat1}s {vocab.placeLabel.toLowerCase()}s</h3>
+                                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
+                                        {isSchoolTreasury ? 'Cuotas Pendientes' : `${vocab.cat1}s ${vocab.placeLabel.toLowerCase()}s`}
+                                    </h3>
                                     <button
                                         onClick={() => setFeePayModal({ fees: myFees })}
                                         className="bg-zinc-900 text-white text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full flex items-center gap-1.5"
                                     >
-                                        <CreditCard size={10} /> Pagar cuotas
+                                        <CreditCard size={10} /> {isSchoolTreasury ? 'Gestionar Cuotas' : 'Pagar'}
                                     </button>
                                 </div>
                                 {myFees.map((feeData: any) => (
