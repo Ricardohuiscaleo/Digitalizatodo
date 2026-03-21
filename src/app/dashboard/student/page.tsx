@@ -570,6 +570,7 @@ export default function StudentDashboard() {
                         handleBulkUploadProof={handleBulkUploadProof}
                         paymentHistory={paymentHistory}
                         vocab={vocab}
+                        isSchoolTreasury={isSchoolTreasury}
                     />
                 )}
                 {activeSection === "profile" && (
