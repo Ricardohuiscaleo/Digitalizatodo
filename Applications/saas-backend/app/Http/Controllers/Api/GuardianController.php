@@ -304,7 +304,7 @@ class GuardianController extends Controller
 
         // Deudas: cuotas pendientes o en revisión
         $debtsQuery = \App\Models\FeePayment::where('fee_payments.guardian_id', $guardian->id)
-            ->whereIn('fee_payments.status', ['pending', 'pending_review', 'overdue'])
+            ->whereIn('fee_payments.status', ['pending', 'review'])
             ->join('fees', 'fee_payments.fee_id', '=', 'fees.id');
         
         $debtsAmount = (float) $debtsQuery->sum('fees.amount');
@@ -312,7 +312,7 @@ class GuardianController extends Controller
 
         // Devoluciones: cuotas pagadas/aprobadas de meses ESTRICTAMENTE futuros
         $refundsQuery = \App\Models\FeePayment::where('fee_payments.guardian_id', $guardian->id)
-            ->where('fee_payments.status', 'approved')
+            ->where('fee_payments.status', 'paid')
             ->where(function($q) use ($currentMonth, $currentYear) {
                 $q->where('fee_payments.period_year', '>', $currentYear)
                   ->orWhere(function($sub) use ($currentMonth, $currentYear) {
