@@ -36,6 +36,7 @@ class StudentController extends Controller
 
         $students = $query
             ->with([
+                'course',
                 'enrollments' => fn($q) => $q->where('status', 'active'),
                 'attendances' => fn($q) => $q->where('date', now()->format('Y-m-d'))
             ])
@@ -50,6 +51,8 @@ class StudentController extends Controller
                     'name' => $student->name,
                     'category' => $student->category,
                     'photo' => $student->photo,
+                    'course_id' => $student->course_id,
+                    'course_name' => $student->course ? $student->course->name : null,
                     'has_debt' => $pendingPayments > 0,
                     'pending_count' => $pendingPayments,
                     'today_status' => $todayAttendance ? $todayAttendance->status : null,
@@ -146,6 +149,24 @@ class StudentController extends Controller
         $student->update(['name' => $validated['name']]);
 
         return response()->json(['message' => 'Nombre actualizado', 'student' => $student]);
+    }
+
+
+    public function updateCourse(Request $request, $tenant, $id)
+    {
+        $tenantModel = app('currentTenant');
+        $student = Student::where('tenant_id', $tenantModel->id)->findOrFail($id);
+
+        $validated = $request->validate([
+            'course_id' => 'nullable|exists:courses,id'
+        ]);
+
+        $student->update(['course_id' => $validated['course_id']]);
+
+        return response()->json([
+            'message' => 'Curso actualizado correctamente',
+            'student' => $student->load('course')
+        ]);
     }
 
     public function destroy(string $id) {}

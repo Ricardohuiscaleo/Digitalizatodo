@@ -13,9 +13,14 @@ class Student extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'tenant_id', 'name', 'phone', 'photo', 'birth_date', 'category', 'belt_rank',
+        'tenant_id', 'course_id', 'name', 'phone', 'photo', 'birth_date', 'category', 'belt_rank',
         'emergency_contact_name', 'emergency_contact_phone', 'active',
     ];
+
+    public function course(): BelongsTo
+    {
+        return $this->belongsTo(Course::class);
+    }
 
     protected $casts = [
         'birth_date' => 'date',

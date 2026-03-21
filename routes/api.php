@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\DebugController;
 use App\Http\Middleware\ResolveTenantFromPath;
 use App\Http\Controllers\TelegramBotController;
 use App\Http\Controllers\Api\AttendanceQRController;
+use App\Http\Controllers\Api\CourseController;
 use Illuminate\Support\Facades\Artisan;
 
 /*
@@ -69,6 +70,9 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
 
     // Web Push VAPID (público para obtener clave)
     Route::get('push/vapid-public-key', [\App\Http\Controllers\Api\PushController::class, 'vapidPublicKey']);
+    
+    // Cursos públicos (para registro)
+    Route::get('courses', [CourseController::class, 'index']);
 
     // Registro público de alumnos
     Route::post('register-student', [StudentRegistrationController::class , 'register']);
@@ -92,6 +96,7 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
             Route::get('students', [StudentController::class , 'index']);
             Route::post('students/{id}/photo', [StudentController::class , 'uploadPhoto']);
             Route::patch('students/{id}/name', [StudentController::class , 'updateName']);
+            Route::patch('students/{id}/course', [StudentController::class, 'updateCourse']);
             Route::get('attendance', [AttendanceController::class , 'index']);
             Route::post('attendance/verify-qr', [AttendanceController::class , 'verifyQR']);
 
@@ -154,6 +159,10 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
                     Route::get('fees/{id}', [\App\Http\Controllers\Api\FeeController::class, 'show']);
                     Route::delete('fees/{id}', [\App\Http\Controllers\Api\FeeController::class, 'destroy']);
                     Route::post('fees/{id}/approve-payment', [\App\Http\Controllers\Api\FeeController::class, 'approvePayment']);
+
+                    // Gestión de Cursos
+                    Route::post('courses', [CourseController::class, 'store']);
+                    Route::delete('courses/{id}', [CourseController::class, 'destroy']);
                 }
                 );
             }
