@@ -138,39 +138,6 @@ class AuthController extends Controller
                 ->whereIn('status', ['pending', 'overdue'])
                 ->sum('amount');
 
-            return response()->json([
-                'user_type' => 'guardian',
-                'guardian'  => $guardian->only('id', 'name', 'email', 'phone', 'photo'),
-                'tenant'    => [
-                    'id'            => $tenant->id,
-                    'slug'          => $tenant->slug,
-                    'name'          => $tenant->name,
-                    'logo'          => $tenant->logo ? (str_starts_with($tenant->logo, 'http') ? $tenant->logo : $toUrl($tenant->logo)) : null,
-                    'primary_color' => $tenant->primary_color,
-                    'industry'      => $tenant->industry,
-                ],
-                'bank_info' => $bankInfo,
-                'students'  => $guardian->students->map(fn($s) => [
-                    'id'                => $s->id,
-                    'name'              => $s->name,
-                    'photo'             => $toUrl($s->photo),
-                    'category'          => $s->category ?? 'Sin Categoría',
-                    'belt_rank'         => $s->belt_rank,
-                    'attendance_count'  => \App\Models\Attendance::where('student_id', $s->id)->where('status', 'present')->count(),
-                    'pending_payments'  => $s->enrollments->flatMap->payments->count(),
-                    'recent_attendance' => $s->attendances->map(fn($a) => [
-                        'date'   => $a->date->format('Y-m-d'),
-                        'status' => $a->status,
-                    ]),
-                    'payments' => $s->enrollments->flatMap->payments->map(fn($p) => [
-                        'id'          => $p->id,
-                        'amount'      => $p->amount,
-                        'due_date'    => $p->due_date?->format('d M, Y'),
-                        'status'      => $p->status,
-                        'proof_image' => $toUrl($p->proof_image),
-                    ]),
-                ]),
-                'total_due' => round($totalDue),
             $paymentHistoryQuery = \App\Models\Payment::whereIn('enrollment_id', $allEnrollmentIds)
                 ->whereIn('status', ['approved', 'pending_review']);
 
