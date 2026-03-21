@@ -21,7 +21,7 @@ interface OverviewSectionProps {
     now: Date;
     setSelectedHistoryDate: (d: string | null) => void;
     schedulesList: any[];
-    feesSummary?: { al_dia: number; en_revision: number; morosos: number; pendientes: number } | null;
+    feesSummary?: { total: number; al_dia: number; en_revision: number; morosos: number } | null;
 }
 
 export default function OverviewSection(props: OverviewSectionProps) {
@@ -51,46 +51,45 @@ export default function OverviewSection(props: OverviewSectionProps) {
 
     return (
         <div className="space-y-6 text-zinc-950">
-            {/* Dashboard Summary Horizontal Grid 4 cols */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {/* Dashboard Summary Horizontal Grid — 4 Columns on Mobile */}
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
                 {branding?.industry === 'school_treasury' && feesSummary ? (
                     <>
-                        {/* Al Día */}
-                        <div className="bg-emerald-50/40 rounded-[1.8rem] px-4 py-3 border border-emerald-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
-                            <div className="flex flex-col gap-1.5 shrink-0">
-                                <CheckCircle2 className="text-emerald-600" size={18} strokeWidth={2.5} />
-                                <p className="text-[7px] font-black text-emerald-600/60 uppercase tracking-widest leading-none">Al Día</p>
+                        {/* Total */}
+                        <div className="bg-white rounded-2xl sm:rounded-[1.8rem] px-2 sm:px-4 py-3 border border-zinc-100 shadow-sm flex flex-col sm:flex-row items-center justify-center sm:justify-between min-h-[65px] sm:min-h-[75px]">
+                            <div className="flex flex-col items-center sm:items-start gap-1 sm:gap-1.5 shrink-0">
+                                <Users style={{ color: branding?.primaryColor || '#6366f1' }} size={18} strokeWidth={2.5} className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+                                <p className="text-[6px] sm:text-[7px] font-black text-zinc-400 uppercase tracking-tighter sm:tracking-widest leading-none text-center sm:text-left">Total</p>
                             </div>
-                            <p className="text-xl font-black text-emerald-700 tracking-tighter leading-none shrink-0">{feesSummary.al_dia}</p>
+                            <p className="text-sm sm:text-xl font-black text-zinc-950 tracking-tighter leading-none shrink-0 mt-1 sm:mt-0">{feesSummary.total}</p>
+                        </div>
+                        {/* Al Día */}
+                        <div className="bg-emerald-50/40 rounded-2xl sm:rounded-[1.8rem] px-2 sm:px-4 py-3 border border-emerald-100/60 shadow-sm flex flex-col sm:flex-row items-center justify-center sm:justify-between min-h-[65px] sm:min-h-[75px]">
+                            <div className="flex flex-col items-center sm:items-start gap-1 sm:gap-1.5 shrink-0">
+                                <CheckCircle2 className="text-emerald-600 w-4 h-4 sm:w-[18px] sm:h-[18px]" size={18} strokeWidth={2.5} />
+                                <p className="text-[6px] sm:text-[7px] font-black text-emerald-600/60 uppercase tracking-tighter sm:tracking-widest leading-none text-center sm:text-left truncate w-full">Al Día</p>
+                            </div>
+                            <p className="text-sm sm:text-xl font-black text-emerald-700 tracking-tighter leading-none shrink-0 mt-1 sm:mt-0">{feesSummary.al_dia}</p>
                         </div>
                         {/* Revisión */}
-                        <div className="bg-amber-50/40 rounded-[1.8rem] px-4 py-3 border border-amber-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
-                            <div className="flex flex-col gap-1.5 shrink-0">
-                                <RefreshCw className="text-amber-600 animate-spin-slow" size={18} strokeWidth={2.5} />
-                                <p className="text-[7px] font-black text-amber-600/60 uppercase tracking-widest leading-none">Revisión</p>
+                        <div className="bg-amber-50/40 rounded-2xl sm:rounded-[1.8rem] px-2 sm:px-4 py-3 border border-amber-100/60 shadow-sm flex flex-col sm:flex-row items-center justify-center sm:justify-between min-h-[65px] sm:min-h-[75px]">
+                            <div className="flex flex-col items-center sm:items-start gap-1 sm:gap-1.5 shrink-0">
+                                <RefreshCw className="text-amber-600 animate-spin-slow w-4 h-4 sm:w-[18px] sm:h-[18px]" size={18} strokeWidth={2.5} />
+                                <p className="text-[6px] sm:text-[7px] font-black text-amber-600/60 uppercase tracking-tighter sm:tracking-widest leading-none text-center sm:text-left">Revisión</p>
                             </div>
-                            <p className="text-xl font-black text-amber-700 tracking-tighter leading-none shrink-0">{feesSummary.en_revision}</p>
+                            <p className="text-sm sm:text-xl font-black text-amber-700 tracking-tighter leading-none shrink-0 mt-1 sm:mt-0">{feesSummary.en_revision}</p>
                         </div>
                         {/* Morosos */}
-                        <div className="bg-rose-50/40 rounded-[1.8rem] px-4 py-3 border border-rose-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
-                            <div className="flex flex-col gap-1.5 shrink-0">
-                                <XCircle className="text-rose-600" size={18} strokeWidth={2.5} />
-                                <p className="text-[7px] font-black text-rose-600/60 uppercase tracking-widest leading-none">Morosos</p>
+                        <div className="bg-rose-50/40 rounded-2xl sm:rounded-[1.8rem] px-2 sm:px-4 py-3 border border-rose-100/60 shadow-sm flex flex-col sm:flex-row items-center justify-center sm:justify-between min-h-[65px] sm:min-h-[75px]">
+                            <div className="flex flex-col items-center sm:items-start gap-1 sm:gap-1.5 shrink-0">
+                                <XCircle className="text-rose-600 w-4 h-4 sm:w-[18px] sm:h-[18px]" size={18} strokeWidth={2.5} />
+                                <p className="text-[6px] sm:text-[7px] font-black text-rose-600/60 uppercase tracking-tighter sm:tracking-widest leading-none text-center sm:text-left">Morosos</p>
                             </div>
-                            <p className="text-xl font-black text-rose-700 tracking-tighter leading-none shrink-0">{feesSummary.morosos}</p>
-                        </div>
-                        {/* Pendientes */}
-                        <div className="bg-zinc-50 rounded-[1.8rem] px-4 py-3 border border-zinc-100 shadow-sm flex items-center justify-between min-h-[75px]">
-                            <div className="flex flex-col gap-1.5 shrink-0">
-                                <Clock className="text-zinc-600" size={18} strokeWidth={2.5} />
-                                <p className="text-[7px] font-black text-zinc-400 uppercase tracking-widest leading-none">Pendientes</p>
-                            </div>
-                            <p className="text-xl font-black text-zinc-900 tracking-tighter leading-none shrink-0">{feesSummary.pendientes}</p>
+                            <p className="text-sm sm:text-xl font-black text-rose-700 tracking-tighter leading-none shrink-0 mt-1 sm:mt-0">{feesSummary.morosos}</p>
                         </div>
                     </>
                 ) : (
                     <>
-                        {/* Total */}
                         <div className="bg-white rounded-[1.8rem] px-4 py-3 border border-zinc-100 shadow-sm flex items-center justify-between min-h-[75px]">
                             <div className="flex flex-col gap-1.5 shrink-0">
                                 <Users style={{ color: branding?.primaryColor || '#6366f1' }} size={18} strokeWidth={2.5} />
@@ -98,8 +97,6 @@ export default function OverviewSection(props: OverviewSectionProps) {
                             </div>
                             <p className="text-xl font-black text-zinc-950 tracking-tighter leading-none shrink-0">{totalStudents}</p>
                         </div>
-
-                        {/* Pagados */}
                         <div className="bg-emerald-50/40 rounded-[1.8rem] px-4 py-3 border border-emerald-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
                             <div className="flex flex-col gap-1.5 shrink-0">
                                 <CheckCircle2 className="text-emerald-600" size={18} strokeWidth={2.5} />
@@ -107,8 +104,6 @@ export default function OverviewSection(props: OverviewSectionProps) {
                             </div>
                             <p className="text-xl font-black text-emerald-700 tracking-tighter leading-none shrink-0">{paidStudents}</p>
                         </div>
-
-                        {/* Revisión */}
                         <div className="bg-amber-50/40 rounded-[1.8rem] px-4 py-3 border border-amber-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
                             <div className="flex flex-col gap-1.5 shrink-0">
                                 <RefreshCw className="text-amber-600 animate-spin-slow" size={18} strokeWidth={2.5} />
@@ -116,8 +111,6 @@ export default function OverviewSection(props: OverviewSectionProps) {
                             </div>
                             <p className="text-xl font-black text-amber-700 tracking-tighter leading-none shrink-0">{allStudents.filter(s => s.payerStatus === 'review').length}</p>
                         </div>
-
-                        {/* Deuda */}
                         <div className="bg-rose-50/40 rounded-[1.8rem] px-4 py-3 border border-rose-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
                             <div className="flex flex-col gap-1.5 shrink-0">
                                 <XCircle className="text-rose-600" size={18} strokeWidth={2.5} />
