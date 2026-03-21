@@ -1,5 +1,5 @@
 # Imagen única Debian — más confiable que Alpine para extensiones PHP complejas
-FROM php:8.4-fpm AS production
+FROM php:8.3-fpm AS production
 
 WORKDIR /var/www/html
 
