@@ -111,11 +111,15 @@ export default function GuardianSettlementModal({ tenantId, token, guardian, onC
                                     <div>
                                         <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1">Alumno(s) Asociado(s)</p>
                                         <div className="flex flex-wrap gap-1">
-                                            {settlement.guardian?.students?.map((s: any) => (
-                                                <span key={s.id} className="text-[10px] font-bold bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-md border border-zinc-200">
-                                                    {s.name} <span className="text-[8px] opacity-50 ml-1">({s.category === '3_basico' ? '3° Básico' : s.category})</span>
-                                                </span>
-                                            ))}
+                                            {settlement.guardian?.students && settlement.guardian.students.length > 0 ? (
+                                                settlement.guardian.students.map((s: any) => (
+                                                    <span key={s.id} className="text-[10px] font-bold bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-md border border-zinc-200">
+                                                        {s.name} <span className="text-[8px] opacity-50 ml-1">({s.category === '3_basico' ? '3° Básico' : s.category})</span>
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <span className="text-[10px] font-bold text-rose-400 italic">No se encontraron alumnos vinculados</span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
