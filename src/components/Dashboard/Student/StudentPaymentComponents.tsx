@@ -108,18 +108,11 @@ export function FeePayModal({ fees, onClose, onSuccess, submitFeePayment }: {
 
     const togglePeriod = (feeId: number, key: string, periods: any[]) => {
         setSelected(prev => {
-            const set = new Set(prev[feeId] || []);
-            const pendingKeys = periods
-                .filter((p: any) => p.status === 'pending')
-                .map((p: any) => `${p.year}-${p.month}`);
-            const idx = pendingKeys.indexOf(key);
-            if (idx === -1) return prev;
-            
-            const newSet = new Set<string>();
-            if (set.has(key) && [...set].pop() === key) {
-                pendingKeys.slice(0, idx).forEach(k => newSet.add(k));
+            const newSet = new Set(prev[feeId] || []);
+            if (newSet.has(key)) {
+                newSet.delete(key);
             } else {
-                pendingKeys.slice(0, idx + 1).forEach(k => newSet.add(k));
+                newSet.add(key);
             }
             return { ...prev, [feeId]: newSet };
         });

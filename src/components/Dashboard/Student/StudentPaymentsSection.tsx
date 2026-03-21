@@ -247,7 +247,7 @@ export function StudentPaymentsSection({
                                     </span>
                                     {p.proof_image && (
                                         <button 
-                                            onClick={() => setProofModal({ url: p.proof_image, canDelete: false, paymentId: String(p.id) })} 
+                                            onClick={() => setProofModal({ url: p.proof_image, canDelete: p.status !== 'approved', paymentId: String(p.id) })} 
                                             className="w-10 h-10 flex items-center justify-center bg-zinc-900 text-white rounded-xl hover:bg-orange-500 transition-all shadow-lg shadow-zinc-200"
                                         >
                                             <Eye size={18} />
