@@ -79,9 +79,11 @@ class FeeController extends Controller
                 $metrics['en_revision']++;
             } elseif ($hasFuturePending) {
                 $status = 'pending';
-            } else {
+            } elseif ($fees->count() > 0) {
                 $status = 'paid';
                 $metrics['al_dia']++;
+            } else {
+                $status = 'none';
             }
 
             return [
