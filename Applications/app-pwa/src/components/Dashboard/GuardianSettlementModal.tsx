@@ -56,6 +56,7 @@ export default function GuardianSettlementModal({ tenantId, token, guardian, onC
         setError('');
 
         const formData = new FormData();
+        formData.append('_method', 'DELETE'); // Laravel spoofing for file uploads on DELETE routes
         formData.append('confirmation_name', confirmName);
         formData.append('refund_amount', String(refundTotal));
         if (proofFile) {
