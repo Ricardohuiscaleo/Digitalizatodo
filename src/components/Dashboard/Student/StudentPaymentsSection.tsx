@@ -171,7 +171,7 @@ export function StudentPaymentsSection({
                             <>
                                 <div className="flex items-center justify-between ml-2 mb-1">
                                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
-                                        {isSchoolTreasury ? 'Cuotas Pendientes' : `${vocab.cat1}s ${vocab.placeLabel.toLowerCase()}s`}
+                                        {isSchoolTreasury ? 'Cuotas Únicas' : `${vocab.cat1}s ${vocab.placeLabel.toLowerCase()}s`}
                                     </h3>
                                     <button
                                         onClick={() => setFeePayModal({ fees: myFees })}
@@ -190,6 +190,13 @@ export function StudentPaymentsSection({
                                     />
                                 ))}
                             </>
+                        )}
+                        {students.some((s: any) => s.payments && s.payments.length > 0) && (
+                            <div className="flex items-center justify-between ml-2 mb-1 mt-4">
+                                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
+                                    {isSchoolTreasury ? 'Cuotas Recurrentes' : 'Pagos Mensuales'}
+                                </h3>
+                            </div>
                         )}
                         {students.flatMap((s: any) => s.payments || []).map((payment: any) => (
                             <PaymentRow
