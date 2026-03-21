@@ -34,6 +34,7 @@ class StudentRegistrationController extends Controller
             'students' => 'required_if:is_self_register,false|array',
             'students.*.name' => 'required_with:students|string|max:255',
             'students.*.category' => 'required_with:students|string|max:50',
+            'students.*.course_id' => 'nullable|exists:courses,id',
             'plan_id' => 'nullable|exists:plans,id',
         ]);
 
@@ -102,7 +103,8 @@ class StudentRegistrationController extends Controller
                         if (!empty($studentData['name'])) {
                             $studentsToCreate[] = [
                                 'name' => $studentData['name'],
-                                'category' => strtolower($studentData['category'] ?? 'kids') // kids o adults
+                                'category' => strtolower($studentData['category'] ?? 'kids'), // kids o adults
+                                'course_id' => $studentData['course_id'] ?? null
                             ];
                         }
                     }
@@ -121,10 +123,27 @@ class StudentRegistrationController extends Controller
                     // Obtener el plan específico para la categoría de este alumno
                     $plan = $getOrCreatePlan($category);
 
+                    $courseId = $studentData['course_id'] ?? null;
+
+                    // Automatización: Si no viene course_id pero hay category (ej: '3_basico'), 
+                    // intentamos buscar el curso que coincida por nombre.
+                    if (!$courseId && !empty($category)) {
+                        $course = \App\Models\Course::where('tenant_id', $tenant->id)
+                            ->where(function($q) use ($category) {
+                                $normalized = str_replace('_', ' ', $category);
+                                $q->where('name', 'LIKE', '%' . $normalized . '%')
+                                  ->orWhere('name', $category);
+                            })->first();
+                        if ($course) {
+                            $courseId = $course->id;
+                        }
+                    }
+
                     $student = Student::create([
                         'tenant_id' => $tenant->id,
                         'name' => $studentData['name'],
                         'category' => $category,
+                        'course_id' => $courseId,
                         'active' => true,
                     ]);
 

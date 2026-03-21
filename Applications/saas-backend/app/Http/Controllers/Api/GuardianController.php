@@ -329,6 +329,13 @@ class GuardianController extends Controller
             'guardian' => [
                 'id' => $guardian->id,
                 'name' => $guardian->name,
+                'students' => $guardian->students->map(function($s) {
+                    return [
+                        'id' => $s->id,
+                        'name' => $s->name,
+                        'category' => $s->category,
+                    ];
+                }),
             ],
             'debts' => [
                 'total' => $debtsAmount,

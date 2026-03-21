@@ -103,9 +103,21 @@ export default function GuardianSettlementModal({ tenantId, token, guardian, onC
                         <>
                             {/* Resumen Finiquito */}
                             <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 space-y-4">
-                                <div>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1">Apoderado</p>
-                                    <p className="text-sm font-bold text-zinc-900">{guardian.name}</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1">Apoderado</p>
+                                        <p className="text-sm font-bold text-zinc-900">{guardian.name}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1">Alumno(s) Asociado(s)</p>
+                                        <div className="flex flex-wrap gap-1">
+                                            {settlement.guardian?.students?.map((s: any) => (
+                                                <span key={s.id} className="text-[10px] font-bold bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-md border border-zinc-200">
+                                                    {s.name} <span className="text-[8px] opacity-50 ml-1">({s.category === '3_basico' ? '3° Básico' : s.category})</span>
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="bg-white border border-rose-100 rounded-xl p-3">
