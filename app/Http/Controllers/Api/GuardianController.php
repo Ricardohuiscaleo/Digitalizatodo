@@ -296,7 +296,11 @@ class GuardianController extends Controller
     public function settlement(Request $request, $tenant, $id)
     {
         $tenantObj = app('currentTenant');
-        $guardian = Guardian::where('tenant_id', $tenantObj->id)->findOrFail($id);
+        $guardian = Guardian::where('tenant_id', $tenantObj->id)
+            ->with(['students' => function($q) {
+                $q->whereNull('students.deleted_at');
+            }])
+            ->findOrFail($id);
 
         $now = now();
         $currentMonth = $now->month;
