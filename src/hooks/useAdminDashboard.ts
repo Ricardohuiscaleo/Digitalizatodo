@@ -81,7 +81,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
     const [showNotifications, setShowNotifications] = useState(false);
     const [appUpdates, setAppUpdates] = useState<any[]>([]);
     const [toastNotification, setToastNotification] = useState<any>(null);
-    const [feesSummary, setFeesSummary] = useState<{ al_dia: number; en_revision: number; morosos: number; pendientes: number } | null>(null);
+    const [feesSummary, setFeesSummary] = useState<{ total: number; al_dia: number; en_revision: number; morosos: number } | null>(null);
     const [feesList, setFeesList] = useState<any[]>([]);
     const [feesSearch, setFeesSearch] = useState('');
     const filteredFees = useMemo(() => {
@@ -245,7 +245,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
             const total = feesData.fees.length;
             const pending = feesData.fees.reduce((a: number, f: any) => a + (f.total_count - f.paid_count - f.review_count), 0);
             const review = feesData.fees.reduce((a: number, f: any) => a + (f.review_count || 0), 0);
-            setFeesSummary({ al_dia: total - pending - review, en_revision: review, morosos: pending, pendientes: 0 } as any);
+            setFeesSummary({ total, al_dia: total - pending - review, en_revision: review, morosos: pending } as any);
         }
 
         if (guardiansData?.guardians) {
