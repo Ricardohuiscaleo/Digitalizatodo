@@ -146,3 +146,37 @@ Para 3 tabs: `width: 'calc(33.33% - 2.6px)'`, transform: `translateX(${idx === 0
 2. **FeesSection tab 'history'**: implementar vista de apoderados con `feesGuardians` (resumen deuda total por apoderado)
 3. **Botón "Ver apoderados"** en fee card: restaurar cuando backend confirmado (retorna todos los apoderados con estado)
 4. **Sección Cuotas staff**: terminar de construir — mejorar modal apoderados, aprobar pagos individuales por período
+
+---
+
+## Arquitectura VERIFICADA: school_treasury
+
+Basado en la auditoría del código fuente (`OverviewSection`, `StudentHomeSection`, `BottomNav`), este es el comportamiento exacto de la industria.
+
+### 👨‍💼 Perfil: STAFF (Administración/Tesorero)
+- **Dashboard**: Muestra exclusivamente el estado de cuotas: **Total Alumnos**, **Al Día**, **En Revisión** y **Morosos**. Sección de asistencia oculta.
+- **Navegación**: Sin botón de "Asistencia" en BottomNav. Prioridad a Cuotas y Compras.
+
+### 👪 Perfil: APODERADO / ALUMNO
+- **Home**: Tarjeta status financiero (Al día/Deuda). 
+- **Asistencia QR**: Desactivada completamente para esta industria.
+- **Rendición**: Pestaña exclusiva para ver gastos del colegio.
+
+### 🏗️ Implementación Backend (Sistema de Cursos)
+- **Modelo `Course`**: En `app/Models/Course.php`.
+- **Relación**: `Student` -> `course_id`.
+- **Automatización**: Mapeo inteligente en el backend. La categoría del formulario (ej: `3_basico`) se vincula automáticamente al curso `3 basico` por nombre.
+
+### 🗄️ Estructura SQL
+```sql
+CREATE TABLE IF NOT EXISTS `courses` (
+  `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `tenant_id` BIGINT UNSIGNED NOT NULL,
+  `name` VARCHAR(255) NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX `courses_tenant_id_index` (`tenant_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE `students` ADD COLUMN `course_id` BIGINT UNSIGNED NULL;
+```
