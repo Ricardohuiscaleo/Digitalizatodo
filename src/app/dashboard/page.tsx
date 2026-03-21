@@ -421,6 +421,7 @@ export default function App() {
                                         setProofModalUrl={setProofModalUrl}
                                         formatMoney={formatMoney}
                                         vocab={vocab}
+                                        feesSummary={feesSummary}
                                     />
                                 ) : (
                                     <PaymentsSection 

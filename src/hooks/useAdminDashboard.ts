@@ -81,7 +81,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
     const [showNotifications, setShowNotifications] = useState(false);
     const [appUpdates, setAppUpdates] = useState<any[]>([]);
     const [toastNotification, setToastNotification] = useState<any>(null);
-    const [feesSummary, setFeesSummary] = useState<{ total: number; pending: number; review: number } | null>(null);
+    const [feesSummary, setFeesSummary] = useState<{ al_dia: number; en_revision: number; morosos: number; pendientes: number } | null>(null);
     const [feesList, setFeesList] = useState<any[]>([]);
     const [feesSearch, setFeesSearch] = useState('');
     const filteredFees = useMemo(() => {
@@ -237,11 +237,15 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         ]);
 
         setFeesList(feesData?.fees || []);
-        if (feesData?.fees) {
+        
+        if (guardiansData?.metrics) {
+            setFeesSummary(guardiansData.metrics);
+        } else if (feesData?.fees) {
+            // Fallback for non-school_treasury or legacy
             const total = feesData.fees.length;
             const pending = feesData.fees.reduce((a: number, f: any) => a + (f.total_count - f.paid_count - f.review_count), 0);
             const review = feesData.fees.reduce((a: number, f: any) => a + (f.review_count || 0), 0);
-            setFeesSummary({ total, pending, review });
+            setFeesSummary({ al_dia: total - pending - review, en_revision: review, morosos: pending, pendientes: 0 } as any);
         }
 
         if (guardiansData?.guardians) {
@@ -548,14 +552,11 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
                     getSchedules(tenantSlug || '', storedToken || '').then(d => setSchedulesList(d?.schedules || []));
                     getFees(tenantSlug || '', storedToken || '').then(d => {
                         setFeesList(d?.fees || []);
-                        if (d?.fees) {
-                            const total = d.fees.length;
-                            const pending = d.fees.reduce((a: number, f: any) => a + (f.total_count - f.paid_count - f.review_count), 0);
-                            const review = d.fees.reduce((a: number, f: any) => a + (f.review_count || 0), 0);
-                            setFeesSummary({ total, pending, review });
-                        }
                     });
-                    getFeesGuardiansSummary(tenantSlug || '', storedToken || '').then(d => setFeesGuardians(d?.guardians || []));
+                    getFeesGuardiansSummary(tenantSlug || '', storedToken || '').then(d => {
+                        if (d?.guardians) setFeesGuardians(d.guardians);
+                        if (d?.metrics) setFeesSummary(d.metrics);
+                    });
                 }
                 getAppUpdates('staff', profile.tenant?.industry || undefined).then(d => setAppUpdates(d?.updates ?? []));
                 getNotifications(tenantSlug || '', storedToken || '').then(d => {

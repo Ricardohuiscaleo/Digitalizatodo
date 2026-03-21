@@ -9,7 +9,8 @@ import {
     Clock, 
     Eye,
     ChevronDown,
-    ChevronUp
+    ChevronUp,
+    Trash2
 } from "lucide-react";
 import { FeeCard, PaymentRow } from "./StudentPaymentComponents";
 
@@ -229,29 +230,37 @@ export function StudentPaymentsSection({
                 <div className="space-y-4 animate-in fade-in duration-300">
                     {paymentHistory && paymentHistory.length > 0 ? (
                         paymentHistory.map((p: any) => (
-                            <div key={p.id} className="flex items-center justify-between bg-white border border-zinc-100 rounded-[2rem] px-6 py-5 shadow-sm hover:shadow-md transition-all group">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-zinc-50 rounded-2xl flex items-center justify-center text-zinc-400 group-hover:bg-orange-50 transition-colors">
-                                        <CreditCard size={20} />
+                            <div key={p.id} className="flex items-center justify-between bg-white border border-zinc-100 rounded-3xl px-5 py-4 shadow-sm group">
+                                <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] text-zinc-400 font-mono">#{String(p.id).slice(-4)}</span>
+                                        <p className="text-sm font-black text-zinc-900">${Number(p.amount).toLocaleString("es-CL")}</p>
                                     </div>
-                                    <div>
-                                        <p className="text-base font-black text-zinc-900">${Number(p.amount).toLocaleString("es-CL")}</p>
-                                        <p className="text-[10px] text-zinc-700 font-bold uppercase tracking-wider">{p.title || 'Pago de Mensualidad'}</p>
-                                        <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest">{p.paid_at || p.due_date}</p>
+                                    <p className="text-[10px] text-zinc-800 font-bold truncate pr-2 uppercase">{p.title || 'Pago de Mensualidad'}</p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-[9px] text-zinc-400 font-bold tracking-widest uppercase">{p.paid_at || p.due_date}</p>
+                                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                                            p.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-yellow-50 text-yellow-600 border-yellow-100'
+                                        }`}>
+                                            {p.status === 'approved' ? 'Pagado' : 'En Revisión'}
+                                        </span>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full border shadow-sm ${
-                                        p.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-yellow-50 text-yellow-600 border-yellow-100'
-                                    }`}>
-                                        {p.status === 'approved' ? 'Pagado' : 'En Revisión'}
-                                    </span>
+                                <div className="flex items-center gap-2">
                                     {p.proof_image && (
                                         <button 
-                                            onClick={() => setProofModal({ url: p.proof_image, canDelete: p.status !== 'approved', paymentId: String(p.id) })} 
-                                            className="w-10 h-10 flex items-center justify-center bg-zinc-900 text-white rounded-xl hover:bg-orange-500 transition-all shadow-lg shadow-zinc-200"
+                                            onClick={() => setProofModal({ url: p.proof_image, canDelete: false, paymentId: String(p.id) })} 
+                                            className="w-9 h-9 flex items-center justify-center bg-zinc-50 text-zinc-400 rounded-xl hover:bg-zinc-900 hover:text-white transition-all border border-zinc-100"
                                         >
-                                            <Eye size={18} />
+                                            <Eye size={16} />
+                                        </button>
+                                    )}
+                                    {p.status !== 'approved' && (
+                                        <button 
+                                            onClick={() => setConfirmDelete(String(p.id))}
+                                            className="w-9 h-9 flex items-center justify-center bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all border border-red-100"
+                                        >
+                                            <Trash2 size={16} />
                                         </button>
                                     )}
                                 </div>
