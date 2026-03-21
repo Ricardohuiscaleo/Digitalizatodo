@@ -34,7 +34,6 @@ export default function OverviewSection(props: OverviewSectionProps) {
 
     const totalStudents = allStudents.length;
     const paidStudents = allStudents.filter(s => s.payerStatus === 'paid').length;
-    const pendingStudents = totalStudents - paidStudents;
     const presentToday = attendance.size;
 
     // Agrupar historial por fecha, filtrado por mes seleccionado
@@ -57,128 +56,120 @@ export default function OverviewSection(props: OverviewSectionProps) {
                     <>
                         {/* Total Students */}
                         <div className="bg-white rounded-xl sm:rounded-2xl px-1.5 sm:px-3 py-2 sm:py-3 border border-zinc-100 shadow-sm flex items-center justify-between min-h-[60px] sm:min-h-[70px]">
-                            <p className="text-base sm:text-2xl font-black text-zinc-950 tracking-tighter leading-none">{feesSummary.total}</p>
-                            <div className="flex flex-col items-end gap-0.5 sm:gap-1 shrink-0">
+                            <div className="flex flex-col items-start gap-0.5 sm:gap-1 shrink-0">
                                 <Users style={{ color: branding?.primaryColor || '#6366f1' }} size={14} className="sm:w-[18px] sm:h-[18px]" strokeWidth={2.5} />
                                 <p className="text-[5px] sm:text-[7px] font-black text-zinc-400 uppercase tracking-tighter leading-none">Total</p>
                             </div>
+                            <p className="text-base sm:text-2xl font-black text-zinc-950 tracking-tighter leading-none">{feesSummary.total}</p>
                         </div>
                         {/* Al Día */}
                         <div className="bg-emerald-50/40 rounded-xl sm:rounded-2xl px-1.5 sm:px-3 py-2 sm:py-3 border border-emerald-100/60 shadow-sm flex items-center justify-between min-h-[60px] sm:min-h-[70px]">
-                            <p className="text-base sm:text-2xl font-black text-emerald-700 tracking-tighter leading-none">{feesSummary.al_dia}</p>
-                            <div className="flex flex-col items-end gap-0.5 sm:gap-1 shrink-0">
+                            <div className="flex flex-col items-start gap-0.5 sm:gap-1 shrink-0">
                                 <CheckCircle2 className="text-emerald-600 w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]" strokeWidth={2.5} />
                                 <p className="text-[5px] sm:text-[7px] font-black text-emerald-600/60 uppercase tracking-tighter leading-none">Al Día</p>
                             </div>
+                            <p className="text-base sm:text-2xl font-black text-emerald-700 tracking-tighter leading-none">{feesSummary.al_dia}</p>
                         </div>
                         {/* Revisión */}
                         <div className="bg-amber-50/40 rounded-xl sm:rounded-2xl px-1.5 sm:px-3 py-2 sm:py-3 border border-amber-100/60 shadow-sm flex items-center justify-between min-h-[60px] sm:min-h-[70px]">
-                            <p className="text-base sm:text-2xl font-black text-amber-700 tracking-tighter leading-none">{feesSummary.en_revision}</p>
-                            <div className="flex flex-col items-end gap-0.5 sm:gap-1 shrink-0">
+                            <div className="flex flex-col items-start gap-0.5 sm:gap-1 shrink-0">
                                 <RefreshCw className="text-amber-600 animate-spin-slow w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]" strokeWidth={2.5} />
                                 <p className="text-[5px] sm:text-[7px] font-black text-amber-600/60 uppercase tracking-tighter leading-none">Revisión</p>
                             </div>
+                            <p className="text-base sm:text-2xl font-black text-amber-700 tracking-tighter leading-none">{feesSummary.en_revision}</p>
                         </div>
                         {/* Morosos */}
                         <div className="bg-rose-50/40 rounded-xl sm:rounded-2xl px-1.5 sm:px-3 py-2 sm:py-3 border border-rose-100/60 shadow-sm flex items-center justify-between min-h-[60px] sm:min-h-[70px]">
-                            <p className="text-base sm:text-2xl font-black text-rose-700 tracking-tighter leading-none">{feesSummary.morosos}</p>
-                            <div className="flex flex-col items-end gap-0.5 sm:gap-1 shrink-0">
+                            <div className="flex flex-col items-start gap-0.5 sm:gap-1 shrink-0">
                                 <XCircle className="text-rose-600 w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]" strokeWidth={2.5} />
                                 <p className="text-[5px] sm:text-[7px] font-black text-rose-600/60 uppercase tracking-tighter leading-none">Morosos</p>
                             </div>
+                            <p className="text-base sm:text-2xl font-black text-rose-700 tracking-tighter leading-none">{feesSummary.morosos}</p>
                         </div>
                     </>
                 ) : (
                     <>
-                        {/* Total Students (Default) */}
                         <div className="bg-white rounded-xl sm:rounded-2xl px-1.5 sm:px-3 py-2 sm:py-3 border border-zinc-100 shadow-sm flex items-center justify-between min-h-[60px] sm:min-h-[70px]">
-                            <p className="text-base sm:text-2xl font-black text-zinc-950 tracking-tighter leading-none">{totalStudents}</p>
-                            <div className="flex flex-col items-end gap-0.5 sm:gap-1 shrink-0">
+                            <div className="flex flex-col items-start gap-0.5 sm:gap-1 shrink-0">
                                 <Users style={{ color: branding?.primaryColor || '#6366f1' }} size={14} className="sm:w-[18px] sm:h-[18px]" strokeWidth={2.5} />
                                 <p className="text-[5px] sm:text-[7px] font-black text-zinc-400 uppercase tracking-tighter leading-none">Total</p>
                             </div>
+                            <p className="text-base sm:text-2xl font-black text-zinc-950 tracking-tighter leading-none">{totalStudents}</p>
                         </div>
-                        {/* Pagados (Default) */}
                         <div className="bg-emerald-50/40 rounded-xl sm:rounded-2xl px-1.5 sm:px-3 py-2 sm:py-3 border border-emerald-100/60 shadow-sm flex items-center justify-between min-h-[60px] sm:min-h-[70px]">
-                            <p className="text-base sm:text-2xl font-black text-emerald-700 tracking-tighter leading-none">{paidStudents}</p>
-                            <div className="flex flex-col items-end gap-0.5 sm:gap-1 shrink-0">
+                            <div className="flex flex-col items-start gap-0.5 sm:gap-1 shrink-0">
                                 <CheckCircle2 className="text-emerald-600 w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]" strokeWidth={2.5} />
                                 <p className="text-[5px] sm:text-[7px] font-black text-emerald-600/60 uppercase tracking-tighter leading-none">Pagados</p>
                             </div>
+                            <p className="text-base sm:text-2xl font-black text-emerald-700 tracking-tighter leading-none">{paidStudents}</p>
                         </div>
-                        {/* Revisión (Default) */}
                         <div className="bg-amber-50/40 rounded-xl sm:rounded-2xl px-1.5 sm:px-3 py-2 sm:py-3 border border-amber-100/60 shadow-sm flex items-center justify-between min-h-[60px] sm:min-h-[70px]">
-                            <p className="text-base sm:text-2xl font-black text-amber-700 tracking-tighter leading-none">{allStudents.filter(s => s.payerStatus === 'review').length}</p>
-                            <div className="flex flex-col items-end gap-0.5 sm:gap-1 shrink-0">
+                            <div className="flex flex-col items-start gap-0.5 sm:gap-1 shrink-0">
                                 <RefreshCw className="text-amber-600 animate-spin-slow w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]" strokeWidth={2.5} />
                                 <p className="text-[5px] sm:text-[7px] font-black text-amber-600/60 uppercase tracking-tighter leading-none">Revisión</p>
                             </div>
+                            <p className="text-base sm:text-2xl font-black text-amber-700 tracking-tighter leading-none">{allStudents.filter(s => s.payerStatus === 'review').length}</p>
                         </div>
-                        {/* Deuda (Default) */}
                         <div className="bg-rose-50/40 rounded-xl sm:rounded-2xl px-1.5 sm:px-3 py-2 sm:py-3 border border-rose-100/60 shadow-sm flex items-center justify-between min-h-[60px] sm:min-h-[70px]">
-                            <p className="text-base sm:text-2xl font-black text-rose-700 tracking-tighter leading-none">{allStudents.filter(s => s.payerStatus === 'pending').length}</p>
-                            <div className="flex flex-col items-end gap-0.5 sm:gap-1 shrink-0">
+                            <div className="flex flex-col items-start gap-0.5 sm:gap-1 shrink-0">
                                 <XCircle className="text-rose-600 w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]" strokeWidth={2.5} />
                                 <p className="text-[5px] sm:text-[7px] font-black text-rose-600/60 uppercase tracking-tighter leading-none">Deuda</p>
                             </div>
+                            <p className="text-base sm:text-2xl font-black text-rose-700 tracking-tighter leading-none">{allStudents.filter(s => s.payerStatus === 'pending').length}</p>
                         </div>
                     </>
                 )}
             </div>
 
-            {(branding?.industry !== 'school_treasury' && !feesSummary) && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Tarjeta de Asistencia Hoy */}
-                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100 flex flex-col justify-between">
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2 uppercase tracking-tighter">
-                                    <CalendarCheck style={{ color: branding?.primaryColor || '#6366f1' }} size={18} />
-                                    Asistencia Hoy
-                                </h3>
-                                <p className="text-[10px] text-zinc-400 font-bold mt-1 uppercase tracking-widest">
-                                    {now.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'short' })}
-                                </p>
-                            </div>
-                            <span 
-                                className="px-4 py-1.5 rounded-full text-xs font-black transition-colors"
-                                style={{ 
-                                    backgroundColor: `${branding?.primaryColor || '#6366f1'}15`,
-                                    color: branding?.primaryColor || '#6366f1' 
-                                }}
-                            >
-                                {presentToday} / {totalStudents}
-                            </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Tarjeta de Asistencia Hoy */}
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100 flex flex-col justify-between">
+                    <div className="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2 uppercase tracking-tighter">
+                                <CalendarCheck style={{ color: branding?.primaryColor || '#6366f1' }} size={18} />
+                                Asistencia Hoy
+                            </h3>
+                            <p className="text-[10px] text-zinc-400 font-bold mt-1 uppercase tracking-widest">
+                                {now.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'short' })}
+                            </p>
                         </div>
-
-                        {presentToday > 0 ? (
-                            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                                {allStudents.filter(s => attendance.has(String(s.id))).slice(0, 5).map(s => (
-                                    <img
-                                        key={s.id}
-                                        className="inline-block h-10 w-10 rounded-full border-2 border-white shadow-sm object-cover shrink-0"
-                                        src={s.photo}
-                                        alt={s.name}
-                                    />
-                                ))}
-                                {presentToday > 5 && (
-                                    <div className="h-10 w-10 rounded-full bg-zinc-100 border-2 border-white flex items-center justify-center shrink-0 shadow-sm">
-                                        <span className="text-[10px] font-black text-zinc-500">+{presentToday - 5}</span>
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
-                            <div className="flex items-center justify-center gap-3 py-6 px-4 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200 w-full transition-all">
-                                <CalendarCheck size={20} className="text-zinc-300 shrink-0" />
-                                <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">Sin registros hoy</p>
-                            </div>
-                        )}
+                        <span 
+                            className="px-4 py-1.5 rounded-full text-xs font-black transition-colors"
+                            style={{ 
+                                backgroundColor: `${branding?.primaryColor || '#6366f1'}15`,
+                                color: branding?.primaryColor || '#6366f1' 
+                            }}
+                        >
+                            {presentToday} / {totalStudents}
+                        </span>
                     </div>
-                </div>
-            )}
 
-            {/* HISTORIAL DE ASISTENCIA */}
-            {branding?.industry !== 'school_treasury' && (
+                    {presentToday > 0 ? (
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                            {allStudents.filter(s => attendance.has(String(s.id))).slice(0, 5).map(s => (
+                                <img
+                                    key={s.id}
+                                    className="inline-block h-10 w-10 rounded-full border-2 border-white shadow-sm object-cover shrink-0"
+                                    src={s.photo}
+                                    alt={s.name}
+                                />
+                            ))}
+                            {presentToday > 5 && (
+                                <div className="h-10 w-10 rounded-full bg-zinc-100 border-2 border-white flex items-center justify-center shrink-0 shadow-sm">
+                                    <span className="text-[10px] font-black text-zinc-500">+{presentToday - 5}</span>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="flex items-center justify-center gap-3 py-6 px-4 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200 w-full transition-all">
+                            <CalendarCheck size={20} className="text-zinc-300 shrink-0" />
+                            <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">Sin registros hoy</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* HISTORIAL DE ASISTENCIA */}
                 <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100">
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2 uppercase tracking-tighter">
@@ -271,12 +262,10 @@ export default function OverviewSection(props: OverviewSectionProps) {
                         </div>
                     )}
                 </div>
-            )}
+            </div>
 
-            {/* HORARIO DEL DÍA — solo para industrias compatibles */}
-            {branding?.industry === 'school_treasury' && (
-                <TodaySchedule schedules={schedulesList} primaryColor={branding?.primaryColor} />
-            )}
+            {/* HORARIO DEL DÍA */}
+            <TodaySchedule schedules={schedulesList} primaryColor={branding?.primaryColor} />
         </div>
     );
 }
