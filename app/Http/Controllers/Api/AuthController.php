@@ -171,19 +171,82 @@ class AuthController extends Controller
                     ]),
                 ]),
                 'total_due' => round($totalDue),
-                'payment_history' => $allEnrollmentIds->isNotEmpty() ? \App\Models\Payment::whereIn('enrollment_id', $allEnrollmentIds)
-                    ->whereIn('status', ['approved', 'pending_review'])
+            $paymentHistoryQuery = \App\Models\Payment::whereIn('enrollment_id', $allEnrollmentIds)
+                ->whereIn('status', ['approved', 'pending_review']);
+
+            $feePayments = collect([]);
+            if ($tenant->industry === 'school_treasury') {
+                $feePayments = \App\Models\FeePayment::where('guardian_id', $guardian->id)
+                    ->whereIn('status', ['paid', 'review'])
+                    ->with('fee')
                     ->orderByDesc('updated_at')
                     ->limit(10)
                     ->get()
-                    ->map(fn($p) => [
+                    ->map(fn($fp) => [
+                        'id'          => $fp->id,
+                        'amount'      => $fp->fee->amount ?? 0,
+                        'status'      => $fp->status === 'paid' ? 'approved' : 'pending_review',
+                        'paid_at'     => $fp->paid_at?->format('d M, Y'),
+                        'due_date'    => \Carbon\Carbon::create($fp->period_year, $fp->period_month, 1)->format('M Y'),
+                        'proof_image' => $fp->proof_url, // Mapeamos proof_url a proof_image para la PWA
+                        'is_fee'      => true,
+                        'title'       => ($fp->fee->title ?? 'Cuota') . " - " . \Carbon\Carbon::create(null, $fp->period_month)->translatedFormat('M') . " {$fp->period_year}",
+                    ]);
+            }
+
+            $regularHistory = $paymentHistoryQuery->orderByDesc('updated_at')
+                ->limit(10)
+                ->get()
+                ->map(fn($p) => [
+                    'id'          => $p->id,
+                    'amount'      => $p->amount,
+                    'status'      => $p->status,
+                    'paid_at'     => $p->paid_at?->format('d M, Y'),
+                    'due_date'    => $p->due_date?->format('d M, Y'),
+                    'proof_image' => $toUrl($p->proof_image),
+                    'is_fee'      => false,
+                    'title'       => 'Pago de Mensualidad',
+                ]);
+
+            $combinedHistory = $regularHistory->concat($feePayments)
+                ->sortByDesc(fn($item) => $item['paid_at'] ?? $item['due_date'])
+                ->take(15)
+                ->values();
+
+            return response()->json([
+                'user_type' => 'guardian',
+                'guardian'  => $guardian->only('id', 'name', 'email', 'phone', 'photo'),
+                'tenant'    => [
+                    'id'            => $tenant->id,
+                    'slug'          => $tenant->slug,
+                    'name'          => $tenant->name,
+                    'logo'          => $tenant->logo ? (str_starts_with($tenant->logo, 'http') ? $tenant->logo : $toUrl($tenant->logo)) : null,
+                    'primary_color' => $tenant->primary_color,
+                    'industry'      => $tenant->industry,
+                ],
+                'bank_info' => $bankInfo,
+                'students'  => $guardian->students->map(fn($s) => [
+                    'id'                => $s->id,
+                    'name'              => $s->name,
+                    'photo'             => $toUrl($s->photo),
+                    'category'          => $s->category ?? 'Sin Categoría',
+                    'belt_rank'         => $s->belt_rank,
+                    'attendance_count'  => \App\Models\Attendance::where('student_id', $s->id)->where('status', 'present')->count(),
+                    'pending_payments'  => $s->enrollments->flatMap->payments->count(),
+                    'recent_attendance' => $s->attendances->map(fn($a) => [
+                        'date'   => $a->date->format('Y-m-d'),
+                        'status' => $a->status,
+                    ]),
+                    'payments' => $s->enrollments->flatMap->payments->map(fn($p) => [
                         'id'          => $p->id,
                         'amount'      => $p->amount,
-                        'status'      => $p->status,
-                        'paid_at'     => $p->paid_at?->format('d M, Y'),
                         'due_date'    => $p->due_date?->format('d M, Y'),
+                        'status'      => $p->status,
                         'proof_image' => $toUrl($p->proof_image),
-                    ]) : collect([]),
+                    ]),
+                ]),
+                'total_due' => round($totalDue),
+                'payment_history' => $combinedHistory,
             ]);
         }
 

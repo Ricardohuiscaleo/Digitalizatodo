@@ -376,6 +376,54 @@ class FeeController extends Controller
         return response()->json(['created' => $created, 'proof_url' => $proofUrl]);
     }
 
+    public function deleteProof(Request $request, $tenant, $id)
+    {
+        $tenant   = app('currentTenant');
+        $guardian = $request->user();
+
+        if (!$guardian instanceof Guardian) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
+        $payment = FeePayment::where('id', $id)
+            ->where('tenant_id', $tenant->id)
+            ->where('guardian_id', $guardian->id)
+            ->firstOrFail();
+
+        if ($payment->status === 'paid') {
+            return response()->json(['message' => 'No se puede eliminar un comprobante ya aprobado'], 422);
+        }
+
+        // Borrar de S3
+        if ($payment->proof_url) {
+            $path = parse_url($payment->proof_url, PHP_URL_PATH);
+            if ($path) {
+                Storage::disk('s3')->delete(ltrim($path, '/'));
+            }
+        }
+
+        $payment->update([
+            'status'    => 'pending',
+            'proof_url' => null,
+        ]);
+
+        // Notificar al Staff
+        \App\Models\User::where('tenant_id', $tenant->id)->each(function ($staff) use ($tenant, $guardian) {
+            \App\Models\Notification::send(
+                $tenant->id,
+                $staff->id,
+                'Comprobante de Cuota Eliminado',
+                "El apoderado {$guardian->name} ha eliminado un comprobante de pago que estaba en revisión.",
+                'fee',
+                $tenant->slug
+            );
+        });
+
+        event(new FeeUpdated($tenant->slug, $guardian->id));
+
+        return response()->json(['message' => 'Comprobante eliminado correctamente']);
+    }
+
     // Helper: calcula todos los períodos de una fee recurrente
     private function calculatePeriods(Fee $fee): array
     {
