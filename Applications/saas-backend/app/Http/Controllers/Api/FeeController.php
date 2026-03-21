@@ -20,28 +20,70 @@ class FeeController extends Controller
     public function guardiansSummary(Request $request)
     {
         $tenant = app('currentTenant');
+        $now = now();
 
         $guardians = Guardian::where('tenant_id', $tenant->id)
             ->where('active', true)
             ->get();
 
-        $result = $guardians->map(function ($guardian) use ($tenant) {
+        $fees = Fee::where('tenant_id', $tenant->id)->get();
+
+        $metrics = [
+            'al_dia'      => 0,
+            'en_revision' => 0,
+            'morosos'     => 0,
+            'pendientes'  => 0,
+        ];
+
+        $result = $guardians->map(function ($guardian) use ($tenant, $fees, $now, &$metrics) {
             $payments = FeePayment::where('tenant_id', $tenant->id)
                 ->where('guardian_id', $guardian->id)
                 ->with('fee:id,title,amount,type,recurring_day,due_date')
                 ->get();
 
-            $pending  = $payments->where('status', 'pending')->count();
-            $review   = $payments->where('status', 'review')->count();
-            $paid     = $payments->where('status', 'paid')->count();
-            $total    = $payments->count();
+            $hasReview  = $payments->where('status', 'review')->count() > 0;
+            $hasPaid    = $payments->where('status', 'paid')->count() > 0;
+            
+            // Determinar si es Moroso
+            $isMoroso = false;
+            $hasFuturePending = false;
 
-            $status = 'pending';
-            if ($total === 0)        $status = 'none';
-            elseif ($review > 0)     $status = 'review';
-            elseif ($pending === 0)  $status = 'paid';
+            foreach ($fees as $fee) {
+                $periods = $this->calculatePeriods($fee);
+                foreach ($periods as $period) {
+                    $dueDate = $period['due_date'] ? \Carbon\Carbon::parse($period['due_date'])->endOfDay() : null;
+                    
+                    $payment = $payments->where('fee_id', $fee->id)
+                        ->where('period_month', $period['month'])
+                        ->where('period_year', $period['year'])
+                        ->first();
 
-            $students = $guardian->students()->select('students.id', 'students.name', 'students.photo')->get();
+                    $status = $payment?->status ?? 'pending';
+
+                    if ($status === 'pending') {
+                        if ($dueDate && $dueDate->isPast()) {
+                            $isMoroso = true;
+                        } else {
+                            $hasFuturePending = true;
+                        }
+                    }
+                }
+            }
+
+            // Status del apoderado (Prioridad: Moroso > Review > Pending > Paid)
+            if ($isMoroso) {
+                $status = 'overdue';
+                $metrics['morosos']++;
+            } elseif ($hasReview) {
+                $status = 'review';
+                $metrics['en_revision']++;
+            } elseif ($hasFuturePending) {
+                $status = 'pending';
+                $metrics['pendientes']++;
+            } else {
+                $status = 'paid';
+                $metrics['al_dia']++;
+            }
 
             return [
                 'id'       => $guardian->id,
@@ -49,16 +91,18 @@ class FeeController extends Controller
                 'email'    => $guardian->email,
                 'photo'    => $guardian->photo,
                 'status'   => $status,
-                'pending'  => $pending,
-                'review'   => $review,
-                'paid'     => $paid,
-                'total'    => $total,
-                'students' => $students,
-                'payments' => $payments,
+                'pending'  => $payments->where('status', 'pending')->count(),
+                'review'   => $payments->where('status', 'review')->count(),
+                'paid'     => $payments->where('status', 'paid')->count(),
+                'total'    => $payments->count(),
+                'students' => $guardian->students()->select('students.id', 'students.name', 'students.photo')->get(),
             ];
         });
 
-        return response()->json(['guardians' => $result]);
+        return response()->json([
+            'metrics'   => $metrics,
+            'guardians' => $result
+        ]);
     }
 
     // GET /fees — staff ve todas las cuotas con resumen de pagos
