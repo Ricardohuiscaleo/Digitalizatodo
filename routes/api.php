@@ -128,6 +128,8 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
                     // Gestión de Cuentas (Payers)
                     Route::get('payers', [GuardianController::class , 'index']);
                     Route::post('payers/{id}/approve', [GuardianController::class , 'approvePayment']);
+                    Route::get('payers/{id}/settlement', [GuardianController::class , 'settlement']);
+                    Route::delete('payers/{id}', [GuardianController::class , 'destroy']);
                     Route::post('settings/pricing', [GuardianController::class, 'updatePricing']);
                     Route::post('settings/bank-info', [GuardianController::class, 'updateBankInfo']);
                     Route::post('settings/logo', [GuardianController::class, 'updateLogo']);
