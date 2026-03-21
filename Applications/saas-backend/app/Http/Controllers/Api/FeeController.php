@@ -446,10 +446,7 @@ class FeeController extends Controller
             }
         }
 
-        $payment->update([
-            'status'    => 'pending',
-            'proof_url' => null,
-        ]);
+        $payment->delete();
 
         // Notificar al Staff
         \App\Models\User::where('tenant_id', $tenant->id)->each(function ($staff) use ($tenant, $guardian) {
