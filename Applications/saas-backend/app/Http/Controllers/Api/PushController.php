@@ -43,15 +43,21 @@ class PushController extends Controller
             $userType = 'staff';
         }
 
+        $data = [
+            'user_id'    => $user?->id,
+            'tenant_id'  => $tenant->id,
+            'public_key' => $request->public_key,
+            'auth_token' => $request->auth_token,
+        ];
+
+        // Schema-Aware: Only use user_type if the column has been created by the migration
+        if (\Illuminate\Support\Facades\Schema::hasColumn('push_subscriptions', 'user_type')) {
+            $data['user_type'] = $userType;
+        }
+
         PushSubscription::updateOrCreate(
             ['endpoint' => $request->endpoint],
-            [
-                'user_id'    => $user?->id,
-                'user_type'  => $userType,
-                'tenant_id'  => $tenant->id,
-                'public_key' => $request->public_key,
-                'auth_token' => $request->auth_token,
-            ]
+            $data
         );
 
         return response()->json(['ok' => true]);
