@@ -236,7 +236,8 @@ export function StudentPaymentsSection({
                                     </div>
                                     <div>
                                         <p className="text-base font-black text-zinc-900">${Number(p.amount).toLocaleString("es-CL")}</p>
-                                        <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{p.paid_at || p.due_date}</p>
+                                        <p className="text-[10px] text-zinc-700 font-bold uppercase tracking-wider">{p.title || 'Pago de Mensualidad'}</p>
+                                        <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest">{p.paid_at || p.due_date}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">

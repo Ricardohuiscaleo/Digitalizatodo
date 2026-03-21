@@ -19,6 +19,7 @@ import {
     markAllNotificationsRead,
     markNotificationRead,
     deletePaymentProof,
+    deleteFeePaymentProof,
     getExpenses,
     getSchedules,
     getMyFees,
@@ -328,12 +329,18 @@ export default function StudentDashboard() {
     };
 
     const handleDeleteProof = async (paymentId: string) => {
+        const isFee = paymentHistory.find((p: any) => String(p.id) === String(paymentId))?.is_fee;
+        
         setConfirmDelete(null);
         setProofModal(null);
         const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
         const slug = localStorage.getItem("tenant_slug");
         if (!token || !slug) return;
-        const result = await deletePaymentProof(slug, token, paymentId);
+        
+        const result = isFee 
+            ? await deleteFeePaymentProof(slug, token, paymentId)
+            : await deletePaymentProof(slug, token, paymentId);
+            
         if (result) refreshData();
     };
 
