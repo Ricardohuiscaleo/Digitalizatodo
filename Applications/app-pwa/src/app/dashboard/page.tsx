@@ -380,6 +380,7 @@ export default function App() {
                                     now={now}
                                     setSelectedHistoryDate={setSelectedHistoryDate}
                                     schedulesList={schedulesList}
+                                    feesSummary={feesSummary}
                                 />
                             )}
                             {activeTab === 'attendance' && (
@@ -421,7 +422,6 @@ export default function App() {
                                         setProofModalUrl={setProofModalUrl}
                                         formatMoney={formatMoney}
                                         vocab={vocab}
-                                        feesSummary={feesSummary}
                                     />
                                 ) : (
                                     <PaymentsSection 
