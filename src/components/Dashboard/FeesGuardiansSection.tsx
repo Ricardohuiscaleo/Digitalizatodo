@@ -138,7 +138,7 @@ const FeesGuardiansSection: React.FC<FeesGuardiansSectionProps> = ({
                                 <img src={feesBubbleModal.photo || '/icon.webp'} className="w-12 h-12 rounded-full object-cover border border-zinc-100" />
                                 <div>
                                     <h3 className="text-sm font-black uppercase text-zinc-900">{feesBubbleModal.name}</h3>
-                                    <p className="text-[10px] text-zinc-400 font-bold">{feesBubbleModal.pending} pendiente · {feesBubbleModal.review} en revisión · {feesBubbleModal.paid} pagado</p>
+                                    <p className="text-[10px] text-zinc-400 font-bold">{feesBubbleModal.pending} morosos · {feesBubbleModal.review} en revisión · {feesBubbleModal.paid} al día</p>
                                 </div>
                                 <button onClick={() => setFeesBubbleModal(null)} className="ml-auto w-8 h-8 rounded-xl bg-zinc-50 flex items-center justify-center text-zinc-400 border border-zinc-100"><X size={16} /></button>
                             </div>
