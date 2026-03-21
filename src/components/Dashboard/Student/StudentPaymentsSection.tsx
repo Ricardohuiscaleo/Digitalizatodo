@@ -7,7 +7,9 @@ import {
     Loader2, 
     CreditCard, 
     Clock, 
-    Eye 
+    Eye,
+    ChevronDown,
+    ChevronUp
 } from "lucide-react";
 import { FeeCard, PaymentRow } from "./StudentPaymentComponents";
 
@@ -58,77 +60,55 @@ export function StudentPaymentsSection({
     vocab,
     isSchoolTreasury
 }: StudentPaymentsSectionProps) {
+    const [showBankInfo, setShowBankInfo] = React.useState(false);
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
             <h2 className="text-2xl font-black text-zinc-900">{isSchoolTreasury ? 'Cuotas' : 'Pagos'}</h2>
             
-            {/* Tabs — ocultar Historial en school_treasury */}
-            {!isSchoolTreasury && (
-                <div className="flex bg-zinc-100/50 p-1 rounded-2xl h-11 relative">
-                    <div
-                        className="absolute inset-y-1 rounded-xl bg-white shadow-sm border border-zinc-100 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
-                        style={{
-                            width: 'calc(50% - 2px)',
-                            transform: `translateX(${paymentTab === 'pending' ? '0' : '100%'})`
-                        }}
-                    />
-                    {(['pending', 'history'] as const).map((tab) => (
-                        <button
-                            key={tab}
-                            onClick={() => setPaymentTab(tab)}
-                            className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-colors duration-200 ${
-                                paymentTab === tab ? 'text-zinc-950' : 'text-zinc-400'
-                            }`}
-                        >
-                            {tab === 'pending' ? <CreditCard size={14} /> : <Clock size={14} />}
-                            <span>{tab === 'pending' ? 'Pendientes' : 'Historial'}</span>
-                        </button>
-                    ))}
-                </div>
-            )}
+            {/* Tabs */}
+            <div className="flex bg-zinc-100/50 p-1 rounded-2xl h-11 relative">
+                <div
+                    className="absolute inset-y-1 rounded-xl bg-white shadow-sm border border-zinc-100 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+                    style={{
+                        width: 'calc(50% - 2px)',
+                        transform: `translateX(${paymentTab === 'pending' ? '0' : '100%'})`
+                    }}
+                />
+                {(['pending', 'history'] as const).map((tab) => (
+                    <button
+                        key={tab}
+                        onClick={() => setPaymentTab(tab)}
+                        className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-colors duration-200 ${
+                            paymentTab === tab ? 'text-zinc-950' : 'text-zinc-400'
+                        }`}
+                    >
+                        {tab === 'pending' ? <CreditCard size={14} /> : <Clock size={14} />}
+                        <span>{tab === 'pending' ? 'Pendientes' : 'Historial'}</span>
+                    </button>
+                ))}
+            </div>
             
             {paymentTab === "pending" ? (
                 <div className="space-y-6 animate-in fade-in duration-300">
-                    {/* Metodos de pago / Banco */}
-                    {bankInfo && (
-                        <div className="bg-zinc-900 text-white rounded-[2.5rem] p-6 shadow-xl relative overflow-hidden group">
-                            <div className="relative z-10">
-                                <div className="flex items-center justify-between mb-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md">
-                                            <ShieldCheck size={20} className="text-orange-400" />
-                                        </div>
-                                        <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Datos de Transferencia</span>
-                                    </div>
-                                    <button 
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(`${bankInfo.bank_name}\n${bankInfo.account_type}\n${bankInfo.account_number}\n${bankInfo.holder_name}\n${bankInfo.holder_rut}`);
-                                            setCopiedBank(true);
-                                            setTimeout(() => setCopiedBank(false), 2000);
-                                        }}
-                                        className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border border-white/5"
-                                    >
-                                        {copiedBank ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
-                                        {copiedBank ? 'Copiado' : 'Copiar'}
-                                    </button>
-                                </div>
-                                <div className="space-y-2">
-                                    <p className="text-lg font-black">{bankInfo.bank_name}</p>
-                                    <p className="text-sm opacity-60">{bankInfo.account_type}</p>
-                                    <p className="text-2xl font-mono font-black tracking-wider text-orange-400">{bankInfo.account_number}</p>
-                                    <p className="text-xs opacity-60">{bankInfo.holder_name} · {bankInfo.holder_rut}</p>
-                                </div>
-                            </div>
-                            <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl" />
-                        </div>
-                    )}
-
                     {/* Pagos pendientes */}
                     <div className="space-y-3">
                         <div className="flex items-center justify-between ml-2">
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
-                                Pagos
-                            </h3>
+                            <div className="flex items-center gap-3">
+                                {bankInfo && (
+                                    <button 
+                                        onClick={() => setShowBankInfo(!showBankInfo)}
+                                        className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl transition-all ${
+                                            showBankInfo 
+                                                ? 'bg-zinc-900 text-white shadow-md' 
+                                                : 'bg-orange-50 text-orange-600 hover:bg-orange-100'
+                                        }`}
+                                    >
+                                        Datos Transferencia
+                                        {showBankInfo ? <ChevronUp size={12} className="text-white/70" /> : <ChevronDown size={12} className="text-orange-500/70" />}
+                                    </button>
+                                )}
+                            </div>
                             {selectedPayments.length > 0 && (
                                 <button 
                                     onClick={() => bulkFileInputRef.current?.click()}
@@ -140,6 +120,53 @@ export function StudentPaymentsSection({
                                 </button>
                             )}
                         </div>
+
+                        {showBankInfo && bankInfo && (
+                            <div className="bg-zinc-900 border border-zinc-800 text-zinc-100 rounded-3xl p-4 shadow-lg relative overflow-hidden flex flex-col gap-3 animate-in slide-in-from-top-2 duration-300 mb-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 bg-zinc-800 rounded-xl flex items-center justify-center">
+                                            <ShieldCheck size={16} className="text-orange-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Transferencia</p>
+                                            <p className="text-xs font-bold leading-none mt-0.5">{bankInfo.bank_name}</p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(`${bankInfo.bank_name}\n${bankInfo.account_type}\n${bankInfo.account_number}\n${bankInfo.holder_name}\n${bankInfo.holder_rut}`);
+                                            setCopiedBank(true);
+                                            setTimeout(() => setCopiedBank(false), 2000);
+                                        }}
+                                        className="flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors"
+                                    >
+                                        {copiedBank ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} />}
+                                        {copiedBank ? 'Copiado' : 'Datos'}
+                                    </button>
+                                </div>
+                                <div className="bg-zinc-950/50 rounded-2xl p-3 border border-zinc-800/50 flex flex-col gap-1">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[10px] text-zinc-400 font-medium">Cuenta</span>
+                                        <span className="text-xs font-mono font-bold text-orange-400">{bankInfo.account_number}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[10px] text-zinc-400 font-medium">Tipo</span>
+                                        <span className="text-[10px] font-bold">{bankInfo.account_type}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[10px] text-zinc-400 font-medium">Titular</span>
+                                        <span className="text-[10px] font-bold line-clamp-1 text-right max-w-[150px]">{bankInfo.holder_name}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[10px] text-zinc-400 font-medium">RUT</span>
+                                        <span className="text-[10px] font-bold">{bankInfo.holder_rut}</span>
+                                    </div>
+                                </div>
+                                <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl pointer-events-none" />
+                            </div>
+                        )}
+
                         {myFees && myFees.length > 0 && (
                             <>
                                 <div className="flex items-center justify-between ml-2 mb-1">

@@ -400,7 +400,7 @@ export default function App() {
                             {activeTab === 'payments' && (
                                 branding?.industry === 'school_treasury' ? (
                                     <FeesGuardiansSection 
-                                        payers={payers}
+                                        payers={feesGuardians}
                                         feesSearch={feesSearch}
                                         setFeesSearch={setFeesSearch}
                                         branding={branding}
