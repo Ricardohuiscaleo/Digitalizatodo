@@ -65,6 +65,12 @@ fi
 echo "==> Corriendo seeders base..."
 php artisan db:seed --class=IndustrySeeder --force 2>/dev/null || echo "⚠️  IndustrySeeder falló"
 
+echo "==> Corriendo actualizaciones de emergencia (deploy_update.sql)..."
+if [ -f "/var/www/html/deploy_update.sql" ]; then
+    php artisan tinker --execute="DB::unprepared(file_get_contents('/var/www/html/deploy_update.sql'));" || echo "❌ Falló ejecición de SQL"
+    rm /var/www/html/deploy_update.sql
+fi
+
 echo "==> Creando usuario admin si no existe..."
 if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ]; then
     php artisan tinker --execute="

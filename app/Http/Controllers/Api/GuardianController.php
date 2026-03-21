@@ -412,10 +412,12 @@ class GuardianController extends Controller
             // 3. Soft Delete de FeePayments asociados para que no salgan más en la lista
             \App\Models\FeePayment::where('guardian_id', $guardian->id)->delete();
 
-            // 4. Limpiar tokens push
-            \App\Models\PushSubscription::where('user_id', $guardian->id)
-                ->where('user_type', 'guardian')
-                ->delete();
+            // 4. Limpiar tokens push (Schema-Aware)
+            $pushQuery = \App\Models\PushSubscription::where('user_id', $guardian->id);
+            if (\Illuminate\Support\Facades\Schema::hasColumn('push_subscriptions', 'user_type')) {
+                $pushQuery->where('user_type', 'guardian');
+            }
+            $pushQuery->delete();
 
             // 5. Soft Delete Guardian
             $guardian->delete();
