@@ -74,8 +74,10 @@ self.addEventListener('push', event => {
 
   const notificationOptions = {
     body,
-    icon: '/icon.webp',
+    icon: data.icon || '/icon.webp',
     badge: '/icon.webp',
+    tag: data.tag || 'default',
+    renotify: true,
     data: { type: data.type || 'default' },
     requireInteraction: true // REQUISITO IOS
   };
