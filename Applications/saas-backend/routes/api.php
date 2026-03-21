@@ -113,6 +113,7 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
             Route::get('fees/my', [\App\Http\Controllers\Api\FeeController::class, 'myFees']);
             Route::post('fees/submit-payment', [\App\Http\Controllers\Api\FeeController::class, 'submitPayment']);
             Route::post('fees/{id}/upload-proof', [\App\Http\Controllers\Api\FeeController::class, 'uploadProof']);
+            Route::delete('fees/payments/{id}/proof', [\App\Http\Controllers\Api\FeeController::class, 'deleteProof']);
 
             // Web Push — suscripción (requiere auth)
             Route::post('push/subscribe', [\App\Http\Controllers\Api\PushController::class, 'subscribe']);

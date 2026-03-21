@@ -533,6 +533,18 @@ export async function deletePaymentProof(tenantId: string, token: string, paymen
     }
 }
 
+export async function deleteFeePaymentProof(tenantId: string, token: string, paymentId: string | number) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/fees/payments/${paymentId}/proof`, {
+            method: 'DELETE',
+            headers: { ...defaultHeaders, Authorization: `Bearer ${token}` },
+        });
+        return await safeJson(response);
+    } catch {
+        return null;
+    }
+}
+
 // ─── Expenses (Tesorero) ─────────────────────────────────────────────────────
 
 export async function getExpenses(tenantId: string, token: string) {
