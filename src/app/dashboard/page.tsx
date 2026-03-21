@@ -422,6 +422,8 @@ export default function App() {
                                         setProofModalUrl={setProofModalUrl}
                                         formatMoney={formatMoney}
                                         vocab={vocab}
+                                        token={token}
+                                        onDeleteSuccess={refreshPayers}
                                     />
                                 ) : (
                                     <PaymentsSection 
