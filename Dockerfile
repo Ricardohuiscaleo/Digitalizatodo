@@ -1,7 +1,10 @@
-# Imagen única Debian — más confiable que Alpine para extensiones PHP complejas
-FROM php:8.4-fpm AS production
+# Imagen estable Debian Bookworm
+FROM php:8.4-fpm-bookworm AS production
 
 WORKDIR /var/www/html
+
+# Cargamos el instalador de extensiones (mucho más rápido y ligero que compilar a mano)
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
 # Traefik Labels para Reverb (WebSockets)
 LABEL traefik.http.routers.reverb.rule="Host(`admin.digitalizatodo.cl`) && PathPrefix(`/app`)"
@@ -10,19 +13,10 @@ LABEL traefik.http.routers.reverb.service="reverb"
 LABEL traefik.http.routers.reverb.tls="true"
 LABEL traefik.http.services.reverb.loadbalancer.server.port="8080"
 
-# Herramientas del sistema + extensiones PHP (Versión Estable)
+# Herramientas del sistema e instalación de extensiones eficiente
 RUN apt-get update && apt-get install -y \
     nginx supervisor curl zip unzip git \
-    libzip-dev libpng-dev libonig-dev libxml2-dev \
-    libfreetype6-dev libjpeg62-turbo-dev libwebp-dev \
-    libicu-dev libgd-dev libsqlite3-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install \
-    pdo pdo_mysql pdo_sqlite \
-    mbstring zip \
-    exif pcntl bcmath \
-    dom xml \
-    gd intl \
+    && install-php-extensions pdo pdo_mysql pdo_sqlite mbstring zip exif pcntl bcmath dom xml gd intl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Composer
