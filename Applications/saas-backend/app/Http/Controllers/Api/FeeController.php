@@ -29,7 +29,7 @@ class FeeController extends Controller
         $fees = Fee::where('tenant_id', $tenant->id)->get();
 
         $metrics = [
-            'total'       => $guardians->count(),
+            'total'       => \App\Models\Student::where('tenant_id', $tenant->id)->where('active', true)->count(),
             'al_dia'      => 0,
             'en_revision' => 0,
             'morosos'     => 0,
