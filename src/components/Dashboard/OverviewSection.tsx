@@ -3,7 +3,7 @@
 import React from 'react';
 import { 
     Users, CheckCircle2, RefreshCw, XCircle, 
-    CalendarCheck, ChevronLeft, ChevronRight 
+    CalendarCheck, ChevronLeft, ChevronRight, Clock
 } from 'lucide-react';
 import TodaySchedule from './TodaySchedule';
 
@@ -21,6 +21,7 @@ interface OverviewSectionProps {
     now: Date;
     setSelectedHistoryDate: (d: string | null) => void;
     schedulesList: any[];
+    feesSummary?: { al_dia: number; en_revision: number; morosos: number; pendientes: number } | null;
 }
 
 export default function OverviewSection(props: OverviewSectionProps) {
@@ -28,7 +29,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
         allStudents, attendance, attendanceHistory,
         historyMonth, setHistoryMonth, historyYear, setHistoryYear,
         historyPage, setHistoryPage, branding, now, 
-        setSelectedHistoryDate, schedulesList
+        setSelectedHistoryDate, schedulesList, feesSummary
     } = props;
 
     const totalStudents = allStudents.length;
@@ -52,41 +53,80 @@ export default function OverviewSection(props: OverviewSectionProps) {
         <div className="space-y-6 text-zinc-950">
             {/* Dashboard Summary Horizontal Grid 4 cols */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {/* Total */}
-                <div className="bg-white rounded-[1.8rem] px-4 py-3 border border-zinc-100 shadow-sm flex items-center justify-between min-h-[75px]">
-                    <div className="flex flex-col gap-1.5 shrink-0">
-                        <Users style={{ color: branding?.primaryColor || '#6366f1' }} size={18} strokeWidth={2.5} />
-                        <p className="text-[7px] font-black text-zinc-400 uppercase tracking-widest leading-none">Total</p>
-                    </div>
-                    <p className="text-xl font-black text-zinc-950 tracking-tighter leading-none shrink-0">{totalStudents}</p>
-                </div>
+                {branding?.industry === 'school_treasury' && feesSummary ? (
+                    <>
+                        {/* Al Día */}
+                        <div className="bg-emerald-50/40 rounded-[1.8rem] px-4 py-3 border border-emerald-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
+                            <div className="flex flex-col gap-1.5 shrink-0">
+                                <CheckCircle2 className="text-emerald-600" size={18} strokeWidth={2.5} />
+                                <p className="text-[7px] font-black text-emerald-600/60 uppercase tracking-widest leading-none">Al Día</p>
+                            </div>
+                            <p className="text-xl font-black text-emerald-700 tracking-tighter leading-none shrink-0">{feesSummary.al_dia}</p>
+                        </div>
+                        {/* Revisión */}
+                        <div className="bg-amber-50/40 rounded-[1.8rem] px-4 py-3 border border-amber-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
+                            <div className="flex flex-col gap-1.5 shrink-0">
+                                <RefreshCw className="text-amber-600 animate-spin-slow" size={18} strokeWidth={2.5} />
+                                <p className="text-[7px] font-black text-amber-600/60 uppercase tracking-widest leading-none">Revisión</p>
+                            </div>
+                            <p className="text-xl font-black text-amber-700 tracking-tighter leading-none shrink-0">{feesSummary.en_revision}</p>
+                        </div>
+                        {/* Morosos */}
+                        <div className="bg-rose-50/40 rounded-[1.8rem] px-4 py-3 border border-rose-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
+                            <div className="flex flex-col gap-1.5 shrink-0">
+                                <XCircle className="text-rose-600" size={18} strokeWidth={2.5} />
+                                <p className="text-[7px] font-black text-rose-600/60 uppercase tracking-widest leading-none">Morosos</p>
+                            </div>
+                            <p className="text-xl font-black text-rose-700 tracking-tighter leading-none shrink-0">{feesSummary.morosos}</p>
+                        </div>
+                        {/* Pendientes */}
+                        <div className="bg-zinc-50 rounded-[1.8rem] px-4 py-3 border border-zinc-100 shadow-sm flex items-center justify-between min-h-[75px]">
+                            <div className="flex flex-col gap-1.5 shrink-0">
+                                <Clock className="text-zinc-600" size={18} strokeWidth={2.5} />
+                                <p className="text-[7px] font-black text-zinc-400 uppercase tracking-widest leading-none">Pendientes</p>
+                            </div>
+                            <p className="text-xl font-black text-zinc-900 tracking-tighter leading-none shrink-0">{feesSummary.pendientes}</p>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        {/* Total */}
+                        <div className="bg-white rounded-[1.8rem] px-4 py-3 border border-zinc-100 shadow-sm flex items-center justify-between min-h-[75px]">
+                            <div className="flex flex-col gap-1.5 shrink-0">
+                                <Users style={{ color: branding?.primaryColor || '#6366f1' }} size={18} strokeWidth={2.5} />
+                                <p className="text-[7px] font-black text-zinc-400 uppercase tracking-widest leading-none">Total</p>
+                            </div>
+                            <p className="text-xl font-black text-zinc-950 tracking-tighter leading-none shrink-0">{totalStudents}</p>
+                        </div>
 
-                {/* Pagados */}
-                <div className="bg-emerald-50/40 rounded-[1.8rem] px-4 py-3 border border-emerald-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
-                    <div className="flex flex-col gap-1.5 shrink-0">
-                        <CheckCircle2 className="text-emerald-600" size={18} strokeWidth={2.5} />
-                        <p className="text-[7px] font-black text-emerald-600/60 uppercase tracking-widest leading-none">Pagados</p>
-                    </div>
-                    <p className="text-xl font-black text-emerald-700 tracking-tighter leading-none shrink-0">{paidStudents}</p>
-                </div>
+                        {/* Pagados */}
+                        <div className="bg-emerald-50/40 rounded-[1.8rem] px-4 py-3 border border-emerald-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
+                            <div className="flex flex-col gap-1.5 shrink-0">
+                                <CheckCircle2 className="text-emerald-600" size={18} strokeWidth={2.5} />
+                                <p className="text-[7px] font-black text-emerald-600/60 uppercase tracking-widest leading-none">Pagados</p>
+                            </div>
+                            <p className="text-xl font-black text-emerald-700 tracking-tighter leading-none shrink-0">{paidStudents}</p>
+                        </div>
 
-                {/* Revisión */}
-                <div className="bg-amber-50/40 rounded-[1.8rem] px-4 py-3 border border-amber-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
-                    <div className="flex flex-col gap-1.5 shrink-0">
-                        <RefreshCw className="text-amber-600 animate-spin-slow" size={18} strokeWidth={2.5} />
-                        <p className="text-[7px] font-black text-amber-600/60 uppercase tracking-widest leading-none">Revisión</p>
-                    </div>
-                    <p className="text-xl font-black text-amber-700 tracking-tighter leading-none shrink-0">{allStudents.filter(s => s.payerStatus === 'review').length}</p>
-                </div>
+                        {/* Revisión */}
+                        <div className="bg-amber-50/40 rounded-[1.8rem] px-4 py-3 border border-amber-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
+                            <div className="flex flex-col gap-1.5 shrink-0">
+                                <RefreshCw className="text-amber-600 animate-spin-slow" size={18} strokeWidth={2.5} />
+                                <p className="text-[7px] font-black text-amber-600/60 uppercase tracking-widest leading-none">Revisión</p>
+                            </div>
+                            <p className="text-xl font-black text-amber-700 tracking-tighter leading-none shrink-0">{allStudents.filter(s => s.payerStatus === 'review').length}</p>
+                        </div>
 
-                {/* Deuda */}
-                <div className="bg-rose-50/40 rounded-[1.8rem] px-4 py-3 border border-rose-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
-                    <div className="flex flex-col gap-1.5 shrink-0">
-                        <XCircle className="text-rose-600" size={18} strokeWidth={2.5} />
-                        <p className="text-[7px] font-black text-rose-600/60 uppercase tracking-widest leading-none">Deuda</p>
-                    </div>
-                    <p className="text-xl font-black text-rose-700 tracking-tighter leading-none shrink-0">{allStudents.filter(s => s.payerStatus === 'pending').length}</p>
-                </div>
+                        {/* Deuda */}
+                        <div className="bg-rose-50/40 rounded-[1.8rem] px-4 py-3 border border-rose-100/60 shadow-sm flex items-center justify-between min-h-[75px]">
+                            <div className="flex flex-col gap-1.5 shrink-0">
+                                <XCircle className="text-rose-600" size={18} strokeWidth={2.5} />
+                                <p className="text-[7px] font-black text-rose-600/60 uppercase tracking-widest leading-none">Deuda</p>
+                            </div>
+                            <p className="text-xl font-black text-rose-700 tracking-tighter leading-none shrink-0">{allStudents.filter(s => s.payerStatus === 'pending').length}</p>
+                        </div>
+                    </>
+                )}
             </div>
 
             {branding?.industry !== 'school_treasury' && (

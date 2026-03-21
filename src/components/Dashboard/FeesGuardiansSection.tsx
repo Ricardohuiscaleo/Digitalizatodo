@@ -25,7 +25,6 @@ interface FeesGuardiansSectionProps {
     setProofModalUrl: (url: string) => void;
     formatMoney: (n: number) => string;
     vocab: any;
-    feesSummary: { al_dia: number; en_revision: number; morosos: number; pendientes: number } | null;
 }
 
 const FeesGuardiansSection: React.FC<FeesGuardiansSectionProps> = ({
@@ -49,31 +48,13 @@ const FeesGuardiansSection: React.FC<FeesGuardiansSectionProps> = ({
     handleApproveFeePayment,
     setProofModalUrl,
     formatMoney,
-    vocab,
-    feesSummary
+    vocab
 }) => {
     // Filtrar apoderados/pagadores usando feesSearch
     const filtered = payers.filter(p => p.name.toLowerCase().includes(feesSearch.toLowerCase()));
 
     return (
-        <div className="space-y-6 px-0 pb-32">
-            {/* MÉTRICAS RÁPIDAS */}
-            {feesSummary && (
-                <div className="grid grid-cols-4 gap-2 mb-2">
-                    {[
-                        { label: 'Al Día', value: feesSummary.al_dia, color: 'text-emerald-500', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-                        { label: 'Revisión', value: feesSummary.en_revision, color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-100' },
-                        { label: 'Morosos', value: feesSummary.morosos, color: 'text-rose-500', bg: 'bg-rose-50', border: 'border-rose-100' },
-                        { label: 'Pendientes', value: feesSummary.pendientes, color: 'text-zinc-500', bg: 'bg-zinc-50', border: 'border-zinc-100' },
-                    ].map((m, i) => (
-                        <div key={i} className={`${m.bg} ${m.border} border rounded-2xl p-3 flex flex-col items-center justify-center shadow-sm`}>
-                            <span className={`text-lg font-black ${m.color}`}>{m.value}</span>
-                            <span className="text-[8px] font-black uppercase tracking-tighter text-zinc-400 text-center">{m.label}</span>
-                        </div>
-                    ))}
-                </div>
-            )}
-
+        <div className="space-y-4 px-0 pb-32">
             {/* CABECERA TÁCTICA */}
             <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md pt-2 pb-4 -mx-2 px-2 flex items-center gap-3">
                 <div className="relative flex-1 group">
