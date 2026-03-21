@@ -303,25 +303,27 @@ class GuardianController extends Controller
         $currentYear = $now->year;
 
         // Deudas: cuotas pendientes o en revisión
-        $debtsQuery = \App\Models\FeePayment::where('guardian_id', $guardian->id)
-            ->whereIn('status', ['pending', 'pending_review', 'overdue']);
+        $debtsQuery = \App\Models\FeePayment::where('fee_payments.guardian_id', $guardian->id)
+            ->whereIn('fee_payments.status', ['pending', 'pending_review', 'overdue'])
+            ->join('fees', 'fee_payments.fee_id', '=', 'fees.id');
         
-        $debtsAmount = $debtsQuery->sum('amount');
-        $debtsPayments = $debtsQuery->get();
+        $debtsAmount = (float) $debtsQuery->sum('fees.amount');
+        $debtsPayments = $debtsQuery->select('fee_payments.*')->with('fee')->get();
 
         // Devoluciones: cuotas pagadas/aprobadas de meses ESTRICTAMENTE futuros
-        $refundsQuery = \App\Models\FeePayment::where('guardian_id', $guardian->id)
-            ->where('status', 'approved')
+        $refundsQuery = \App\Models\FeePayment::where('fee_payments.guardian_id', $guardian->id)
+            ->where('fee_payments.status', 'approved')
             ->where(function($q) use ($currentMonth, $currentYear) {
-                $q->where('period_year', '>', $currentYear)
+                $q->where('fee_payments.period_year', '>', $currentYear)
                   ->orWhere(function($sub) use ($currentMonth, $currentYear) {
-                      $sub->where('period_year', $currentYear)
-                          ->where('period_month', '>', $currentMonth);
+                      $sub->where('fee_payments.period_year', $currentYear)
+                          ->where('fee_payments.period_month', '>', $currentMonth);
                   });
-            });
+            })
+            ->join('fees', 'fee_payments.fee_id', '=', 'fees.id');
 
-        $refundsAmount = $refundsQuery->sum('amount');
-        $refundsPayments = $refundsQuery->get();
+        $refundsAmount = (float) $refundsQuery->sum('fees.amount');
+        $refundsPayments = $refundsQuery->select('fee_payments.*')->with('fee')->get();
 
         return response()->json([
             'guardian' => [
