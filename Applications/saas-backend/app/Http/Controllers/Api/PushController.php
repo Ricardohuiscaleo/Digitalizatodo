@@ -35,10 +35,19 @@ class PushController extends Controller
             'auth_token' => 'required|string',
         ]);
 
+        $user = $request->user();
+        $userType = null;
+        if ($user instanceof \App\Models\Guardian) {
+            $userType = 'guardian';
+        } else {
+            $userType = 'staff';
+        }
+
         PushSubscription::updateOrCreate(
             ['endpoint' => $request->endpoint],
             [
-                'user_id'    => $request->user()?->id,
+                'user_id'    => $user?->id,
+                'user_type'  => $userType,
                 'tenant_id'  => $tenant->id,
                 'public_key' => $request->public_key,
                 'auth_token' => $request->auth_token,
