@@ -236,6 +236,17 @@ class FeeController extends Controller
             'proof_url'      => $proofUrl,
         ]);
 
+        \App\Models\User::where('tenant_id', $tenant->id)->each(function ($staff) use ($tenant, $guardian) {
+            \App\Models\Notification::send(
+                $tenant->id,
+                $staff->id,
+                'Nuevo Comprobante de Pago',
+                "El apoderado {$guardian->name} ha subido un comprobante para su revisión.",
+                'fee',
+                $tenant->slug
+            );
+        });
+
         return response()->json(['payment' => $payment]);
     }
 
@@ -348,6 +359,19 @@ class FeeController extends Controller
         }
 
         event(new FeeUpdated($tenant->slug, $guardian->id));
+
+        if ($created > 0) {
+            \App\Models\User::where('tenant_id', $tenant->id)->each(function ($staff) use ($tenant, $guardian) {
+                \App\Models\Notification::send(
+                    $tenant->id,
+                    $staff->id,
+                    'Nuevo Comprobante de Pago',
+                    "El apoderado {$guardian->name} ha subido un comprobante para su revisión.",
+                    'fee',
+                    $tenant->slug
+                );
+            });
+        }
 
         return response()->json(['created' => $created, 'proof_url' => $proofUrl]);
     }
