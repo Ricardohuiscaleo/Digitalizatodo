@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\FeeUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Guardian;
 use App\Models\Tenant;
@@ -423,6 +424,9 @@ class GuardianController extends Controller
             $guardian->delete();
 
             \Illuminate\Support\Facades\DB::commit();
+
+            // Broadcast para actualización en tiempo real del dashboard Staff
+            broadcast(new FeeUpdated($tenantObj->slug, $guardian->id));
 
             return response()->json(['message' => 'Apoderado eliminado correctamente y finiquito procesado.']);
         } catch (\Exception $e) {
