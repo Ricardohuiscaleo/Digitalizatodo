@@ -70,20 +70,17 @@ class FeeController extends Controller
                 }
             }
 
-            // Status del apoderado (Prioridad: Moroso > Review > Pending > Paid)
+            // Status del apoderado (Prioridad: Moroso > Review > Al día)
             if ($isMoroso) {
                 $status = 'overdue';
                 $metrics['morosos']++;
             } elseif ($hasReview) {
                 $status = 'review';
                 $metrics['en_revision']++;
-            } elseif ($hasFuturePending) {
-                $status = 'pending';
-            } elseif ($fees->count() > 0) {
-                $status = 'paid';
-                $metrics['al_dia']++;
             } else {
-                $status = 'none';
+                // No es moroso ni tiene nada en revisión => está "Al día" (tenga cuotas futuras o no tenga ninguna)
+                $status = ($fees->count() > 0) ? 'paid' : 'none';
+                $metrics['al_dia']++;
             }
 
             return [
@@ -92,7 +89,9 @@ class FeeController extends Controller
                 'email'    => $guardian->email,
                 'photo'    => $guardian->photo,
                 'status'   => $status,
-                'pending'  => $payments->where('status', 'pending')->count(),
+                'pending'  => $payments->filter(function($p) use ($now) {
+                    return $p->status === 'pending' && $p->due_date && \Carbon\Carbon::parse($p->due_date)->endOfDay()->isPast();
+                })->count(),
                 'review'   => $payments->where('status', 'review')->count(),
                 'paid'     => $payments->where('status', 'paid')->count(),
                 'total'    => $payments->count(),

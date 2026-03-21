@@ -239,13 +239,13 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         setFeesList(feesData?.fees || []);
         
         if (guardiansData?.metrics) {
-            setFeesSummary(guardiansData.metrics);
+            setFeesSummary({ ...guardiansData.metrics, total: allStudents.length });
         } else if (feesData?.fees) {
             // Fallback for non-school_treasury or legacy
-            const total = feesData.fees.length;
+            const total = allStudents.length;
             const pending = feesData.fees.reduce((a: number, f: any) => a + (f.total_count - f.paid_count - f.review_count), 0);
             const review = feesData.fees.reduce((a: number, f: any) => a + (f.review_count || 0), 0);
-            setFeesSummary({ total, al_dia: total - pending - review, en_revision: review, morosos: pending } as any);
+            setFeesSummary({ total, al_dia: Math.max(0, total - pending - review), en_revision: review, morosos: pending } as any);
         }
 
         if (guardiansData?.guardians) {
