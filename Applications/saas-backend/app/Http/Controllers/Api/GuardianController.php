@@ -289,4 +289,131 @@ class GuardianController extends Controller
 
         return response()->json(['message' => 'No se subió ningún archivo'], 400);
     }
+
+    /**
+     * Obtiene el estado de resultado (finiquito) del apoderado.
+     */
+    public function settlement(Request $request, $tenant, $id)
+    {
+        $tenantObj = app('currentTenant');
+        $guardian = Guardian::where('tenant_id', $tenantObj->id)->findOrFail($id);
+
+        $now = now();
+        $currentMonth = $now->month;
+        $currentYear = $now->year;
+
+        // Deudas: cuotas pendientes o en revisión
+        $debtsQuery = \App\Models\FeePayment::where('guardian_id', $guardian->id)
+            ->whereIn('status', ['pending', 'pending_review', 'overdue']);
+        
+        $debtsAmount = $debtsQuery->sum('amount');
+        $debtsPayments = $debtsQuery->get();
+
+        // Devoluciones: cuotas pagadas/aprobadas de meses ESTRICTAMENTE futuros
+        $refundsQuery = \App\Models\FeePayment::where('guardian_id', $guardian->id)
+            ->where('status', 'approved')
+            ->where(function($q) use ($currentMonth, $currentYear) {
+                $q->where('period_year', '>', $currentYear)
+                  ->orWhere(function($sub) use ($currentMonth, $currentYear) {
+                      $sub->where('period_year', $currentYear)
+                          ->where('period_month', '>', $currentMonth);
+                  });
+            });
+
+        $refundsAmount = $refundsQuery->sum('amount');
+        $refundsPayments = $refundsQuery->get();
+
+        return response()->json([
+            'guardian' => [
+                'id' => $guardian->id,
+                'name' => $guardian->name,
+            ],
+            'debts' => [
+                'total' => $debtsAmount,
+                'payments' => $debtsPayments
+            ],
+            'refunds' => [
+                'total' => $refundsAmount,
+                'payments' => $refundsPayments
+            ]
+        ]);
+    }
+
+    /**
+     * Elimina (Soft Delete) al apoderado, sus alumnos y pagos, y registra el gasto de devolución si aplica.
+     */
+    public function destroy(Request $request, $tenant, $id)
+    {
+        $tenantObj = app('currentTenant');
+        $guardian = Guardian::where('tenant_id', $tenantObj->id)->findOrFail($id);
+
+        $request->validate([
+            'confirmation_name' => 'required|string',
+            'refund_proof' => 'nullable|file|max:20480', // 20MB max
+            'refund_amount' => 'nullable|numeric'
+        ]);
+
+        if (strtolower(trim($request->confirmation_name)) !== strtolower(trim($guardian->name))) {
+            return response()->json(['error' => 'El nombre de confirmación no coincide con el del apoderado.'], 400);
+        }
+
+        $refundAmount = (float) $request->input('refund_amount', 0);
+        
+        if ($refundAmount > 0 && !$request->hasFile('refund_proof')) {
+            return response()->json(['error' => 'Debe adjuntar un comprobante de transferencia para procesar la devolución.'], 400);
+        }
+
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            // 1. Procesar devolución y crear Gasto (Expense)
+            if ($refundAmount > 0 && $request->hasFile('refund_proof')) {
+                $file = $request->file('refund_proof');
+                $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+                $s3Path = 'digitalizatodo/' . $tenantObj->id . '/refunds/' . $filename;
+                
+                Storage::disk('s3')->put($s3Path, file_get_contents($file));
+                
+                $bucket = env('AWS_BUCKET', env('S3_BUCKET'));
+                $region = env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1'));
+                $proofUrl = "https://{$bucket}.s3.{$region}.amazonaws.com/{$s3Path}";
+
+                \App\Models\Expense::create([
+                    'tenant_id' => $tenantObj->id,
+                    'category' => 'Devolución',
+                    'title' => 'Devolución retiro de apoderado',
+                    'amount' => $refundAmount,
+                    'expense_date' => now()->format('Y-m-d'),
+                    'description' => 'Devolución de cuotas por retiro de apoderado: ' . $guardian->name,
+                    'receipt_photo' => $proofUrl,
+                    'created_by' => auth()->id()
+                ]);
+            }
+
+            // 2. Soft Delete de estudiantes
+            foreach ($guardian->students as $student) {
+                // Remove the student's enrollments/payments logic if needed, 
+                // but soft-deleting the student is enough for now.
+                $student->delete(); 
+            }
+
+            // 3. Soft Delete de FeePayments asociados para que no salgan más en la lista
+            \App\Models\FeePayment::where('guardian_id', $guardian->id)->delete();
+
+            // 4. Limpiar tokens push
+            \App\Models\PushSubscription::where('user_id', $guardian->id)
+                ->where('user_type', 'guardian')
+                ->delete();
+
+            // 5. Soft Delete Guardian
+            $guardian->delete();
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            return response()->json(['message' => 'Apoderado eliminado correctamente y finiquito procesado.']);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            \Log::error("Error eliminando apoderado: " . $e->getMessage());
+            return response()->json(['error' => 'Ocurrió un error al procesar el retiro: ' . $e->getMessage()], 500);
+        }
+    }
 }

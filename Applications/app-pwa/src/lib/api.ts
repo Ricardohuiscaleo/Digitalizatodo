@@ -777,3 +777,30 @@ export async function updateStudentName(tenantId: string, token: string, student
         return await safeJson(response);
     } catch { return null; }
 }
+
+export async function getGuardianSettlement(tenantId: string, token: string, guardianId: number | string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/payers/${guardianId}/settlement`, {
+            method: 'GET',
+            cache: 'no-store',
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+        });
+        return await safeJson(response);
+    } catch {
+        return null;
+    }
+}
+
+export async function deleteGuardian(tenantId: string, token: string, guardianId: number | string, data: FormData) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/payers/${guardianId}`, {
+            method: 'POST', // Laravel uses POST with _method=DELETE for FormData
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+            body: data,
+        });
+        return await safeJson(response);
+    } catch {
+        return { error: 'Error de conexión' };
+    }
+}
+

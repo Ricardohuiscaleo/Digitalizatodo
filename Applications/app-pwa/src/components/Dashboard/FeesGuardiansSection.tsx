@@ -25,7 +25,12 @@ interface FeesGuardiansSectionProps {
     setProofModalUrl: (url: string) => void;
     formatMoney: (n: number) => string;
     vocab: any;
+    token: string | null;
+    onDeleteSuccess: () => void;
 }
+
+import GuardianSettlementModal from './GuardianSettlementModal';
+import { Trash2 } from 'lucide-react';
 
 const FeesGuardiansSection: React.FC<FeesGuardiansSectionProps> = ({
     payers,
@@ -48,8 +53,11 @@ const FeesGuardiansSection: React.FC<FeesGuardiansSectionProps> = ({
     handleApproveFeePayment,
     setProofModalUrl,
     formatMoney,
-    vocab
+    vocab,
+    token,
+    onDeleteSuccess
 }) => {
+    const [settlementGuardian, setSettlementGuardian] = React.useState<any>(null);
     // Filtrar apoderados/pagadores usando feesSearch
     const filtered = payers.filter(p => p.name.toLowerCase().includes(feesSearch.toLowerCase()));
 
@@ -140,7 +148,16 @@ const FeesGuardiansSection: React.FC<FeesGuardiansSectionProps> = ({
                                     <h3 className="text-sm font-black uppercase text-zinc-900">{feesBubbleModal.name}</h3>
                                     <p className="text-[10px] text-zinc-400 font-bold">{feesBubbleModal.pending} morosos · {feesBubbleModal.review} en revisión · {feesBubbleModal.paid} al día</p>
                                 </div>
-                                <button onClick={() => setFeesBubbleModal(null)} className="ml-auto w-8 h-8 rounded-xl bg-zinc-50 flex items-center justify-center text-zinc-400 border border-zinc-100"><X size={16} /></button>
+                                <div className="flex items-center gap-2 ml-auto">
+                                    <button 
+                                        onClick={() => setSettlementGuardian(feesBubbleModal)}
+                                        className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500 border border-rose-100 hover:bg-rose-100 transition-colors"
+                                        title="Eliminar Apoderado"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                    <button onClick={() => setFeesBubbleModal(null)} className="w-8 h-8 rounded-xl bg-zinc-50 flex items-center justify-center text-zinc-400 border border-zinc-100"><X size={16} /></button>
+                                </div>
                             </div>
                         </div>
                         <div className="overflow-y-auto flex-1 p-4 space-y-2">
@@ -199,6 +216,22 @@ const FeesGuardiansSection: React.FC<FeesGuardiansSectionProps> = ({
                         </button>
                     </div>
                 </div>
+            )}
+
+            {/* Modal de Finiquito y Eliminación */}
+            {settlementGuardian && token && (
+                <GuardianSettlementModal 
+                    tenantId={branding?.slug || ''}
+                    token={token}
+                    guardian={settlementGuardian}
+                    onClose={() => setSettlementGuardian(null)}
+                    onSuccess={() => {
+                        setSettlementGuardian(null);
+                        setFeesBubbleModal(null);
+                        onDeleteSuccess();
+                    }}
+                    formatMoney={formatMoney}
+                />
             )}
         </div>
     );

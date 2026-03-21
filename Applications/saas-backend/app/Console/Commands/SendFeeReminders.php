@@ -6,7 +6,7 @@ use App\Models\Fee;
 use App\Models\FeePayment;
 use App\Models\Notification;
 use Illuminate\Console\Command;
-use Illuminate\Support\Carbon;
+
 
 class SendFeeReminders extends Command
 {
@@ -15,7 +15,7 @@ class SendFeeReminders extends Command
 
     public function handle(): void
     {
-        $today = Carbon::today();
+        $today = \Carbon\Carbon::today();
 
         // ── Cuotas únicas ─────────────────────────────────────────────────────
         $fees = Fee::where('type', 'once')
@@ -27,7 +27,7 @@ class SendFeeReminders extends Command
             ->get();
 
         foreach ($fees as $fee) {
-            $daysLeft = $today->diffInDays(Carbon::parse($fee->due_date));
+            $daysLeft = $today->diffInDays(\Carbon\Carbon::parse($fee->due_date));
             $this->notifyPending($fee, $daysLeft);
         }
 
@@ -64,9 +64,9 @@ class SendFeeReminders extends Command
         }
     }
 
-    private function nextDueDate(int $day): Carbon
+    private function nextDueDate(int $day): \Carbon\Carbon
     {
-        $today     = Carbon::today();
+        $today     = \Carbon\Carbon::today();
         $candidate = $today->copy()->day(min($day, $today->daysInMonth));
 
         if ($candidate->lte($today)) {
@@ -74,6 +74,6 @@ class SendFeeReminders extends Command
             $candidate = $next->day(min($day, $next->daysInMonth));
         }
 
-        return Carbon::instance($candidate);
+        return $candidate;
     }
 }
