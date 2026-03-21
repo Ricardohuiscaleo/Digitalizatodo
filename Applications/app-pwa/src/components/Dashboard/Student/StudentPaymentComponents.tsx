@@ -166,7 +166,7 @@ export function FeePayModal({ fees, onClose, onSuccess, submitFeePayment }: {
 
     return (
         <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-end justify-center p-0 animate-in fade-in duration-200" onClick={onClose}>
-            <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom-4 duration-200 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="bg-white w-full rounded-t-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom-4 duration-200 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                 {success ? (
                     <div className="flex flex-col items-center gap-4 py-12">
                         <div className="w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
@@ -179,7 +179,7 @@ export function FeePayModal({ fees, onClose, onSuccess, submitFeePayment }: {
                     <>
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-lg font-black text-zinc-900">Pagar Cuotas</h3>
-                            <button onClick={onClose} className="w-8 h-8 bg-zinc-100 rounded-full flex items-center justify-center"><X size={16} /></button>
+                            <button onClick={onClose} className="w-8 h-8 bg-rose-500 rounded-full flex items-center justify-center text-white"><X size={16} /></button>
                         </div>
 
                         {fees.map(fd => {

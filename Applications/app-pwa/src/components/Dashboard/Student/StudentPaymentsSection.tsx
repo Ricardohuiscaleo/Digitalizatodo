@@ -62,26 +62,29 @@ export function StudentPaymentsSection({
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
             <h2 className="text-2xl font-black text-zinc-900">{isSchoolTreasury ? 'Cuotas' : 'Pagos'}</h2>
             
-            {/* Tabs — ocultar Historial en school_treasury (las cuotas tienen su propio historial en la rendición) */}
+            {/* Tabs — ocultar Historial en school_treasury */}
             {!isSchoolTreasury && (
-            <div className="flex bg-zinc-100 p-1.5 rounded-[2.2rem] gap-1 shadow-inner">
-                <button 
-                    onClick={() => setPaymentTab("pending")}
-                    className={`flex-1 py-3 px-4 rounded-[2rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
-                        paymentTab === "pending" ? "bg-white text-zinc-900 shadow-md scale-[1.02]" : "text-zinc-400 hover:text-zinc-600"
-                    }`}
-                >
-                    Pendientes
-                </button>
-                <button 
-                    onClick={() => setPaymentTab("history")}
-                    className={`flex-1 py-3 px-4 rounded-[2rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
-                        paymentTab === "history" ? "bg-white text-zinc-900 shadow-md scale-[1.02]" : "text-zinc-400 hover:text-zinc-600"
-                    }`}
-                >
-                    Historial
-                </button>
-            </div>
+                <div className="flex bg-zinc-100/50 p-1 rounded-2xl h-11 relative">
+                    <div
+                        className="absolute inset-y-1 rounded-xl bg-white shadow-sm border border-zinc-100 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+                        style={{
+                            width: 'calc(50% - 2px)',
+                            transform: `translateX(${paymentTab === 'pending' ? '0' : '100%'})`
+                        }}
+                    />
+                    {(['pending', 'history'] as const).map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setPaymentTab(tab)}
+                            className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-colors duration-200 ${
+                                paymentTab === tab ? 'text-zinc-950' : 'text-zinc-400'
+                            }`}
+                        >
+                            {tab === 'pending' ? <CreditCard size={14} /> : <Clock size={14} />}
+                            <span>{tab === 'pending' ? 'Pendientes' : 'Historial'}</span>
+                        </button>
+                    ))}
+                </div>
             )}
             
             {paymentTab === "pending" ? (

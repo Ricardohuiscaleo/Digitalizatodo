@@ -37,7 +37,7 @@ import {
 
 import { industryConfig } from "@/lib/constants";
 
-const EXPENSE_CATEGORIES = ["Alimentación", "Materiales", "Mantenimiento", "Publicidad", "Sueldos", "Servicios", "Otros"];
+const EXPENSE_CATEGORIES = ["Materiales escolares", "Insumos de aseo", "Alimentación", "Actividades", "Infraestructura", "Servicios básicos", "Fiestas Patrias", "Navidad", "Pascua", "Día del Alumno", "Día del Profesor", "Otros"];
 
 export function useAdminDashboard(branding: any, setBranding: (b: any) => void) {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -98,7 +98,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
     const [expensesSummary, setExpensesSummary] = useState<any[]>([]);
     const [expensesLoading, setExpensesLoading] = useState(false);
     const [showCreateExpense, setShowCreateExpense] = useState(false);
-    const [expenseForm, setExpenseForm] = useState({ title: '', description: '', amount: '', category: 'insumos', expense_date: new Date().toISOString().split('T')[0] });
+    const [expenseForm, setExpenseForm] = useState({ title: '', description: '', amount: '', category: 'Materiales escolares', expense_date: new Date().toISOString().split('T')[0] });
     const [schedulesList, setSchedulesList] = useState<any[]>([]);
     const [schedulesLoading, setSchedulesLoading] = useState(false);
     const [expenseReceiptPhoto, setExpenseReceiptPhoto] = useState<File | null>(null);
@@ -133,7 +133,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
     const [feesGuardianSearch, setFeesGuardianSearch] = useState('');
     const [feesGuardianDropdown, setFeesGuardianDropdown] = useState<string | null>(null);
     const [feesBubbleModal, setFeesBubbleModal] = useState<any>(null);
-    const [feesView, setFeesView] = useState<'list' | 'guardians' | 'history'>('list');
+    const [feesView, setFeesView] = useState<'list' | 'history'>('list');
 
     useEffect(() => {
         const t = setInterval(() => setNow(nowCL()), 60000);
@@ -145,8 +145,12 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
     useEffect(() => { tokenRef.current = token; }, [token]);
     const brandingSlugRef = useRef(branding?.slug);
     useEffect(() => { brandingSlugRef.current = branding?.slug; }, [branding?.slug]);
+    const brandingIndustryRef = useRef(branding?.industry);
+    useEffect(() => { brandingIndustryRef.current = branding?.industry; }, [branding?.industry]);
     const userRef = useRef(user);
     useEffect(() => { userRef.current = user; }, [user]);
+    const activeTabRef = useRef(activeTab);
+    useEffect(() => { activeTabRef.current = activeTab; }, [activeTab]);
 
     useEffect(() => {
         document.addEventListener('click', () => unlockAudio(), { once: true });
@@ -201,8 +205,11 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
     };
 
     const loadExpenses = async () => {
+        const s = brandingSlugRef.current || '';
+        const tk = tokenRef.current || '';
+        if (!s || !tk) return;
         setExpensesLoading(true);
-        const data = await getExpenses(branding?.slug || '', token || '');
+        const data = await getExpenses(s, tk);
         setExpensesList(data?.expenses ?? []);
         setExpensesTotal(data?.total ?? 0);
         setExpensesSummary(data?.summary ?? []);
@@ -210,17 +217,23 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
     };
 
     const loadSchedules = async () => {
+        const s = brandingSlugRef.current || '';
+        const tk = tokenRef.current || '';
+        if (!s || !tk) return;
         setSchedulesLoading(true);
-        const data = await getSchedules(branding?.slug || '', token || '');
+        const data = await getSchedules(s, tk);
         setSchedulesList(data?.schedules ?? []);
         setSchedulesLoading(false);
     };
 
     const loadFees = async () => {
+        const s = brandingSlugRef.current || '';
+        const tk = tokenRef.current || '';
+        if (!s || !tk) return;
         setFeesLoading(true);
         const [feesData, guardiansData] = await Promise.all([
-            getFees(branding?.slug || '', token || ''),
-            branding?.industry === 'school_treasury' ? getFeesGuardiansSummary(branding?.slug || '', token || '') : Promise.resolve({ guardians: [] })
+            getFees(s, tk),
+            brandingIndustryRef.current === 'school_treasury' ? getFeesGuardiansSummary(s, tk) : Promise.resolve({ guardians: [] })
         ]);
 
         setFeesList(feesData?.fees || []);
@@ -395,7 +408,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         const res = await createExpense(branding?.slug || '', token || '', fd);
         if (res?.expense) {
             setShowCreateExpense(false);
-            setExpenseForm({ title: '', description: '', amount: '', category: 'insumos', expense_date: new Date().toISOString().split('T')[0] });
+            setExpenseForm({ title: '', description: '', amount: '', category: 'Materiales escolares', expense_date: new Date().toISOString().split('T')[0] });
             setExpenseReceiptPhoto(null); setExpenseProductPhoto(null);
             await loadExpenses();
         } else {
@@ -582,7 +595,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
     useRealtimeChannel(`payments.${branding?.slug}`, {
         'payment.updated': () => refreshPayers(),
         'fee.updated': () => refreshPayers(),
-        'expense.updated': () => { if (activeTab === 'expenses') loadExpenses(); },
+        'expense.updated': () => { if (activeTabRef.current === 'expenses') loadExpenses(); },
     }, !!branding?.slug);
 
     useRealtimeChannel(`dashboard.${branding?.slug}`, {

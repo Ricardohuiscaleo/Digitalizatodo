@@ -366,7 +366,7 @@ useRealtimeVisibility(() => refreshData());
 | Canal | Eventos | Quién escucha |
 |-------|---------|---------------|
 | `attendance.{slug}` | `student.checked-in`, `student.checked-out`, `schedule.updated` | staff + student |
-| `payments.{slug}` | `payment.updated`, `fee.updated` | staff + student |
+| `payments.{slug}` | `payment.updated`, `fee.updated`, `expense.updated` | staff + student |
 | `dashboard.{slug}` | `student.registered` | staff |
 | `notifications.{slug}.{userId}` | `notification.sent` | staff + student (canal separado por userId) |
 
@@ -412,6 +412,7 @@ return [
 | Reverb no responde | Supervisord no lo inició | Verificar logs de supervisor |
 | Eventos llegan duplicados | Múltiples subscriptions | Limpiar listeners en useEffect cleanup |
 | Badge notificaciones siempre muestra 1 | Ver sección "Anti-patrones de contador" abajo | Fetch desde DB al recibir evento |
+| Handler WS no ejecuta fetch (datos vacíos) | Closure stale — función captura `slug`/`token` del primer render (vacíos) | Usar `brandingSlugRef.current` y `tokenRef.current` dentro de la función |
 
 ### Logs Útiles
 
@@ -427,6 +428,29 @@ docker exec -it <container> supervisorctl status
 ---
 
 ## Anti-patrones de Contador (Notificaciones)
+
+### ❌ Closure stale en funciones llamadas desde handlers WS
+`useRealtimeChannel` guarda los handlers en `handlersRef` para evitar re-suscripciones. Pero si la función que llama el handler (ej: `loadExpenses`) captura `branding?.slug` y `token` del closure, esos valores son los del primer render — vacíos.
+
+```typescript
+// ❌ MAL — loadExpenses captura slug='' y token=null del primer render
+const loadExpenses = async () => {
+    const data = await getExpenses(branding?.slug || '', token || ''); // stale!
+};
+useRealtimeChannel(`payments.${slug}`, {
+    'expense.updated': () => loadExpenses(), // nunca fetchea nada
+});
+
+// ✅ BIEN — leer de refs siempre tienen el valor actual
+const loadExpenses = async () => {
+    const s = brandingSlugRef.current || '';
+    const tk = tokenRef.current || '';
+    if (!s || !tk) return;
+    const data = await getExpenses(s, tk);
+};
+```
+
+**Regla**: Toda función que se llame desde un handler WS debe leer `slug` y `token` de refs (`brandingSlugRef.current`, `tokenRef.current`), no de estado/props directamente.
 
 ### ❌ `setUnreadCount(c => c + 1)` en handler WS
 El contador local se desincroniza cuando `refreshData()` (disparado por otros canales) sobreescribe el estado con el valor de la DB, que puede ser menor si el fetch llega antes del commit de la notificación.
@@ -476,6 +500,15 @@ useRealtimeChannel(
 ---
 
 ## Eventos Implementados
+
+### ExpenseUpdated
+- **Trigger**: Staff crea o elimina un gasto (`ExpenseController::store`, `destroy`)
+- **Canal**: `payments.{tenantSlug}`
+- **Evento**: `expense.updated`
+- **Payload**: `{ ts }` (solo señal, sin datos)
+- **Frontend staff**: `useAdminDashboard` — handler llama `loadExpenses()` si `activeTabRef.current === 'expenses'`
+- **Frontend student**: `student/page.tsx` — handler llama `getExpenses()` siempre (datos frescos al entrar a rendición)
+- **CRÍTICO**: `loadExpenses`, `loadSchedules`, `loadFees` en `useAdminDashboard` deben leer de `brandingSlugRef.current` y `tokenRef.current`, NO de `branding?.slug` y `token` directamente — de lo contrario el closure queda stale con valores vacíos del primer render
 
 ### StudentCheckedIn
 - **Trigger**: Staff marca asistencia o alumno escanea QR

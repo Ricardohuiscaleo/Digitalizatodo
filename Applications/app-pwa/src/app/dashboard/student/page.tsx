@@ -185,13 +185,21 @@ export default function StudentDashboard() {
             const guardianId = data?.guardian?.id;
             if (!guardianId || String(ev.payerId) === String(guardianId)) refreshDataRef.current();
         },
-        'fee.updated': (ev) => {
-            const guardianId = data?.guardian?.id;
-            if (!guardianId || String(ev.guardianId) === String(guardianId)) {
-                const slug = localStorage.getItem('tenant_slug') || '';
-                const tk = localStorage.getItem('auth_token') || '';
-                if (slug && tk) getMyFees(slug, tk).then(d => setMyFees(d?.fees ?? []));
-            }
+        'fee.updated': () => {
+            const slug = localStorage.getItem('tenant_slug') || '';
+            const tk = localStorage.getItem('auth_token') || '';
+            if (slug && tk) getMyFees(slug, tk).then(d => setMyFees(d?.fees ?? []));
+        },
+        'expense.updated': () => {
+            const slug = localStorage.getItem('tenant_slug') || '';
+            const tk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
+            if (!slug || !tk) return;
+            getExpenses(slug, tk).then(data => {
+                setExpensesList(data?.expenses ?? []);
+                setExpensesTotal(data?.total ?? 0);
+                setExpensesBalance(data?.balance ?? 0);
+                setExpensesSummary(data?.summary ?? []);
+            });
         },
     }, !!branding?.slug);
 

@@ -101,7 +101,7 @@ import {
 } from '@/components/Dashboard/Admin/AdminModals';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
 
-const EXPENSE_CATEGORIES = ["Alimentación", "Materiales", "Mantenimiento", "Publicidad", "Sueldos", "Servicios", "Otros"];
+const EXPENSE_CATEGORIES = ["Materiales escolares", "Insumos de aseo", "Alimentación", "Actividades", "Infraestructura", "Servicios básicos", "Fiestas Patrias", "Navidad", "Pascua", "Día del Alumno", "Día del Profesor", "Otros"];
 
 export default function App() {
     const { branding, setBranding } = useBranding();

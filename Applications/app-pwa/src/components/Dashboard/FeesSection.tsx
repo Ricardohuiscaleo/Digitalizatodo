@@ -41,8 +41,8 @@ interface FeesSectionProps {
     branding: any;
     feesSearch: string;
     setFeesSearch: (v: string) => void;
-    feesView: 'list' | 'guardians' | 'history';
-    setFeesView: (v: 'list' | 'guardians' | 'history') => void;
+    feesView: 'list' | 'history';
+    setFeesView: (v: 'list' | 'history') => void;
     feesGuardians: any[];
     feesGuardiansLoading: boolean;
 }
@@ -98,11 +98,11 @@ export default function FeesSection(props: FeesSectionProps) {
                         <div 
                             className="absolute inset-y-1 rounded-xl bg-white shadow-sm border border-zinc-100 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
                             style={{ 
-                                width: 'calc(33.33% - 2.6px)',
-                                transform: `translateX(${feesView === 'list' ? '0' : feesView === 'guardians' ? '100%' : '200%'})`
+                                width: 'calc(50% - 2px)',
+                                transform: `translateX(${feesView === 'list' ? '0' : '100%'})`
                             }}
                         />
-                        {(['list', 'guardians', 'history'] as const).map((view) => (
+                        {(['list', 'history'] as const).map((view) => (
                             <button 
                                 key={view}
                                 onClick={() => setFeesView(view)}
@@ -110,17 +110,15 @@ export default function FeesSection(props: FeesSectionProps) {
                                     feesView === view ? 'text-zinc-950' : 'text-zinc-400'
                                 }`}
                             >
-                                {view === 'list' ? <CreditCard size={14} /> : view === 'guardians' ? <Users size={14} /> : <RefreshCw size={14} />}
-                                <span className={feesView === view ? '' : 'hidden sm:inline'}>
-                                    {view === 'list' ? 'Cuotas' : view === 'guardians' ? 'Deudas' : 'Historial'}
-                                </span>
+                                {view === 'list' ? <CreditCard size={14} /> : <RefreshCw size={14} />}
+                                <span>{view === 'list' ? 'Cuotas' : 'Historial'}</span>
                             </button>
                         ))}
                     </div>
                 )}
             </div>
 
-            {feesLoading || (feesView === 'guardians' && feesGuardiansLoading) ? (
+            {feesLoading ? (
                 <div className="flex justify-center py-20"><Loader2 className="animate-spin text-zinc-300" size={24} /></div>
             ) : feesView === 'list' ? (
                 feesList.length === 0 ? (
@@ -166,7 +164,7 @@ export default function FeesSection(props: FeesSectionProps) {
                                             <Trash2 size={14} />
                                         </button>
                                     </div>
-                                    <div className="mb-3">
+                                    <div className="mb-2">
                                         <div className="flex justify-between text-[9px] font-black uppercase text-zinc-400 mb-1">
                                             <span>{paidCount} pagados</span>
                                             <span>{progress}%</span>
@@ -175,50 +173,16 @@ export default function FeesSection(props: FeesSectionProps) {
                                             <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2 mb-3">
+                                    <div className="flex items-center gap-2">
                                         {paidCount > 0 && <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">{paidCount} pagados</span>}
                                         {reviewCount > 0 && <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100">{reviewCount} en revisión</span>}
                                         {pendingCount > 0 && <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100">{pendingCount} pendientes</span>}
                                     </div>
-                                    <button onClick={() => openFee(fee)}
-                                        className="w-full h-9 bg-zinc-50 border border-zinc-100 rounded-xl text-[10px] font-black uppercase text-zinc-600 flex items-center justify-center gap-2 active:scale-95 transition-all">
-                                        <Users size={13} /> Ver apoderados
-                                    </button>
                                 </div>
                             );
                         })}
                     </div>
                 )
-            ) : feesView === 'guardians' ? (
-                <div className="space-y-3">
-                    {feesGuardians.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 gap-4">
-                            <Users size={28} className="text-zinc-200" />
-                            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Sin deudas registradas</p>
-                        </div>
-                    ) : (
-                        feesGuardians
-                            .filter(g => !feesSearch || g.name.toLowerCase().includes(feesSearch.toLowerCase()))
-                            .map(guardian => (
-                            <div key={guardian.id} className="bg-white border border-zinc-100 rounded-[1.8rem] p-4 shadow-sm flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-zinc-50 shrink-0">
-                                    <img src={guardian.photo || '/icon.webp'} className="w-full h-full object-cover" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="text-sm font-black text-zinc-900 uppercase leading-none truncate">{guardian.name}</h3>
-                                    <p className="text-[9px] text-zinc-400 font-bold mt-1 uppercase">Deuda Total</p>
-                                    <p className="text-lg font-black text-zinc-950 leading-tight">{formatMoney(guardian.total_pending)}</p>
-                                </div>
-                                <div className="flex flex-col items-end gap-1 shrink-0">
-                                    <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100">{guardian.pending_count} pendientes</span>
-                                    <button className="w-8 h-8 rounded-xl bg-zinc-50 flex items-center justify-center text-zinc-400 active:scale-95 border border-zinc-100">
-                                        <Eye size={14} />
-                                    </button>
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
             ) : feesView === 'history' ? (
                 <div className="space-y-3">
                     <div className="flex flex-col items-center justify-center py-20 gap-4">
