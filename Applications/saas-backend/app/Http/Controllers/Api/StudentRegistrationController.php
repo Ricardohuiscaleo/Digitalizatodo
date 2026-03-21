@@ -201,6 +201,22 @@ class StudentRegistrationController extends Controller
                     Log::error("Error enviando notificación telegram registro alumno: " . $e->getMessage());
                 }
 
+                // 6. Notificar a los administradores del tenant (App/Web Push)
+                try {
+                    foreach ($tenant->users as $staffUser) {
+                        \App\Models\Notification::send(
+                            $tenant->id,
+                            $staffUser->id,
+                            'Nuevo Registro',
+                            "{$guardian->name} se ha registrado y ha inscrito a {$studentCount} alumno(s).",
+                            'profile',
+                            $tenant->slug
+                        );
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Error enviando notificación in-app de registro alumno a staff: " . $e->getMessage());
+                }
+
                 event(new \App\Events\StudentRegistered($studentCount, $guardian->name, $tenant->slug));
 
                 return response()->json([

@@ -546,7 +546,16 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
                 setAttendanceHistory(attendanceHistoryData?.attendance || []);
                 if (profile.tenant?.industry === 'school_treasury') {
                     getSchedules(tenantSlug || '', storedToken || '').then(d => setSchedulesList(d?.schedules || []));
-                    getFees(tenantSlug || '', storedToken || '').then(d => setFeesList(d?.fees || []));
+                    getFees(tenantSlug || '', storedToken || '').then(d => {
+                        setFeesList(d?.fees || []);
+                        if (d?.fees) {
+                            const total = d.fees.length;
+                            const pending = d.fees.reduce((a: number, f: any) => a + (f.total_count - f.paid_count - f.review_count), 0);
+                            const review = d.fees.reduce((a: number, f: any) => a + (f.review_count || 0), 0);
+                            setFeesSummary({ total, pending, review });
+                        }
+                    });
+                    getFeesGuardiansSummary(tenantSlug || '', storedToken || '').then(d => setFeesGuardians(d?.guardians || []));
                 }
                 getAppUpdates('staff', profile.tenant?.industry || undefined).then(d => setAppUpdates(d?.updates ?? []));
                 getNotifications(tenantSlug || '', storedToken || '').then(d => {
@@ -592,14 +601,21 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         },
     }, !!branding?.slug);
 
+    const reloadDataAndFees = () => {
+        refreshPayers();
+        if (brandingIndustryRef.current === 'school_treasury') {
+            loadFees();
+        }
+    };
+
     useRealtimeChannel(`payments.${branding?.slug}`, {
-        'payment.updated': () => refreshPayers(),
-        'fee.updated': () => refreshPayers(),
+        'payment.updated': () => reloadDataAndFees(),
+        'fee.updated': () => reloadDataAndFees(),
         'expense.updated': () => { if (activeTabRef.current === 'expenses') loadExpenses(); },
     }, !!branding?.slug);
 
     useRealtimeChannel(`dashboard.${branding?.slug}`, {
-        'student.registered': () => refreshPayers(),
+        'student.registered': () => reloadDataAndFees(),
     }, !!branding?.slug);
 
     // Canal notificaciones — useEffect directo para evitar race condition en leaveChannel/re-suscripción

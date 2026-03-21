@@ -173,10 +173,16 @@ export default function FeesSection(props: FeesSectionProps) {
                                             <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        {paidCount > 0 && <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">{paidCount} pagados</span>}
-                                        {reviewCount > 0 && <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100">{reviewCount} en revisión</span>}
-                                        {pendingCount > 0 && <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100">{pendingCount} pendientes</span>}
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            {paidCount > 0 && <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">{paidCount} pagados</span>}
+                                            {reviewCount > 0 && <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100">{reviewCount} en revisión</span>}
+                                            {pendingCount > 0 && <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100">{pendingCount} pendientes</span>}
+                                        </div>
+                                        <button onClick={() => openFee(fee)}
+                                            className="h-8 px-3 rounded-xl bg-zinc-950 text-white text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 active:scale-95 shadow-sm shrink-0">
+                                            <Users size={12} /> Ver apoderados
+                                        </button>
                                     </div>
                                 </div>
                             );
@@ -184,15 +190,41 @@ export default function FeesSection(props: FeesSectionProps) {
                     </div>
                 )
             ) : feesView === 'history' ? (
-                <div className="space-y-3">
+                feesGuardiansLoading ? (
+                    <div className="flex justify-center py-20"><Loader2 className="animate-spin text-zinc-300" size={24} /></div>
+                ) : !feesGuardians || feesGuardians.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-4">
-                        <RefreshCw size={28} className="text-zinc-200" />
-                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 text-center px-8">Historial global de tesorería sincronizado</p>
+                        <Users size={28} className="text-zinc-200" />
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 text-center px-8">Sin apoderados con deuda</p>
                         <button onClick={loadFees} className="text-[9px] font-black uppercase text-zinc-400 hover:text-zinc-600 flex items-center gap-2">
                             <RefreshCw size={10} /> Actualizar ahora
                         </button>
                     </div>
-                </div>
+                ) : (
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between px-2 mb-2">
+                            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Resumen por Apoderado</h3>
+                            <button onClick={loadFees} className="text-[10px] text-zinc-400 hover:text-zinc-900 active:scale-95">
+                                <RefreshCw size={12} />
+                            </button>
+                        </div>
+                        {feesGuardians.map((g: any, i: number) => (
+                            <div key={g.guardian_id || i} className="bg-white border border-zinc-100 rounded-[1.8rem] p-4 shadow-sm flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center shrink-0 overflow-hidden">
+                                    {g.guardian_photo ? <img src={g.guardian_photo} className="w-full h-full object-cover" /> : <Users size={16} className="text-zinc-400" />}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="text-xs font-black text-zinc-900 uppercase truncate">{g.guardian_name || 'Apoderado'}</h4>
+                                    <p className="text-[10px] text-zinc-400 mt-0.5">{g.pending_count || 0} cuotas pendientes</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-sm font-black text-rose-500">{formatMoney(g.total_pending || 0)}</p>
+                                    <p className="text-[8px] font-black uppercase text-zinc-400 mt-0.5">Deuda Total</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )
             ) : null}
 
             {/* Modal crear cuota */}
