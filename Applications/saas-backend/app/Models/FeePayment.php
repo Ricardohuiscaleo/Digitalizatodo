@@ -9,6 +9,7 @@ class FeePayment extends Model
     protected $fillable = [
         'fee_id', 'tenant_id', 'guardian_id', 'student_id',
         'status', 'payment_method', 'proof_url', 'paid_at', 'approved_by', 'notes',
+        'period_month', 'period_year',
     ];
 
     protected $casts = ['paid_at' => 'datetime'];
