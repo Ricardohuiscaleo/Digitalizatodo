@@ -29,10 +29,10 @@ class FeeController extends Controller
         $fees = Fee::where('tenant_id', $tenant->id)->get();
 
         $metrics = [
+            'total'       => $guardians->count(),
             'al_dia'      => 0,
             'en_revision' => 0,
             'morosos'     => 0,
-            'pendientes'  => 0,
         ];
 
         $result = $guardians->map(function ($guardian) use ($tenant, $fees, $now, &$metrics) {
@@ -79,7 +79,6 @@ class FeeController extends Controller
                 $metrics['en_revision']++;
             } elseif ($hasFuturePending) {
                 $status = 'pending';
-                $metrics['pendientes']++;
             } else {
                 $status = 'paid';
                 $metrics['al_dia']++;
