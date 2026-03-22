@@ -83,7 +83,7 @@ export default function RegisterPage() {
     guardian_name: "", guardian_email: "", guardian_phone: "",
     password: "", password_confirmation: "",
     is_self_register: false,
-    self_student: { category: "adults", belt: "", degrees: 0, modality: "gi", birth_date: "" },
+    self_student: { category: "adults", belt: "", degrees: null as number | null, modality: "gi", birth_date: "" },
     students: [] as any[],
     plan_id: null,
   });
@@ -121,12 +121,17 @@ export default function RegisterPage() {
     if (config.showBJJGraduation) {
       if (form.is_self_register && !form.self_student.belt)
         e.self_belt = "Selecciona tu cinturón";
+      if (form.is_self_register && form.self_student.degrees === null)
+        e.self_degrees = "Selecciona tus grados";
       if (form.is_self_register && !form.self_student.birth_date)
         e.self_birth = "Fecha de nacimiento obligatoria";
+      
       if (!form.is_self_register && form.students.some(s => !s.belt))
-        e.students_belt = "Todos los alumnos deben tener un cinturón seleccionado";
+        e.students_belt = "Todos deben tener un cinturón";
+      if (!form.is_self_register && form.students.some(s => s.degrees === null))
+        e.students_degrees = "Todos deben tener grados seleccionados";
       if (!form.is_self_register && form.students.some(s => !s.birth_date))
-        e.students_birth = "Todos los alumnos deben tener fecha de nacimiento";
+        e.students_birth = "Todos deben tener fecha de nacimiento";
     }
 
     setErrors(e);
@@ -359,22 +364,24 @@ export default function RegisterPage() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { id: 'gi', label: '🥋 Gi' },
-                      { id: 'nogi', label: '👕 No-Gi' },
-                      { id: 'both', label: '⚡ Ambas' }
-                    ].map(mod => (
-                      <button key={mod.id} type="button"
-                        onClick={() => setForm({ ...form, self_student: { ...form.self_student, modality: mod.id } })}
-                        className={`py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all border ${form.self_student.modality === mod.id 
-                          ? 'bg-white text-black border-white shadow-xl' 
-                          : 'bg-zinc-900/50 text-zinc-500 border-zinc-800 hover:border-zinc-700'}`}
-                      >
-                        {mod.label}
-                      </button>
-                    ))}
-                  </div>
+                  {form.self_student.degrees !== null && (
+                    <div className="grid grid-cols-3 gap-2 animate-in fade-in zoom-in duration-500 delay-150">
+                      {[
+                        { id: 'gi', label: '🥋 Gi' },
+                        { id: 'nogi', label: '👕 No-Gi' },
+                        { id: 'both', label: '⚡ Ambas' }
+                      ].map(mod => (
+                        <button key={mod.id} type="button"
+                          onClick={() => setForm({ ...form, self_student: { ...form.self_student, modality: mod.id } })}
+                          className={`py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all border ${form.self_student.modality === mod.id 
+                            ? 'bg-white text-black border-white shadow-xl' 
+                            : 'bg-zinc-900/50 text-zinc-500 border-zinc-800 hover:border-zinc-700'}`}
+                        >
+                          {mod.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -387,7 +394,7 @@ export default function RegisterPage() {
                 {config.showSelfRegister ? `Otros ${config.membersLabel.toLowerCase()}` : `${config.membersLabel} a inscribir`}
               </label>
               <button type="button"
-                onClick={() => setForm({ ...form, students: [...form.students, { name: "", category: config.courseOptions[0].value, belt: "", degrees: 0, modality: "gi", birth_date: "" }] })}
+                onClick={() => setForm({ ...form, students: [...form.students, { name: "", category: config.courseOptions[0].value, belt: "", degrees: null as number | null, modality: "gi", birth_date: "" }] })}
                 className="text-[10px] font-black uppercase tracking-widest text-amber-500 hover:text-amber-400 transition-colors flex items-center gap-2">
                 <span className="w-5 h-5 bg-amber-500/10 rounded flex items-center justify-center">+</span>
                 Agregar
@@ -473,23 +480,25 @@ export default function RegisterPage() {
                         </div>
                       )}
                       
-                      {/* Paso 3: Modalidad */}
-                      <div className="grid grid-cols-3 gap-2">
-                        {[
-                          { id: 'gi', label: '🥋 Gi' },
-                          { id: 'nogi', label: '👕 No-Gi' },
-                          { id: 'both', label: '⚡ Ambas' }
-                        ].map(mod => (
-                          <button key={mod.id} type="button"
-                            onClick={() => { const st = [...form.students]; st[i].modality = mod.id; setForm({ ...form, students: st }); }}
-                            className={`py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all border ${s.modality === mod.id 
-                              ? 'bg-white text-black border-white shadow-xl' 
-                              : 'bg-zinc-900/50 text-zinc-500 border-zinc-800 hover:border-zinc-700'}`}
-                          >
-                            {mod.label}
-                          </button>
-                        ))}
-                      </div>
+                      {/* Paso 3: Modalidad - SOLO SI HAY GRADO SELECCIONADO */}
+                      {s.degrees !== null && (
+                        <div className="grid grid-cols-3 gap-2 animate-in fade-in zoom-in duration-500 delay-150">
+                          {[
+                            { id: 'gi', label: '🥋 Gi' },
+                            { id: 'nogi', label: '👕 No-Gi' },
+                            { id: 'both', label: '⚡ Ambas' }
+                          ].map(mod => (
+                            <button key={mod.id} type="button"
+                              onClick={() => { const st = [...form.students]; st[i].modality = mod.id; setForm({ ...form, students: st }); }}
+                              className={`py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all border ${s.modality === mod.id 
+                                ? 'bg-white text-black border-white shadow-xl' 
+                                : 'bg-zinc-900/50 text-zinc-500 border-zinc-800 hover:border-zinc-700'}`}
+                            >
+                              {mod.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 
