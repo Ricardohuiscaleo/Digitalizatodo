@@ -101,66 +101,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
             {/* SECCIÓN INFERIOR — Oculta si es tesorería */}
             {!isTreasury && (
                 <div className="space-y-4">
-                    <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-zinc-100">
-                        <div className="flex justify-between items-center mb-6">
-                            <div>
-                                <h3 className="text-sm font-black text-zinc-900 flex items-center gap-2 uppercase tracking-tighter">
-                                    <CalendarCheck style={{ color: branding?.primaryColor || '#6366f1' }} size={20} />
-                                    {vocab?.attendance || 'Asistencia'} Hoy
-                                </h3>
-                                <p className="text-[10px] text-zinc-400 font-bold mt-0.5 uppercase tracking-widest">
-                                    {now.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'short' })}
-                                </p>
-                            </div>
-                            <button 
-                                onClick={() => setActiveTab?.('attendance')}
-                                className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-600 transition-colors"
-                            >
-                                Ver Todo
-                                <ChevronRight size={14} />
-                            </button>
-                        </div>
 
-                        {/* Globos de Asistencia Scrolleables con Nombre */}
-                        <div className="flex items-center gap-6 overflow-hidden">
-                            {presentStudents.length > 0 ? (
-                                <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar snap-x flex-1">
-                                    {presentStudents.map((student) => (
-                                        <div 
-                                            key={student.id} 
-                                            className="flex flex-col items-center gap-1.5 flex-shrink-0 snap-start"
-                                        >
-                                            <div className="h-14 w-14 rounded-full ring-4 ring-zinc-50 shadow-sm relative overflow-hidden bg-zinc-100 flex-shrink-0">
-                                                {student.photo ? (
-                                                    <img src={student.photo} className="h-full w-full object-cover" alt={student.name} />
-                                                ) : (
-                                                    <div className="h-full w-full flex items-center justify-center text-zinc-300">
-                                                        <User size={20} />
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <span className="text-[9px] font-black text-zinc-500 uppercase tracking-tighter truncate max-w-[56px] text-center">
-                                                {student.name.split(' ')[0]}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="flex-1 py-6 px-6 bg-zinc-50 rounded-[2rem] border-2 border-dashed border-zinc-100 flex items-center justify-center">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300 leading-none">Nadie en el {vocab?.attendance || 'Tatami'} aún</p>
-                                </div>
-                            )}
-                            
-                            {presentStudents.length > 0 && (
-                                <div className="pl-4 flex flex-col items-center justify-center border-l border-zinc-100 shrink-0">
-                                    <span style={{ color: branding?.primaryColor || '#6366f1' }} className="text-3xl font-black tracking-tighter leading-none">
-                                        {presentStudents.length}
-                                    </span>
-                                    <span className="text-[7px] font-black uppercase tracking-[0.2em] text-zinc-400 mt-1">Total</span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
 
                     {/* Historial Mensual — Tarjetas Horizontales */}
                     <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-zinc-100 mt-4 animate-in slide-in-from-bottom-2 duration-500">
@@ -194,13 +135,16 @@ export default function OverviewSection(props: OverviewSectionProps) {
                             >
                                 {(() => {
                                     // Agrupar por día para las tarjetas
-                                    const groups: { [key: string]: any } = {};
+                                    const groups: { [key: string]: { count: number, students: any[] } } = {};
                                     attendanceHistory.forEach(record => {
                                         const d = record.date;
                                         if (!groups[d]) {
-                                            groups[d] = { count: 0 };
+                                            groups[d] = { count: 0, students: [] };
                                         }
-                                        if (record.status === 'present') groups[d].count++;
+                                        if (record.status === 'present') {
+                                            groups[d].count++;
+                                            if (record.student) groups[d].students.push(record.student);
+                                        }
                                     });
 
                                     // Generar todos los días del mes actual o seleccionado de forma ASCENDENTE
@@ -237,13 +181,35 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                                 <span className={`text-2xl font-black tracking-tighter ${isToday ? 'text-blue-900' : 'text-zinc-900'}`}>
                                                     {i}
                                                 </span>
-                                                <div className="flex flex-col items-center">
+                                                <div className="flex flex-col items-center gap-2">
                                                     {stats ? (
                                                         <>
-                                                            <span className={`text-[14px] font-black leading-none ${isToday ? 'text-blue-600' : 'text-emerald-600'}`}>
-                                                                {stats.count}
-                                                            </span>
-                                                            <span className="text-[7px] font-black text-zinc-400 uppercase tracking-tighter">Enteraron</span>
+                                                            {/* Mini Pila de Burbujas */}
+                                                            <div className="flex -space-x-1.5 overflow-hidden">
+                                                                {stats.students.slice(0, 3).map((student: any, idx: number) => (
+                                                                    <div 
+                                                                        key={idx}
+                                                                        className={`h-5 w-5 rounded-full ring-2 ${isToday ? 'ring-blue-50' : 'ring-zinc-50'} bg-zinc-100 flex-shrink-0 overflow-hidden shadow-sm`}
+                                                                    >
+                                                                        {student.photo ? (
+                                                                            <img src={student.photo} className="h-full w-full object-cover" alt="" />
+                                                                        ) : (
+                                                                            <User size={10} className="text-zinc-300 m-auto mt-1" />
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                                {stats.count > 3 && (
+                                                                    <div className={`h-5 w-5 rounded-full ring-2 ${isToday ? 'ring-blue-50' : 'ring-zinc-50'} bg-zinc-900 flex items-center justify-center flex-shrink-0`}>
+                                                                        <span className="text-[5px] font-black text-white">+{stats.count - 3}</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex flex-col items-center">
+                                                                <span className={`text-[12px] font-black leading-none ${isToday ? 'text-blue-600' : 'text-emerald-600'}`}>
+                                                                    {stats.count}
+                                                                </span>
+                                                                <span className="text-[6px] font-black text-zinc-400 uppercase tracking-tighter">Total</span>
+                                                            </div>
                                                         </>
                                                     ) : (
                                                         <span className="text-[7px] font-black text-zinc-300 uppercase tracking-tighter leading-tight text-center">Sin<br/>asistencia</span>
