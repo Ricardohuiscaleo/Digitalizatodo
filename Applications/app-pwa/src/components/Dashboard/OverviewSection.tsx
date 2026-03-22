@@ -188,7 +188,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
                         {attendanceHistory.length > 0 ? (
                             <div 
                                 ref={scrollRef}
-                                className="flex gap-3 overflow-x-auto pb-4 no-scrollbar -mx-2 px-2 snap-x scroll-smooth"
+                                className="flex gap-3 overflow-x-auto pb-4 no-scrollbar -mx-2 px-2 snap-x"
                             >
                                 {(() => {
                                     // Agrupar por día para las tarjetas
