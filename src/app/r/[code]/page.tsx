@@ -384,33 +384,43 @@ export default function RegisterPage() {
 
                   {/* BJJ FIELDS */}
                   {config.showBJJGraduation && (
-                    <div className="space-y-3 p-3 bg-white/50 rounded-xl border border-zinc-100/50">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Cinturón & Grados</span>
-                        <div className="flex gap-1">
-                          {[0, 1, 2, 3, 4].map(deg => (
-                            <button key={deg} type="button" 
-                              onClick={() => { const st = [...form.students]; st[i].degrees = deg; setForm({ ...form, students: st }); }}
-                              className={`w-5 h-5 rounded-md text-[9px] font-black transition-all ${s.degrees === deg ? 'bg-zinc-950 text-white shadow-md' : 'bg-white text-zinc-300 border border-zinc-100'}`}>
-                              {deg}
+                    <div className="space-y-4">
+                      {/* Paso 1: Cinturón */}
+                      <div className="space-y-3">
+                        <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500">Selecciona Cinturón</label>
+                        <div className="flex gap-1.5 h-10">
+                          {BJJ_BELTS.map(belt => (
+                            <button key={belt.id} type="button"
+                              onClick={() => { const st = [...form.students]; st[i].belt = belt.id; setForm({ ...form, students: st }); }}
+                              className={`flex-1 rounded-xl border transition-all flex items-center justify-center relative overflow-hidden group/belt ${s.belt === belt.id ? 'border-white ring-4 ring-white/10 scale-105 z-10' : 'border-zinc-800 opacity-40 hover:opacity-100'}`}
+                              style={{ backgroundColor: belt.color }}
+                            >
+                              <span className={`text-[9px] font-bold pointer-events-none z-10 ${belt.textColor} uppercase tracking-tighter`}>{belt.name}</span>
+                              <div className="absolute right-0 top-0 bottom-0 w-1/4 bg-zinc-950/90 pointer-events-none group-hover/belt:w-1/3 transition-all" />
                             </button>
                           ))}
                         </div>
                       </div>
-                      
-                      <div className="flex gap-1.5 h-8">
-                        {BJJ_BELTS.map(belt => (
-                          <button key={belt.id} type="button"
-                            onClick={() => { const st = [...form.students]; st[i].belt = belt.id; setForm({ ...form, students: st }); }}
-                            className={`flex-1 rounded-lg border transition-all flex items-center justify-center relative overflow-hidden ${s.belt === belt.id ? 'border-zinc-950 ring-2 ring-zinc-950/5 scale-105 z-10' : 'border-zinc-100 opacity-40 hover:opacity-100'}`}
-                            style={{ backgroundColor: belt.color }}
-                          >
-                            <span className={`text-[9px] font-black pointer-events-none ${belt.textColor}`}>{belt.name}</span>
-                            <div className="absolute right-0 top-0 bottom-0 w-1/4 bg-zinc-950/90 pointer-events-none" />
-                          </button>
-                        ))}
-                      </div>
 
+                      {/* Paso 2: Grados (Rayas) con Animación */}
+                      <div key={s.belt} className="animate-in fade-in slide-in-from-top-4 duration-500 space-y-3 bg-zinc-950/40 p-5 rounded-[2rem] border border-zinc-800/50 shadow-inner">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500">Grados (Rayas)</label>
+                          <div className="flex gap-1.5">
+                            {[0, 1, 2, 3, 4].map(deg => (
+                              <button key={deg} type="button" 
+                                onClick={() => { const st = [...form.students]; st[i].degrees = deg; setForm({ ...form, students: st }); }}
+                                className={`w-8 h-8 rounded-full text-xs font-black transition-all flex items-center justify-center ${s.degrees === deg 
+                                  ? 'bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.4)] scale-110' 
+                                  : 'bg-zinc-900 text-zinc-600 border border-zinc-800 hover:border-zinc-700'}`}>
+                                {deg}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Paso 3: Modalidad */}
                       <div className="grid grid-cols-3 gap-2">
                         {[
                           { id: 'gi', label: '🥋 Gi' },
@@ -419,7 +429,9 @@ export default function RegisterPage() {
                         ].map(mod => (
                           <button key={mod.id} type="button"
                             onClick={() => { const st = [...form.students]; st[i].modality = mod.id; setForm({ ...form, students: st }); }}
-                            className={`py-2 rounded-lg text-[9px] font-black uppercase tracking-tight transition-all border ${s.modality === mod.id ? 'bg-zinc-950 text-white border-zinc-950 shadow-sm' : 'bg-white text-zinc-400 border-zinc-100 hover:border-zinc-300'}`}
+                            className={`py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all border ${s.modality === mod.id 
+                              ? 'bg-white text-black border-white shadow-xl' 
+                              : 'bg-zinc-900/50 text-zinc-500 border-zinc-800 hover:border-zinc-700'}`}
                           >
                             {mod.label}
                           </button>
