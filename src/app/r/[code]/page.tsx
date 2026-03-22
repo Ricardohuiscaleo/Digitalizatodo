@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { getRegistrationPage, registerStudent } from "@/lib/api";
-import { Loader2, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { Loader2, CheckCircle2, Eye, EyeOff, Users } from "lucide-react";
 
 type IndustryConfig = {
   memberLabel: string;
@@ -161,48 +161,49 @@ export default function RegisterPage() {
   const totals = calculateTotal();
 
   const inputClass = (field: string) =>
-    `w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors[field] ? "border-red-400" : "border-zinc-100 hover:border-zinc-200"}`;
+    `w-full h-12 bg-zinc-900/50 rounded-2xl px-5 text-sm text-white placeholder:text-zinc-700 border transition-all outline-none font-bold ${errors[field] ? "border-red-500/50" : "border-zinc-800 focus:border-amber-500/50"}`;
 
   if (loading) return (
-    <div className="flex min-h-screen items-center justify-center bg-white">
-      <Loader2 className="animate-spin text-zinc-300" size={24} />
+    <div className="flex min-h-screen items-center justify-center bg-[#09090b]">
+      <Loader2 className="animate-spin text-zinc-800" size={32} />
     </div>
   );
 
   if (!tenant) return (
-    <div className="flex min-h-screen items-center justify-center bg-white">
-      <p className="text-zinc-400 text-sm">Página de registro no encontrada.</p>
+    <div className="flex min-h-screen items-center justify-center bg-[#09090b]">
+      <p className="text-zinc-500 text-sm font-bold uppercase tracking-widest">Página de registro no encontrada</p>
     </div>
   );
 
   if (success) return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-6 text-center bg-white">
-      <div className="h-16 w-16 rounded-full bg-emerald-50 flex items-center justify-center mb-6">
-        <CheckCircle2 className="text-emerald-500" size={32} />
+    <div className="flex min-h-screen flex-col items-center justify-center p-6 text-center bg-[#09090b]">
+      <div className="h-20 w-20 rounded-full bg-emerald-500/10 flex items-center justify-center mb-8 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+        <CheckCircle2 className="text-emerald-500" size={40} />
       </div>
-      <h1 className="text-xl font-black text-zinc-900">¡Registro exitoso!</h1>
-      <p className="text-sm text-zinc-500 mt-2">Bienvenido a <span className="font-semibold text-zinc-800">{tenant.name}</span></p>
-      <a href="/login" className="mt-8 h-11 px-8 bg-zinc-950 text-white text-sm font-semibold rounded-xl flex items-center justify-center transition-all active:scale-95">
+      <h1 className="text-2xl font-black text-white uppercase tracking-tighter">¡Registro exitoso!</h1>
+      <p className="text-sm text-zinc-500 mt-3 font-bold">Bienvenido a <span className="text-amber-500">{tenant.name}</span></p>
+      <a href="/login" className="mt-10 h-14 px-10 bg-white text-black text-[11px] font-black uppercase tracking-widest rounded-2xl flex items-center justify-center transition-all active:scale-95 shadow-xl">
         Ir al login
       </a>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center p-6 pb-20">
-      <div className="w-full max-w-sm pt-10 space-y-8">
+    <div className="min-h-screen bg-[#09090b] flex flex-col items-center p-6 pb-20 selection:bg-amber-500 selection:text-black">
+      <div className="w-full max-w-sm pt-10 space-y-10 animate-in fade-in duration-1000">
 
         {/* Branding */}
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-14 w-14 rounded-2xl bg-zinc-100 overflow-hidden flex items-center justify-center shadow-sm">
+        <div className="flex flex-col items-center gap-5">
+          <div className="h-20 w-20 rounded-[2rem] bg-zinc-900 overflow-hidden flex items-center justify-center shadow-2xl border border-zinc-800 p-1 relative group">
+            <div className="absolute inset-0 bg-amber-500/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
             {tenant.logo
-              ? <img src={tenant.logo} className="h-full w-full object-contain" />
-              : <span className="text-xl font-black text-zinc-400">{tenant.name?.[0]}</span>
+              ? <img src={tenant.logo} className="h-full w-full object-contain relative z-10" />
+              : <span className="text-2xl font-black text-zinc-700 relative z-10">{tenant.name?.[0]}</span>
             }
           </div>
-          <div className="text-center">
-            <h1 className="text-lg font-black text-zinc-900">Únete a {tenant.name}</h1>
-            <p className="text-[10px] text-zinc-400 uppercase tracking-widest mt-0.5">Formulario de registro</p>
+          <div className="text-center space-y-1">
+            <h1 className="text-2xl font-black text-white uppercase tracking-tighter">Únete a {tenant.name}</h1>
+            <p className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.3em]">Formulario de registro</p>
           </div>
         </div>
 
@@ -210,11 +211,12 @@ export default function RegisterPage() {
           {error && <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</p>}
 
           {/* DATOS DEL APODERADO/TITULAR */}
-          <div className="space-y-4">
-            <label className="text-[10px] uppercase tracking-widest font-black text-zinc-400">
+          <div className="space-y-5 bg-zinc-900/30 p-6 rounded-[2.5rem] border border-zinc-800/50 backdrop-blur-sm">
+            <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500 flex items-center gap-2">
+              <div className="w-1 h-1 rounded-full bg-amber-500" />
               Datos del {config.guardianLabel}
             </label>
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               <div className="relative">
                 <input placeholder="Nombre completo" value={form.guardian_name}
                   onChange={e => { setForm({ ...form, guardian_name: e.target.value }); if (errors.guardian_name) setErrors({ ...errors, guardian_name: "" }); }}
@@ -271,47 +273,50 @@ export default function RegisterPage() {
 
           {/* TOGGLE "YO TAMBIÉN PARTICIPO" — solo industrias que lo usan */}
           {config.showSelfRegister && (
-            <div className={`rounded-2xl border transition-all ${form.is_self_register ? "bg-zinc-50 border-zinc-200 p-4" : "bg-zinc-50/50 border-zinc-100 p-3"}`}>
-              <label className="flex items-center gap-3 cursor-pointer">
+            <div className={`rounded-[2.5rem] border transition-all relative overflow-hidden ${form.is_self_register ? "bg-zinc-900 border-zinc-700 p-6 shadow-2xl" : "bg-zinc-900/30 border-zinc-800 p-4"}`}>
+              {form.is_self_register && (
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl"></div>
+              )}
+              <label className="flex items-center gap-4 cursor-pointer relative z-10">
                 <div className="relative flex items-center justify-center">
                   <input type="checkbox" checked={form.is_self_register}
                     onChange={e => setForm({ ...form, is_self_register: e.target.checked })}
                     className="sr-only" />
-                  <div className={`w-10 h-6 rounded-full transition-colors ${form.is_self_register ? "bg-zinc-950" : "bg-zinc-200"}`}></div>
-                  <div className={`absolute left-1 w-4 h-4 bg-white rounded-full transition-transform ${form.is_self_register ? "translate-x-4" : "translate-x-0"}`}></div>
+                  <div className={`w-12 h-7 rounded-full transition-colors border ${form.is_self_register ? "bg-amber-500 border-amber-600 shadow-[0_0_15px_rgba(245,158,11,0.3)]" : "bg-zinc-800 border-zinc-700"}`}></div>
+                  <div className={`absolute left-1 w-5 h-5 bg-white rounded-full shadow-lg transition-transform duration-300 ${form.is_self_register ? "translate-x-5" : "translate-x-0"}`}></div>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xs font-black text-zinc-900 uppercase">{config.selfRegisterLabel}</span>
-                  <span className="text-[9px] text-zinc-400 font-bold uppercase">
-                    {form.is_self_register ? `Se te inscribirá como ${config.memberLabel.toLowerCase()}` : `Solo inscribirás a otros`}
+                  <span className="text-[11px] font-black text-white uppercase tracking-wider">{config.selfRegisterLabel}</span>
+                  <span className="text-[9px] text-zinc-500 font-bold uppercase">
+                    {form.is_self_register ? `Atleta + Titular` : `Solo Administrador`}
                   </span>
                 </div>
               </label>
 
               {form.is_self_register && config.showBJJGraduation && (
-                <div className="mt-4 space-y-3 pt-4 border-t border-zinc-200 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="mt-5 space-y-4 pt-5 border-t border-zinc-800 animate-in fade-in slide-in-from-top-2 duration-300">
                    <div className="flex items-center justify-between">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Tu Graduación Persona</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Tu Graduación Personal</span>
                       <div className="flex gap-1">
                         {[0, 1, 2, 3, 4].map(deg => (
                           <button key={deg} type="button" 
                             onClick={() => setForm({ ...form, self_student: { ...form.self_student, degrees: deg } })}
-                            className={`w-5 h-5 rounded-md text-[9px] font-black transition-all ${form.self_student.degrees === deg ? 'bg-zinc-950 text-white shadow-md' : 'bg-white text-zinc-300 border border-zinc-100'}`}>
+                            className={`w-6 h-6 rounded-md text-[10px] font-black transition-all ${form.self_student.degrees === deg ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-zinc-800 text-zinc-500 border border-zinc-700 hover:border-zinc-600'}`}>
                             {deg}
                           </button>
                         ))}
                       </div>
                     </div>
                     
-                    <div className="flex gap-1.5 h-8">
+                    <div className="flex gap-1.5 h-9">
                       {BJJ_BELTS.map(belt => (
                         <button key={belt.id} type="button"
                           onClick={() => setForm({ ...form, self_student: { ...form.self_student, belt: belt.id } })}
-                          className={`flex-1 rounded-lg border transition-all flex items-center justify-center relative overflow-hidden ${form.self_student.belt === belt.id ? 'border-zinc-950 ring-2 ring-zinc-950/5 scale-105 z-10' : 'border-zinc-100 opacity-40'}`}
+                          className={`flex-1 rounded-xl border transition-all flex items-center justify-center relative overflow-hidden ${form.self_student.belt === belt.id ? 'border-white ring-2 ring-white/5 scale-105 z-10 shadow-xl' : 'border-zinc-800 opacity-30 hover:opacity-100'}`}
                           style={{ backgroundColor: belt.color }}
                         >
-                          <span className={`text-[9px] font-black pointer-events-none ${belt.textColor}`}>{belt.name}</span>
-                          <div className="absolute right-0 top-0 bottom-0 w-1/4 bg-zinc-950/90 pointer-events-none" />
+                          <span className={`text-[10px] font-black pointer-events-none drop-shadow-md ${belt.textColor}`}>{belt.name}</span>
+                          <div className="absolute right-0 top-0 bottom-0 w-1/4 bg-zinc-950/80 pointer-events-none" />
                         </button>
                       ))}
                     </div>
@@ -324,7 +329,7 @@ export default function RegisterPage() {
                         ].map(mod => (
                           <button key={mod.id} type="button"
                             onClick={() => setForm({ ...form, self_student: { ...form.self_student, modality: mod.id } })}
-                            className={`py-2 rounded-lg text-[9px] font-black uppercase tracking-tight transition-all border ${form.self_student.modality === mod.id ? 'bg-zinc-950 text-white border-zinc-950' : 'bg-white text-zinc-400 border-zinc-100'}`}
+                            className={`py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${form.self_student.modality === mod.id ? 'bg-zinc-800 text-amber-500 border-amber-500/50 shadow-lg' : 'bg-transparent text-zinc-500 border-zinc-800 hover:border-zinc-700'}`}
                           >
                             {mod.label}
                           </button>
@@ -336,35 +341,40 @@ export default function RegisterPage() {
           )}
 
           {/* LISTA DE ALUMNOS/ESTUDIANTES */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <label className="text-[10px] uppercase tracking-widest font-black text-zinc-400">
-                {config.showSelfRegister ? `Otros ${config.membersLabel.toLowerCase()} a inscribir` : `${config.membersLabel} a inscribir`}
+          <div className="space-y-5">
+            <div className="flex items-center justify-between px-2">
+              <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500">
+                {config.showSelfRegister ? `Otros ${config.membersLabel.toLowerCase()}` : `${config.membersLabel} a inscribir`}
               </label>
               <button type="button"
-                onClick={() => setForm({ ...form, students: [...form.students, { name: "", category: config.courseOptions[0].value }] })}
-                className="text-[10px] font-black uppercase text-indigo-600 hover:text-indigo-800 transition-colors">
-                + Agregar
+                onClick={() => setForm({ ...form, students: [...form.students, { name: "", category: config.courseOptions[0].value, belt: "white", degrees: 0, modality: "gi" }] })}
+                className="text-[10px] font-black uppercase tracking-widest text-amber-500 hover:text-amber-400 transition-colors flex items-center gap-2">
+                <span className="w-5 h-5 bg-amber-500/10 rounded flex items-center justify-center">+</span>
+                Agregar
               </button>
             </div>
 
-            {errors.students && <p className="text-[9px] text-red-500 font-bold uppercase animate-pulse">{errors.students}</p>}
+            {errors.students && <p className="text-[10px] text-red-400 font-bold uppercase animate-pulse px-2">{errors.students}</p>}
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               {form.students.map((s: any, i) => (
-                <div key={i} className="space-y-3 p-4 bg-zinc-50 border border-zinc-100 rounded-2xl animate-in slide-in-from-right-2 duration-200">
+                <div key={i} className="space-y-4 p-6 bg-zinc-900/40 border border-zinc-800 rounded-[2.5rem] animate-in slide-in-from-bottom-4 duration-500 relative overflow-hidden group">
+                   <div className="absolute top-0 right-0 p-4 opacity-[0.05] rotate-12 group-hover:rotate-0 transition-transform duration-700">
+                    <Users size={40} className="text-white" />
+                  </div>
+
                   <div className="flex gap-2">
                     <input
                       placeholder={`Nombre del ${config.memberLabel.toLowerCase()}`}
                       value={s.name}
                       onChange={e => { const st = [...form.students]; st[i].name = e.target.value; setForm({ ...form, students: st }); if (errors.students) setErrors({ ...errors, students: "" }); }}
-                      className="flex-1 h-11 bg-white rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border border-zinc-100 focus:border-zinc-950 transition-all outline-none font-bold"
+                      className="flex-1 h-12 bg-zinc-950/50 rounded-2xl px-5 text-sm text-white placeholder:text-zinc-700 border border-zinc-800 focus:border-amber-500/50 transition-all outline-none font-bold shadow-inner"
                     />
                     <select value={s.category}
                       onChange={e => { const st = [...form.students]; st[i].category = e.target.value; setForm({ ...form, students: st }); }}
-                      className="h-11 bg-white rounded-xl px-3 text-[10px] font-black uppercase text-zinc-600 border border-zinc-100 focus:border-zinc-950 outline-none">
+                      className="h-12 bg-zinc-950/50 rounded-2xl px-3 text-[10px] font-black uppercase text-amber-500 border border-zinc-800 focus:border-amber-500/50 outline-none cursor-pointer">
                       {config.courseOptions.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        <option key={opt.value} value={opt.value} className="bg-zinc-900 text-white">{opt.label}</option>
                       ))}
                     </select>
                   </div>
@@ -429,8 +439,9 @@ export default function RegisterPage() {
             </div>
 
             {form.students.length === 0 && !form.is_self_register && (
-              <div className="bg-zinc-50 rounded-xl p-6 border border-dashed border-zinc-200 text-center">
-                <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest">
+              <div className="bg-zinc-900/20 rounded-[2.5rem] p-12 border border-dashed border-zinc-800 text-center space-y-3">
+                <Users size={32} className="mx-auto text-zinc-800" />
+                <p className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.3em]">
                   Agrega al menos un {config.memberLabel.toLowerCase()}
                 </p>
               </div>
@@ -439,52 +450,56 @@ export default function RegisterPage() {
 
           {/* RESUMEN DE PRECIOS — solo industrias con pricing */}
           {config.showPricing && totals.totalInscriptions > 0 && (
-            <div className="bg-zinc-50 rounded-2xl p-5 border border-zinc-200 space-y-3">
-              <h3 className="text-[10px] uppercase font-black tracking-widest text-zinc-400">Resumen de Inscripción</h3>
-              <div className="space-y-1 text-sm">
+            <div className="bg-zinc-900/40 backdrop-blur-md rounded-[2.5rem] p-6 sm:p-8 border border-zinc-800 space-y-5 shadow-2xl relative overflow-hidden group">
+               <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl" />
+              <h3 className="text-[10px] uppercase font-black tracking-[0.2em] text-zinc-500">Resumen de Inscripción</h3>
+              <div className="space-y-3 text-sm">
                 {totals.adultsCount > 0 && (
-                  <div className="flex justify-between items-center text-zinc-600">
-                    <span>{totals.adultsCount}x Adulto</span>
-                    <span className="font-medium">${(totals.adultsCount * (pricing.adult || 0)).toLocaleString("es-CL")}</span>
+                  <div className="flex justify-between items-center text-zinc-400">
+                    <span className="font-bold uppercase tracking-tighter">{totals.adultsCount}x ADULTO</span>
+                    <span className="font-black text-white">${(totals.adultsCount * (pricing.adult || 0)).toLocaleString("es-CL")}</span>
                   </div>
                 )}
                 {totals.kidsCount > 0 && (
-                  <div className="flex justify-between items-center text-zinc-600">
-                    <span>{totals.kidsCount}x Kids</span>
-                    <span className="font-medium">${(totals.kidsCount * (pricing.kids || 0)).toLocaleString("es-CL")}</span>
+                  <div className="flex justify-between items-center text-zinc-400">
+                    <span className="font-bold uppercase tracking-tighter">{totals.kidsCount}x KIDS</span>
+                    <span className="font-black text-white">${(totals.kidsCount * (pricing.kids || 0)).toLocaleString("es-CL")}</span>
                   </div>
                 )}
               </div>
-              <div className="border-t border-zinc-200 pt-3 flex items-end justify-between">
+              <div className="border-t border-zinc-800/50 pt-5 flex items-end justify-between relative z-10">
                 <div className="flex flex-col">
-                  <span className="text-zinc-900 font-bold">Total mensual</span>
+                  <span className="text-zinc-500 font-black uppercase tracking-widest text-[9px]">Total mensual</span>
                   {totals.hasDiscount && (
-                    <span className="text-[10px] font-black text-emerald-500 uppercase">
-                      ¡{pricing.discountPercentage}% Descuento Familiar!
+                    <span className="text-[10px] font-black text-amber-500 uppercase tracking-tighter animate-pulse">
+                      -{pricing.discountPercentage}% Familia Arica
                     </span>
                   )}
                 </div>
                 <div className="text-right">
                   {totals.hasDiscount && (
-                    <span className="text-xs text-zinc-400 line-through block">${totals.subtotal.toLocaleString("es-CL")}</span>
+                    <span className="text-xs text-zinc-600 line-through block tracking-tighter">${totals.subtotal.toLocaleString("es-CL")}</span>
                   )}
-                  <span className="text-xl font-black text-zinc-900">${totals.total.toLocaleString("es-CL")}</span>
+                  <span className="text-3xl font-black text-white tracking-tighter">${totals.total.toLocaleString("es-CL")}</span>
                 </div>
               </div>
             </div>
           )}
 
-          <button type="submit" disabled={submitting}
-            className="w-full h-12 bg-zinc-950 hover:bg-zinc-800 text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-zinc-200 disabled:opacity-40">
-            {submitting ? <Loader2 className="animate-spin text-zinc-400" size={18} /> : (
-              <><span>Completar Inscripción</span><CheckCircle2 size={18} className="opacity-40" /></>
-            )}
-          </button>
+          <div className="space-y-4 pt-6">
+            <button type="submit" disabled={submitting}
+              className="w-full h-14 bg-white hover:bg-zinc-200 text-black text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-2xl disabled:opacity-30 group relative overflow-hidden">
+               <div className="absolute inset-0 bg-gradient-to-r from-amber-500/0 via-amber-500/10 to-amber-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+              {submitting ? <Loader2 className="animate-spin text-zinc-900" size={20} /> : (
+                <><span>Completar Inscripción</span><CheckCircle2 size={20} className="text-zinc-400" /></>
+              )}
+            </button>
 
-          <p className="text-center text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-            ¿Ya tienes cuenta?{" "}
-            <a href="/login" className="text-zinc-950 hover:underline">Iniciar sesión</a>
-          </p>
+            <p className="text-center text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">
+              ¿Ya tienes cuenta?{" "}
+              <a href="/login" className="text-white hover:text-amber-500 transition-colors underline-offset-4 hover:underline">Iniciar sesión</a>
+            </p>
+          </div>
         </form>
       </div>
     </div>
