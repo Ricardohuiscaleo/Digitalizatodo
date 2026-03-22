@@ -185,7 +185,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                                         ? 'bg-zinc-900 border-zinc-900 ring-4 ring-zinc-100'
                                                         : isToday 
                                                             ? 'bg-blue-50 border-blue-500 ring-2 ring-blue-100' 
-                                                            : 'bg-zinc-50 border-zinc-100 hover:border-zinc-300'
+                                                            : 'bg-white border-zinc-100 hover:border-zinc-300'
                                                 }`}
                                             >
                                                 <span className={`text-[9px] font-black uppercase tracking-widest ${isActive ? 'text-zinc-400' : isToday ? 'text-blue-600' : 'text-zinc-400'}`}>
