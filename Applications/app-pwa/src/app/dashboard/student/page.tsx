@@ -1,379 +1,139 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Bell, Camera, Loader2, Calendar, FileText, Users, Backpack, CreditCard, Zap, X } from "lucide-react";
-import { useBranding } from "@/context/BrandingContext";
+import React, { useEffect, useRef, useState } from "react";
+import { Bell, X } from "lucide-react";
 import NotificationToast from "@/components/Notifications/NotificationToast";
 import { StudentQRScanner } from "@/components/Dashboard/Student/StudentQRScanner";
 import { ConfirmDialog, ProofModal } from "@/components/Dashboard/Student/StudentUIHelpers";
-import { StudentHomeSection } from "@/components/Dashboard/Student/StudentHomeSection";
-import { StudentPaymentsSection } from "@/components/Dashboard/Student/StudentPaymentsSection";
 import { FeePayModal } from "@/components/Dashboard/Student/StudentPaymentComponents";
 import { StudentCalendarSection } from "@/components/Dashboard/Student/StudentCalendarSection";
 import { StudentProfileSection } from "@/components/Dashboard/Student/StudentProfileSection";
 import { StudentRendicionSection } from "@/components/Dashboard/Student/StudentRendicionSection";
-import {
-    getProfile,
-    resumeSession,
-    getNotifications,
-    markAllNotificationsRead,
-    markNotificationRead,
-    deletePaymentProof,
-    deleteFeePaymentProof,
-    getExpenses,
-    getSchedules,
-    getMyFees,
-    getAppUpdates,
-    submitFeePayment
-} from "@/lib/api";
-import { nowCL } from "@/lib/utils";
 import BottomNav, { NavSection } from "@/components/Navigation/BottomNav";
-import { getEcho } from "@/lib/echo";
+
+// Industry Components
+import { HomeTreasury } from "@/components/Dashboard/Student/Industries/SchoolTreasury/HomeTreasury";
+import { PaymentsTreasury } from "@/components/Dashboard/Student/Industries/SchoolTreasury/PaymentsTreasury";
+import { HomeMartialArts } from "@/components/Dashboard/Student/Industries/MartialArts/HomeMartialArts";
+import { PaymentsMartialArts } from "@/components/Dashboard/Student/Industries/MartialArts/PaymentsMartialArts";
+
+// Hooks
+import { useStudentCommon } from "@/hooks/useStudentCommon";
+import { useStudentTreasuryData } from "@/hooks/useStudentTreasuryData";
+import { useStudentMartialArtsData } from "@/hooks/useStudentMartialArtsData";
+
 import { useRealtimeChannel, useRealtimeVisibility } from "@/hooks/useRealtimeChannel";
-import { unlockAudio, setAppBadge } from "@/lib/audio";
-import { subscribeToPush } from "@/lib/push";
+import { unlockAudio } from "@/lib/audio";
 import { industryConfig } from "@/lib/constants";
+import { nowCL } from "@/lib/utils";
 
-/* ─── Main Dashboard ─── */
 export default function StudentDashboard() {
-    const { branding, setBranding } = useBranding();
-    const [data, setData] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+    const common = useStudentCommon();
     const [activeSection, setActiveSection] = useState<NavSection>("home");
-    // Estado reactivo de industry — inicia desde localStorage, se actualiza con el perfil del servidor
-    const [effectiveIndustry, setEffectiveIndustry] = useState<string>(
-        () => typeof window !== 'undefined' ? (localStorage.getItem('tenant_industry') || '') : ''
-    );
+    
+    const slug = common.branding?.slug;
+    const token = typeof window !== 'undefined' ? (localStorage.getItem("auth_token") || localStorage.getItem("staff_token")) : null;
+    
+    const treasury = useStudentTreasuryData(slug, token);
+    const martialArts = useStudentMartialArtsData(slug, token);
 
-
-    // Gastos / Rendición
-    const [expensesList, setExpensesList] = useState<any[]>([]);
-    const [expensesTotal, setExpensesTotal] = useState(0);
-    const [expensesBalance, setExpensesBalance] = useState(0);
-    const [expensesSummary, setExpensesSummary] = useState<any[]>([]);
-    const [expensesLoading, setExpensesLoading] = useState(false);
-    const [expenseLightbox, setExpenseLightbox] = useState<string | null>(null);
-
-    // Horario
-    const [schedulesList, setSchedulesList] = useState<any[]>([]);
-
-    // QR Scanner
-    const [activeScanner, setActiveScanner] = useState<string | null>(null);
-
-    // Fotos
-    const profileFileInputRef = useRef<HTMLInputElement>(null);
-    const bulkFileInputRef = useRef<HTMLInputElement>(null);
-    const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-    const [studentPhotoLoadingId, setStudentPhotoLoadingId] = useState<string | null>(null);
-    const studentForPhotoRef = useRef<string | null>(null);
-
-    // Pagos
-    const [selectedPayments, setSelectedPayments] = useState<string[]>([]);
-    const [paymentTab, setPaymentTab] = useState<"pending" | "history">("pending");
-    const [uploadingPayment, setUploadingPayment] = useState<string | null>(null);
-    const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+    // Common states for UI helpers
     const [proofModal, setProofModal] = useState<{ url: string; canDelete: boolean; paymentId: string } | null>(null);
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+    const [paymentTab, setPaymentTab] = useState<"pending" | "history">("pending");
+    const [selectedPayments, setSelectedPayments] = useState<string[]>([]);
+    const [uploadingPayment, setUploadingPayment] = useState<string | null>(null);
+    const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
     const [copiedBank, setCopiedBank] = useState(false);
-    const [myFees, setMyFees] = useState<any[]>([]);
-    const [feePayModal, setFeePayModal] = useState<{ fees: any[] } | null>(null);
-    const [appUpdates, setAppUpdates] = useState<any[]>([]);
+    
+    // Refs for file inputs
+    const profileFileInputRef = useRef<HTMLInputElement>(null);
+    const bulkFileInputRef = useRef<HTMLInputElement>(null);
+    const studentForPhotoRef = useRef<string | null>(null);
 
-    // Notificaciones
-    const [notifications, setNotifications] = useState<any[]>([]);
-    const [unreadCount, setUnreadCount] = useState(0);
-    const [showNotifications, setShowNotifications] = useState(false);
-    const [toastNotification, setToastNotification] = useState<any>(null);
-    const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
-    const [showPushModal, setShowPushModal] = useState(false);
+    // ─── Real-time ───
+    useRealtimeVisibility(() => common.refreshData());
 
-    // Edición de nombres de alumnos
-    const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
-    const [editingStudentName, setEditingStudentName] = useState("");
-    const [savingStudentName, setSavingStudentName] = useState(false);
+    useRealtimeChannel(`attendance.${slug}`, {
+        'student.checked-in': () => common.refreshData(),
+        'student.checked-out': () => common.refreshData(),
+        'schedule.updated': () => martialArts.refreshSchedules(),
+    }, !!slug);
 
-    const refreshDataRef = useRef<() => void>(() => {});
-
-    // ─── Cambio de tenant (multitenancy) ───
-    const handleAccountSwitch = (tenant: any) => {
-        const availableTenants = localStorage.getItem("available_tenants");
-        localStorage.removeItem("auth_token");
-        localStorage.removeItem("staff_token");
-        localStorage.removeItem("remember_token");
-        localStorage.setItem("tenant_id", String(tenant.id));
-        localStorage.setItem("tenant_slug", tenant.slug);
-        if (availableTenants) localStorage.setItem("available_tenants", availableTenants);
-        window.location.href = "/";
-    };
-
-    // ─── RefreshData ───
-    const refreshData = useCallback(async () => {
-        let token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-        const tenantSlug = localStorage.getItem("tenant_slug");
-
-        if (!token && !tenantSlug) return;
-
-        if (!token && tenantSlug) {
-            const rememberToken = localStorage.getItem("remember_token");
-            if (rememberToken) {
-                const resumed = await resumeSession(tenantSlug, rememberToken);
-                if (resumed?.token) {
-                    token = resumed.token;
-                    const key = resumed.user_type === 'staff' ? 'staff_token' : 'auth_token';
-                    localStorage.setItem(key, token!);
-                }
-            }
-        }
-
-        if (!token || !tenantSlug) { window.location.href = "/"; return; }
-
-        let profile = await getProfile(tenantSlug, token);
-
-        if (!profile) {
-            const rememberToken = localStorage.getItem("remember_token");
-            if (rememberToken && tenantSlug) {
-                const resumed = await resumeSession(tenantSlug, rememberToken);
-                if (resumed?.token) {
-                    const newToken = resumed.token;
-                    const key = resumed.user_type === 'staff' ? 'staff_token' : 'auth_token';
-                    localStorage.setItem(key, newToken);
-                    profile = await getProfile(tenantSlug, newToken);
-                }
-            }
-        }
-
-        const notifData = await getNotifications(tenantSlug, token);
-        if (notifData?.notifications) setNotifications(notifData.notifications);
-        if (notifData?.unread !== undefined) setUnreadCount(notifData.unread);
-
-        if (profile) {
-            setData(profile);
-            if (profile.tenant) {
-                const ind = profile.tenant.industry || '';
-                localStorage.setItem('tenant_industry', ind);
-                setEffectiveIndustry(ind); // re-render inmediato con industry correcto
-                setBranding({
-                    id: String(profile.tenant.id),
-                    slug: profile.tenant.slug,
-                    name: profile.tenant.name,
-                    industry: profile.tenant.industry,
-                    logo: profile.tenant.logo,
-                    primaryColor: profile.tenant.primary_color
-                });
-            }
-        } else {
-            window.location.href = "/";
-        }
-    }, [setBranding]);
-
-    refreshDataRef.current = refreshData;
-
-    // ─── WebSockets ───
-    useRealtimeVisibility(() => refreshDataRef.current());
-
-    useRealtimeChannel(`attendance.${branding?.slug}`, {
-        'student.checked-in': () => refreshDataRef.current(),
-        'student.checked-out': () => refreshDataRef.current(),
-        'schedule.updated': () => {
-            const slug = localStorage.getItem('tenant_slug') || '';
-            const tk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
-            if (slug) getSchedules(slug, tk).then(d => setSchedulesList(d?.schedules ?? []));
+    useRealtimeChannel(`payments.${slug}`, {
+        'payment.updated': (ev: any) => {
+            const guardianId = common.data?.guardian?.id;
+            if (!guardianId || String(ev.payerId) === String(guardianId)) common.refreshData();
         },
-    }, !!branding?.slug);
-
-    useRealtimeChannel(`payments.${branding?.slug}`, {
-        'payment.updated': (ev) => {
-            const guardianId = data?.guardian?.id;
-            if (!guardianId || String(ev.payerId) === String(guardianId)) refreshDataRef.current();
-        },
-        'fee.updated': () => {
-            const slug = localStorage.getItem('tenant_slug') || '';
-            const tk = localStorage.getItem('auth_token') || '';
-            if (slug && tk) getMyFees(slug, tk).then(d => setMyFees(d?.fees ?? []));
-        },
+        'fee.updated': () => treasury.refreshMyFees(),
         'expense.updated': () => {
-            const slug = localStorage.getItem('tenant_slug') || '';
-            const tk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
-            if (!slug || !tk) return;
-            getExpenses(slug, tk).then(data => {
-                setExpensesList(data?.expenses ?? []);
-                setExpensesTotal(data?.total ?? 0);
-                setExpensesBalance(data?.balance ?? 0);
-                setExpensesSummary(data?.summary ?? []);
-            });
+            if (activeSection === 'rendicion') treasury.loadExpenses();
         },
-    }, !!branding?.slug);
+    }, !!slug);
 
     useRealtimeChannel(
-        `notifications.${branding?.slug}.${data?.guardian?.id}`,
+        `notifications.${slug}.${common.data?.guardian?.id}`,
         {
-            'notification.sent': (ev) => {
-                setToastNotification({ id: ev.notificationId, title: ev.title, body: ev.body, type: ev.type });
-                setUnreadCount(c => c + 1);
-                setNotifications(prev => [{ id: ev.notificationId, title: ev.title, body: ev.body, type: ev.type, read: false, created_at: 'Ahora' }, ...prev]);
+            'notification.sent': (ev: any) => {
+                common.setToastNotification({ id: ev.notificationId, title: ev.title, body: ev.body, type: ev.type });
+                common.setUnreadCount(c => c + 1);
+                common.setNotifications(prev => [{ id: ev.notificationId, title: ev.title, body: ev.body, type: ev.type, read: false, created_at: 'Ahora' }, ...prev]);
             },
         },
-        !!branding?.slug && !!data?.guardian?.id
+        !!slug && !!common.data?.guardian?.id
     );
 
-    // ─── Init ───
+    // ─── Initialization ───
     useEffect(() => {
-        refreshData().then(() => {
-            const slug = localStorage.getItem('tenant_slug') || '';
-            const freshTk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
-            Promise.all([
-                slug ? getSchedules(slug, freshTk).then(d => setSchedulesList(d?.schedules ?? [])) : Promise.resolve(),
-                slug && freshTk ? getMyFees(slug, freshTk).then(d => setMyFees(d?.fees ?? [])) : Promise.resolve(),
-                getAppUpdates('student', localStorage.getItem('tenant_industry') || undefined).then(d => setAppUpdates(d?.updates ?? [])),
-            ]).then(() => setLoading(false));
+        common.refreshData().then(() => {
+            // The specialized hooks will now react to slug/token changes and load themselves
+            common.setLoading(false);
         });
     }, []);
 
-    // ─── Unlock Audio ───
+    // ─── Audio ───
     useEffect(() => {
         document.addEventListener('click', unlockAudio, { once: true });
         document.addEventListener('touchstart', unlockAudio, { once: true });
     }, []);
 
-    // ─── App Badge ───
-    useEffect(() => { setAppBadge(unreadCount); }, [unreadCount]);
-
-    // ─── SW Messages ───
-    useEffect(() => {
-        if (!('serviceWorker' in navigator)) return;
-        const handleMessage = (event: MessageEvent) => {
-            if (event.data?.type === 'REFRESH_NOTIFICATIONS') refreshData();
-        };
-        navigator.serviceWorker.addEventListener('message', handleMessage);
-        return () => navigator.serviceWorker.removeEventListener('message', handleMessage);
-    }, [refreshData]);
-
-    // ─── Push Permissions ───
-    useEffect(() => {
-        if (typeof Notification === 'undefined') { setPushPermission('denied'); return; }
-        const updatePermission = () => {
-            const perm = Notification.permission;
-            setPushPermission(perm);
-            const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-            if (token && branding?.slug) {
-                const dismissed = localStorage.getItem('push_banner_dismissed');
-                if (perm === 'default' && !dismissed) {
-                    setShowPushModal(true);
-                } else {
-                    setShowPushModal(false);
-                    if (perm === 'granted' && branding?.industry !== 'school_treasury') {
-                        subscribeToPush(branding.slug, token);
-                    }
-                }
-            }
-        };
-        updatePermission();
-        document.addEventListener('visibilitychange', updatePermission);
-        return () => document.removeEventListener('visibilitychange', updatePermission);
-    }, [branding?.slug]);
-
     // ─── Rendición lazy load ───
     useEffect(() => {
-        if (activeSection === 'rendicion' && branding?.slug) {
-            const token = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
-            setExpensesLoading(true);
-            getExpenses(branding.slug, token).then(data => {
-                setExpensesList(data?.expenses ?? []);
-                setExpensesTotal(data?.total ?? 0);
-                setExpensesBalance(data?.balance ?? 0);
-                setExpensesSummary(data?.summary ?? []);
-                setExpensesLoading(false);
-            });
+        if (activeSection === 'rendicion' && slug) {
+            treasury.loadExpenses();
         }
-    }, [activeSection, branding?.slug]);
+    }, [activeSection, slug]);
 
     // ─── Handlers ───
-    const handleActivatePush = () => {
-        setShowPushModal(false);
-        if (typeof Notification !== 'undefined') {
-            Notification.requestPermission().then(permission => {
-                setPushPermission(permission);
-                const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-                if (permission === 'granted' && token && branding?.slug && branding?.industry !== 'school_treasury') {
-                    subscribeToPush(branding.slug, token);
-                }
-            });
-        }
-    };
-
     const handleUploadProof = async (paymentId: string, file: File) => {
         setUploadingPayment(paymentId);
-        const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-        const tenantSlug = localStorage.getItem("tenant_slug");
-        if (!token || !tenantSlug) return;
+        if (!token || !slug) return;
         const formData = new FormData();
         formData.append("proof", file);
         try {
             const API = process.env.NEXT_PUBLIC_API_URL || "https://admin.digitalizatodo.cl/api";
-            const res = await fetch(`${API}/${tenantSlug}/payments/${paymentId}/upload-proof`, {
+            const res = await fetch(`${API}/${slug}/payments/${paymentId}/upload-proof`, {
                 method: "POST",
                 headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
                 body: formData,
             });
             if (res.ok) {
                 setUploadSuccess(paymentId);
-                setTimeout(() => { setUploadSuccess(null); refreshData(); }, 2000);
+                setTimeout(() => { setUploadSuccess(null); common.refreshData(); }, 2000);
             }
         } finally { setUploadingPayment(null); }
-    };
-
-    const refreshMyFees = async () => {
-        const slug = localStorage.getItem('tenant_slug') || '';
-        const tk = localStorage.getItem('auth_token') || localStorage.getItem('staff_token') || '';
-        if (slug && tk) { const d = await getMyFees(slug, tk); setMyFees(d?.fees ?? []); }
-    };
-
-    const handleDeleteProof = async (paymentId: string) => {
-        const isFee = paymentHistory.find((p: any) => String(p.id) === String(paymentId))?.is_fee;
-        
-        setConfirmDelete(null);
-        setProofModal(null);
-        const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-        const slug = localStorage.getItem("tenant_slug");
-        if (!token || !slug) return;
-        
-        const result = isFee 
-            ? await deleteFeePaymentProof(slug, token, paymentId)
-            : await deletePaymentProof(slug, token, paymentId);
-            
-        if (result) refreshData();
-    };
-
-    const handleProfilePhotoUpload = async (file: File) => {
-        if (!file) return;
-        setIsUploadingPhoto(true);
-        const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-        const tenantSlug = localStorage.getItem("tenant_slug");
-        try {
-            const API = process.env.NEXT_PUBLIC_API_URL || "https://admin.digitalizatodo.cl/api";
-            const formData = new FormData();
-            formData.append("photo", file);
-            const response = await fetch(`${API}/${tenantSlug}/me/photo`, {
-                method: "POST",
-                headers: { "Authorization": `Bearer ${token}`, "Accept": "application/json" },
-                body: formData
-            });
-            if (response.ok) refreshData();
-        } finally { setIsUploadingPhoto(false); }
     };
 
     const handleBulkUploadProof = async (file: File) => {
         if (selectedPayments.length === 0) return;
         setUploadingPayment("bulk");
-        const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-        const tenantSlug = localStorage.getItem("tenant_slug");
-        if (!token || !tenantSlug) return;
+        if (!token || !slug) return;
         const formData = new FormData();
         formData.append("proof", file);
         selectedPayments.forEach(id => formData.append("payment_ids[]", id));
         try {
             const API = process.env.NEXT_PUBLIC_API_URL || "https://admin.digitalizatodo.cl/api";
-            const res = await fetch(`${API}/${tenantSlug}/payments/bulk-upload-proof`, {
+            const res = await fetch(`${API}/${slug}/payments/bulk-upload-proof`, {
                 method: "POST",
                 headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
                 body: formData
@@ -381,45 +141,27 @@ export default function StudentDashboard() {
             if (res.ok) {
                 setUploadSuccess("bulk");
                 setSelectedPayments([]);
-                setTimeout(() => { setUploadSuccess(null); refreshData(); }, 2000);
+                setTimeout(() => { setUploadSuccess(null); common.refreshData(); }, 2000);
             }
         } finally { setUploadingPayment(null); }
     };
 
-    const handleUploadPhoto = async (studentId: string, file: File) => {
-        setStudentPhotoLoadingId(studentId);
-        const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-        const tenantSlug = localStorage.getItem("tenant_slug");
-        if (!token || !tenantSlug) return;
-        const formData = new FormData();
-        formData.append("photo", file);
-        try {
-            const API = process.env.NEXT_PUBLIC_API_URL || "https://admin.digitalizatodo.cl/api";
-            const res = await fetch(`${API}/${tenantSlug}/students/${studentId}/photo`, {
-                method: "POST",
-                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
-                body: formData,
-            });
-            if (res.ok) refreshData();
-        } finally { setStudentPhotoLoadingId(null); }
+    const handleDeleteProof = async (paymentId: string) => {
+        const isFee = (common.data?.payment_history || []).find((p: any) => String(p.id) === String(paymentId))?.is_fee;
+        setConfirmDelete(null);
+        setProofModal(null);
+        if (isFee) await treasury.handleDeleteFeeProof(paymentId);
+        else await martialArts.handleGenericPaymentProofDelete(paymentId);
+        common.refreshData();
     };
 
-    // ─── Derived state ───
-    const primaryColor = branding?.primaryColor || "#f97316";
-    // effectiveIndustry es un estado reactivo: inicia desde localStorage y se actualiza con el perfil del servidor
-    const isSchoolTreasury = effectiveIndustry === 'school_treasury';
-    const industry = effectiveIndustry;
-    const guardian = data?.guardian || { name: "Usuario", email: "", phone: "" };
-    const students = data?.students || [];
-    const paymentHistory = data?.payment_history || [];
-    const bankInfo = data?.bank_info;
-    const totalDue = data?.total_due || 0;
-    const hasPendingReview = students.some((s: any) => (s.payments || []).some((p: any) => p.status === 'pending_review'));
-    const totalDueOrReview = totalDue > 0 || hasPendingReview;
-    const vocab = industryConfig[industry] || industryConfig.default;
+    const isSchoolTreasury = common.effectiveIndustry === 'school_treasury';
+    const primaryColor = common.branding?.primaryColor || "#f97316";
+    const vocab = industryConfig[common.effectiveIndustry] || industryConfig.default;
+    const guardian = common.data?.guardian || { name: "Usuario", photo: null };
+    const students = common.data?.students || [];
 
-    // ─── Loading skeleton ───
-    if (loading) return (
+    if (common.loading) return (
         <div className="min-h-screen bg-stone-50 px-4 pt-6 pb-32 max-w-lg mx-auto space-y-4 animate-pulse">
             <div className="flex items-center justify-between mb-2">
                 <div className="space-y-2">
@@ -429,33 +171,30 @@ export default function StudentDashboard() {
                 <div className="w-14 h-14 bg-zinc-200 rounded-full" />
             </div>
             <div className="h-36 bg-zinc-200 rounded-[2.5rem]" />
-            <div className="h-4 w-32 bg-zinc-100 rounded-lg" />
-            <div className="h-24 bg-zinc-100 rounded-[2rem]" />
-            <div className="h-24 bg-zinc-100 rounded-[2rem]" />
         </div>
     );
 
     return (
         <div className="min-h-screen bg-stone-50 overflow-x-hidden font-sans pb-32">
-            <NotificationToast notification={toastNotification} onDismiss={() => setToastNotification(null)} />
+            <NotificationToast notification={common.toastNotification} onDismiss={() => common.setToastNotification(null)} />
 
             {/* Header */}
             <header className="flex items-center justify-between px-6 py-4 fixed top-0 left-0 right-0 bg-stone-50/80 backdrop-blur-md z-[80] border-b border-zinc-100">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl overflow-hidden bg-white border border-zinc-100 flex items-center justify-center shadow-sm">
-                        {branding?.logo ? (
-                            <img src={branding.logo} className="w-full h-full object-cover" alt="L" />
+                        {common.branding?.logo ? (
+                            <img src={common.branding.logo} className="w-full h-full object-cover" alt="L" />
                         ) : (
-                            <span className="font-black text-xl uppercase tracking-tighter text-zinc-950">{branding?.name?.[0] || 'D'}</span>
+                            <span className="font-black text-xl uppercase tracking-tighter text-zinc-950">{common.branding?.name?.[0] || 'D'}</span>
                         )}
                     </div>
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                            <h1 className="text-lg font-black uppercase tracking-tighter text-zinc-950 leading-none">{branding?.name || 'Academy'}</h1>
-                            <button onClick={() => setShowPushModal(true)} className="shrink-0 mt-0.5">
+                            <h1 className="text-lg font-black uppercase tracking-tighter text-zinc-950 leading-none">{common.branding?.name || 'Academy'}</h1>
+                            <button onClick={() => common.setShowPushModal(true)} className="shrink-0 mt-0.5">
                                 <div className={`w-3 h-3 rounded-full border-2 border-white shadow-sm transition-colors duration-500 ${
-                                    pushPermission === 'granted' ? 'bg-emerald-500 animate-pulse' :
-                                    pushPermission === 'denied'  ? 'bg-red-500' : 'bg-amber-400'
+                                    common.pushPermission === 'granted' ? 'bg-emerald-500 animate-pulse' :
+                                    common.pushPermission === 'denied'  ? 'bg-red-500' : 'bg-amber-400'
                                 }`} />
                             </button>
                         </div>
@@ -467,45 +206,26 @@ export default function StudentDashboard() {
                         </span>
                     </div>
                 </div>
-                <button onClick={() => setShowNotifications(!showNotifications)} className="relative w-10 h-10 flex items-center justify-center rounded-full border border-zinc-100 shadow-sm bg-white">
+                <button onClick={() => common.setShowNotifications(!common.showNotifications)} className="relative w-10 h-10 flex items-center justify-center rounded-full border border-zinc-100 shadow-sm bg-white">
                     <Bell size={20} className="text-zinc-600" />
-                    {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                    {common.unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{common.unreadCount > 9 ? '9+' : common.unreadCount}</span>
                     )}
                 </button>
             </header>
 
-            {/* Notification Dropdown */}
-            {showNotifications && (
-                <div className="fixed inset-0 z-[100]" onClick={() => setShowNotifications(false)}>
+            {/* Notifications */}
+            {common.showNotifications && (
+                <div className="fixed inset-0 z-[100]" onClick={() => common.setShowNotifications(false)}>
                     <div className="absolute top-16 right-2 w-80 max-h-96 bg-white rounded-2xl shadow-2xl border border-zinc-100 overflow-hidden animate-in slide-in-from-top-2 fade-in duration-200" onClick={e => e.stopPropagation()}>
                         <div className="p-4 border-b border-zinc-50 flex items-center justify-between">
                             <span className="text-xs font-black uppercase tracking-widest text-zinc-400">Notificaciones</span>
-                            {unreadCount > 0 && (
-                                <button onClick={async () => {
-                                    const tk = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-                                    const sl = localStorage.getItem("tenant_slug");
-                                    if (tk && sl) { await markAllNotificationsRead(sl, tk); setUnreadCount(0); setNotifications(n => n.map(x => ({ ...x, read: true }))); }
-                                }} className="text-[9px] font-black text-zinc-400 hover:text-zinc-600">Marcar leídas</button>
-                            )}
+                            {common.unreadCount > 0 && <button onClick={common.markAllRead} className="text-[9px] font-black text-zinc-400 hover:text-zinc-600">Marcar leídas</button>}
                         </div>
                         <div className="max-h-72 overflow-y-auto">
-                            {notifications.length > 0 ? notifications.map((n: any) => (
-                                <div key={n.id}
-                                    onClick={async () => {
-                                        if (!n.read) {
-                                            const tk = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
-                                            const sl = localStorage.getItem("tenant_slug");
-                                            if (tk && sl) markNotificationRead(sl, tk, n.id);
-                                            setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
-                                            setUnreadCount(c => Math.max(0, c - 1));
-                                        }
-                                        if (n.type === 'attendance') setActiveSection('calendar');
-                                        else if (n.type === 'payment') setActiveSection('payments');
-                                        setShowNotifications(false);
-                                    }}
-                                    className={`p-4 border-b border-zinc-50 cursor-pointer hover:bg-zinc-50 transition-colors ${!n.read ? 'bg-blue-50/50' : ''}`}
-                                >
+                            {common.notifications.length > 0 ? common.notifications.map((n: any) => (
+                                <div key={n.id} onClick={() => { if (!n.read) common.markRead(n.id); if (n.type === 'attendance') setActiveSection('calendar'); else if (n.type === 'payment') setActiveSection('payments'); common.setShowNotifications(false); }}
+                                    className={`p-4 border-b border-zinc-50 cursor-pointer hover:bg-zinc-50 transition-colors ${!n.read ? 'bg-blue-50/50' : ''}`}>
                                     <div className="flex items-start gap-3">
                                         <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${!n.read ? 'bg-blue-500' : 'bg-zinc-200'}`} />
                                         <div className="flex-1 min-w-0">
@@ -515,9 +235,7 @@ export default function StudentDashboard() {
                                         </div>
                                     </div>
                                 </div>
-                            )) : (
-                                <div className="p-8 text-center text-zinc-300 text-xs">Sin notificaciones</div>
-                            )}
+                            )) : <div className="p-8 text-center text-zinc-300 text-xs">Sin notificaciones</div>}
                         </div>
                     </div>
                 </div>
@@ -526,238 +244,111 @@ export default function StudentDashboard() {
             {/* Main Content */}
             <main className="px-2 md:px-8 pt-20">
                 {activeSection === "home" && (
-                    <StudentHomeSection
-                        guardian={guardian}
-                        isSchoolTreasury={isSchoolTreasury}
-                        branding={branding}
-                        totalDueOrReview={totalDueOrReview}
-                        hasPendingReview={hasPendingReview}
-                        totalDue={totalDue}
-                        setActiveSection={setActiveSection}
-                        myFees={myFees}
-                        schedulesList={schedulesList}
-                        primaryColor={primaryColor}
-                        students={students}
-                        isUploadingPhoto={isUploadingPhoto}
-                        studentPhotoLoadingId={studentPhotoLoadingId}
-                        studentForPhotoRef={studentForPhotoRef}
-                        profileFileInputRef={profileFileInputRef}
-                        setActiveScanner={setActiveScanner}
-                        vocab={vocab}
-                    />
+                    isSchoolTreasury ? (
+                        <HomeTreasury guardian={guardian} branding={common.branding} myFees={treasury.myFees} schedulesList={martialArts.schedulesList} primaryColor={primaryColor} students={students} setActiveSection={setActiveSection} vocab={vocab} />
+                    ) : (
+                        <HomeMartialArts 
+                            guardian={guardian} 
+                            branding={common.branding} 
+                            totalDueOrReview={common.data?.total_due > 0 || students.some((s:any)=> (s.payments||[]).some((p:any)=>p.status==='pending_review'))} 
+                            hasPendingReview={students.some((s:any)=> (s.payments||[]).some((p:any)=>p.status==='pending_review'))} 
+                            totalDue={common.data?.total_due || 0} 
+                            setActiveSection={setActiveSection} 
+                            schedulesList={martialArts.schedulesList} 
+                            primaryColor={primaryColor} 
+                            students={students} 
+                            isUploadingPhoto={common.isUploadingPhoto} 
+                            studentPhotoLoadingId={common.studentPhotoLoadingId} 
+                            studentForPhotoRef={studentForPhotoRef} 
+                            profileFileInputRef={profileFileInputRef as any} 
+                            setActiveScanner={martialArts.setActiveScanner} 
+                            vocab={vocab} 
+                        />
+                    )
                 )}
+                
                 {activeSection === "calendar" && (
-                    <StudentCalendarSection
-                        branding={branding}
-                        schedulesList={schedulesList}
-                        students={students}
-                        primaryColor={primaryColor}
-                        isSchoolTreasury={isSchoolTreasury}
-                    />
+                    <StudentCalendarSection branding={common.branding} schedulesList={martialArts.schedulesList} students={students} primaryColor={primaryColor} isSchoolTreasury={isSchoolTreasury} />
                 )}
+
                 {activeSection === "payments" && (
-                    <StudentPaymentsSection
-                        paymentTab={paymentTab}
-                        setPaymentTab={setPaymentTab}
-                        bankInfo={bankInfo}
-                        copiedBank={copiedBank}
-                        setCopiedBank={setCopiedBank}
-                        selectedPayments={selectedPayments}
-                        setSelectedPayments={setSelectedPayments}
-                        uploadingPayment={uploadingPayment}
-                        bulkFileInputRef={bulkFileInputRef as any}
-                        myFees={myFees}
-                        setFeePayModal={setFeePayModal}
-                        students={students}
-                        primaryColor={primaryColor}
-                        uploadSuccess={uploadSuccess}
-                        handleUploadProof={handleUploadProof}
-                        setProofModal={setProofModal}
-                        setConfirmDelete={setConfirmDelete}
-                        handleBulkUploadProof={handleBulkUploadProof}
-                        paymentHistory={paymentHistory}
-                        vocab={vocab}
-                        isSchoolTreasury={isSchoolTreasury}
-                    />
+                    isSchoolTreasury ? (
+                        <PaymentsTreasury paymentTab={paymentTab} setPaymentTab={setPaymentTab} bankInfo={common.data?.bank_info} copiedBank={copiedBank} setCopiedBank={setCopiedBank} selectedPayments={selectedPayments} setSelectedPayments={setSelectedPayments} uploadingPayment={uploadingPayment} bulkFileInputRef={bulkFileInputRef as any} myFees={treasury.myFees} setFeePayModal={treasury.setFeePayModal} students={students} primaryColor={primaryColor} uploadSuccess={uploadSuccess} handleUploadProof={handleUploadProof} setProofModal={setProofModal} setConfirmDelete={setConfirmDelete} handleBulkUploadProof={handleBulkUploadProof} paymentHistory={common.data?.payment_history || []} vocab={vocab} />
+                    ) : (
+                        <PaymentsMartialArts paymentTab={paymentTab} setPaymentTab={setPaymentTab} bankInfo={common.data?.bank_info} copiedBank={copiedBank} setCopiedBank={setCopiedBank} selectedPayments={selectedPayments} setSelectedPayments={setSelectedPayments} uploadingPayment={uploadingPayment} bulkFileInputRef={bulkFileInputRef as any} students={students} primaryColor={primaryColor} uploadSuccess={uploadSuccess} handleUploadProof={handleUploadProof} setProofModal={setProofModal} setConfirmDelete={setConfirmDelete} handleBulkUploadProof={handleBulkUploadProof} paymentHistory={common.data?.payment_history || []} vocab={vocab} />
+                    )
                 )}
+
                 {activeSection === "profile" && (
-                    <StudentProfileSection
-                        guardian={guardian}
-                        primaryColor={primaryColor}
-                        isUploadingPhoto={isUploadingPhoto}
-                        profileFileInputRef={profileFileInputRef as any}
-                        students={students}
-                        editingStudentId={editingStudentId}
-                        setEditingStudentId={setEditingStudentId}
-                        editingStudentName={editingStudentName}
-                        setEditingStudentName={setEditingStudentName}
-                        savingStudentName={savingStudentName}
-                        setSavingStudentName={setSavingStudentName}
-                        refreshData={refreshData}
-                        studentPhotoLoadingId={studentPhotoLoadingId}
-                        handleUploadPhoto={(id: string, file: File) => handleUploadPhoto(id, file)}
-                        studentForPhotoRef={studentForPhotoRef}
-                        setActiveSection={setActiveSection}
-                        setPaymentTab={setPaymentTab}
-                        vocab={vocab}
-                        onAccountSwitch={handleAccountSwitch}
-                        isSchoolTreasury={isSchoolTreasury}
-                        appUpdates={appUpdates}
+                    <StudentProfileSection 
+                        guardian={guardian} 
+                        primaryColor={primaryColor} 
+                        isUploadingPhoto={common.isUploadingPhoto} 
+                        profileFileInputRef={profileFileInputRef as any} 
+                        students={students} 
+                        editingStudentId={null} 
+                        setEditingStudentId={()=>{}} 
+                        editingStudentName={""} 
+                        setEditingStudentName={()=>{}} 
+                        savingStudentName={false} 
+                        setSavingStudentName={()=>{}} 
+                        refreshData={common.refreshData} 
+                        studentPhotoLoadingId={common.studentPhotoLoadingId} 
+                        handleUploadPhoto={common.handleUploadPhoto} 
+                        studentForPhotoRef={studentForPhotoRef} 
+                        setActiveSection={setActiveSection} 
+                        setPaymentTab={setPaymentTab} 
+                        vocab={vocab} 
+                        onAccountSwitch={common.handleAccountSwitch} 
+                        isSchoolTreasury={isSchoolTreasury} 
+                        appUpdates={common.appUpdates} 
                     />
                 )}
+
                 {activeSection === "rendicion" && (
-                    <StudentRendicionSection
-                        expensesTotal={expensesTotal}
-                        expensesBalance={expensesBalance}
-                        expensesList={expensesList}
-                        expensesSummary={expensesSummary}
-                        expensesLoading={expensesLoading}
-                        setExpenseLightbox={setExpenseLightbox}
-                    />
+                    <StudentRendicionSection expensesTotal={treasury.expensesTotal} expensesBalance={treasury.expensesBalance} expensesList={treasury.expensesList} expensesSummary={treasury.expensesSummary} expensesLoading={treasury.expensesLoading} setExpenseLightbox={()=>{}} />
                 )}
             </main>
 
-            {/* Bottom Nav */}
-            <BottomNav
-                activeSection={activeSection}
-                setActiveSection={setActiveSection}
-                primaryColor={primaryColor}
-                userPhoto={guardian.photo}
-                userName={guardian.name}
-                industry={industry}
-            />
+            <BottomNav activeSection={activeSection} setActiveSection={setActiveSection} primaryColor={primaryColor} userPhoto={guardian.photo} userName={guardian.name} industry={common.effectiveIndustry} />
 
-            {/* Modals */}
-            {activeScanner && (
-                <StudentQRScanner
-                    studentId={activeScanner}
-                    primaryColor={primaryColor}
-                    onComplete={() => { setActiveScanner(null); refreshData(); }}
-                    onCancel={() => setActiveScanner(null)}
-                />
-            )}
-            {feePayModal && (
-                <FeePayModal
-                    fees={feePayModal.fees}
-                    onClose={() => setFeePayModal(null)}
-                    onSuccess={refreshMyFees}
-                    submitFeePayment={submitFeePayment}
-                />
-            )}
-            {proofModal && (
-                <ProofModal
-                    url={proofModal.url}
-                    canDelete={proofModal.canDelete}
-                    onClose={() => setProofModal(null)}
-                    onDelete={() => setConfirmDelete(proofModal.paymentId)}
-                />
-            )}
-            {confirmDelete && (
-                <ConfirmDialog
-                    title="¿Eliminar comprobante?"
-                    message="Se eliminará la imagen y el pago volverá a estado pendiente."
-                    onConfirm={() => handleDeleteProof(confirmDelete)}
-                    onCancel={() => setConfirmDelete(null)}
-                />
-            )}
-
-            {/* Push Modal */}
-            {showPushModal && (
-                <div className="fixed inset-0 z-[300] bg-black/70 backdrop-blur-sm flex items-end justify-center p-4 animate-in fade-in duration-200" onClick={() => setShowPushModal(false)}>
-                    <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl animate-in slide-in-from-bottom-4 duration-300 overflow-hidden" onClick={e => e.stopPropagation()}>
-
-                        {/* Header con gradiente */}
-                        <div className="relative px-6 pt-8 pb-6" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${primaryColor}05)` }}>
-                            <button onClick={() => setShowPushModal(false)} className="absolute top-4 right-4 w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center">
-                                <X size={14} className="text-zinc-400" />
-                            </button>
-                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-sm" style={{ backgroundColor: `${primaryColor}20` }}>
-                                <Bell size={26} style={{ color: primaryColor }} />
-                            </div>
-                            {isSchoolTreasury ? (
-                                <>
-                                    <h3 className="text-base font-black text-zinc-900 leading-tight">Mantente al día con el colegio</h3>
-                                    <p className="text-xs text-zinc-400 mt-1 font-medium">Activa las notificaciones para no perderte nada importante.</p>
-                                </>
-                            ) : (
-                                <>
-                                    <h3 className="text-base font-black text-zinc-900 leading-tight">Alertas en tiempo real</h3>
-                                    <p className="text-xs text-zinc-400 mt-1 font-medium">Sé el primero en saber cuando {vocab.memberLabel.toLowerCase()} llegue al {vocab.placeLabel.toLowerCase()}.</p>
-                                </>
-                            )}
-                        </div>
-
-                        {/* Lista de beneficios */}
-                        <div className="px-6 pb-2 space-y-3">
-                            {isSchoolTreasury ? (
-                                <>
-                                    {[
-                                        { icon: <Calendar size={16} style={{ color: primaryColor }} />, text: 'Cambios de horario al instante' },
-                                        { icon: <FileText size={16} style={{ color: primaryColor }} />, text: 'Pruebas y evaluaciones' },
-                                        { icon: <Users size={16} style={{ color: primaryColor }} />, text: 'Reuniones de apoderados' },
-                                        { icon: <Backpack size={16} style={{ color: primaryColor }} />, text: 'Actividades y eventos del colegio' },
-                                        { icon: <CreditCard size={16} style={{ color: primaryColor }} />, text: 'Recordatorios de cuotas y pagos' },
-                                    ].map((item, i) => (
-                                        <div key={i} className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${primaryColor}12` }}>
-                                                {item.icon}
-                                            </div>
-                                            <span className="text-xs font-semibold text-zinc-700">{item.text}</span>
-                                        </div>
-                                    ))}
-                                </>
-                            ) : (
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${primaryColor}12` }}>
-                                        <Zap size={16} style={{ color: primaryColor }} />
-                                    </div>
-                                    <span className="text-xs font-semibold text-zinc-700">Notificación instantánea de ingreso y salida</span>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Botones */}
-                        <div className="px-6 pt-4 pb-8 space-y-2">
-                            <button
-                                onClick={handleActivatePush}
-                                style={{ backgroundColor: primaryColor }}
-                                className="w-full py-4 rounded-2xl text-white font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all shadow-lg"
-                            >
-                                Activar notificaciones
-                            </button>
-                            <button
-                                onClick={() => { setShowPushModal(false); localStorage.setItem('push_banner_dismissed', '1'); }}
-                                className="w-full py-3 text-zinc-400 font-bold text-[10px] uppercase tracking-widest"
-                            >
-                                Ahora no
-                            </button>
-                        </div>
+            {/* Modal Logic */}
+            {martialArts.activeScanner && <StudentQRScanner studentId={martialArts.activeScanner} primaryColor={primaryColor} onComplete={() => { martialArts.setActiveScanner(null); common.refreshData(); }} onCancel={() => martialArts.setActiveScanner(null)} />}
+            {treasury.feePayModal && <FeePayModal fees={treasury.feePayModal.fees} onClose={() => treasury.setFeePayModal(null)} onSuccess={treasury.refreshMyFees} submitFeePayment={treasury.submitFeePayment} />}
+            {proofModal && <ProofModal url={proofModal.url} canDelete={proofModal.canDelete} onClose={() => setProofModal(null)} onDelete={() => setConfirmDelete(proofModal.paymentId)} />}
+            {confirmDelete && <ConfirmDialog title="¿Eliminar comprobante?" message="Se eliminará la imagen y el pago volverá a estado pendiente." onConfirm={() => handleDeleteProof(confirmDelete)} onCancel={() => setConfirmDelete(null)} />}
+            
+            {common.showPushModal && (
+                <div className="fixed inset-0 z-[300] bg-black/70 backdrop-blur-sm flex items-end justify-center p-4" onClick={() => common.setShowPushModal(false)}>
+                    <div className="bg-white w-full max-w-sm rounded-[2rem] p-6 text-center" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-lg font-black">{isSchoolTreasury ? 'Mantente al día' : 'Alertas en tiempo real'}</h3>
+                        <p className="text-xs text-zinc-500 my-2">Activa las notificaciones push para recibir noticias importantes.</p>
+                        <button onClick={common.handleActivatePush} style={{ backgroundColor: primaryColor }} className="w-full py-4 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] mb-2">Activar ahora</button>
+                        <button onClick={() => common.setShowPushModal(false)} className="w-full py-3 text-zinc-400 text-[10px] font-bold uppercase tracking-widest">Ahora no</button>
                     </div>
                 </div>
             )}
 
-            {/* Photo Input */}
-            <input
-                type="file"
-                ref={profileFileInputRef}
-                style={{ opacity: 0, position: 'absolute', pointerEvents: 'none', width: 0, height: 0 }}
-                accept="image/*"
-                onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                        if (studentForPhotoRef.current) handleUploadPhoto(studentForPhotoRef.current, file);
-                        else handleProfilePhotoUpload(file);
+            <input 
+                type="file" 
+                ref={profileFileInputRef} 
+                className="hidden" 
+                accept="image/*" 
+                onChange={(e) => { 
+                    const file = e.target.files?.[0]; 
+                    if (!file) return;
+                    
+                    if (studentForPhotoRef.current) {
+                        // Es una foto de alumno
+                        common.handleUploadPhoto(studentForPhotoRef.current, file);
+                    } else {
+                        // Es la foto del perfil (guardian)
+                        common.handleProfilePhotoUpload(file);
                     }
-                    studentForPhotoRef.current = null;
-                }}
+                    // Reset input
+                    e.target.value = '';
+                }} 
             />
-
-            {/* Lightbox gastos */}
-            {expenseLightbox && (
-                <div className="fixed inset-0 bg-black/90 z-[300] flex items-center justify-center p-4" onClick={() => setExpenseLightbox(null)}>
-                    <img src={expenseLightbox} className="max-w-full max-h-full rounded-2xl object-contain" alt="Gasto" />
-                </div>
-            )}
         </div>
     );
 }

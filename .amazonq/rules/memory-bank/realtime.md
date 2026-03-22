@@ -448,7 +448,35 @@ const loadExpenses = async () => {
     if (!s || !tk) return;
     const data = await getExpenses(s, tk);
 };
+useRealtimeChannel(`payments.${slug}`, {
+    'expense.updated': () => loadExpenses(),
+});
 ```
+
+### 🏆 Patrón Recomendado: Hooks Auto-Reactivos
+
+Para evitar depender de llamadas manuales desde el componente padre (que suelen sufrir de cierres viciados en el primer render), los hooks modulares deben ser auto-suficientes:
+
+```typescript
+// useStudentTreasuryData.ts
+export function useStudentTreasuryData(slug, token) {
+    const refresh = useCallback(async () => {
+        if (slug && token) {
+            const d = await getMyFees(slug, token);
+            setMyFees(d?.fees ?? []);
+        }
+    }, [slug, token]);
+
+    // Auto-carga inicial reactiva
+    useEffect(() => {
+        if (slug && token) refresh();
+    }, [slug, token, refresh]);
+
+    return { refresh, ... };
+}
+```
+
+**Ventaja**: El orquestador (`page.tsx`) solo se preocupa de `common.refreshData()`. En cuanto el perfil carga y el `slug`/`token` se propagan, todos los hooks de industria se activan y cargan sus propios datos de forma aislada y segura.
 
 **Regla**: Toda función que se llame desde un handler WS debe leer `slug` y `token` de refs (`brandingSlugRef.current`, `tokenRef.current`), no de estado/props directamente.
 

@@ -89,12 +89,10 @@ import { subscribeToPush } from "@/lib/push";
 import PaymentsSection from "@/components/Dashboard/PaymentsSection";
 import AppUpdatesAccordion from "@/components/Dashboard/AppUpdatesAccordion";
 import AttendanceSection from "@/components/Dashboard/AttendanceSection";
-import FeesGuardiansSection from "@/components/Dashboard/Industries/SchoolTreasury/FeesGuardiansSection";
+import FeesGuardiansSection from "@/components/Dashboard/FeesGuardiansSection";
 import ScheduleSection from "@/components/Dashboard/ScheduleSection";
 import SettingsSection from "@/components/Dashboard/SettingsSection";
 import ProfileSection from "@/components/Dashboard/ProfileSection";
-import OverviewTreasury from "@/components/Dashboard/Industries/SchoolTreasury/OverviewTreasury";
-import AttendanceMartialArts from "@/components/Dashboard/Industries/MartialArts/AttendanceMartialArts";
 
 import {
     PaymentActionModal,
@@ -140,7 +138,7 @@ export default function App() {
         approvingFeePayment, setApprovingFeePayment, feeApproveMethod, setFeeApproveMethod,
         feeApproveNotes, setFeeApproveNotes, feeApprovingLoading, setFeeApprovingLoading,
         feesGuardians, setFeesGuardians, feesGuardiansLoading, setFeesGuardiansLoading,
-        feesGuardianFilter, setFeesGuardianFilter, 
+        feesGuardianFilter, setFeesGuardianFilter, feesGuardianSearch, setFeesGuardianSearch,
         feesGuardianDropdown, setFeesGuardianDropdown, feesBubbleModal, setFeesBubbleModal,
         feesSearch, setFeesSearch, filteredFees, feesView, setFeesView,
         showInactivePayers, setShowInactivePayers, loadingSync, setLoadingSync,
@@ -383,8 +381,6 @@ export default function App() {
                                     setSelectedHistoryDate={setSelectedHistoryDate}
                                     schedulesList={schedulesList}
                                     feesSummary={feesSummary}
-                                    vocab={vocab}
-                                    setActiveTab={setActiveTab}
                                 />
                             )}
                             {activeTab === 'attendance' && (

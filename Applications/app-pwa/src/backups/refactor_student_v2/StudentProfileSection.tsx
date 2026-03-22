@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import { updateStudentName } from "@/lib/api";
 import AppUpdatesAccordion from "../AppUpdatesAccordion";
-import { getBeltColor, formatStudentCategory } from "@/lib/industryUtils";
 
 interface StudentProfileSectionProps {
     guardian: any;
@@ -177,15 +176,7 @@ export function StudentProfileSection({
                                                 <Settings size={12} />
                                             </button>
                                         </div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                                            {formatStudentCategory(student.category, isSchoolTreasury ? 'school_treasury' : 'martial_arts', vocab.memberLabel)}
-                                        </p>
-                                        {!isSchoolTreasury && student.label && (
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <div className={`w-8 h-1.5 rounded-full ${getBeltColor(student.label)}`} />
-                                                <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400">{student.label}</span>
-                                            </div>
-                                        )}
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{student.category ? (() => { const c = student.category; const l = c.toLowerCase(); if (l === 'prekinder') return 'Pre-Kinder'; if (l === 'kinder') return 'Kinder'; const m = c.match(/^(\d+)_(.+)$/); if (m) return `${m[1]}° ${m[2].charAt(0).toUpperCase() + m[2].slice(1).toLowerCase()}`; return c.replace(/_/g, ' '); })() : vocab.memberLabel}</p>
                                     </>
                                 )}
                             </div>

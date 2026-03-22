@@ -142,41 +142,99 @@ Para 3 tabs: `width: 'calc(33.33% - 2.6px)'`, transform: `translateX(${idx === 0
 
 ## Pendientes próxima sesión
 
-1. **Commit backend** (`/tmp/saas-backend-push/`): FeeController, FeeUpdated, Notification — hacer push
-2. **FeesSection tab 'history'**: implementar vista de apoderados con `feesGuardians` (resumen deuda total por apoderado)
-3. **Botón "Ver apoderados"** en fee card: restaurar cuando backend confirmado (retorna todos los apoderados con estado)
-4. **Sección Cuotas staff**: terminar de construir — mejorar modal apoderados, aprobar pagos individuales por período
+---
+
+## Consolidación Arquitectura Modular (Fase 6-8) — Marzo 2025
+
+Se ha completado la refactorización profunda para aislar lógicas de industria y resolver problemas de reactividad.
+
+### 1. Desacoplamiento de Industrias (Hooks)
+Se eliminó la lógica "monolítica" y se crearon hooks especializados:
+- **`useAdminDashboard.ts`**: Orquestador principal (Staff).
+- **`useMartialArtsData.ts` / `useTreasuryData.ts`**: Lógica de negocio pura por industria.
+- **`useDashboardCommon.ts`**: Lógica compartida (branding, notificaciones).
+- **`useStudentCommon.ts` / `useStudentTreasuryData.ts` / `useStudentMartialArtsData.ts`**: Equivalentes para el Portal del Estudiante.
+
+### 2. Autocarga Reactiva (Fix v2.2)
+Se resolvió el problema de "clausura viciada" (stale closure) en el Dashboard del Estudiante:
+- Los hooks de datos ahora usan `useEffect` internos que reaccionan al `slug` y `token` tan pronto como están disponibles.
+- Eliminada la necesidad de llamadas manuales sincronizadas en `student/page.tsx`.
+
+### 3. Conectividad y APIs
+- **Fotos**: Implementada la subida de fotos de perfil y de alumnos (Student Portal).
+- **Buscadores**: Sincronización del `feesSearch` en Staff con la lógica de filtrado de `useTreasuryData`.
+- **Asistencia QR**: Vinculación real de eventos WebSocket para refrescar estados de asistencia en tiempo real.
+
+### 4. Verificación de Integridad
+- Ejecutado `npm run build` con éxito. La arquitectura modular es 100% compatible con la optimización de Next.js.
 
 ---
 
-## Arquitectura VERIFICADA: school_treasury
+## Archivos clave actualizados (Consolidación)
 
-Basado en la auditoría del código fuente (`OverviewSection`, `StudentHomeSection`, `BottomNav`), este es el comportamiento exacto de la industria.
+| Archivo | Rol | Cambio |
+|---------|-----|--------|
+| `src/hooks/useAdminDashboard.ts` | Orquestador Staff | Limpieza de propiedad, integración de sub-hooks |
+| `src/hooks/useStudentTreasuryData.ts` | Datos Estudiante | Implementado `useEffect` auto-reactivo para cuotas |
+| `src/app/dashboard/student/page.tsx` | UI Estudiante | Simplificación de inicio, handlers de fotos |
+| `src/hooks/useMartialArtsData.ts` | Lógica Staff | Gestión de historial de asistencia y toggle |
 
-### 👨‍💼 Perfil: STAFF (Administración/Tesorero)
-- **Dashboard**: Muestra exclusivamente el estado de cuotas: **Total Alumnos**, **Al Día**, **En Revisión** y **Morosos**. Sección de asistencia oculta.
-- **Navegación**: Sin botón de "Asistencia" en BottomNav. Prioridad a Cuotas y Compras.
+---
 
-### 👪 Perfil: APODERADO / ALUMNO
-- **Home**: Tarjeta status financiero (Al día/Deuda). 
-- **Asistencia QR**: Desactivada completamente para esta industria.
-- **Rendición**: Pestaña exclusiva para ver gastos del colegio.
+---
 
-### 🏗️ Implementación Backend (Sistema de Cursos)
-- **Modelo `Course`**: En `app/Models/Course.php`.
-- **Relación**: `Student` -> `course_id`.
-- **Automatización**: Mapeo inteligente en el backend. La categoría del formulario (ej: `3_basico`) se vincula automáticamente al curso `3 basico` por nombre.
+## Consolidación Industrial: Artes Marciales (Fase 9) — Marzo 2025
 
-### 🗄️ Estructura SQL
-```sql
-CREATE TABLE IF NOT EXISTS `courses` (
-  `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  `tenant_id` BIGINT UNSIGNED NOT NULL,
-  `name` VARCHAR(255) NOT NULL,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX `courses_tenant_id_index` (`tenant_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+Se ha refinado el aislamiento de la industria de Artes Marciales para garantizar que cambios futuros no afecten a School Treasury.
 
-ALTER TABLE `students` ADD COLUMN `course_id` BIGINT UNSIGNED NULL;
-```
+### 1. Centralización de Utilidades (`industryUtils.ts`)
+- Implementado `getBeltColor` para mapear labels (Blanco, Azul, etc.) a clases CSS consistentes.
+- Implementado `formatStudentCategory` que detecta la industria para formatear grados (1° Básico) o categorías (Infantil/Adulto).
+
+### 2. Aislamiento de Lógica (Hooks Staff)
+- **`useMartialArtsData.ts`**: Añadida guarda industrial estricta en `toggleAttendance`.
+- **`useAdminDashboard.ts`**: Implementado ruteo explícito de asistencia. Si es Martial Arts, usa el hook especializado; de lo contrario, usa el común.
+- **Recuperación**: Se restauró `toggleAttendance` genérico en `useDashboardCommon` para que School Treasury no pierda funcionalidad.
+
+### 3. Experiencia del Estudiante (Refinamiento Visual)
+- **Dashboard Home**: Ahora muestra la barra de color de cinturón bajo el nombre del alumno si aplica.
+- **Perfil**: Integrado el color y nombre del cinturón/grado en la lista de "Mis hijos".
+- **Limpieza**: Renombrado `handleDeletePaymentProof` a `handleGenericPaymentProofDelete` en el hook de artes marciales para evitar ambigüedad con las cuotas.
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/lib/industryUtils.ts` | **NUEVO**: Utilidades compartidas (belt colors, category format) |
+| `src/hooks/useAdminDashboard.ts` | Ruteo inteligente de asistencia (delegación por industria) |
+| `src/hooks/useDashboardCommon.ts` | Restaurado `toggleAttendance` genérico |
+| `src/components/Dashboard/Industries/MartialArts/AttendanceMartialArts.tsx` | Uso de `industryUtils` y marcadores de pago |
+| `src/components/Dashboard/Student/Industries/MartialArts/HomeMartialArts.tsx` | Añadida visualización de cinturones |
+| `src/components/Dashboard/Student/StudentProfileSection.tsx` | Integración de grados/cinturones refinada |
+| `src/hooks/useStudentMartialArtsData.ts` | Limpieza de funciones mixed-up |
+| `src/app/dashboard/student/page.tsx` | Actualización de nombres de funciones tras limpieza |
+
+---
+
+## Mejora de Inicio Staff: Real-time & Terminología (Fase 10) — Marzo 2025
+
+Se ha potenciado el Dashboard principal (Staff) para la industria de Artes Marciales, enfocándose en la presencia en tiempo real en el Tatami.
+
+### 1. Restauración de "Globos" de Asistencia
+- **`OverviewSection.tsx`**: Implementada una fila de avatares (globos) que muestra en tiempo real quién está presente hoy.
+- Diseño premium con superposición de imágenes, borde dinámico y contador de "+X" para grupos grandes.
+
+### 2. Refinamiento de Terminología y UI
+- **Encabezados Dinámicos**: La sección de asistencia ahora se titula según la industria (ej: "**Tatami Hoy**") usando el sistema de `vocab`.
+- **Navegación Integrada**: Añadido botón "Ver Todo" que permite saltar directamente a la gestión de asistencia desde el inicio.
+- **Simplificación**: Se oculta la sección de horarios escolares (`TodaySchedule`) cuando se detecta una industria distinta a `school_treasury`.
+
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/Dashboard/OverviewSection.tsx` | Rediseño de sección de asistencia con globos y navegación |
+| `src/app/dashboard/page.tsx` | Inyección de `vocab` y `setActiveTab` hacia el Overview |
+
+---
+
+## Pendientes Próxima Sesión (v2.5)
+
+1. **Refinar Rendición**: Pulir la visualización de gastos en el portal de apoderados.
+2. **Optimización de Notificaciones**: Asegurar que los badges se actualicen instantáneamente en todas las vistas tras lecturas.

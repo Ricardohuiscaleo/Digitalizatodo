@@ -79,10 +79,18 @@ app-pwa/src/
 │   └── r/[code]/           # Registration page via code
 ├── components/ui/          # Shadcn/ui components (Button, Card, Badge, Input, Tabs, etc.)
 ├── context/
-│   └── BrandingContext.tsx # Tenant branding (logo, colors) via React Context
+│   └── BrandingContext.tsx # Tenant branding
+├── hooks/                  # Modular architecture
+│   ├── useAdminDashboard.ts
+│   ├── useDashboardCommon.ts
+│   ├── useMartialArtsData.ts
+│   ├── useTreasuryData.ts
+│   ├── useStudentCommon.ts
+│   ├── useStudentTreasuryData.ts
+│   └── useStudentMartialArtsData.ts
 └── lib/
-    ├── api.ts              # All fetch calls to saas-backend API
-    └── utils.ts            # Utility helpers (cn, etc.)
+    ├── api.ts              # API calls
+    └── utils.ts            # Helpers
 ```
 
 ---
