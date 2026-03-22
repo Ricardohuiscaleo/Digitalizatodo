@@ -6,19 +6,21 @@ import { getRegistrationPage, registerStudent } from "@/lib/api";
 import { Loader2, CheckCircle2, Eye, EyeOff } from "lucide-react";
 
 type IndustryConfig = {
-  memberLabel: string;       // "Alumno" | "Estudiante" | "Participante"
-  membersLabel: string;      // "Alumnos" | "Estudiantes"
-  selfRegisterLabel: string; // "Yo también participaré" | null (ocultar toggle)
+  memberLabel: string;
+  membersLabel: string;
+  selfRegisterLabel: string;
   showSelfRegister: boolean;
   showPricing: boolean;
-  showCategory: boolean;     // kids/adults vs curso
-  courseLabel: string;       // "Curso" | "Categoría"
+  showCategory: boolean;
+  showBJJGraduation: boolean; // New: BJJ belts/stripes
+  courseLabel: string;
   courseOptions: { value: string; label: string }[];
-  guardianLabel: string;     // "Apoderado" | "Titular"
+  guardianLabel: string;
 };
 
 function getIndustryConfig(industry: string): IndustryConfig {
   const isSchool = industry === "school_treasury" || industry === "education";
+  const isMartialArts = industry === "martial_arts";
 
   if (isSchool) {
     return {
@@ -28,6 +30,7 @@ function getIndustryConfig(industry: string): IndustryConfig {
       showSelfRegister: false,
       showPricing: false,
       showCategory: true,
+      showBJJGraduation: false,
       courseLabel: "Curso",
       courseOptions: [
         { value: "pre_kinder", label: "Pre-Kinder" },
@@ -57,6 +60,7 @@ function getIndustryConfig(industry: string): IndustryConfig {
     showSelfRegister: true,
     showPricing: true,
     showCategory: true,
+    showBJJGraduation: isMartialArts,
     courseLabel: "Categoría",
     courseOptions: [
       { value: "kids", label: "Kids" },
@@ -79,9 +83,18 @@ export default function RegisterPage() {
     guardian_name: "", guardian_email: "", guardian_phone: "",
     password: "", password_confirmation: "",
     is_self_register: false,
-    students: [{ name: "", category: "kids" }],
+    self_student: { category: "adults", belt: "white", degrees: 0, modality: "gi" },
+    students: [] as any[],
     plan_id: null,
   });
+
+  const BJJ_BELTS = [
+    { id: 'white', name: 'B', color: '#ffffff', textColor: 'text-zinc-400' },
+    { id: 'blue', name: 'A', color: '#1e40af', textColor: 'text-blue-100' },
+    { id: 'purple', name: 'M', color: '#7e22ce', textColor: 'text-purple-100' },
+    { id: 'brown', name: 'C', color: '#78350f', textColor: 'text-amber-100' },
+    { id: 'black', name: 'N', color: '#18181b', textColor: 'text-zinc-100', border: 'border-zinc-700' },
+  ];
 
   useEffect(() => {
     getRegistrationPage(code as string).then(t => {
@@ -100,8 +113,10 @@ export default function RegisterPage() {
     if (!form.password) e.password = "La contraseña es obligatoria";
     if (form.password.length < 8) e.password = "Mínimo 8 caracteres";
     if (form.password !== form.password_confirmation) e.password_confirmation = "No coinciden";
-    if (!form.is_self_register && (form.students.length === 0 || !form.students[0].name))
+    if (!form.is_self_register && form.students.length === 0)
       e.students = `Debes inscribir al menos un ${config.memberLabel.toLowerCase()}`;
+    if (!form.is_self_register && form.students.some(s => !s.name))
+      e.students = "El nombre del alumno es obligatorio";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -256,7 +271,7 @@ export default function RegisterPage() {
 
           {/* TOGGLE "YO TAMBIÉN PARTICIPO" — solo industrias que lo usan */}
           {config.showSelfRegister && (
-            <div className="bg-zinc-50 rounded-2xl p-4 border border-zinc-100">
+            <div className={`rounded-2xl border transition-all ${form.is_self_register ? "bg-zinc-50 border-zinc-200 p-4" : "bg-zinc-50/50 border-zinc-100 p-3"}`}>
               <label className="flex items-center gap-3 cursor-pointer">
                 <div className="relative flex items-center justify-center">
                   <input type="checkbox" checked={form.is_self_register}
@@ -272,6 +287,51 @@ export default function RegisterPage() {
                   </span>
                 </div>
               </label>
+
+              {form.is_self_register && config.showBJJGraduation && (
+                <div className="mt-4 space-y-3 pt-4 border-t border-zinc-200 animate-in fade-in slide-in-from-top-2 duration-300">
+                   <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Tu Graduación Persona</span>
+                      <div className="flex gap-1">
+                        {[0, 1, 2, 3, 4].map(deg => (
+                          <button key={deg} type="button" 
+                            onClick={() => setForm({ ...form, self_student: { ...form.self_student, degrees: deg } })}
+                            className={`w-5 h-5 rounded-md text-[9px] font-black transition-all ${form.self_student.degrees === deg ? 'bg-zinc-950 text-white shadow-md' : 'bg-white text-zinc-300 border border-zinc-100'}`}>
+                            {deg}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-1.5 h-8">
+                      {BJJ_BELTS.map(belt => (
+                        <button key={belt.id} type="button"
+                          onClick={() => setForm({ ...form, self_student: { ...form.self_student, belt: belt.id } })}
+                          className={`flex-1 rounded-lg border transition-all flex items-center justify-center relative overflow-hidden ${form.self_student.belt === belt.id ? 'border-zinc-950 ring-2 ring-zinc-950/5 scale-105 z-10' : 'border-zinc-100 opacity-40'}`}
+                          style={{ backgroundColor: belt.color }}
+                        >
+                          <span className={`text-[9px] font-black pointer-events-none ${belt.textColor}`}>{belt.name}</span>
+                          <div className="absolute right-0 top-0 bottom-0 w-1/4 bg-zinc-950/90 pointer-events-none" />
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { id: 'gi', label: '🥋 Gi' },
+                          { id: 'nogi', label: '👕 No-Gi' },
+                          { id: 'both', label: '⚡ Ambas' }
+                        ].map(mod => (
+                          <button key={mod.id} type="button"
+                            onClick={() => setForm({ ...form, self_student: { ...form.self_student, modality: mod.id } })}
+                            className={`py-2 rounded-lg text-[9px] font-black uppercase tracking-tight transition-all border ${form.self_student.modality === mod.id ? 'bg-zinc-950 text-white border-zinc-950' : 'bg-white text-zinc-400 border-zinc-100'}`}
+                          >
+                            {mod.label}
+                          </button>
+                        ))}
+                      </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -290,28 +350,79 @@ export default function RegisterPage() {
 
             {errors.students && <p className="text-[9px] text-red-500 font-bold uppercase animate-pulse">{errors.students}</p>}
 
-            <div className="space-y-3">
-              {form.students.map((s, i) => (
-                <div key={i} className="flex gap-2 animate-in slide-in-from-right-2 duration-200">
-                  <input
-                    placeholder={`Nombre del ${config.memberLabel.toLowerCase()}`}
-                    value={s.name}
-                    onChange={e => { const st = [...form.students]; st[i].name = e.target.value; setForm({ ...form, students: st }); if (errors.students) setErrors({ ...errors, students: "" }); }}
-                    className="flex-1 h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border border-zinc-100 focus:border-zinc-950 transition-all outline-none"
-                  />
-                  <select value={s.category}
-                    onChange={e => { const st = [...form.students]; st[i].category = e.target.value; setForm({ ...form, students: st }); }}
-                    className="h-11 bg-zinc-50 rounded-xl px-3 text-[10px] font-black uppercase text-zinc-600 border border-zinc-100 focus:border-zinc-950 outline-none">
-                    {config.courseOptions.map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
+            <div className="space-y-4">
+              {form.students.map((s: any, i) => (
+                <div key={i} className="space-y-3 p-4 bg-zinc-50 border border-zinc-100 rounded-2xl animate-in slide-in-from-right-2 duration-200">
+                  <div className="flex gap-2">
+                    <input
+                      placeholder={`Nombre del ${config.memberLabel.toLowerCase()}`}
+                      value={s.name}
+                      onChange={e => { const st = [...form.students]; st[i].name = e.target.value; setForm({ ...form, students: st }); if (errors.students) setErrors({ ...errors, students: "" }); }}
+                      className="flex-1 h-11 bg-white rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 border border-zinc-100 focus:border-zinc-950 transition-all outline-none font-bold"
+                    />
+                    <select value={s.category}
+                      onChange={e => { const st = [...form.students]; st[i].category = e.target.value; setForm({ ...form, students: st }); }}
+                      className="h-11 bg-white rounded-xl px-3 text-[10px] font-black uppercase text-zinc-600 border border-zinc-100 focus:border-zinc-950 outline-none">
+                      {config.courseOptions.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* BJJ FIELDS */}
+                  {config.showBJJGraduation && (
+                    <div className="space-y-3 p-3 bg-white/50 rounded-xl border border-zinc-100/50">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Cinturón & Grados</span>
+                        <div className="flex gap-1">
+                          {[0, 1, 2, 3, 4].map(deg => (
+                            <button key={deg} type="button" 
+                              onClick={() => { const st = [...form.students]; st[i].degrees = deg; setForm({ ...form, students: st }); }}
+                              className={`w-5 h-5 rounded-md text-[9px] font-black transition-all ${s.degrees === deg ? 'bg-zinc-950 text-white shadow-md' : 'bg-white text-zinc-300 border border-zinc-100'}`}>
+                              {deg}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-1.5 h-8">
+                        {BJJ_BELTS.map(belt => (
+                          <button key={belt.id} type="button"
+                            onClick={() => { const st = [...form.students]; st[i].belt = belt.id; setForm({ ...form, students: st }); }}
+                            className={`flex-1 rounded-lg border transition-all flex items-center justify-center relative overflow-hidden ${s.belt === belt.id ? 'border-zinc-950 ring-2 ring-zinc-950/5 scale-105 z-10' : 'border-zinc-100 opacity-40 hover:opacity-100'}`}
+                            style={{ backgroundColor: belt.color }}
+                          >
+                            <span className={`text-[9px] font-black pointer-events-none ${belt.textColor}`}>{belt.name}</span>
+                            <div className="absolute right-0 top-0 bottom-0 w-1/4 bg-zinc-950/90 pointer-events-none" />
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { id: 'gi', label: '🥋 Gi' },
+                          { id: 'nogi', label: '👕 No-Gi' },
+                          { id: 'both', label: '⚡ Ambas' }
+                        ].map(mod => (
+                          <button key={mod.id} type="button"
+                            onClick={() => { const st = [...form.students]; st[i].modality = mod.id; setForm({ ...form, students: st }); }}
+                            className={`py-2 rounded-lg text-[9px] font-black uppercase tracking-tight transition-all border ${s.modality === mod.id ? 'bg-zinc-950 text-white border-zinc-950 shadow-sm' : 'bg-white text-zinc-400 border-zinc-100 hover:border-zinc-300'}`}
+                          >
+                            {mod.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {form.students.length > 1 && (
-                    <button type="button"
-                      onClick={() => setForm({ ...form, students: form.students.filter((_, idx) => idx !== i) })}
-                      className="w-11 h-11 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-300 hover:text-red-400 hover:bg-red-50 transition-all border border-zinc-100">
-                      <span className="text-lg leading-none">×</span>
-                    </button>
+                    <div className="flex justify-end">
+                      <button type="button"
+                        onClick={() => setForm({ ...form, students: form.students.filter((_, idx) => idx !== i) })}
+                        className="text-[9px] font-black uppercase text-red-400 hover:text-red-500 transition-colors flex items-center gap-1 active:scale-95">
+                        Eliminar {config.memberLabel.toLowerCase()} ×
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}

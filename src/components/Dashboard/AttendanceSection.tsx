@@ -35,14 +35,14 @@ const AttendanceSection: React.FC<AttendanceSectionProps> = ({
         s.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const getBeltColor = (label: string) => {
+    const getBeltStyle = (label: string) => {
         const lower = label.toLowerCase();
-        if (lower.includes('blanco')) return 'bg-zinc-100 text-zinc-900';
-        if (lower.includes('azul')) return 'bg-blue-600 text-white';
-        if (lower.includes('morado')) return 'bg-purple-600 text-white';
-        if (lower.includes('marron')) return 'bg-amber-900 text-white';
-        if (lower.includes('negro')) return 'bg-zinc-900 text-white';
-        return 'bg-zinc-100 text-zinc-500';
+        if (lower.includes('blanco')) return { bg: 'bg-zinc-100', text: 'text-zinc-900', border: 'border-zinc-300' };
+        if (lower.includes('azul')) return { bg: 'bg-blue-600', text: 'text-white', border: 'border-blue-700' };
+        if (lower.includes('morado')) return { bg: 'bg-purple-600', text: 'text-white', border: 'border-purple-700' };
+        if (lower.includes('marrón') || lower.includes('marron') || lower.includes('café')) return { bg: 'bg-[#5d3a1a]', text: 'text-white', border: 'border-[#4a2e15]' };
+        if (lower.includes('negro')) return { bg: 'bg-zinc-900', text: 'text-white', border: 'border-zinc-950' };
+        return { bg: 'bg-zinc-100', text: 'text-zinc-500', border: 'border-zinc-200' };
     };
 
     return (
@@ -92,7 +92,16 @@ const AttendanceSection: React.FC<AttendanceSectionProps> = ({
                                     </td>
                                     <td className="px-6 py-4 font-bold text-zinc-500">
                                         {student.label && branding?.industry === 'martial_arts' ? (
-                                            <span className={`text-[9px] px-2 py-1 rounded font-black uppercase tracking-widest ${getBeltColor(student.label)}`}>{student.label}</span>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className={`text-[9px] px-2 py-0.5 rounded-md font-black uppercase tracking-widest border ${getBeltStyle(student.label).bg} ${getBeltStyle(student.label).text} ${getBeltStyle(student.label).border}`}>
+                                                    {student.label}
+                                                </span>
+                                                {student.degrees > 0 && (
+                                                    <span className="text-[10px] font-black text-amber-500">
+                                                        {'|'.repeat(student.degrees)}
+                                                    </span>
+                                                )}
+                                            </div>
                                         ) : (
                                             <span className="text-[9px] uppercase tracking-widest font-bold text-zinc-400">
                                                 {student.category === 'kids' ? vocab?.cat1 : student.category === 'adult' ? vocab?.cat2 : student.category || ''}
@@ -155,6 +164,12 @@ const AttendanceSection: React.FC<AttendanceSectionProps> = ({
                                 <p className={`font-black text-[9px] text-center leading-tight line-clamp-2 w-full uppercase mt-1 ${isPresent ? 'text-emerald-900' : 'text-zinc-800'}`}>
                                     {student.name.split(' ')[0]}
                                 </p>
+                                {student.label && branding?.industry === 'martial_arts' && (
+                                    <div className="mt-1 flex items-center gap-0.5">
+                                        <div className={`w-3 h-1.5 rounded-sm border-[0.5px] ${getBeltStyle(student.label).bg} ${getBeltStyle(student.label).border}`}></div>
+                                        {student.degrees > 0 && <span className="text-[7px] font-black text-zinc-400">{student.degrees}</span>}
+                                    </div>
+                                )}
                             </button>
                         </div>
                     );

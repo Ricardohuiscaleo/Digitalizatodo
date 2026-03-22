@@ -79,6 +79,10 @@ export default function OverviewSection(props: OverviewSectionProps) {
     const displayBubbles = presentStudents.slice(0, maxBubbles);
     const extraCount = presentStudents.length - maxBubbles;
 
+    // BANDEJA DE APROBACIÓN (New Registrations)
+    const pendingStudents = allStudents.filter(s => s.status === 'pending' || s.status === 'pending_approval');
+    const hasPending = pendingStudents.length > 0;
+
     return (
         <div className="space-y-6 text-zinc-950">
             {/* Dashboard Summary Horizontal Grid — 4 Columns on Mobile */}
@@ -119,6 +123,52 @@ export default function OverviewSection(props: OverviewSectionProps) {
                     </div>
                 ))}
             </div>
+
+            {/* BANDEJA DE APROBACIÓN — Solo Martial Arts y si hay pendientes */}
+            {hasPending && !isTreasury && (
+                <div className="bg-zinc-950 rounded-[2.5rem] p-6 shadow-xl border border-zinc-800 shadow-zinc-200 animate-in slide-in-from-top-2 duration-700 relative overflow-hidden group">
+                    {/* Background Glow */}
+                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl group-hover:bg-amber-500/20 transition-all duration-700"></div>
+                    
+                    <div className="flex items-center justify-between relative z-10">
+                        <div className="flex items-center gap-4">
+                            <div className="relative">
+                                <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20">
+                                    <Users size={24} className="text-zinc-950" />
+                                </div>
+                                <div className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 rounded-full flex items-center justify-center border-2 border-zinc-950 animate-bounce">
+                                    <span className="text-[10px] font-black text-white">{pendingStudents.length}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-black text-white uppercase tracking-tighter leading-none">Bandeja de Aprobación</h3>
+                                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-1">Hay {pendingStudents.length} {pendingStudents.length === 1 ? 'nuevo atleta' : 'nuevos atletas'} por validar</p>
+                            </div>
+                        </div>
+                        <button 
+                            onClick={() => setActiveTab?.('attendance')}
+                            className="bg-zinc-800 hover:bg-zinc-700 text-amber-500 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 border border-zinc-700"
+                        >
+                            Revisar
+                        </button>
+                    </div>
+
+                    {/* Preview of names */}
+                    <div className="mt-4 flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                        {pendingStudents.slice(0, 5).map((s, idx) => (
+                            <div key={idx} className="bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-full flex items-center gap-2 shrink-0">
+                                <div className="w-4 h-4 rounded-full bg-zinc-800 flex items-center justify-center text-[8px] font-black text-zinc-500 uppercase">{s.name[0]}</div>
+                                <span className="text-[10px] font-black text-zinc-300 uppercase tracking-tighter">{s.name.split(' ')[0]}</span>
+                            </div>
+                        ))}
+                        {pendingStudents.length > 5 && (
+                            <div className="bg-zinc-900/50 px-3 py-1.5 rounded-full shrink-0 flex items-center">
+                                <span className="text-[10px] font-black text-zinc-600 uppercase">+{pendingStudents.length - 5}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* SECCIÓN INFERIOR — Oculta si es tesorería */}
             {!isTreasury && (
