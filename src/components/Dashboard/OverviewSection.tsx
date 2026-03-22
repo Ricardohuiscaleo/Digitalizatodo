@@ -153,7 +153,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
                         {attendanceHistory.length > 0 ? (
                             <div 
                                 ref={scrollRef}
-                                className="flex gap-3 overflow-x-auto pb-4 no-scrollbar -mx-2 px-2 snap-x"
+                                className="flex gap-3 overflow-x-auto pb-2 no-scrollbar -mx-2 px-2 snap-x"
                             >
                                 {(() => {
 
@@ -221,8 +221,8 @@ export default function OverviewSection(props: OverviewSectionProps) {
                         )}
 
                         {/* Visor Dinámico de Asistentes */}
-                        <div className="mt-4 pt-4 border-t border-zinc-50">
-                            <div className="flex justify-between items-center mb-4">
+                        <div className="mt-2 pt-2 border-t border-zinc-50">
+                            <div className="flex justify-between items-center mb-2">
                                 <h3 className="text-[10px] font-black text-zinc-900 uppercase tracking-tighter flex items-center gap-2">
                                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
                                     {activePreviewDate === nowCL().toISOString().split('T')[0] 
