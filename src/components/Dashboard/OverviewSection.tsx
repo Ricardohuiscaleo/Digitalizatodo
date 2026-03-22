@@ -180,7 +180,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                             <button
                                                 key={dStr}
                                                 onClick={() => setActivePreviewDate(dStr)}
-                                                className={`flex-shrink-0 w-20 h-20 rounded-[2rem] p-2 flex flex-col items-center justify-between transition-all active:scale-95 snap-start shadow-sm border-2 ${
+                                                className={`flex-shrink-0 w-20 aspect-[3/4] rounded-3xl p-3 flex flex-col items-center justify-between transition-all active:scale-95 snap-start shadow-sm border-2 ${
                                                     isActive
                                                         ? 'bg-zinc-900 border-zinc-900 ring-4 ring-zinc-100'
                                                         : isToday 
@@ -221,8 +221,8 @@ export default function OverviewSection(props: OverviewSectionProps) {
                         )}
 
                         {/* Visor Dinámico de Asistentes */}
-                        <div className="mt-8 pt-6 border-t border-zinc-50">
-                            <div className="flex justify-between items-center mb-6">
+                        <div className="mt-4 pt-4 border-t border-zinc-50">
+                            <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-[10px] font-black text-zinc-900 uppercase tracking-tighter flex items-center gap-2">
                                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
                                     {activePreviewDate === nowCL().toISOString().split('T')[0] 
