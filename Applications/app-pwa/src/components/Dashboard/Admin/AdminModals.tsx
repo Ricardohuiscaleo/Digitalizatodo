@@ -186,7 +186,7 @@ export function HistoryDetailModal({ date, records, branding, onClose }: History
                     <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-1">{records.length} asistentes</p>
                 </div>
 
-                <div ref={scrollRef} className="max-h-[60vh] overflow-y-auto space-y-3 pr-2 scrollbar-hide">
+                <div ref={scrollRef} className="max-h-[310px] overflow-y-auto space-y-3 pr-2 scrollbar-hide">
                     {records.map((r: any, i: number) => (
                         <div 
                             key={r.id} 
