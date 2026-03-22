@@ -232,7 +232,10 @@ export default function OverviewSection(props: OverviewSectionProps) {
                             </div>
 
                             {activePreviewDate && groupedHistory[activePreviewDate] && groupedHistory[activePreviewDate].count > 0 ? (
-                                <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar snap-x">
+                                <div 
+                                    key={activePreviewDate}
+                                    className="flex gap-4 overflow-x-auto pb-2 no-scrollbar snap-x animate-in fade-in slide-in-from-bottom-2 duration-500"
+                                >
                                     {groupedHistory[activePreviewDate].students.map((student: any, idx: number) => (
                                         <div 
                                             key={idx} 
