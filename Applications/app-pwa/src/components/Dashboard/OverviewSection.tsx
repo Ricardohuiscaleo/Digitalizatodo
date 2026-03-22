@@ -51,27 +51,27 @@ export default function OverviewSection(props: OverviewSectionProps) {
             {/* Dashboard Summary Horizontal Grid — 4 Columns on Mobile */}
             <div className="grid grid-cols-4 gap-1.5 sm:gap-4">
                 {(feesSummary ? [
-                    { icon: <Users style={{ color: branding?.primaryColor || '#6366f1' }} size={24} className="sm:w-16 sm:h-16" strokeWidth={3} />, label: 'Total', value: feesSummary.total, colorClass: 'text-zinc-950', bgClass: 'bg-white' },
-                    { icon: <CheckCircle2 className="text-emerald-600 w-6 h-6 sm:w-16 sm:h-16" strokeWidth={3} />, label: 'Al Día', value: feesSummary.al_dia, colorClass: 'text-emerald-700', bgClass: 'bg-emerald-50/40 border-emerald-100/60' },
-                    { icon: <RefreshCw className="text-amber-600 animate-spin-slow w-6 h-6 sm:w-16 sm:h-16" strokeWidth={3} />, label: 'Revisión', value: feesSummary.en_revision, colorClass: 'text-amber-700', bgClass: 'bg-amber-50/40 border-amber-100/60' },
-                    { icon: <XCircle className="text-rose-600 w-6 h-6 sm:w-16 sm:h-16" strokeWidth={3} />, label: 'Morosos', value: feesSummary.morosos, colorClass: 'text-rose-700', bgClass: 'bg-rose-50/40 border-rose-100/60' }
+                    { icon: <Users style={{ color: branding?.primaryColor || '#6366f1' }} size={18} className="sm:w-12 sm:h-12" strokeWidth={3} />, label: 'Total', value: feesSummary.total, colorClass: 'text-zinc-950', bgClass: 'bg-white' },
+                    { icon: <CheckCircle2 className="text-emerald-600 w-4.5 h-4.5 sm:w-12 sm:h-12" size={18} strokeWidth={3} />, label: 'Al Día', value: feesSummary.al_dia, colorClass: 'text-emerald-700', bgClass: 'bg-emerald-50/40 border-emerald-100/60' },
+                    { icon: <RefreshCw className="text-amber-600 animate-spin-slow w-4.5 h-4.5 sm:w-12 sm:h-12" size={18} strokeWidth={3} />, label: 'Revisión', value: feesSummary.en_revision, colorClass: 'text-amber-700', bgClass: 'bg-amber-50/40 border-amber-100/60' },
+                    { icon: <XCircle className="text-rose-600 w-4.5 h-4.5 sm:w-12 sm:h-12" size={18} strokeWidth={3} />, label: 'Morosos', value: feesSummary.morosos, colorClass: 'text-rose-700', bgClass: 'bg-rose-50/40 border-rose-100/60' }
                 ] : [
-                    { icon: <Users style={{ color: branding?.primaryColor || '#6366f1' }} size={24} className="sm:w-16 sm:h-16" strokeWidth={3} />, label: 'Total', value: totalStudents, colorClass: 'text-zinc-950', bgClass: 'bg-white' },
-                    { icon: <CheckCircle2 className="text-emerald-600 w-6 h-6 sm:w-12 sm:h-16" strokeWidth={3} />, label: 'Pagados', value: paidStudents, colorClass: 'text-emerald-700', bgClass: 'bg-emerald-50/40 border-emerald-100/60' },
-                    { icon: <RefreshCw className="text-amber-600 animate-spin-slow w-6 h-6 sm:w-16 sm:h-16" strokeWidth={3} />, label: 'Revisión', value: allStudents.filter(s => s.payerStatus === 'review').length, colorClass: 'text-amber-700', bgClass: 'bg-amber-50/40 border-amber-100/60' },
-                    { icon: <XCircle className="text-rose-600 w-6 h-6 sm:w-16 sm:h-16" strokeWidth={3} />, label: 'Deuda', value: allStudents.filter(s => s.payerStatus === 'pending').length, colorClass: 'text-rose-700', bgClass: 'bg-rose-50/40 border-rose-100/60' }
+                    { icon: <Users style={{ color: branding?.primaryColor || '#6366f1' }} size={18} className="sm:w-12 sm:h-12" strokeWidth={3} />, label: 'Total', value: totalStudents, colorClass: 'text-zinc-950', bgClass: 'bg-white' },
+                    { icon: <CheckCircle2 className="text-emerald-600 w-4.5 h-4.5 sm:w-12 sm:h-12" size={18} strokeWidth={3} />, label: 'Pagados', value: paidStudents, colorClass: 'text-emerald-700', bgClass: 'bg-emerald-50/40 border-emerald-100/60' },
+                    { icon: <RefreshCw className="text-amber-600 animate-spin-slow w-4.5 h-4.5 sm:w-12 sm:h-12" size={18} strokeWidth={3} />, label: 'Revisión', value: allStudents.filter(s => s.payerStatus === 'review').length, colorClass: 'text-amber-700', bgClass: 'bg-amber-50/40 border-amber-100/60' },
+                    { icon: <XCircle className="text-rose-600 w-4.5 h-4.5 sm:w-12 sm:h-12" size={18} strokeWidth={3} />, label: 'Deuda', value: allStudents.filter(s => s.payerStatus === 'pending').length, colorClass: 'text-rose-700', bgClass: 'bg-rose-50/40 border-rose-100/60' }
                 ]).map((card, i) => (
                     <div 
                         key={i} 
-                        className={`${card.bgClass} rounded-2xl sm:rounded-[3rem] px-2.5 sm:px-8 py-4 sm:py-10 border border-zinc-100 shadow-sm flex flex-col justify-between aspect-square`}
+                        className={`${card.bgClass} rounded-2xl sm:rounded-[3rem] px-2 sm:px-8 py-3.5 sm:py-10 border border-zinc-100 shadow-sm flex flex-col justify-between aspect-square`}
                     >
                         {/* Top: Icon (50%) + Number (50%) */}
                         <div className="grid grid-cols-2 items-center gap-1 sm:gap-2">
-                            <div className="flex justify-start">
+                            <div className="flex justify-start items-center">
                                 {card.icon}
                             </div>
-                            <div className="flex justify-end">
-                                <p className={`text-2xl sm:text-7xl font-black ${card.colorClass} tracking-tighter leading-none truncate`}>
+                            <div className="flex justify-end items-center">
+                                <p className={`text-xl sm:text-5xl font-black ${card.colorClass} tracking-tighter leading-none truncate`}>
                                     {card.value}
                                 </p>
                             </div>
