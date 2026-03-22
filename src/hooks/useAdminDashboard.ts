@@ -313,12 +313,22 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
                 });
             }
 
+            const demoPayments: any[] = [];
+            if (status === 'paid') {
+                demoPayments.push({ id: `demo-pay-${i}-1`, amount: 45000, status: 'approved', month: selectedMonth, year: selectedYear, date: '2024-03-01' });
+            } else if (status === 'review') {
+                demoPayments.push({ id: `demo-pay-${i}-1`, amount: 45000, status: 'review', month: selectedMonth, year: selectedYear, date: '2024-03-10', proof_url: 'https://placehold.co/400x600?text=Comprobante' });
+            } else {
+                demoPayments.push({ id: `demo-pay-${i}-1`, amount: 45000, status: 'pending', month: selectedMonth, year: selectedYear, date: '2024-03-15' });
+            }
+
             return {
                 id: `demo-p-${i}`,
                 name: `Apoderado ${i + 1}`,
                 status,
                 amount: 45000,
                 last_payment: '2024-03-01',
+                payments: demoPayments,
                 enrolledStudents: [
                     { 
                         id: studentId, 

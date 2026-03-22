@@ -53,14 +53,6 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
     bubbleModalPayer,
     vocab
 }) => {
-    const filteredPayers = payers.filter(p => {
-        const stats = getPayerRealStats(p);
-        if (paymentFilter === 'pending') return stats.pendingAmount > 0;
-        if (paymentFilter === 'review') return stats.reviewAmount > 0;
-        if (paymentFilter === 'paid') return stats.approvedAmount > 0 && stats.pendingAmount === 0 && stats.reviewAmount === 0;
-        return true;
-    }).filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
-
     const getPayerRealStats = (payer: any) => {
         const reviewAmount = payer.payments?.filter((p: any) => p.status === 'review').reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
         const pendingAmount = payer.payments?.filter((p: any) => p.status === 'pending' || p.status === 'overdue').reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
@@ -74,6 +66,14 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
             
         return { displayAmount, reviewAmount, pendingAmount, approvedAmount, numEnrollments, hasReview };
     };
+
+    const filteredPayers = payers.filter(p => {
+        const stats = getPayerRealStats(p);
+        if (paymentFilter === 'pending') return stats.pendingAmount > 0;
+        if (paymentFilter === 'review') return stats.reviewAmount > 0;
+        if (paymentFilter === 'paid') return stats.approvedAmount > 0 && stats.pendingAmount === 0 && stats.reviewAmount === 0;
+        return true;
+    }).filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
     const years = [new Date().getFullYear(), new Date().getFullYear() - 1];
