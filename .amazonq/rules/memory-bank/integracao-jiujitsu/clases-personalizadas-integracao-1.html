@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clases Personalizadas – Integração Jiu-Jitsu</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --black: #0a0a0a;
+    --white: #f5f0e8;
+    --gold: #c9a84c;
+    --gold-light: #e8c96a;
+    --red: #8b1a1a;
+    --red-light: #b52a2a;
+    --gray: #2a2a2a;
+  }
+
+  body {
+    background: var(--black);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'DM Sans', sans-serif;
+    padding: 20px;
+  }
+
+  .poster {
+    width: 480px;
+    background: var(--black);
+    border: 1px solid #222;
+    position: relative;
+    overflow: hidden;
+    animation: fadeIn 0.8s ease forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Texture overlay */
+  .poster::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0.5;
+  }
+
+  /* Gold stripe top */
+  .stripe-top {
+    height: 5px;
+    background: linear-gradient(90deg, var(--red), var(--gold), var(--red));
+  }
+
+  /* Header */
+  .header {
+    background: var(--gray);
+    padding: 28px 32px 22px;
+    position: relative;
+  }
+
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 32px;
+    right: 32px;
+    height: 1px;
+    background: var(--gold);
+    opacity: 0.4;
+  }
+
+  .academy-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 4px;
+    color: var(--gold);
+    margin-bottom: 6px;
+    opacity: 0.9;
+  }
+
+  .title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    line-height: 0.92;
+    color: var(--white);
+    letter-spacing: 1px;
+  }
+
+  .title span {
+    color: var(--gold);
+  }
+
+  .subtitle {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #888;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 300;
+  }
+
+  /* Divider with belt icon */
+  .belt-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 32px;
+    background: var(--black);
+  }
+
+  .belt-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #333);
+  }
+
+  .belt-line.right {
+    background: linear-gradient(90deg, #333, transparent);
+  }
+
+  .belt-badge {
+    background: var(--red);
+    color: var(--white);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 11px;
+    letter-spacing: 3px;
+    padding: 5px 12px;
+    border: 1px solid var(--red-light);
+  }
+
+  /* Cards */
+  .cards {
+    padding: 0 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .card {
+    background: var(--gray);
+    border: 1px solid #333;
+    padding: 20px 24px;
+    position: relative;
+    transition: border-color 0.3s;
+    animation: slideIn 0.6s ease forwards;
+    opacity: 0;
+  }
+
+  .card:nth-child(1) { animation-delay: 0.2s; }
+  .card:nth-child(2) { animation-delay: 0.35s; }
+  .card:nth-child(3) { animation-delay: 0.5s; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-12px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .card.featured {
+    border-color: var(--gold);
+    background: #1a1500;
+  }
+
+  .card.featured::before {
+    content: '★ RECOMENDADO';
+    position: absolute;
+    top: -1px;
+    right: 16px;
+    background: var(--gold);
+    color: var(--black);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 3px 10px;
+  }
+
+  .card-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #777;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .card.featured .card-label { color: var(--gold-light); opacity: 0.8; }
+
+  .card-main {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .card-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    color: var(--white);
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+
+  .price-block {
+    text-align: right;
+  }
+
+  .price {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    color: var(--white);
+    line-height: 1;
+  }
+
+  .card.featured .price { color: var(--gold-light); }
+
+  .price-unit {
+    font-size: 10px;
+    color: #666;
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  .card.featured .price-unit { color: #a08030; }
+
+  .card-note {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #666;
+    border-top: 1px solid #2e2e2e;
+    padding-top: 10px;
+    line-height: 1.5;
+  }
+
+  .card.featured .card-note { color: #8a6e20; border-color: #3a2e00; }
+
+  /* Info strip */
+  .info-strip {
+    margin: 0 24px;
+    background: #111;
+    border: 1px solid #222;
+    padding: 14px 20px;
+    display: flex;
+    gap: 20px;
+    margin-bottom: 24px;
+    animation: slideIn 0.6s ease 0.65s forwards;
+    opacity: 0;
+  }
+
+  .info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+  }
+
+  .info-icon {
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .info-text {
+    font-size: 11px;
+    color: #666;
+    line-height: 1.4;
+  }
+
+  .info-text strong {
+    display: block;
+    color: #aaa;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  /* Footer */
+  .footer {
+    background: var(--gray);
+    padding: 18px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #222;
+  }
+
+  .contact {
+    font-size: 11px;
+    color: #555;
+    letter-spacing: 0.5px;
+    line-height: 1.8;
+  }
+
+  .contact a { color: var(--gold); text-decoration: none; opacity: 0.8; }
+
+  .lineage {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #333;
+    text-align: right;
+    line-height: 1.8;
+  }
+
+  .lineage span { color: #555; }
+
+  /* Bottom stripe */
+  .stripe-bottom {
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold), var(--red), var(--gold));
+  }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="stripe-top"></div>
+
+  <div class="header">
+    <div class="academy-name">INTEGRAÇÃO JIU-JITSU · ARICA</div>
+    <div class="title">CLASES<br><span>PERSONA</span>LIZADAS</div>
+    <div class="subtitle">Instrucción 1 a 1 · Black Belt 3° Dan</div>
+  </div>
+
+  <div class="belt-divider">
+    <div class="belt-line"></div>
+    <div class="belt-badge">MODALIDADES</div>
+    <div class="belt-line right"></div>
+  </div>
+
+  <div class="cards">
+
+    <div class="card">
+      <div class="card-label">Clase individual</div>
+      <div class="card-main">
+        <div class="card-name">Clase Suelta</div>
+        <div class="price-block">
+          <div class="price">$18.000</div>
+          <div class="price-unit">CLP · 1 hora</div>
+        </div>
+      </div>
+      <div class="card-note">Ideal para probar la metodología. Sin compromiso previo.</div>
+    </div>
+
+    <div class="card featured">
+      <div class="card-label">Mejor valor</div>
+      <div class="card-main">
+        <div class="card-name">Pack 4 Clases</div>
+        <div class="price-block">
+          <div class="price">$65.000</div>
+          <div class="price-unit">CLP · $16.250 c/u</div>
+        </div>
+      </div>
+      <div class="card-note">Ahorra $7.000 vs. precio unitario. Progresión real en 4 sesiones.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Para alumnos del grupo</div>
+      <div class="card-main">
+        <div class="card-name">Clase Referido</div>
+        <div class="price-block">
+          <div class="price">$15.000</div>
+          <div class="price-unit">CLP · 1 hora</div>
+        </div>
+      </div>
+      <div class="card-note">Beneficio exclusivo para quienes ya entrenan en la academia.</div>
+    </div>
+
+  </div>
+
+  <div class="info-strip">
+    <div class="info-item">
+      <div class="info-icon">📍</div>
+      <div class="info-text"><strong>Ubicación</strong>Av. Sta. María 3016, Local 4</div>
+    </div>
+    <div class="info-item">
+      <div class="info-icon">⏱</div>
+      <div class="info-text"><strong>Duración</strong>1 hora por sesión</div>
+    </div>
+    <div class="info-item">
+      <div class="info-icon">🥋</div>
+      <div class="info-text"><strong>Nivel</strong>Todos los niveles</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="contact">
+      <a href="mailto:integracao.arica@gmail.com">integracao.arica@gmail.com</a><br>
+      <span style="color:#444">Arica, Chile</span>
+    </div>
+    <div class="lineage">
+      CARLSON GRACIE LINEAGE<br>
+      <span>Mestre Elcio Figueiredo</span>
+    </div>
+  </div>
+
+  <div class="stripe-bottom"></div>
+</div>
+</body>
+</html>

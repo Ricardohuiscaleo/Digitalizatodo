@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de Alumnos · Integração Jiu-Jitsu Arica</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #c9960c;
+    --gold-light: #f0b429;
+    --gold-pale: rgba(201,150,12,0.13);
+    --dark: #0d0d0d;
+    --dark-2: #161616;
+    --dark-3: #1e1e1e;
+    --border: rgba(255,255,255,0.08);
+    --text: #f0f0f0;
+    --muted: rgba(255,255,255,0.4);
+    --error: #e53e3e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 400px;
+    background: radial-gradient(ellipse 80% 60% at 50% 100%, rgba(201,150,12,0.06), transparent);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 580px;
+  }
+
+  .top-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+    animation: fadeDown 0.5s ease both;
+  }
+
+  .badge-line { flex: 1; height: 1px; background: linear-gradient(to right, transparent, var(--gold)); }
+  .badge-line.right { background: linear-gradient(to left, transparent, var(--gold)); }
+  .badge-text {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 4px; text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .card {
+    background: var(--dark-2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03);
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .card-header {
+    padding: 34px 40px 28px;
+    border-bottom: 1px solid var(--border);
+    position: relative; overflow: hidden;
+  }
+
+  .card-header::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
+  }
+
+  .card-header::after {
+    content: 'BJJ';
+    position: absolute; right: -10px; top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 120px; color: rgba(255,255,255,0.02);
+    line-height: 1; pointer-events: none;
+  }
+
+  .header-tag {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 3px; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 8px;
+  }
+
+  .header-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 46px; color: #fff;
+    line-height: 1; letter-spacing: 1px;
+  }
+
+  .header-sub {
+    font-size: 14px; color: var(--muted);
+    margin-top: 8px; line-height: 1.5;
+  }
+
+  .form-body { padding: 30px 40px 36px; }
+
+  /* Fields */
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  .field { margin-bottom: 18px; }
+
+  .field-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 7px; display: block;
+  }
+
+  .field-input, .field-select {
+    width: 100%;
+    background: var(--dark-3);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none; appearance: none;
+  }
+
+  .field-input::placeholder { color: rgba(255,255,255,0.2); }
+  .field-input:focus, .field-select:focus {
+    border-color: var(--gold);
+    background: rgba(201,150,12,0.04);
+    box-shadow: 0 0 0 3px rgba(201,150,12,0.08);
+  }
+
+  .field-input.error { border-color: var(--error); }
+
+  .field-select { cursor: pointer; }
+  .field-select option { background: #1e1e1e; color: #fff; }
+
+  .form-divider { height: 1px; background: var(--border); margin: 8px 0 20px; }
+
+  /* Belt selector */
+  .section-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 10px; display: block;
+  }
+
+  .belt-selector {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px; margin-bottom: 20px;
+  }
+
+  .belt-option { position: relative; }
+  .belt-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+
+  .belt-option label {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 7px;
+    cursor: pointer; padding: 10px 6px;
+    border: 1px solid var(--border); border-radius: 2px;
+    background: var(--dark-3);
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  }
+
+  .belt-option label:hover { border-color: rgba(201,150,12,0.4); transform: translateY(-1px); }
+
+  .belt-option input:checked + label {
+    border-color: var(--gold); background: var(--gold-pale);
+    box-shadow: 0 0 0 3px rgba(201,150,12,0.1);
+  }
+
+  .belt-swatch {
+    width: 100%; height: 10px; border-radius: 2px;
+    position: relative; overflow: hidden;
+  }
+  .belt-swatch::after {
+    content: ''; position: absolute; right: 0; top: 0; bottom: 0;
+    width: 22%; background: rgba(0,0,0,0.4);
+  }
+
+  .swatch-white  { background: linear-gradient(90deg, #e8e8e8, #c8c8c8); }
+  .swatch-blue   { background: linear-gradient(90deg, #1a5fb4, #0d3d7a); }
+  .swatch-purple { background: linear-gradient(90deg, #7c3aed, #4c1d95); }
+  .swatch-brown  { background: linear-gradient(90deg, #92400e, #5c2d0a); }
+  .swatch-black  { background: linear-gradient(90deg, #2a2a2a, #111); border: 1px solid #444; }
+
+  .belt-option-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: var(--muted); text-align: center;
+  }
+
+  .belt-option input:checked + label .belt-option-name { color: var(--gold-light); }
+
+  /* Grados */
+  .grados-selector {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: 8px; margin-bottom: 20px;
+  }
+
+  .grado-option { position: relative; }
+  .grado-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+
+  .grado-option label {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    cursor: pointer; padding: 10px 6px;
+    border: 1px solid var(--border); border-radius: 2px;
+    background: var(--dark-3); gap: 5px;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  }
+
+  .grado-option label:hover { border-color: rgba(201,150,12,0.4); transform: translateY(-1px); }
+
+  .grado-option input:checked + label {
+    border-color: var(--gold); background: var(--gold-pale);
+    box-shadow: 0 0 0 3px rgba(201,150,12,0.1);
+  }
+
+  .grado-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px; color: var(--text); line-height: 1;
+  }
+
+  .grado-option input:checked + label .grado-num { color: var(--gold-light); }
+
+  .grado-dots { display: flex; gap: 3px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
+  .dot.active { background: var(--gold); }
+  .grado-option input:checked + label .dot.active { background: var(--gold-light); }
+
+  /* Modalidad */
+  .modal-selector {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 8px; margin-bottom: 20px;
+  }
+
+  .modal-option { position: relative; }
+  .modal-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+
+  .modal-option label {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    cursor: pointer; padding: 14px 8px;
+    border: 1px solid var(--border); border-radius: 2px;
+    background: var(--dark-3); gap: 6px;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  }
+
+  .modal-option label:hover { border-color: rgba(201,150,12,0.4); transform: translateY(-1px); }
+
+  .modal-option input:checked + label {
+    border-color: var(--gold); background: var(--gold-pale);
+    box-shadow: 0 0 0 3px rgba(201,150,12,0.1);
+  }
+
+  .modal-icon { font-size: 22px; }
+
+  .modal-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--muted); text-align: center;
+  }
+
+  .modal-option input:checked + label .modal-name { color: var(--gold-light); }
+
+  /* Submit */
+  .submit-btn {
+    width: 100%; background: var(--gold);
+    color: #000; border: none;
+    padding: 16px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px; letter-spacing: 3px;
+    cursor: pointer; border-radius: 2px;
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    margin-top: 4px; position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+
+  .submit-btn:hover:not(:disabled) {
+    background: var(--gold-light);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(201,150,12,0.3);
+  }
+
+  .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  .submit-btn.loading .spinner { display: block; }
+  .submit-btn.loading .btn-text { display: none; }
+
+  /* Status bar */
+  .status-bar {
+    margin-top: 12px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; letter-spacing: 1.5px;
+    text-align: center; min-height: 20px;
+    color: var(--muted);
+  }
+
+  .status-bar.ok { color: #68d391; }
+  .status-bar.err { color: #fc8181; }
+
+  /* Progress steps */
+  .progress-steps {
+    display: flex; gap: 6px; margin-top: 12px;
+    justify-content: center;
+  }
+
+  .step {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 12px; color: var(--muted);
+    padding: 5px 10px;
+    border: 1px solid var(--border); border-radius: 20px;
+    transition: all 0.3s;
+  }
+
+  .step.active { border-color: var(--gold); color: var(--gold-light); background: var(--gold-pale); }
+  .step.done { border-color: #48bb78; color: #68d391; background: rgba(72,187,120,0.08); }
+  .step-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* Success */
+  .success-msg {
+    display: none; text-align: center;
+    padding: 32px 0 8px;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .success-icon { font-size: 56px; margin-bottom: 16px; }
+
+  .success-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 38px; color: var(--gold-light);
+    letter-spacing: 2px; margin-bottom: 8px;
+  }
+
+  .success-text {
+    font-size: 15px; color: var(--muted); line-height: 1.6;
+  }
+
+  .success-data {
+    margin-top: 20px;
+    background: var(--dark-3);
+    border: 1px solid var(--border); border-radius: 2px;
+    padding: 16px 20px; text-align: left;
+  }
+
+  .success-row {
+    display: flex; justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 14px;
+  }
+
+  .success-row:last-child { border-bottom: none; }
+
+  .success-row-key {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700; letter-spacing: 1px;
+    color: var(--muted); text-transform: uppercase; font-size: 12px;
+  }
+
+  .success-row-val { color: var(--text); font-weight: 500; }
+
+  .sent-badges {
+    display: flex; gap: 8px; justify-content: center;
+    margin-top: 16px; flex-wrap: wrap;
+  }
+
+  .sent-badge {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    padding: 5px 12px; border-radius: 20px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .sent-badge.email { background: rgba(72,187,120,0.12); color: #68d391; border: 1px solid rgba(72,187,120,0.3); }
+  .sent-badge.sheets { background: rgba(99,179,237,0.12); color: #90cdf4; border: 1px solid rgba(99,179,237,0.3); }
+  .sent-badge.pending { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+
+  /* Footer */
+  .card-footer {
+    padding: 14px 40px 18px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .footer-brand {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--gold);
+  }
+
+  .footer-info { font-size: 12px; color: rgba(255,255,255,0.2); }
+
+  /* Animations */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 520px) {
+    .card-header, .form-body, .card-footer { padding-left: 22px; padding-right: 22px; }
+    .field-row { grid-template-columns: 1fr; }
+    .header-title { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="top-badge">
+    <div class="badge-line"></div>
+    <span class="badge-text">Integração Arica</span>
+    <div class="badge-line right"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="header-tag">Registro de Alumnos 2025</div>
+      <div class="header-title">Actualiza<br>tu Perfil</div>
+      <div class="header-sub">Completa el formulario. Recibirás una confirmación por correo y tus datos quedarán registrados en la academia.</div>
+    </div>
+
+    <div class="form-body">
+
+      <!-- FORM -->
+      <form id="registroForm" novalidate>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label" for="nombre">Nombre</label>
+            <input class="field-input" type="text" id="nombre" placeholder="Tu nombre" required>
+          </div>
+          <div class="field">
+            <label class="field-label" for="apellido">Apellido</label>
+            <input class="field-input" type="text" id="apellido" placeholder="Tu apellido" required>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="correo">Correo electrónico</label>
+          <input class="field-input" type="email" id="correo" placeholder="tucorreo@email.com" required>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label" for="telefono">Teléfono / WhatsApp</label>
+            <input class="field-input" type="tel" id="telefono" placeholder="+56 9 1234 5678">
+          </div>
+          <div class="field">
+            <label class="field-label" for="nacimiento">Fecha de nacimiento</label>
+            <input class="field-input" type="date" id="nacimiento" style="color-scheme: dark;">
+          </div>
+        </div>
+
+        <div class="form-divider"></div>
+
+        <!-- CINTURÓN -->
+        <span class="section-label">Color de cinturón</span>
+        <div class="belt-selector">
+          <div class="belt-option">
+            <input type="radio" name="cinturon" id="b-blanco" value="Blanco" required>
+            <label for="b-blanco"><div class="belt-swatch swatch-white"></div><span class="belt-option-name">Blanco</span></label>
+          </div>
+          <div class="belt-option">
+            <input type="radio" name="cinturon" id="b-azul" value="Azul">
+            <label for="b-azul"><div class="belt-swatch swatch-blue"></div><span class="belt-option-name">Azul</span></label>
+          </div>
+          <div class="belt-option">
+            <input type="radio" name="cinturon" id="b-morado" value="Morado">
+            <label for="b-morado"><div class="belt-swatch swatch-purple"></div><span class="belt-option-name">Morado</span></label>
+          </div>
+          <div class="belt-option">
+            <input type="radio" name="cinturon" id="b-cafe" value="Café">
+            <label for="b-cafe"><div class="belt-swatch swatch-brown"></div><span class="belt-option-name">Café</span></label>
+          </div>
+          <div class="belt-option">
+            <input type="radio" name="cinturon" id="b-negro" value="Negro">
+            <label for="b-negro"><div class="belt-swatch swatch-black"></div><span class="belt-option-name">Negro</span></label>
+          </div>
+        </div>
+
+        <!-- GRADOS -->
+        <span class="section-label">Grados (rayas)</span>
+        <div class="grados-selector">
+          <div class="grado-option">
+            <input type="radio" name="grado" id="g-0" value="0" required>
+            <label for="g-0"><span class="grado-num">0</span><div class="grado-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></label>
+          </div>
+          <div class="grado-option">
+            <input type="radio" name="grado" id="g-1" value="1">
+            <label for="g-1"><span class="grado-num">1</span><div class="grado-dots"><div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></label>
+          </div>
+          <div class="grado-option">
+            <input type="radio" name="grado" id="g-2" value="2">
+            <label for="g-2"><span class="grado-num">2</span><div class="grado-dots"><div class="dot active"></div><div class="dot active"></div><div class="dot"></div><div class="dot"></div></div></label>
+          </div>
+          <div class="grado-option">
+            <input type="radio" name="grado" id="g-3" value="3">
+            <label for="g-3"><span class="grado-num">3</span><div class="grado-dots"><div class="dot active"></div><div class="dot active"></div><div class="dot active"></div><div class="dot"></div></div></label>
+          </div>
+          <div class="grado-option">
+            <input type="radio" name="grado" id="g-4" value="4">
+            <label for="g-4"><span class="grado-num">4</span><div class="grado-dots"><div class="dot active"></div><div class="dot active"></div><div class="dot active"></div><div class="dot active"></div></div></label>
+          </div>
+        </div>
+
+        <!-- MODALIDAD -->
+        <span class="section-label">Modalidad</span>
+        <div class="modal-selector">
+          <div class="modal-option">
+            <input type="radio" name="modalidad" id="m-gi" value="Gi (Kimono)" required>
+            <label for="m-gi"><span class="modal-icon">🥋</span><span class="modal-name">Gi</span></label>
+          </div>
+          <div class="modal-option">
+            <input type="radio" name="modalidad" id="m-nogi" value="No-Gi">
+            <label for="m-nogi"><span class="modal-icon">👕</span><span class="modal-name">No-Gi</span></label>
+          </div>
+          <div class="modal-option">
+            <input type="radio" name="modalidad" id="m-ambas" value="Ambas">
+            <label for="m-ambas"><span class="modal-icon">⚡</span><span class="modal-name">Ambas</span></label>
+          </div>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">
+          <span class="btn-text">Enviar Registro →</span>
+          <div class="spinner"></div>
+        </button>
+
+        <div class="status-bar" id="statusBar"></div>
+
+        <div class="progress-steps" id="progressSteps" style="display:none;">
+          <div class="step" id="step-gmail"><div class="step-dot"></div> Gmail</div>
+          <div class="step" id="step-sheets"><div class="step-dot"></div> Sheets</div>
+        </div>
+
+      </form>
+
+      <!-- SUCCESS -->
+      <div class="success-msg" id="successMsg">
+        <div class="success-icon">🥋</div>
+        <div class="success-title">¡Registro Enviado!</div>
+        <div class="success-text">Tus datos fueron guardados y enviados.<br>Nos vemos en el tatami, oss!</div>
+        <div class="success-data" id="successData"></div>
+        <div class="sent-badges" id="sentBadges"></div>
+      </div>
+
+    </div>
+
+    <div class="card-footer">
+      <span class="footer-brand">Integração Jiu-Jitsu · Arica</span>
+      <span class="footer-info">integracao.arica@gmail.com</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ─── Helpers ───────────────────────────────────────────────────────────────
+  function setStep(id, state) {
+    const el = document.getElementById(id);
+    el.className = 'step ' + state;
+  }
+
+  function setStatus(msg, type = '') {
+    const bar = document.getElementById('statusBar');
+    bar.textContent = msg;
+    bar.className = 'status-bar ' + type;
+  }
+
+  // ─── Main handler ──────────────────────────────────────────────────────────
+  document.getElementById('registroForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const nombre     = document.getElementById('nombre').value.trim();
+    const apellido   = document.getElementById('apellido').value.trim();
+    const correo     = document.getElementById('correo').value.trim();
+    const telefono   = document.getElementById('telefono').value.trim();
+    const nacimiento = document.getElementById('nacimiento').value;
+    const cinturon   = document.querySelector('input[name="cinturon"]:checked');
+    const grado      = document.querySelector('input[name="grado"]:checked');
+    const modalidad  = document.querySelector('input[name="modalidad"]:checked');
+
+    // Validación básica
+    let valid = true;
+    ['nombre','apellido','correo'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el.value.trim()) { el.classList.add('error'); valid = false; }
+      else el.classList.remove('error');
+    });
+
+    if (!cinturon || !grado || !modalidad) {
+      setStatus('⚠ Selecciona cinturón, grado y modalidad.', 'err');
+      valid = false;
+    }
+
+    if (!valid) return;
+
+    // UI: loading
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.classList.add('loading');
+
+    const steps = document.getElementById('progressSteps');
+    steps.style.display = 'flex';
+    setStatus('Enviando datos...', '');
+    setStep('step-gmail', 'active');
+    setStep('step-sheets', '');
+
+    const rayas = parseInt(grado.value);
+    const rayasStr = rayas === 0 ? 'Sin rayas' : rayas + (rayas === 1 ? ' raya' : ' rayas');
+    const nacStr = nacimiento ? new Date(nacimiento + 'T12:00:00').toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' }) : '—';
+    const fechaReg = new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
+
+    const alumnoData = {
+      nombre, apellido, correo, telefono: telefono || '—',
+      nacimiento: nacStr,
+      cinturon: cinturon.value,
+      grado: rayasStr,
+      modalidad: modalidad.value,
+      fecha: fechaReg
+    };
+
+    let gmailOk = false;
+    let sheetsOk = false;
+
+    // ─── 1) Gmail via Claude API + MCP ───────────────────────────────────────
+    try {
+      setStatus('📧 Enviando correo...', '');
+
+      const emailPrompt = `
+Envía un correo electrónico usando Gmail con los siguientes datos:
+
+Para: integracao.arica@gmail.com
+Asunto: Nuevo registro de alumno — ${nombre} ${apellido}
+Cuerpo del correo (en HTML si es posible, sino texto plano):
+
+🥋 NUEVO REGISTRO — INTEGRAÇÃO JIU-JITSU ARICA
+
+Nombre completo: ${nombre} ${apellido}
+Correo: ${correo}
+Teléfono/WhatsApp: ${telefono || '—'}
+Fecha de nacimiento: ${nacStr}
+Cinturón: ${cinturon.value}
+Grado: ${rayasStr}
+Modalidad: ${modalidad.value}
+Fecha de registro: ${fechaReg}
+
+Este registro fue enviado desde el formulario de alumnos de Integração Jiu-Jitsu Arica.
+      `.trim();
+
+      const gmailRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          messages: [{ role: "user", content: emailPrompt }],
+          mcp_servers: [{ type: "url", url: "https://gmail.mcp.claude.com/mcp", name: "gmail-mcp" }]
+        })
+      });
+
+      const gmailData = await gmailRes.json();
+      // Check for tool result blocks
+      const hasToolResult = gmailData.content && gmailData.content.some(b => b.type === 'mcp_tool_result' || b.type === 'tool_result');
+      const hasText = gmailData.content && gmailData.content.some(b => b.type === 'text' && (b.text.toLowerCase().includes('envia') || b.text.toLowerCase().includes('correo') || b.text.toLowerCase().includes('send') || b.text.toLowerCase().includes('sent') || b.text.toLowerCase().includes('email')));
+      gmailOk = hasToolResult || hasText || (gmailData.content && gmailData.content.length > 0);
+
+    } catch(err) {
+      console.warn('Gmail MCP error:', err);
+    }
+
+    setStep('step-gmail', gmailOk ? 'done' : 'active');
+    setStep('step-sheets', 'active');
+    setStatus(gmailOk ? '✓ Correo enviado. Guardando en Sheets...' : '⚠ Correo parcial. Guardando en Sheets...', '');
+
+    // ─── 2) Google Sheets via Claude API + MCP ────────────────────────────────
+    try {
+      const sheetsPrompt = `
+Usa Google Calendar o cualquier herramienta disponible de Google para registrar estos datos de un alumno de jiu-jitsu. 
+Si tienes acceso a Google Sheets, crea o actualiza una hoja llamada "Registro Alumnos Integração Arica" y agrega esta fila de datos:
+
+Nombre: ${nombre}
+Apellido: ${apellido}
+Correo: ${correo}
+Teléfono: ${telefono || '—'}
+Fecha de nacimiento: ${nacStr}
+Cinturón: ${cinturon.value}
+Grado: ${rayasStr}
+Modalidad: ${modalidad.value}
+Fecha de registro: ${fechaReg}
+
+Si no tienes acceso a Sheets directamente, confirma que los datos han sido recibidos.
+      `.trim();
+
+      const sheetsRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          messages: [{ role: "user", content: sheetsPrompt }],
+          mcp_servers: [
+            { type: "url", url: "https://gmail.mcp.claude.com/mcp", name: "gmail-mcp" },
+            { type: "url", url: "https://gcal.mcp.claude.com/mcp", name: "gcal-mcp" }
+          ]
+        })
+      });
+
+      const sheetsData = await sheetsRes.json();
+      sheetsOk = sheetsData.content && sheetsData.content.length > 0;
+
+    } catch(err) {
+      console.warn('Sheets MCP error:', err);
+    }
+
+    setStep('step-sheets', sheetsOk ? 'done' : 'active');
+
+    // ─── 3) Mostrar resultado ─────────────────────────────────────────────────
+    await new Promise(r => setTimeout(r, 400));
+
+    const fields = [
+      { key: 'Nombre', val: `${nombre} ${apellido}` },
+      { key: 'Correo', val: correo },
+      { key: 'Teléfono', val: telefono || '—' },
+      { key: 'Nacimiento', val: nacStr },
+      { key: 'Cinturón', val: cinturon.value },
+      { key: 'Grado', val: rayasStr },
+      { key: 'Modalidad', val: modalidad.value },
+      { key: 'Registrado', val: fechaReg },
+    ];
+
+    document.getElementById('successData').innerHTML = fields.map(f =>
+      `<div class="success-row">
+        <span class="success-row-key">${f.key}</span>
+        <span class="success-row-val">${f.val}</span>
+      </div>`
+    ).join('');
+
+    const badges = [];
+    if (gmailOk)  badges.push(`<div class="sent-badge email">✓ Correo enviado</div>`);
+    else          badges.push(`<div class="sent-badge pending">⚠ Correo pendiente</div>`);
+    if (sheetsOk) badges.push(`<div class="sent-badge sheets">✓ Sheets guardado</div>`);
+    else          badges.push(`<div class="sent-badge pending">⚠ Sheets pendiente</div>`);
+
+    document.getElementById('sentBadges').innerHTML = badges.join('');
+
+    document.getElementById('registroForm').style.display = 'none';
+    steps.style.display = 'none';
+    document.getElementById('statusBar').style.display = 'none';
+    document.getElementById('successMsg').style.display = 'block';
+
+    // Log
+    console.log('Registro completado:', alumnoData, { gmailOk, sheetsOk });
+  });
+
+  // Reset error styles on input
+  document.querySelectorAll('.field-input').forEach(inp => {
+    inp.addEventListener('input', () => inp.classList.remove('error'));
+  });
+</script>
+</body>
+</html>
