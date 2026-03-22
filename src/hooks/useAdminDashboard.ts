@@ -302,19 +302,28 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         const demoAttendance = new Set<string>();
         const demoHistory: any[] = [];
         
+        const curFullYear = nowCL().getFullYear();
+        const curMonthStr = String(nowCL().getMonth() + 1).padStart(2, '0');
+        
         const demoPayers = Array.from({ length: 100 }, (_, i) => {
             const status: 'pending' | 'paid' | 'review' = (i % 3 === 0) ? 'pending' : (i % 3 === 1 ? 'paid' : 'review');
             const studentId = `demo-s-${i}`;
             const studentName = `Alumno ${i + 1}`;
-            const isPresent = i < 15;
+            
+            // Simular asistencia aleatoria en los últimos 7 días
+            const daysToBack = i % 7; 
+            const d = new Date(nowCL());
+            d.setDate(d.getDate() - daysToBack);
+            const dStr = d.toISOString().split('T')[0];
+            const isPresent = i < 60; // Más alumnos presentes para que se vea lleno
 
             if (isPresent) {
-                demoAttendance.add(studentId);
+                if (daysToBack === 0) demoAttendance.add(studentId);
                 demoHistory.push({
                     id: `demo-h-${i}`,
                     student_id: studentId,
-                    student: { id: studentId, name: studentName, photo: null },
-                    date: todayCL(),
+                    student: { id: studentId, name: studentName, photo: `https://i.pravatar.cc/150?u=${studentId}` },
+                    date: dStr,
                     status: 'present',
                     created_at: new Date().toISOString(),
                     registration_method: 'manual'
@@ -322,12 +331,15 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
             }
 
             const demoPayments: any[] = [];
+            const dayStr = String((i % 28) + 1).padStart(2, '0');
+            const fullDate = `${curFullYear}-${curMonthStr}-${dayStr}`;
+
             if (status === 'paid') {
-                demoPayments.push({ id: `demo-pay-${i}-1`, amount: 45000, status: 'approved', month: selectedMonth, year: selectedYear, date: '2024-03-01' });
+                demoPayments.push({ id: `demo-pay-${i}-1`, amount: 45000, status: 'approved', month: historyMonth, year: historyYear, date: fullDate });
             } else if (status === 'review') {
-                demoPayments.push({ id: `demo-pay-${i}-1`, amount: 45000, status: 'review', month: selectedMonth, year: selectedYear, date: '2024-03-10', proof_url: 'https://placehold.co/400x600?text=Comprobante' });
+                demoPayments.push({ id: `demo-pay-${i}-1`, amount: 45000, status: 'review', month: historyMonth, year: historyYear, date: fullDate, proof_url: 'https://placehold.co/400x600?text=Comprobante' });
             } else {
-                demoPayments.push({ id: `demo-pay-${i}-1`, amount: 45000, status: 'pending', month: selectedMonth, year: selectedYear, date: '2024-03-15' });
+                demoPayments.push({ id: `demo-pay-${i}-1`, amount: 45000, status: 'pending', month: historyMonth, year: historyYear, date: fullDate });
             }
 
             return {
