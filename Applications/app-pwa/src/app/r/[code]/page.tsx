@@ -83,7 +83,7 @@ export default function RegisterPage() {
     guardian_name: "", guardian_email: "", guardian_phone: "",
     password: "", password_confirmation: "",
     is_self_register: false,
-    self_student: { category: "adults", belt: "white", degrees: 0, modality: "gi" },
+    self_student: { category: "adults", belt: "", degrees: 0, modality: "gi" },
     students: [] as any[],
     plan_id: null,
   });
@@ -117,6 +117,14 @@ export default function RegisterPage() {
       e.students = `Debes inscribir al menos un ${config.memberLabel.toLowerCase()}`;
     if (!form.is_self_register && form.students.some(s => !s.name))
       e.students = "El nombre del alumno es obligatorio";
+    
+    if (config.showBJJGraduation) {
+      if (form.is_self_register && !form.self_student.belt)
+        e.self_belt = "Selecciona tu cinturón";
+      if (!form.is_self_register && form.students.some(s => !s.belt))
+        e.students_belt = "Todos los alumnos deben tener un cinturón seleccionado";
+    }
+
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -297,47 +305,61 @@ export default function RegisterPage() {
               </label>
 
               {form.is_self_register && config.showBJJGraduation && (
-                <div className="mt-5 space-y-4 pt-5 border-t border-zinc-800 animate-in fade-in slide-in-from-top-2 duration-300">
-                   <div className="flex items-center justify-between">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Tu Graduación Personal</span>
-                      <div className="flex gap-1">
-                        {[0, 1, 2, 3, 4].map(deg => (
-                          <button key={deg} type="button" 
-                            onClick={() => setForm({ ...form, self_student: { ...form.self_student, degrees: deg } })}
-                            className={`w-6 h-6 rounded-md text-[10px] font-black transition-all ${form.self_student.degrees === deg ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-zinc-800 text-zinc-500 border border-zinc-700 hover:border-zinc-600'}`}>
-                            {deg}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-1.5 h-9">
+                <div className="mt-8 space-y-5 pt-8 border-t border-zinc-800 animate-in fade-in zoom-in duration-500">
+                  <div className="space-y-3">
+                    <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500">Tu Cinturón actual</label>
+                    <div className="flex gap-1.5 h-10">
                       {BJJ_BELTS.map(belt => (
                         <button key={belt.id} type="button"
                           onClick={() => setForm({ ...form, self_student: { ...form.self_student, belt: belt.id } })}
-                          className={`flex-1 rounded-xl border transition-all flex items-center justify-center relative overflow-hidden ${form.self_student.belt === belt.id ? 'border-white ring-2 ring-white/5 scale-105 z-10 shadow-xl' : 'border-zinc-800 opacity-30 hover:opacity-100'}`}
+                          className={`flex-1 rounded-xl border transition-all flex items-center justify-center relative overflow-hidden group/belt ${form.self_student.belt === belt.id ? 'border-amber-500 ring-4 ring-amber-500/20 scale-105 z-10 shadow-[0_0_20px_rgba(245,158,11,0.2)]' : 'border-zinc-800 opacity-40 hover:opacity-100'}`}
                           style={{ backgroundColor: belt.color }}
                         >
-                          <span className={`text-[10px] font-black pointer-events-none drop-shadow-md ${belt.textColor}`}>{belt.name}</span>
-                          <div className="absolute right-0 top-0 bottom-0 w-1/4 bg-zinc-950/80 pointer-events-none" />
+                          <span className={`text-[9px] font-bold pointer-events-none z-10 ${belt.textColor} uppercase tracking-tighter`}>{belt.name}</span>
+                          <div className={`absolute right-0 top-0 bottom-0 w-1/4 bg-zinc-950/90 pointer-events-none transition-all ${form.self_student.belt === belt.id ? 'w-1/3' : 'group-hover/belt:w-1/3'}`} />
                         </button>
                       ))}
                     </div>
+                  </div>
 
-                    <div className="grid grid-cols-3 gap-2">
-                        {[
-                          { id: 'gi', label: '🥋 Gi' },
-                          { id: 'nogi', label: '👕 No-Gi' },
-                          { id: 'both', label: '⚡ Ambas' }
-                        ].map(mod => (
-                          <button key={mod.id} type="button"
-                            onClick={() => setForm({ ...form, self_student: { ...form.self_student, modality: mod.id } })}
-                            className={`py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${form.self_student.modality === mod.id ? 'bg-zinc-800 text-amber-500 border-amber-500/50 shadow-lg' : 'bg-transparent text-zinc-500 border-zinc-800 hover:border-zinc-700'}`}
-                          >
-                            {mod.label}
-                          </button>
-                        ))}
+                  {form.self_student.belt && (
+                    <div key={form.self_student.belt} className="animate-in fade-in slide-in-from-top-4 duration-700 space-y-4 bg-zinc-950/40 p-5 rounded-[2rem] border border-zinc-800/50 shadow-inner">
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-col">
+                          <label className="text-[10px] uppercase tracking-[0.2em] font-black text-white">Grados (Rayas)</label>
+                          <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">Tu progreso en el tatami</p>
+                        </div>
+                        <div className="flex gap-1.5">
+                          {[0, 1, 2, 3, 4].map(deg => (
+                            <button key={deg} type="button" 
+                              onClick={() => setForm({ ...form, self_student: { ...form.self_student, degrees: deg } })}
+                              className={`w-8 h-8 rounded-full text-xs font-black transition-all flex items-center justify-center ${form.self_student.degrees === deg 
+                                ? 'bg-amber-500 text-black shadow-[0_0_20px_rgba(245,158,11,0.5)] scale-110' 
+                                : 'bg-zinc-900 text-zinc-600 border border-zinc-800 hover:border-zinc-700'}`}>
+                              {deg}
+                            </button>
+                          ))}
+                        </div>
                       </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'gi', label: '🥋 Gi' },
+                      { id: 'nogi', label: '👕 No-Gi' },
+                      { id: 'both', label: '⚡ Ambas' }
+                    ].map(mod => (
+                      <button key={mod.id} type="button"
+                        onClick={() => setForm({ ...form, self_student: { ...form.self_student, modality: mod.id } })}
+                        className={`py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all border ${form.self_student.modality === mod.id 
+                          ? 'bg-white text-black border-white shadow-xl' 
+                          : 'bg-zinc-900/50 text-zinc-500 border-zinc-800 hover:border-zinc-700'}`}
+                      >
+                        {mod.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -350,7 +372,7 @@ export default function RegisterPage() {
                 {config.showSelfRegister ? `Otros ${config.membersLabel.toLowerCase()}` : `${config.membersLabel} a inscribir`}
               </label>
               <button type="button"
-                onClick={() => setForm({ ...form, students: [...form.students, { name: "", category: config.courseOptions[0].value, belt: "white", degrees: 0, modality: "gi" }] })}
+                onClick={() => setForm({ ...form, students: [...form.students, { name: "", category: config.courseOptions[0].value, belt: "", degrees: 0, modality: "gi" }] })}
                 className="text-[10px] font-black uppercase tracking-widest text-amber-500 hover:text-amber-400 transition-colors flex items-center gap-2">
                 <span className="w-5 h-5 bg-amber-500/10 rounded flex items-center justify-center">+</span>
                 Agregar
@@ -392,33 +414,38 @@ export default function RegisterPage() {
                           {BJJ_BELTS.map(belt => (
                             <button key={belt.id} type="button"
                               onClick={() => { const st = [...form.students]; st[i].belt = belt.id; setForm({ ...form, students: st }); }}
-                              className={`flex-1 rounded-xl border transition-all flex items-center justify-center relative overflow-hidden group/belt ${s.belt === belt.id ? 'border-white ring-4 ring-white/10 scale-105 z-10' : 'border-zinc-800 opacity-40 hover:opacity-100'}`}
+                              className={`flex-1 rounded-xl border transition-all flex items-center justify-center relative overflow-hidden group/belt ${s.belt === belt.id ? 'border-amber-500 ring-4 ring-amber-500/20 scale-105 z-10 shadow-[0_0_20px_rgba(245,158,11,0.2)]' : 'border-zinc-800 opacity-40 hover:opacity-100'}`}
                               style={{ backgroundColor: belt.color }}
                             >
                               <span className={`text-[9px] font-bold pointer-events-none z-10 ${belt.textColor} uppercase tracking-tighter`}>{belt.name}</span>
-                              <div className="absolute right-0 top-0 bottom-0 w-1/4 bg-zinc-950/90 pointer-events-none group-hover/belt:w-1/3 transition-all" />
+                              <div className={`absolute right-0 top-0 bottom-0 w-1/4 bg-zinc-950/90 pointer-events-none transition-all ${s.belt === belt.id ? 'w-1/3' : 'group-hover/belt:w-1/3'}`} />
                             </button>
                           ))}
                         </div>
                       </div>
 
-                      {/* Paso 2: Grados (Rayas) con Animación */}
-                      <div key={s.belt} className="animate-in fade-in slide-in-from-top-4 duration-500 space-y-3 bg-zinc-950/40 p-5 rounded-[2rem] border border-zinc-800/50 shadow-inner">
-                        <div className="flex items-center justify-between">
-                          <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500">Grados (Rayas)</label>
-                          <div className="flex gap-1.5">
-                            {[0, 1, 2, 3, 4].map(deg => (
-                              <button key={deg} type="button" 
-                                onClick={() => { const st = [...form.students]; st[i].degrees = deg; setForm({ ...form, students: st }); }}
-                                className={`w-8 h-8 rounded-full text-xs font-black transition-all flex items-center justify-center ${s.degrees === deg 
-                                  ? 'bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.4)] scale-110' 
-                                  : 'bg-zinc-900 text-zinc-600 border border-zinc-800 hover:border-zinc-700'}`}>
-                                {deg}
-                              </button>
-                            ))}
+                      {/* Paso 2: Grados (Rayas) con Animación - SOLO SI HAY CINTURÓN SELECCIONADO */}
+                      {s.belt && (
+                        <div key={s.belt} className="animate-in fade-in slide-in-from-top-4 duration-700 space-y-4 bg-zinc-950/40 p-5 rounded-[2rem] border border-zinc-800/50 shadow-inner">
+                          <div className="flex items-center justify-between">
+                            <div className="flex flex-col">
+                              <label className="text-[10px] uppercase tracking-[0.2em] font-black text-white">Grados (Rayas)</label>
+                              <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">Nivel de graduación</p>
+                            </div>
+                            <div className="flex gap-1.5">
+                              {[0, 1, 2, 3, 4].map(deg => (
+                                <button key={deg} type="button" 
+                                  onClick={() => { const st = [...form.students]; st[i].degrees = deg; setForm({ ...form, students: st }); }}
+                                  className={`w-8 h-8 rounded-full text-xs font-black transition-all flex items-center justify-center ${s.degrees === deg 
+                                    ? 'bg-amber-500 text-black shadow-[0_0_20px_rgba(245,158,11,0.5)] scale-110' 
+                                    : 'bg-zinc-900 text-zinc-600 border border-zinc-800 hover:border-zinc-700'}`}>
+                                  {deg}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      )}
                       
                       {/* Paso 3: Modalidad */}
                       <div className="grid grid-cols-3 gap-2">
