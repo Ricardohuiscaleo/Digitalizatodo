@@ -54,7 +54,10 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
     vocab
 }) => {
     const filteredPayers = payers.filter(p => {
-        if (paymentFilter === 'pending') return p.status === 'pending' || p.status === 'review';
+        const stats = getPayerRealStats(p);
+        if (paymentFilter === 'pending') return stats.pendingAmount > 0;
+        if (paymentFilter === 'review') return stats.reviewAmount > 0;
+        if (paymentFilter === 'paid') return stats.approvedAmount > 0 && stats.pendingAmount === 0 && stats.reviewAmount === 0;
         return true;
     }).filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -213,7 +216,7 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                 />
             )}
 
-            <div className="md:hidden flex flex-wrap gap-4 px-1 pb-6">
+            <div className="md:hidden grid grid-cols-4 gap-x-3 gap-y-7 px-1 pb-6">
                 {filteredPayers.flatMap(payer => {
                     const stats = getPayerRealStats(payer);
                     const isPaid = (payer.status === 'paid');
@@ -234,8 +237,8 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                                 onClick={() => setBubbleModalPayer({ ...payer, _focusStudent: student })}
                             >
                                 <div className="relative">
-                                    <img src={student.photo || payer.photo} className={`w-16 h-16 rounded-full object-cover ring-4 ${ringColor}`} />
-                                    <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white ${dotColor}`} />
+                                    <img src={student.photo || payer.photo} className={`w-[72px] h-[72px] min-w-[72px] min-h-[72px] rounded-full object-cover ring-4 ${ringColor}`} />
+                                    <div className={`absolute bottom-0 right-0 w-5 h-5 rounded-full border-2 border-white ${dotColor}`} />
                                 </div>
                                 <p className="text-[9px] font-black uppercase text-zinc-700 max-w-[72px] text-center line-clamp-2">{student.name.split(' ')[0]}</p>
                             </div>
