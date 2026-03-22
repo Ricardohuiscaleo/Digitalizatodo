@@ -194,29 +194,9 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                                 <span className={`text-2xl font-black tracking-tighter ${isActive ? 'text-white' : isToday ? 'text-blue-900' : 'text-zinc-900'}`}>
                                                     {i}
                                                 </span>
-                                                <div className="flex flex-col items-center gap-2">
+                                                <div className="flex flex-col items-center">
                                                     {stats ? (
                                                         <>
-                                                            {/* Mini Pila de Burbujas */}
-                                                            <div className="flex -space-x-1.5 overflow-hidden">
-                                                                {stats.students.slice(0, 3).map((student: any, idx: number) => (
-                                                                    <div 
-                                                                        key={idx}
-                                                                        className={`h-5 w-5 rounded-full ring-2 ${isActive ? 'ring-zinc-900' : isToday ? 'ring-blue-50' : 'ring-zinc-50'} bg-zinc-100 flex-shrink-0 overflow-hidden shadow-sm`}
-                                                                    >
-                                                                        {student.photo ? (
-                                                                            <img src={student.photo} className="h-full w-full object-cover" alt="" />
-                                                                        ) : (
-                                                                            <User size={10} className="text-zinc-300 m-auto mt-1" />
-                                                                        )}
-                                                                    </div>
-                                                                ))}
-                                                                {stats.count > 3 && (
-                                                                    <div className={`h-5 w-5 rounded-full ring-2 ${isActive ? 'ring-zinc-900' : isToday ? 'ring-blue-50' : 'ring-zinc-50'} bg-zinc-900 flex items-center justify-center flex-shrink-0`}>
-                                                                        <span className="text-[5px] font-black text-white">+{stats.count - 3}</span>
-                                                                    </div>
-                                                                )}
-                                                            </div>
                                                             <div className="flex flex-col items-center">
                                                                 <span className={`text-[12px] font-black leading-none ${isActive ? 'text-emerald-400' : isToday ? 'text-blue-600' : 'text-emerald-600'}`}>
                                                                     {stats.count}
