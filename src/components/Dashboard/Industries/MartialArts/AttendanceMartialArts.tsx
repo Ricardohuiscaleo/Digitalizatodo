@@ -81,7 +81,14 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                     <td className="px-6 py-4 text-sm font-black text-zinc-900 uppercase">
                                         <div className="flex items-center gap-3">
                                             <img src={student.photo} className="w-10 h-10 rounded-full object-cover border border-zinc-100" />
-                                            <span>{student.name}</span>
+                                            <div className="flex flex-col">
+                                                <span>{student.name}</span>
+                                                {student.consumable_credits > 0 && (
+                                                    <span className="text-[8px] text-[#c9a84c] font-black tracking-widest flex items-center gap-1 mt-0.5">
+                                                        <span className="text-[10px]">★</span> {student.consumable_credits} SESIONES VIP
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 font-bold text-zinc-500">

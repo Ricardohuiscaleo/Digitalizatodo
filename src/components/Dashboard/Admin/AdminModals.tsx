@@ -61,7 +61,12 @@ export function PaymentActionModal({ payer, onConfirm, onCancel, primaryColor, f
                                         <img src={item.student_photo || 'https://i.pravatar.cc/100'} className="w-full h-full object-cover" />
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="text-[11px] font-black uppercase text-zinc-800 leading-tight mb-0.5">{item.student_name}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[11px] font-black uppercase text-zinc-800 leading-tight truncate">{item.student_name}</span>
+                                            {(item.type === 'single' || item.type === 'pack_4' || item.type === 'referral') && (
+                                                <span className="bg-[#c9a84c] text-black text-[6px] font-black px-1 py-0.5 rounded-full">VIP</span>
+                                            )}
+                                        </div>
                                         <div className="flex items-center gap-2">
                                             <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${item.category === 'kids' ? 'bg-sky-50 text-sky-600' : 'bg-zinc-100 text-zinc-600'}`}>
                                                 {item.category === 'kids' ? 'Infantil' : 'Adulto'}
@@ -196,7 +201,12 @@ export function HistoryDetailModal({ date, records, branding, onClose }: History
                             <div className="flex items-center gap-3">
                                 <img src={r.student?.photo} className="w-10 h-10 rounded-full object-cover border border-white shadow-sm" alt={r.student?.name} />
                                 <div>
-                                    <p className="text-sm font-black text-zinc-900 uppercase leading-none">{r.student?.name}</p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-sm font-black text-zinc-900 uppercase leading-none">{r.student?.name}</p>
+                                        {r.type === 'personalized' && (
+                                            <span className="bg-[#c9a84c] text-black text-[6px] font-black px-1.5 py-0.5 rounded-full">VIP SESSION</span>
+                                        )}
+                                    </div>
                                     <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest mt-1">
                                         {r.registration_method === 'qr' ? 'Escaneado' : 'Manual'} • {new Date(r.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
                                     </p>

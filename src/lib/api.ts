@@ -320,7 +320,7 @@ export async function getAttendanceQR(tenantId: string, token: string) {
     }
 }
 
-export async function markAttendanceViaQR(tenantId: string, token: string, qrToken: string, studentId: string) {
+export async function markAttendanceViaQR(tenantId: string, token: string, qrToken: string, studentId: string, isPersonalized: boolean = false) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/attendance/verify-qr`, {
             method: 'POST',
@@ -328,12 +328,30 @@ export async function markAttendanceViaQR(tenantId: string, token: string, qrTok
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
             },
-            body: JSON.stringify({ qr_token: qrToken, student_id: studentId }),
+            body: JSON.stringify({ qr_token: qrToken, student_id: studentId, is_personalized: isPersonalized }),
         });
 
         return await safeJson(response);
     } catch (error) {
         console.error('Error marking attendance via QR:', error);
+        return { message: 'Error de conexión' };
+    }
+}
+
+export async function buyConsumablePack(tenantId: string, token: string, studentId: string, type: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/payments/consumable`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ student_id: studentId, type }),
+        });
+
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error buying consumable pack:', error);
         return { message: 'Error de conexión' };
     }
 }

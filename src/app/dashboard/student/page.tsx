@@ -26,6 +26,7 @@ import { useRealtimeChannel, useRealtimeVisibility } from "@/hooks/useRealtimeCh
 import { unlockAudio } from "@/lib/audio";
 import { industryConfig } from "@/lib/constants";
 import { nowCL } from "@/lib/utils";
+import { buyConsumablePack } from "@/lib/api";
 
 export default function StudentDashboard() {
     const common = useStudentCommon();
@@ -45,6 +46,21 @@ export default function StudentDashboard() {
     const [uploadingPayment, setUploadingPayment] = useState<string | null>(null);
     const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
     const [copiedBank, setCopiedBank] = useState(false);
+
+    const handleBuyPack = async (studentId: string, type: string) => {
+        if (!slug || !token) return;
+        const res = await buyConsumablePack(slug, token, studentId, type);
+        if (res && res.payment) {
+            common.refreshData();
+            setPaymentTab("pending");
+            common.setToastNotification({
+                id: Date.now().toString(),
+                title: "¡Solicitud Creada!",
+                body: "Pila con esto: Sube el comprobante de transferencia abajo para que el staff lo valide.",
+                type: "payment"
+            });
+        }
+    };
     
     // Refs for file inputs
     const profileFileInputRef = useRef<HTMLInputElement>(null);
@@ -275,7 +291,7 @@ export default function StudentDashboard() {
                     isSchoolTreasury ? (
                         <PaymentsTreasury paymentTab={paymentTab} setPaymentTab={setPaymentTab} bankInfo={common.data?.bank_info} copiedBank={copiedBank} setCopiedBank={setCopiedBank} selectedPayments={selectedPayments} setSelectedPayments={setSelectedPayments} uploadingPayment={uploadingPayment} bulkFileInputRef={bulkFileInputRef as any} myFees={treasury.myFees} setFeePayModal={treasury.setFeePayModal} students={students} primaryColor={primaryColor} uploadSuccess={uploadSuccess} handleUploadProof={handleUploadProof} setProofModal={setProofModal} setConfirmDelete={setConfirmDelete} handleBulkUploadProof={handleBulkUploadProof} paymentHistory={common.data?.payment_history || []} vocab={vocab} />
                     ) : (
-                        <PaymentsMartialArts paymentTab={paymentTab} setPaymentTab={setPaymentTab} bankInfo={common.data?.bank_info} copiedBank={copiedBank} setCopiedBank={setCopiedBank} selectedPayments={selectedPayments} setSelectedPayments={setSelectedPayments} uploadingPayment={uploadingPayment} bulkFileInputRef={bulkFileInputRef as any} students={students} primaryColor={primaryColor} uploadSuccess={uploadSuccess} handleUploadProof={handleUploadProof} setProofModal={setProofModal} setConfirmDelete={setConfirmDelete} handleBulkUploadProof={handleBulkUploadProof} paymentHistory={common.data?.payment_history || []} vocab={vocab} />
+                        <PaymentsMartialArts paymentTab={paymentTab} setPaymentTab={setPaymentTab} bankInfo={common.data?.bank_info} copiedBank={copiedBank} setCopiedBank={setCopiedBank} selectedPayments={selectedPayments} setSelectedPayments={setSelectedPayments} uploadingPayment={uploadingPayment} bulkFileInputRef={bulkFileInputRef as any} students={students} primaryColor={primaryColor} uploadSuccess={uploadSuccess} handleUploadProof={handleUploadProof} setProofModal={setProofModal} setConfirmDelete={setConfirmDelete} handleBulkUploadProof={handleBulkUploadProof} paymentHistory={common.data?.payment_history || []} vocab={vocab} onBuyPack={handleBuyPack} />
                     )
                 )}
 
@@ -313,7 +329,15 @@ export default function StudentDashboard() {
             <BottomNav activeSection={activeSection} setActiveSection={setActiveSection} primaryColor={primaryColor} userPhoto={guardian.photo} userName={guardian.name} industry={common.effectiveIndustry} />
 
             {/* Modal Logic */}
-            {martialArts.activeScanner && <StudentQRScanner studentId={martialArts.activeScanner} primaryColor={primaryColor} onComplete={() => { martialArts.setActiveScanner(null); common.refreshData(); }} onCancel={() => martialArts.setActiveScanner(null)} />}
+            {martialArts.activeScanner && (
+                <StudentQRScanner 
+                    studentId={martialArts.activeScanner} 
+                    primaryColor={primaryColor} 
+                    hasCredits={(students.find((s: any) => String(s.id) === String(martialArts.activeScanner))?.consumable_credits || 0) > 0}
+                    onComplete={() => { martialArts.setActiveScanner(null); common.refreshData(); }} 
+                    onCancel={() => martialArts.setActiveScanner(null)} 
+                />
+            )}
             {treasury.feePayModal && <FeePayModal fees={treasury.feePayModal.fees} onClose={() => treasury.setFeePayModal(null)} onSuccess={treasury.refreshMyFees} submitFeePayment={treasury.submitFeePayment} />}
             {proofModal && <ProofModal url={proofModal.url} canDelete={proofModal.canDelete} onClose={() => setProofModal(null)} onDelete={() => setConfirmDelete(proofModal.paymentId)} />}
             {confirmDelete && <ConfirmDialog title="¿Eliminar comprobante?" message="Se eliminará la imagen y el pago volverá a estado pendiente." onConfirm={() => handleDeleteProof(confirmDelete)} onCancel={() => setConfirmDelete(null)} />}

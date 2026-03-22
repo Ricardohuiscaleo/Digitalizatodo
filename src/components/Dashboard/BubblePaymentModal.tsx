@@ -101,7 +101,12 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
                                     className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm shrink-0"
                                 />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-black uppercase text-zinc-900 leading-none truncate">{payment.student_name}</p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-sm font-black uppercase text-zinc-900 leading-none truncate">{payment.student_name}</p>
+                                        {(payment.type === 'single' || payment.type === 'pack_4' || payment.type === 'referral') && (
+                                            <span className="bg-[#c9a84c] text-black text-[7px] font-black px-1.5 py-0.5 rounded-full">VIP</span>
+                                        )}
+                                    </div>
                                     <p className="text-[10px] text-zinc-400 font-bold mt-1.5 uppercase">
                                         Vence: {payment.due_date} • <span className={statusColor}>{statusLabel}</span>
                                     </p>

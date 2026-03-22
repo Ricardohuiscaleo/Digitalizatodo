@@ -306,6 +306,9 @@ export function PaymentRow({
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
+                    {['single', 'pack_4', 'referral'].includes(payment.type) && (
+                        <span className="text-[8px] bg-[#c9a84c] text-black font-black px-1.5 py-0.5 rounded-full shadow-sm animate-pulse">VIP</span>
+                    )}
                     <span className={`text-[9px] border rounded-full px-2 py-0.5 font-black uppercase shadow-sm ${sc.color}`}>{sc.label}</span>
 
                     {uploadSuccess && (

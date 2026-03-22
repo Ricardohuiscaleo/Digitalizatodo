@@ -96,6 +96,31 @@ export function HomeMartialArts({
                 </div>
             )}
 
+            {/* Premium Credits Card (Consumables) */}
+            {students.some(s => s.consumable_credits > 0) && (
+              <div className="bg-zinc-950 rounded-[2.5rem] p-6 text-white shadow-2xl relative overflow-hidden group border border-[#c9a84c]/30">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#c9a84c]/10 rounded-full blur-3xl" />
+                <div className="relative z-10 flex justify-between items-center text-left">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="bg-[#c9a84c] text-black text-[7px] font-black uppercase px-2 py-0.5 rounded-full tracking-widest">VIP EXPERIENCE</span>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#c9a84c]">Clases Personalizadas</p>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                        <h2 className="text-4xl font-black text-white">{students.reduce((acc, s) => acc + (s.consumable_credits || 0), 0)}</h2>
+                        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Disponibles</span>
+                    </div>
+                  </div>
+                  <div className="bg-[#c9a84c]/10 p-4 rounded-3xl border border-[#c9a84c]/20">
+                     <div className="w-10 h-10 border-2 border-[#c9a84c] rounded-full flex items-center justify-center animate-pulse">
+                        <span className="text-[#c9a84c] font-black text-xl">★</span>
+                     </div>
+                  </div>
+                </div>
+                <div className="absolute -right-4 -bottom-4 w-32 h-32 text-[#c9a84c] opacity-5 -rotate-12 font-black text-8xl pointer-events-none select-none">VIP</div>
+              </div>
+            )}
+
             {/* Attendance Sections */}
             <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-1">
@@ -138,6 +163,14 @@ export function HomeMartialArts({
                                     <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider mb-2">{student.category === 'kids' ? vocab.cat1 : student.category === 'adult' ? vocab.cat2 : student.category}</p>
                                     {student.label && (
                                         <div className={`mt-1.5 w-full h-1 rounded-full ${getBeltColor(student.label)}`} />
+                                    )}
+                                    {student.consumable_credits > 0 && (
+                                        <div className="mt-2 flex items-center gap-1.5">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-[#c9a84c] animate-pulse" />
+                                            <span className="text-[9px] font-black uppercase text-[#c9a84c] tracking-tighter">
+                                                {student.consumable_credits} Clases VIP
+                                            </span>
+                                        </div>
                                     )}
                                     {isPresentToday ? (
                                         <p className="text-[8px] font-black text-emerald-600 uppercase tracking-tighter flex items-center gap-1.5 bg-emerald-50 w-fit px-2 py-1 rounded-full border border-emerald-200 mt-2">
