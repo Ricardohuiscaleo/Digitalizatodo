@@ -121,40 +121,42 @@ export default function OverviewSection(props: OverviewSectionProps) {
                             </button>
                         </div>
 
-                        {/*Globos de Asistencia */}
-                        <div className="flex items-center gap-2">
+                        {/* Globos de Asistencia Scrolleables con Nombre */}
+                        <div className="flex items-center gap-6 overflow-hidden">
                             {presentStudents.length > 0 ? (
-                                <div className="flex -space-x-3 overflow-hidden p-1">
-                                    {displayBubbles.map((student, i) => (
+                                <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar snap-x flex-1">
+                                    {presentStudents.map((student) => (
                                         <div 
                                             key={student.id} 
-                                            className="inline-block h-12 w-12 rounded-full ring-4 ring-white shadow-md relative group overflow-hidden bg-zinc-100"
-                                            style={{ zIndex: displayBubbles.length - i }}
+                                            className="flex flex-col items-center gap-1.5 flex-shrink-0 snap-start"
                                         >
-                                            {student.photo ? (
-                                                <img src={student.photo} className="h-full w-full object-cover" alt={student.name} />
-                                            ) : (
-                                                <div className="h-full w-full flex items-center justify-center text-zinc-300">
-                                                    <User size={18} />
-                                                </div>
-                                            )}
+                                            <div className="h-14 w-14 rounded-full ring-4 ring-zinc-50 shadow-sm relative overflow-hidden bg-zinc-100 flex-shrink-0">
+                                                {student.photo ? (
+                                                    <img src={student.photo} className="h-full w-full object-cover" alt={student.name} />
+                                                ) : (
+                                                    <div className="h-full w-full flex items-center justify-center text-zinc-300">
+                                                        <User size={20} />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <span className="text-[9px] font-black text-zinc-500 uppercase tracking-tighter truncate max-w-[56px] text-center">
+                                                {student.name.split(' ')[0]}
+                                            </span>
                                         </div>
                                     ))}
-                                    {extraCount > 0 && (
-                                        <div className="inline-block h-12 w-12 rounded-full ring-4 ring-white shadow-md bg-zinc-900 flex items-center justify-center z-0">
-                                            <span className="text-[10px] font-black text-white">+{extraCount}</span>
-                                        </div>
-                                    )}
                                 </div>
                             ) : (
-                                <div className="flex-1 py-4 px-6 bg-zinc-50 rounded-2xl border-2 border-dashed border-zinc-100 flex items-center justify-center">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Nadie en el {vocab?.attendance || 'Tatami'} aún</p>
+                                <div className="flex-1 py-6 px-6 bg-zinc-50 rounded-[2rem] border-2 border-dashed border-zinc-100 flex items-center justify-center">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300 leading-none">Nadie en el {vocab?.attendance || 'Tatami'} aún</p>
                                 </div>
                             )}
+                            
                             {presentStudents.length > 0 && (
-                                <div className="ml-4 flex flex-col">
-                                    <span className="text-[18px] font-black text-zinc-900 leading-none">{presentStudents.length}</span>
-                                    <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400 mt-0.5">Presentes</span>
+                                <div className="pl-4 flex flex-col items-center justify-center border-l border-zinc-100 shrink-0">
+                                    <span style={{ color: branding?.primaryColor || '#6366f1' }} className="text-3xl font-black tracking-tighter leading-none">
+                                        {presentStudents.length}
+                                    </span>
+                                    <span className="text-[7px] font-black uppercase tracking-[0.2em] text-zinc-400 mt-1">Total</span>
                                 </div>
                             )}
                         </div>
