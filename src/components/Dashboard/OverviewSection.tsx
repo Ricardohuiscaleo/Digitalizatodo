@@ -180,7 +180,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                             <button
                                                 key={dStr}
                                                 onClick={() => setActivePreviewDate(dStr)}
-                                                className={`flex-shrink-0 w-20 aspect-[3/4] rounded-3xl p-3 flex flex-col items-center justify-between transition-all active:scale-95 snap-start shadow-sm border-2 ${
+                                                className={`flex-shrink-0 w-20 h-20 rounded-[2rem] p-2 flex flex-col items-center justify-between transition-all active:scale-95 snap-start shadow-sm border-2 ${
                                                     isActive
                                                         ? 'bg-zinc-900 border-zinc-900 ring-4 ring-zinc-100'
                                                         : isToday 
@@ -223,17 +223,12 @@ export default function OverviewSection(props: OverviewSectionProps) {
                         {/* Visor Dinámico de Asistentes */}
                         <div className="mt-8 pt-6 border-t border-zinc-50">
                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                <h3 className="text-[10px] font-black text-zinc-900 uppercase tracking-tighter flex items-center gap-2">
                                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                                    Asistentes del {activePreviewDate ? new Date(activePreviewDate + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }) : '...'}
+                                    {activePreviewDate === nowCL().toISOString().split('T')[0] 
+                                        ? 'Hoy están entrenando en el dojo:' 
+                                        : 'Este día entrenaron:'}
                                 </h3>
-                                <button 
-                                    onClick={() => activePreviewDate && setSelectedHistoryDate(activePreviewDate)}
-                                    className="text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-colors flex items-center gap-1"
-                                >
-                                    Ficha Completa
-                                    <ArrowRight size={14} />
-                                </button>
                             </div>
 
                             {activePreviewDate && groupedHistory[activePreviewDate] && groupedHistory[activePreviewDate].count > 0 ? (
@@ -261,6 +256,17 @@ export default function OverviewSection(props: OverviewSectionProps) {
                             ) : (
                                 <div className="py-6 px-6 bg-zinc-50 rounded-[2rem] border-2 border-dashed border-zinc-100 flex items-center justify-center">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Sin asistentes registrados</p>
+                                </div>
+                            )}
+
+                            {activePreviewDate && groupedHistory[activePreviewDate]?.count > 0 && (
+                                <div className="mt-6 flex justify-center">
+                                    <button 
+                                        onClick={() => setSelectedHistoryDate(activePreviewDate)}
+                                        className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-zinc-900 transition-colors py-2 px-4 bg-zinc-50 rounded-full border border-zinc-100"
+                                    >
+                                        Ver listado
+                                    </button>
                                 </div>
                             )}
                         </div>
