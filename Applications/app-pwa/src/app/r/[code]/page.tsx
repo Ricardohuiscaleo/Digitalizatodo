@@ -156,6 +156,25 @@ export default function RegisterPage() {
 
   const pricing = tenant?.data?.pricing || tenant?.data?.prices || { kids: 0, adult: 0, discountThreshold: 2, discountPercentage: 0 };
 
+  const ModernDateInput = ({ value, onChange, placeholder, error }: any) => {
+    const handleValueChange = (e: React.FocusEvent<HTMLInputElement>) => {
+      let v = e.target.value.replace(/\D/g, '').slice(0, 8);
+      let formatted = v;
+      if (v.length >= 2) formatted = `${v.slice(0, 2)} / ${v.slice(2)}`;
+      if (v.length >= 4) formatted = `${v.slice(0, 2)} / ${v.slice(2, 4)} / ${v.slice(4)}`;
+      onChange(formatted);
+    };
+
+    return (
+      <div className="relative group/date">
+        <input type="text" value={value} onChange={handleValueChange} placeholder={placeholder} inputMode="numeric" maxLength={14}
+          className={`w-full h-14 bg-zinc-900/40 rounded-[1.2rem] px-6 text-base text-white border transition-all outline-none font-black tracking-widest placeholder:text-zinc-800 ${error ? "border-red-500/50 text-red-100" : "border-zinc-800 focus:border-amber-500 shadow-xl focus:shadow-amber-500/10"}`}
+        />
+        <Calendar size={18} className={`absolute right-5 top-1/2 -translate-y-1/2 transition-colors ${error ? "text-red-500/50" : "text-zinc-700 group-focus-within/date:text-amber-500"}`} />
+      </div>
+    );
+  };
+
   const calculateTotal = () => {
     let kidsCount = 0, adultsCount = 0;
     if (form.is_self_register) adultsCount += 1;
@@ -315,14 +334,14 @@ export default function RegisterPage() {
 
               {form.is_self_register && config.showBJJGraduation && (
                 <div className="mt-8 space-y-6 pt-8 border-t border-zinc-800 animate-in fade-in zoom-in duration-500">
-                  <div className="space-y-3">
-                    <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500 flex items-center gap-2 px-1">
-                       <Calendar size={12} className="text-zinc-600" />
-                       Tu Fecha de Nacimiento
-                    </label>
-                    <input type="date" value={form.self_student.birth_date}
-                      onChange={e => setForm({ ...form, self_student: { ...form.self_student, birth_date: e.target.value } })}
-                      className={`w-full h-12 bg-zinc-950/50 rounded-2xl px-5 text-sm text-white border transition-all outline-none font-bold ${errors.self_birth ? "border-red-500/50" : "border-zinc-800 focus:border-amber-500/50"}`}
+                  <div className="space-y-4">
+                    <div className="flex flex-col px-1">
+                      <label className="text-[11px] uppercase tracking-[0.2em] font-black text-white/90">Tu Fecha de Nacimiento</label>
+                      <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-bold mt-1">Día / Mes / Año</span>
+                    </div>
+                    <ModernDateInput value={form.self_student.birth_date} placeholder="DD / MM / AAAA"
+                      onChange={(v: string) => setForm({ ...form, self_student: { ...form.self_student, birth_date: v } })}
+                      error={errors.self_birth}
                     />
                   </div>
 
@@ -426,14 +445,14 @@ export default function RegisterPage() {
                     </select>
                   </div>
 
-                  <div className="space-y-3">
-                    <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500 flex items-center gap-2 px-1">
-                       <Calendar size={12} className="text-zinc-600" />
-                       Fecha de Nacimiento
-                    </label>
-                    <input type="date" value={s.birth_date}
-                      onChange={e => { const st = [...form.students]; st[i].birth_date = e.target.value; setForm({ ...form, students: st }); }}
-                      className={`w-full h-12 bg-zinc-950/50 rounded-2xl px-5 text-sm text-white border transition-all outline-none font-bold ${errors.students_birth ? "border-red-500/50" : "border-zinc-800 focus:border-amber-500/50"}`}
+                  <div className="space-y-4">
+                    <div className="flex flex-col px-1">
+                      <label className="text-[11px] uppercase tracking-[0.2em] font-black text-white/90">Fecha de Nacimiento</label>
+                      <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-bold mt-1">Día / Mes / Año</span>
+                    </div>
+                    <ModernDateInput value={s.birth_date} placeholder="DD / MM / AAAA"
+                      onChange={(v: string) => { const st = [...form.students]; st[i].birth_date = v; setForm({ ...form, students: st }); }}
+                      error={errors.students_birth}
                     />
                   </div>
 
