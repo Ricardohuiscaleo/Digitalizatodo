@@ -291,11 +291,49 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
 
     const handleLoadDemo = () => {
         setIsDemo(true);
-        common.setPayers([
-            { id: 'demo1', name: 'Juan Pérez', status: 'pending', amount: 45000, last_payment: '2024-03-01' },
-            { id: 'demo2', name: 'María García', status: 'paid', amount: 45000, last_payment: '2024-03-15' },
-        ]);
-        alert("✓ Datos de demostración cargados");
+        const demoAttendance = new Set<string>();
+        const demoHistory: any[] = [];
+        
+        const demoPayers = Array.from({ length: 100 }, (_, i) => {
+            const status: 'pending' | 'paid' | 'review' = (i % 3 === 0) ? 'pending' : (i % 3 === 1 ? 'paid' : 'review');
+            const studentId = `demo-s-${i}`;
+            const studentName = `Alumno ${i + 1}`;
+            const isPresent = i < 15;
+
+            if (isPresent) {
+                demoAttendance.add(studentId);
+                demoHistory.push({
+                    id: `demo-h-${i}`,
+                    student_id: studentId,
+                    student: { id: studentId, name: studentName, photo: null },
+                    date: todayCL(),
+                    status: 'present',
+                    created_at: new Date().toISOString(),
+                    registration_method: 'manual'
+                });
+            }
+
+            return {
+                id: `demo-p-${i}`,
+                name: `Apoderado ${i + 1}`,
+                status,
+                amount: 45000,
+                last_payment: '2024-03-01',
+                enrolledStudents: [
+                    { 
+                        id: studentId, 
+                        name: studentName, 
+                        photo: null,
+                        today_status: isPresent ? 'present' : 'absent'
+                    }
+                ]
+            };
+        });
+
+        common.setPayers(demoPayers);
+        martialArts.setAttendance(demoAttendance);
+        martialArts.setAttendanceHistory(demoHistory);
+        alert("✓ 100 alumnos de demostración cargados (Dojo Care Mode)");
     };
 
     const longPressTimer = useRef<NodeJS.Timeout | undefined>(undefined);
