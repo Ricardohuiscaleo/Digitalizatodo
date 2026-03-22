@@ -165,8 +165,13 @@ export function HistoryDetailModal({ date, records, branding, onClose }: History
             onClick={onClose}
         >
             <div
-                className={`bg-white w-full max-w-lg rounded-t-[2.5rem] md:rounded-[2.5rem] p-6 shadow-2xl ${!isDragging ? 'transition-all duration-300' : ''}`}
-                style={{ transform: `translateY(${dragY}px)`, opacity: 1 - dragY / 400 }}
+                className={`bg-white w-full max-w-lg rounded-t-[2.5rem] md:rounded-[2.5rem] p-6 shadow-2xl ${
+                    !isDragging ? 'transition-all duration-500 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)]' : ''
+                } animate-in fade-in slide-in-from-bottom-10`}
+                style={{ 
+                    transform: `translateY(${dragY}px)`, 
+                    opacity: 1 - dragY / 400
+                }}
                 onClick={e => e.stopPropagation()}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
@@ -182,8 +187,12 @@ export function HistoryDetailModal({ date, records, branding, onClose }: History
                 </div>
 
                 <div ref={scrollRef} className="max-h-[60vh] overflow-y-auto space-y-3 pr-2 scrollbar-hide">
-                    {records.map((r: any) => (
-                        <div key={r.id} className="flex items-center justify-between p-3 bg-zinc-50 rounded-2xl border border-zinc-100">
+                    {records.map((r: any, i: number) => (
+                        <div 
+                            key={r.id} 
+                            style={{ animationDelay: `${i * 60}ms` }}
+                            className="flex items-center justify-between p-3 bg-zinc-50 rounded-2xl border border-zinc-100 animate-in fade-in slide-in-from-right-4 duration-500 fill-mode-both"
+                        >
                             <div className="flex items-center gap-3">
                                 <img src={r.student?.photo} className="w-10 h-10 rounded-full object-cover border border-white shadow-sm" alt={r.student?.name} />
                                 <div>

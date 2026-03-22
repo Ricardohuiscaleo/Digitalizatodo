@@ -266,7 +266,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                 <div className="mt-2 flex justify-center">
                                     <button 
                                         onClick={() => setSelectedHistoryDate(activePreviewDate)}
-                                        className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-zinc-900 transition-colors py-2 px-4 bg-zinc-50 rounded-full border border-zinc-100"
+                                        className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-zinc-900 active:scale-90 transition-all py-2 px-4 bg-zinc-50 rounded-full border border-zinc-100"
                                     >
                                         Ver listado
                                     </button>
