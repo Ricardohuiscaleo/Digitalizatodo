@@ -239,13 +239,16 @@ export default function RegisterPage() {
           </div>
 
           {/* CONTRASEÑA */}
-          <div className="space-y-4 pt-2">
-            <label className="text-[10px] uppercase tracking-widest font-black text-zinc-400">Crear Cuenta</label>
-            <div className="space-y-2.5">
+          <div className="space-y-5 bg-zinc-900/30 p-6 rounded-[2.5rem] border border-zinc-800/50 backdrop-blur-sm">
+            <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500 flex items-center gap-2">
+              <div className="w-1 h-1 rounded-full bg-indigo-500" />
+              Crear Cuenta
+            </label>
+            <div className="space-y-3">
               {(["password", "password_confirmation"] as const).map((field, idx) => (
                 <div key={field} className="relative">
                   {errors[field] && (
-                    <div className="absolute -top-7 left-2 z-10">
+                    <div className="absolute -top-7 left-2 z-10 transition-all">
                       <div className="bg-red-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-md shadow-lg flex items-center gap-1.5 whitespace-nowrap">
                         <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
                         {errors[field]}
@@ -259,10 +262,10 @@ export default function RegisterPage() {
                       placeholder={idx === 0 ? "Contraseña (mín. 8 caracteres)" : "Confirmar contraseña"}
                       value={form[field]}
                       onChange={e => { setForm({ ...form, [field]: e.target.value }); if (errors[field]) setErrors({ ...errors, [field]: "" }); }}
-                      className={`w-full h-11 bg-zinc-50 rounded-xl px-4 pr-11 text-sm text-zinc-900 placeholder:text-zinc-300 border transition-all focus:ring-2 ring-zinc-950 outline-none ${errors[field] ? "border-red-400" : "border-zinc-100 hover:border-zinc-200"}`}
+                      className={`w-full h-12 bg-zinc-950/50 rounded-2xl px-5 pr-11 text-sm text-white placeholder:text-zinc-700 border transition-all outline-none font-bold ${errors[field] ? "border-red-500/50" : "border-zinc-800 focus:border-indigo-500/50 shadow-inner"}`}
                     />
                     <button type="button" onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors">
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors">
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
