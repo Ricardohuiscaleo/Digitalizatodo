@@ -34,6 +34,9 @@ class StudentRegistrationController extends Controller
             'students' => 'required_if:is_self_register,false|array',
             'students.*.name' => 'required_with:students|string|max:255',
             'students.*.category' => 'required_with:students|string|max:50',
+            'students.*.gender' => 'nullable|string|max:20',
+            'students.*.weight' => 'nullable|numeric',
+            'students.*.height' => 'nullable|numeric',
             'students.*.course_id' => 'nullable|exists:courses,id',
             'plan_id' => 'nullable|exists:plans,id',
         ]);
@@ -89,13 +92,18 @@ class StudentRegistrationController extends Controller
 
                 $studentsToCreate = [];
 
-                if ($request->is_self_register) {
-                    // El apoderado es el alumno titular
+                    $selfData = $request->input('self_student', []);
                     $studentsToCreate[] = [
                         'name' => $request->guardian_name,
-                        'category' => 'adults', // Adulto por defecto para titular
+                        'category' => $selfData['category'] ?? 'adults',
+                        'birth_date' => $selfData['birth_date'] ?? null,
+                        'belt_rank' => $selfData['belt'] ?? null,
+                        'degrees' => $selfData['degrees'] ?? null,
+                        'modality' => $selfData['modality'] ?? null,
+                        'gender' => $selfData['gender'] ?? 'male',
+                        'weight' => $selfData['weight'] ?? null,
+                        'height' => $selfData['height'] ?? null,
                     ];
-                }
 
                 // Añadir el resto de los alumnos si existen
                 if ($request->has('students') && is_array($request->students)) {
@@ -103,7 +111,14 @@ class StudentRegistrationController extends Controller
                         if (!empty($studentData['name'])) {
                             $studentsToCreate[] = [
                                 'name' => $studentData['name'],
-                                'category' => strtolower($studentData['category'] ?? 'kids'), // kids o adults
+                                'category' => strtolower($studentData['category'] ?? 'kids'),
+                                'birth_date' => $studentData['birth_date'] ?? null,
+                                'belt_rank' => $studentData['belt'] ?? null,
+                                'degrees' => $studentData['degrees'] ?? null,
+                                'modality' => $studentData['modality'] ?? null,
+                                'gender' => $studentData['gender'] ?? 'male',
+                                'weight' => $studentData['weight'] ?? null,
+                                'height' => $studentData['height'] ?? null,
                                 'course_id' => $studentData['course_id'] ?? null
                             ];
                         }
@@ -143,6 +158,13 @@ class StudentRegistrationController extends Controller
                         'tenant_id' => $tenant->id,
                         'name' => $studentData['name'],
                         'category' => $category,
+                        'birth_date' => !empty($studentData['birth_date']) ? \Carbon\Carbon::createFromFormat('d / m / Y', $studentData['birth_date']) : null,
+                        'belt_rank' => $studentData['belt_rank'] ?? null,
+                        'degrees' => $studentData['degrees'] ?? null,
+                        'modality' => $studentData['modality'] ?? null,
+                        'gender' => $studentData['gender'] ?? null,
+                        'weight' => $studentData['weight'] ?? null,
+                        'height' => $studentData['height'] ?? null,
                         'course_id' => $courseId,
                         'active' => true,
                     ]);
@@ -160,18 +182,39 @@ class StudentRegistrationController extends Controller
                     ]);
 
                     // 3. Crear primer pago pendiente (Aplicando descuento dinámico)
-                    $amount = $plan->price;
-                    if ($appliesDiscount) {
-                        $amount = round($amount * (1 - ($discountPct / 100)));
+                    // SOLO si no es modo "VIP Only"
+                    if ($request->registration_mode !== 'vip_only') {
+                        $amount = $plan->price;
+                        if ($appliesDiscount) {
+                            $amount = round($amount * (1 - ($discountPct / 100)));
+                        }
+
+                        Payment::create([
+                            'tenant_id' => $tenant->id,
+                            'enrollment_id' => $enrollment->id,
+                            'amount' => $amount,
+                            'due_date' => now(), // Vence hoy para el primer cobro
+                            'status' => 'pending',
+                            'type' => 'monthly_fee',
+                        ]);
                     }
 
-                    Payment::create([
-                        'tenant_id' => $tenant->id,
-                        'enrollment_id' => $enrollment->id,
-                        'amount' => $amount,
-                        'due_date' => now(), // Vence hoy para el primer cobro
-                        'status' => 'pending',
-                    ]);
+                    // Add Personalized Pack if requested
+                    if ($request->has('pack_type')) {
+                        $packType = $request->pack_type;
+                        $packAmount = $packType === 'pack_4' ? 65000 : ($packType === 'single' ? 18000 : ($packType === 'referral' ? 15000 : 0));
+                        
+                        if ($packAmount > 0) {
+                            Payment::create([
+                                'tenant_id' => $tenant->id,
+                                'enrollment_id' => $enrollment->id,
+                                'amount' => $packAmount,
+                                'due_date' => now(),
+                                'status' => 'pending',
+                                'type' => $packType,
+                            ]);
+                        }
+                    }
                 }
 
                 // Para el email, usamos el plan del primer alumno como referencia

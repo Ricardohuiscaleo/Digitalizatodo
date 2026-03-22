@@ -10,6 +10,7 @@ interface StudentQRScannerProps {
     onComplete: () => void;
     onCancel: () => void;
     primaryColor: string;
+    hasCredits?: boolean;
 }
 
 export function StudentQRScanner({
@@ -17,6 +18,7 @@ export function StudentQRScanner({
     onComplete,
     onCancel,
     primaryColor,
+    hasCredits = false,
 }: StudentQRScannerProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -24,6 +26,7 @@ export function StudentQRScanner({
     const rafRef = useRef<number>(0);
     const [status, setStatus] = useState<"scanning" | "loading" | "success" | "error" | "denied">("scanning");
     const [errorMsg, setErrorMsg] = useState("");
+    const [isPersonalized, setIsPersonalized] = useState(hasCredits);
 
     const stopCamera = useCallback(() => {
         cancelAnimationFrame(rafRef.current);
@@ -79,7 +82,7 @@ export function StudentQRScanner({
             const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
             const tenantSlug = localStorage.getItem("tenant_slug");
             if (token && tenantSlug) {
-                markAttendanceViaQR(tenantSlug, token, code.data, studentId).then((res) => {
+                markAttendanceViaQR(tenantSlug, token, code.data, studentId, isPersonalized).then((res) => {
                     if (res?.attendance) {
                         playBeep('success');
                         setStatus("success");
@@ -122,6 +125,25 @@ export function StudentQRScanner({
                     <h2 className="text-2xl font-black text-white">Marcar Asistencia</h2>
                     <p className="text-sm text-gray-500 mt-1">Apunta al QR del profesor</p>
                 </div>
+
+                {hasCredits && status === "scanning" && (
+                    <div className="bg-zinc-900/50 p-1.5 rounded-2xl border border-white/5 flex items-center justify-between gap-1 w-full relative z-10">
+                        <button 
+                            type="button" 
+                            onClick={() => setIsPersonalized(false)}
+                            className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${!isPersonalized ? 'bg-white text-black shadow-lg' : 'text-zinc-500'}`}
+                        >
+                            Clase Normal
+                        </button>
+                        <button 
+                            type="button" 
+                            onClick={() => setIsPersonalized(true)}
+                            className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${isPersonalized ? 'bg-[#c9a84c] text-black shadow-[0_0_15px_rgba(201,168,76,0.3)]' : 'text-[#c9a84c]/50'}`}
+                        >
+                            Usar Clase VIP <span className="text-[12px]">★</span>
+                        </button>
+                    </div>
+                )}
 
                 {status === "scanning" && (
                     <div className="relative rounded-3xl overflow-hidden border-2 border-white/10 aspect-square">

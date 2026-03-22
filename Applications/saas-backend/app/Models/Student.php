@@ -14,7 +14,8 @@ class Student extends Model
 
     protected $fillable = [
         'tenant_id', 'course_id', 'name', 'phone', 'photo', 'birth_date', 'category', 'belt_rank',
-        'emergency_contact_name', 'emergency_contact_phone', 'active',
+        'gender', 'weight', 'height', 'degrees', 'modality',
+        'emergency_contact_name', 'emergency_contact_phone', 'active', 'consumable_credits',
     ];
 
     public function course(): BelongsTo

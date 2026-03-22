@@ -35,6 +35,7 @@ interface PaymentsMartialArtsProps {
     handleBulkUploadProof: (file: File) => void;
     paymentHistory: any[];
     vocab: any;
+    onBuyPack?: (studentId: string, type: string) => Promise<void>;
 }
 
 export function PaymentsMartialArts({
@@ -55,9 +56,22 @@ export function PaymentsMartialArts({
     setConfirmDelete,
     handleBulkUploadProof,
     paymentHistory,
-    vocab
+    vocab,
+    onBuyPack
 }: PaymentsMartialArtsProps) {
     const [showBankInfo, setShowBankInfo] = React.useState(false);
+    const [selectedStudentForPack, setSelectedStudentForPack] = React.useState<string>(students[0]?.id || "");
+    const [isBuying, setIsBuying] = React.useState<string | null>(null);
+
+    const handleBuy = async (type: string) => {
+        if (!onBuyPack || !selectedStudentForPack) return;
+        setIsBuying(type);
+        try {
+            await onBuyPack(selectedStudentForPack, type);
+        } finally {
+            setIsBuying(null);
+        }
+    };
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
@@ -131,6 +145,56 @@ export function PaymentsMartialArts({
                                 </div>
                             </div>
                         )}
+                        
+                        {/* COMPRA DE PACKS VIP */}
+                        <div className="mt-2 p-6 rounded-[2.5rem] border border-zinc-800 bg-zinc-900/40 relative overflow-hidden transition-all duration-700">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-[#c9a84c]/5 rounded-full blur-3xl" />
+                            <div className="flex items-center justify-between mb-5 relative z-10">
+                                <div className="space-y-0.5">
+                                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#c9a84c]">Compra de Packs VIP</h3>
+                                    <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest">Sesiones 1-a-1 personalizadas</p>
+                                </div>
+                                {students.length > 1 && (
+                                    <select 
+                                        value={selectedStudentForPack}
+                                        onChange={(e) => setSelectedStudentForPack(e.target.value)}
+                                        className="text-[9px] font-black uppercase px-3 py-1.5 rounded-xl border border-zinc-800 bg-zinc-950/50 text-white outline-none transition-all"
+                                    >
+                                        {students.map(s => <option key={s.id} value={s.id}>{s.name.split(' ')[0]}</option>)}
+                                    </select>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-2.5 relative z-10">
+                                {[
+                                    { id: 'single', name: 'CLASE INDIVIDUAL', price: '$18.000', label: 'Clase Suelta · CLP 1hr', desc: 'Ideal para probar la metodología. Sin compromiso previo.' },
+                                    { id: 'pack_4', name: 'Pack 4 Clases', price: '$65.000', label: '$16.250 c/u · Ahorra $7.000', badge: 'MEJOR VALOR' },
+                                    { id: 'referral', name: 'Clase Referido', price: '$15.000', label: 'Beneficio Alumnos · 1hr', badge: 'PARA EL GRUPO' }
+                                ].map((pack) => (
+                                    <button
+                                        key={pack.id}
+                                        onClick={() => handleBuy(pack.id)}
+                                        disabled={!!isBuying}
+                                        className="group flex items-center justify-between p-4 rounded-2xl border border-zinc-800/50 bg-zinc-950/40 hover:border-[#c9a84c]/50 transition-all active:scale-[0.98]"
+                                    >
+                                        <div className="flex flex-col text-left">
+                                            <div className="flex items-center gap-2">
+                                                {pack.badge && <span className="bg-[#c9a84c] text-black text-[7px] font-black px-1.5 py-0.5 rounded-full tracking-widest">{pack.badge}</span>}
+                                                <span className="text-[10px] font-black uppercase tracking-tight text-white">{pack.name}</span>
+                                            </div>
+                                            <span className="text-[8px] text-zinc-500 font-bold uppercase mt-0.5">{pack.label}</span>
+                                            <p className="text-[7.5px] text-zinc-600 font-medium leading-tight mt-1 max-w-[180px]">{pack.desc || ''}</p>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-[13px] font-black text-[#c9a84c] tracking-tighter">{pack.price}</span>
+                                            <div className="w-7 h-7 rounded-xl bg-zinc-900 flex items-center justify-center text-white shadow-lg group-hover:bg-[#c9a84c] group-hover:text-black transition-all">
+                                                {isBuying === pack.id ? <Loader2 size={12} className="animate-spin" /> : <CreditCard size={12} />}
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
 
                         <div className="flex items-center justify-between ml-2 mb-1 mt-4">
                             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Pagos Mensuales</h3>
