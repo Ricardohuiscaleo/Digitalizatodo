@@ -160,35 +160,6 @@ const AttendanceSection: React.FC<AttendanceSectionProps> = ({
                     );
                 })}
             </div>
-
-            {/* Historial (opcional, si se desea mantener aquí) */}
-            {attendanceHistory.length > 0 && (
-                <div className="mt-8">
-                    <div className="flex items-center gap-3 mb-4 px-2">
-                        <Calendar size={18} className="text-zinc-400" />
-                        <h3 className="text-[11px] font-black uppercase tracking-widest text-zinc-900">Historial Reciente</h3>
-                    </div>
-                    <div className="space-y-3">
-                        {Array.from(new Map(attendanceHistory.map((d: any) => [d.date, d])).values()).map((day: any) => (
-                            <div 
-                                key={day.date}
-                                className="bg-white border border-zinc-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer active:scale-[0.99]"
-                                onClick={() => setSelectedHistoryDate(day.date)}
-                            >
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm font-black text-zinc-900 uppercase">{day.date_formatted}</p>
-                                        <p className="text-[10px] text-zinc-400 font-bold mt-0.5 uppercase">
-                                            {day.total_present} Presentes • {day.total_students} Total
-                                        </p>
-                                    </div>
-                                    <ChevronRight size={18} className="text-zinc-300" />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
