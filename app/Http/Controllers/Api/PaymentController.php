@@ -231,4 +231,45 @@ class PaymentController extends Controller
 
         return response()->json(['error' => 'No se recibió archivo'], 400);
     }
+
+    /**
+     * Crea un pago pendiente por clases personalizadas (consumibles).
+     */
+    public function storeConsumable(Request $request): JsonResponse
+    {
+        $guardian = $request->user();
+        $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'type' => 'required|in:pack_4,single,referral'
+        ]);
+
+        $student = $guardian->students()->find($request->student_id);
+        if (!$student) {
+            return response()->json(['message' => 'Alumno no encontrado o no pertenece a su tutor.'], 403);
+        }
+
+        // Precios hardcoded según requerimiento
+        $prices = [
+            'single' => 18000,
+            'pack_4' => 65000,
+            'referral' => 15000
+        ];
+
+        $amount = $prices[$request->type];
+
+        $payment = Payment::create([
+            'tenant_id' => app('currentTenant')->id,
+            'student_id' => $student->id,
+            'amount' => $amount,
+            'type' => $request->type,
+            'status' => 'pending',
+            'due_date' => now()->toDateString(),
+            'notes' => 'Compra de clases personalizadas: ' . $request->type
+        ]);
+
+        return response()->json([
+            'message' => 'Solicitud de compra creada. Por favor suba el comprobante de transferencia.',
+            'payment' => $payment
+        ]);
+    }
 }

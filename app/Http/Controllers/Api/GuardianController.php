@@ -158,10 +158,23 @@ class GuardianController extends Controller
         $guardian = Guardian::where('tenant_id', $tenantId)->findOrFail($id);
 
         foreach ($guardian->students as $student) {
-            \App\Models\Payment::where('tenant_id', $tenantId)
+            $paymentsToApprove = \App\Models\Payment::where('tenant_id', $tenantId)
                 ->whereIn('enrollment_id', $student->enrollments->pluck('id'))
                 ->where('status', 'pending_review')
-                ->update(['status' => 'approved', 'paid_at' => now()]);
+                ->get();
+
+            foreach ($paymentsToApprove as $payment) {
+                if ($payment->type === 'pack_4') {
+                    $student->increment('consumable_credits', 4);
+                } elseif ($payment->type === 'single') {
+                    $student->increment('consumable_credits', 1);
+                }
+
+                $payment->update([
+                    'status' => 'approved',
+                    'paid_at' => now()
+                ]);
+            }
         }
 
         event(new \App\Events\PaymentStatusUpdated($guardian->id, 'approved', $tenant->slug));

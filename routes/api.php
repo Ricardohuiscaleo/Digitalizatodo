@@ -107,6 +107,7 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
 
             // Pagos
             Route::get('payments', [PaymentController::class , 'index']);
+            Route::post('payments/consumable', [PaymentController::class , 'storeConsumable']);
             Route::post('payments/{payment}/pay', [PaymentController::class , 'initiatePayment']);
             Route::post('payments/{payment}/upload-proof', [PaymentController::class , 'uploadProof']);
             Route::delete('payments/{payment}/proof', [PaymentController::class , 'deleteProof']);

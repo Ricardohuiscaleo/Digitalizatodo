@@ -11,8 +11,8 @@ class Payment extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'tenant_id', 'enrollment_id', 'amount', 'due_date', 'paid_at',
-        'status', 'payment_method', 'proof_image', 'rejection_reason',
+        'tenant_id', 'student_id', 'enrollment_id', 'amount', 'due_date', 'paid_at',
+        'status', 'type', 'payment_method', 'proof_image', 'rejection_reason',
         'approved_by', 'transaction_id', 'gateway_response',
     ];
 
@@ -26,6 +26,11 @@ class Payment extends Model
     public function enrollment(): BelongsTo
     {
         return $this->belongsTo(Enrollment::class);
+    }
+
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(Student::class);
     }
 
     public function approvedBy(): BelongsTo

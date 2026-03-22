@@ -146,6 +146,15 @@ class AttendanceController extends Controller
                 return response()->json(['message' => 'Estudiante no pertenece a este tenant o no existe'], 404);
             }
 
+            $isPersonalized = filter_var($request->is_personalized, FILTER_VALIDATE_BOOLEAN);
+
+            if ($isPersonalized) {
+                if ($student->consumable_credits <= 0) {
+                    return response()->json(['message' => 'No tienes clases personalizadas disponibles'], 422);
+                }
+                $student->decrement('consumable_credits');
+            }
+
             $attendance = Attendance::updateOrCreate(
                 [
                     'tenant_id' => $tenant->id,
@@ -154,7 +163,8 @@ class AttendanceController extends Controller
                 ],
                 [
                     'status' => 'present',
-                    'notes' => 'Registrado vía QR',
+                    'type' => $isPersonalized ? 'personalized' : 'regular',
+                    'notes' => $isPersonalized ? 'Clase Personalizada (1-a-1)' : 'Registrado vía QR',
                     'registration_method' => 'qr',
                 ]
             );
