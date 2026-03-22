@@ -26,6 +26,7 @@ interface OverviewSectionProps {
     feesSummary?: { total: number; al_dia: number; en_revision: number; morosos: number } | null;
     vocab?: any;
     setActiveTab?: (tab: string) => void;
+    isDemo?: boolean; // Assuming isDemo might be passed as a prop or context
 }
 
 export default function OverviewSection(props: OverviewSectionProps) {
@@ -37,6 +38,15 @@ export default function OverviewSection(props: OverviewSectionProps) {
         vocab, setActiveTab
     } = props;
 
+    const scrollRef = React.useRef<HTMLDivElement>(null);
+
+    // Auto-scroll al final para ver lo más reciente
+    React.useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+        }
+    }, [historyMonth, historyYear, attendanceHistory]);
+
     const totalStudents = allStudents.length;
     const paidStudents = allStudents.filter(s => s.payerStatus === 'paid').length;
     const isTreasury = branding?.industry === 'school_treasury';
@@ -46,15 +56,6 @@ export default function OverviewSection(props: OverviewSectionProps) {
     const maxBubbles = 6;
     const displayBubbles = presentStudents.slice(0, maxBubbles);
     const extraCount = presentStudents.length - maxBubbles;
-
-    const scrollRef = React.useRef<HTMLDivElement>(null);
-
-    // Auto-scroll al final para ver lo más reciente
-    React.useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
-        }
-    }, [historyMonth, historyYear, attendanceHistory]);
 
     return (
         <div className="space-y-6 text-zinc-950">
@@ -203,7 +204,9 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                     // Generar todos los días del mes actual o seleccionado de forma ASCENDENTE
                                     const lastDay = new Date(historyYear, historyMonth, 0).getDate();
                                     const todayNum = now.getDate();
-                                    const isCurrentMonth = historyMonth === (nowCL().getMonth() + 1) && historyYear === nowCL().getFullYear();
+                                    const currentYear = nowCL().getFullYear();
+                                    const currentMonth = nowCL().getMonth() + 1;
+                                    const isCurrentMonth = historyMonth === currentMonth && historyYear === currentYear;
                                     
                                     // Si es el mes actual, mostramos hasta el día de hoy, si no, todo el mes
                                     const endDay = isCurrentMonth ? todayNum : lastDay;
