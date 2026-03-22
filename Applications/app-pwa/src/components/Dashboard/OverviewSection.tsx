@@ -7,6 +7,7 @@ import {
     ArrowRight
 } from 'lucide-react';
 import TodaySchedule from './TodaySchedule';
+import { nowCL } from '@/lib/utils';
 
 interface OverviewSectionProps {
     allStudents: any[];
@@ -45,6 +46,15 @@ export default function OverviewSection(props: OverviewSectionProps) {
     const maxBubbles = 6;
     const displayBubbles = presentStudents.slice(0, maxBubbles);
     const extraCount = presentStudents.length - maxBubbles;
+
+    const scrollRef = React.useRef<HTMLDivElement>(null);
+
+    // Auto-scroll al final para ver lo más reciente
+    React.useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+        }
+    }, [historyMonth, historyYear, attendanceHistory]);
 
     return (
         <div className="space-y-6 text-zinc-950">
@@ -163,7 +173,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                     <ChevronLeft size={16} />
                                 </button>
                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-900 min-w-[60px] text-center">
-                                    {new Date(historyYear, historyMonth - 1).toLocaleDateString('es-CL', { month: 'short' })} {historyYear}
+                                    {["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"][historyMonth - 1]} {historyYear}
                                 </span>
                                 <button 
                                     onClick={() => setHistoryMonth(prev => prev === 12 ? 1 : prev + 1)}
@@ -175,7 +185,10 @@ export default function OverviewSection(props: OverviewSectionProps) {
                         </div>
 
                         {attendanceHistory.length > 0 ? (
-                            <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar -mx-2 px-2 snap-x">
+                            <div 
+                                ref={scrollRef}
+                                className="flex gap-3 overflow-x-auto pb-4 no-scrollbar -mx-2 px-2 snap-x scroll-smooth"
+                            >
                                 {(() => {
                                     // Agrupar por día para las tarjetas
                                     const groups: { [key: string]: any } = {};
@@ -187,16 +200,16 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                         if (record.status === 'present') groups[d].count++;
                                     });
 
-                                    // Generar todos los días del mes actual o seleccionado de forma descendente
+                                    // Generar todos los días del mes actual o seleccionado de forma ASCENDENTE
                                     const lastDay = new Date(historyYear, historyMonth, 0).getDate();
                                     const todayNum = now.getDate();
-                                    const isCurrentMonth = historyMonth === (now.getMonth() + 1) && historyYear === now.getFullYear();
+                                    const isCurrentMonth = historyMonth === (nowCL().getMonth() + 1) && historyYear === nowCL().getFullYear();
                                     
-                                    // Si es el mes actual, empezamos desde el día actual, si no, desde el último día del mes
-                                    const startDay = isCurrentMonth ? todayNum : lastDay;
+                                    // Si es el mes actual, mostramos hasta el día de hoy, si no, todo el mes
+                                    const endDay = isCurrentMonth ? todayNum : lastDay;
                                     const days = [];
                                     
-                                    for (let i = startDay; i >= 1; i--) {
+                                    for (let i = 1; i <= endDay; i++) {
                                         const dStr = `${historyYear}-${String(historyMonth).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
                                         const dateObj = new Date(historyYear, historyMonth - 1, i);
                                         const dayName = dateObj.toLocaleDateString('es-CL', { weekday: 'short' });
@@ -210,7 +223,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                                 className={`flex-shrink-0 w-20 aspect-[3/4] rounded-3xl p-3 flex flex-col items-center justify-between transition-all active:scale-95 snap-start shadow-sm border-2 ${
                                                     isToday 
                                                         ? 'bg-blue-50 border-blue-500 ring-2 ring-blue-100' 
-                                                        : 'bg-zinc-50 border-zinc-100 hover:bg-zinc-100'
+                                                        : 'bg-zinc-50 border-zinc-100'
                                                 }`}
                                             >
                                                 <span className={`text-[9px] font-black uppercase tracking-widest ${isToday ? 'text-blue-600' : 'text-zinc-400'}`}>
@@ -225,7 +238,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                                             <span className={`text-[14px] font-black leading-none ${isToday ? 'text-blue-600' : 'text-emerald-600'}`}>
                                                                 {stats.count}
                                                             </span>
-                                                            <span className="text-[7px] font-black text-zinc-400 uppercase tracking-tighter">Asistencias</span>
+                                                            <span className="text-[7px] font-black text-zinc-400 uppercase tracking-tighter">Enteraron</span>
                                                         </>
                                                     ) : (
                                                         <span className="text-[7px] font-black text-zinc-300 uppercase tracking-tighter leading-tight text-center">Sin<br/>asistencia</span>
