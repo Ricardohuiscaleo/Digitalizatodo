@@ -291,7 +291,7 @@ export default function RegisterPage() {
                 <div className="flex flex-col">
                   <span className="text-[11px] font-black text-white uppercase tracking-wider">{config.selfRegisterLabel}</span>
                   <span className="text-[9px] text-zinc-500 font-bold uppercase">
-                    {form.is_self_register ? `Atleta + Titular` : `Solo Administrador`}
+                    {form.is_self_register ? `Atleta + Titular` : `Solo Titular (No entrena)`}
                   </span>
                 </div>
               </label>
