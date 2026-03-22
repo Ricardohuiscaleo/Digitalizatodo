@@ -9,11 +9,11 @@ export function useMartialArtsData(slug: string | undefined, token: string | nul
     const [historyLoading, setHistoryLoading] = useState(false);
     const processingRef = useRef<Set<string>>(new Set());
 
-    const loadAttendanceHistory = useCallback(async () => {
+    const loadAttendanceHistory = useCallback(async (monthYear?: string) => {
         if (!slug || !token || industry !== 'martial_arts') return;
         setHistoryLoading(true);
         try {
-            const data = await getAttendanceHistory(slug, token);
+            const data = await getAttendanceHistory(slug, token, undefined, monthYear);
             setAttendanceHistory(data?.attendance || []);
         } finally {
             setHistoryLoading(false);

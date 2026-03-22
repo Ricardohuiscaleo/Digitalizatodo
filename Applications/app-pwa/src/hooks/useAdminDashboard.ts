@@ -61,6 +61,14 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
             setHistoryMonth(curM);
         }
     }, []); // Una sola vez al montar
+
+    // Recargar historial si cambia el selector de mes/año
+    useEffect(() => {
+        if (!isDemo && branding?.slug && token) {
+            const mStr = `${historyYear}-${String(historyMonth).padStart(2, '0')}`;
+            martialArts.loadAttendanceHistory(mStr);
+        }
+    }, [historyMonth, historyYear, isDemo, branding?.slug, token]);
     const [regPageCode, setRegPageCode] = useState<string | null>(null);
     const [showQRModal, setShowQRModal] = useState(false);
     const [proofModalUrl, setProofModalUrl] = useState<string | null>(null);
@@ -230,12 +238,22 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
             const sid = String(data.studentId);
             martialArts.setAttendance((prev: Set<string>) => new Set(prev).add(sid));
             setLastCheckedInStudent({ ...data, _ts: Date.now() });
+            
+            // Refrescar historial para las tarjetas mensuales
+            const mStr = `${historyYear}-${String(historyMonth).padStart(2, '0')}`;
+            martialArts.loadAttendanceHistory(mStr);
+            
             // Defer full refresh to update list colors/status without flickering the bubble/emerald state
             setTimeout(() => common.refreshPayers(selectedMonth, selectedYear, paymentFilter), 1000);
         },
         'student.checked-out': (data: any) => {
             const sid = String(data.studentId);
             martialArts.setAttendance((prev: Set<string>) => { const next = new Set(prev); next.delete(sid); return next; });
+            
+            // Refrescar historial para las tarjetas mensuales
+            const mStr = `${historyYear}-${String(historyMonth).padStart(2, '0')}`;
+            martialArts.loadAttendanceHistory(mStr);
+            
             setTimeout(() => common.refreshPayers(selectedMonth, selectedYear, paymentFilter), 1000);
         },
         'schedule.updated': () => common.loadSchedules(),
