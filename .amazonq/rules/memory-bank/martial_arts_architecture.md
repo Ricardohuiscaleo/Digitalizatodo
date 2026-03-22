@@ -22,9 +22,10 @@ Para evitar colisiones con otras industrias, se utiliza un sistema de **Hooks Es
 - **`formatStudentCategory(category, industry)`**: Formateador inteligente que distingue entre grados escolares y categorías deportivas.
 
 ### 2. Dashboard Home Staff (`OverviewSection.tsx`)
-- **Tatami Hoy**: El encabezado de asistencia se adapta dinámicamente al vocabulario (`vocab.attendance`).
-- **Globos de Asistencia**: Visualización en tiempo real de los alumnos presentes mediante avatares superpuestos.
-- **Enfoque Operativo**: Se oculta la sección de horarios escolares (`TodaySchedule`) para mantener la interfaz limpia y centrada en la actividad actual del Dojo.
+- **Fusión de Historial**: Se unificó la sección "Tatami Hoy" con el Historial Mensual. Las tarjetas diarias ahora centralizan toda la información de presencia.
+- **Visor Interactivo**: Implementación de un pre-visor dinámico de alumnos que reacciona al toque de cada tarjeta, eliminando la necesidad de abrir modales para consultas rápidas.
+- **Enfoque Operativo**: Se oculta la sección de horarios escolares (`TodaySchedule`) en contextos de artes marciales para mantener la interfaz centrada en la actividad del día.
+- **Animaciones Premium**: Uso de entradas escalonadas (staggered) y curvas elásticas (`spring`) para transiciones de alta calidad táctil.
 
 ### 3. Hooks de Lógica Staff (`src/hooks/useMartialArtsData.ts`)
 - Gestiona el historial de asistencia al Tatami.

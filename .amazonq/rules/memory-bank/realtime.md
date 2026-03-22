@@ -559,6 +559,10 @@ useRealtimeChannel(
 
 ---
 
+### StudentCheckedIn / StudentCheckedOut (Historial Mensual)
+- **Frontend Ref** (`OverviewSection.tsx`): El componente escucha estos eventos para disparar `loadAttendanceHistory()`. Esto asegura que el carrusel de tarjetas y el visor interactivo reflejen los cambios sin refrescar la página.
+- **Optimización**: Se utiliza un `refreshDataRef` para evitar cierres viciados (stale closures) en el listener de Echo, garantizando que el fetch siempre use el `slug` y `token` actuales.
+
 ## Próximos Eventos (Pendientes)
 
 ### PaymentReceived

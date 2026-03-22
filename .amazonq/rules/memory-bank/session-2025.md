@@ -234,7 +234,25 @@ Se ha potenciado el Dashboard principal (Staff) para la industria de Artes Marci
 
 ---
 
-## Pendientes Próxima Sesión (v2.5)
+## Consolidación: Historial Interactivo & Animaciones Premium (Marzo 2026)
 
-1. **Refinar Rendición**: Pulir la visualización de gastos en el portal de apoderados.
-2. **Optimización de Notificaciones**: Asegurar que los badges se actualicen instantáneamente en todas las vistas tras lecturas.
+Se ha transformado la experiencia de gestión de asistencia de Artes Marciales hacia un modelo más fluido y moderno.
+
+### 1. Fusión de Secciones (Tatami + Historial)
+- Se eliminó el bloque redundante "Tatami Hoy".
+- El **Historial Mensual** ahora es el centro de mando, mostrando presencia diaria en un carrusel compacto.
+
+### 2. Visor de Alumnos Interactivo
+- Implementación de un pre-visor que reacciona al toque de cada día en el historial.
+- Permite ver quién está entrenando hoy o quién entrenó en días pasados sin cambiar de vista.
+
+### 3. Animaciones de Grado Nativo (Connected)
+- **Cubic-Bezier Custom**: Modales con efecto de rebote ("springy").
+- **Staggered Entry**: Carga escalonada de registros para un efecto visual de barrido.
+- **Micro-gestos**: Feedback táctil (`scale-90`) en botones críticos como "Ver listado".
+
+| Archivo | Rol | Cambio |
+|---------|-----|--------|
+| `OverviewSection.tsx` | UI Principal Staff | Fusión de secciones, visor dinámico y animaciones |
+| `AdminModals.tsx` | Modales de Detalle | Implementación de staggered entrance y springy transitions |
+| `useRealtimeChannel.ts` | Sincronización | Soporte para recarga de historial en vivo |
