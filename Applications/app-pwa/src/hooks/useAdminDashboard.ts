@@ -201,10 +201,10 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         init();
     }, [setBranding]);
 
-    // Derived refresh with attendance calculation
-    const refreshPayersAndAttendance = async (m?: number, y?: number, f?: string) => {
+    // Derived refresh with attendance calculation (Used for Initial Load and Sync)
+    const refreshPayersAndAttendance = async (m?: number, y?: number, f?: string, updateAttendance = false) => {
         await common.refreshPayers(m, y, f);
-        if (branding?.industry === 'martial_arts' || !branding?.industry) {
+        if (updateAttendance && (branding?.industry === 'martial_arts' || !branding?.industry)) {
             const currentAttendance = new Set<string>();
             common.payers.forEach((p: any) => {
                 const students = p.enrolledStudents || p.students || [];
@@ -215,17 +215,20 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
     };
 
     // WebSockets
-    useRealtimeVisibility(() => refreshPayersAndAttendance(selectedMonth, selectedYear, paymentFilter));
+    useRealtimeVisibility(() => refreshPayersAndAttendance(selectedMonth, selectedYear, paymentFilter, true));
 
     useRealtimeChannel(`attendance.${branding?.slug}`, {
         'student.checked-in': (data: any) => {
-            martialArts.setAttendance((prev: Set<string>) => new Set(prev).add(String(data.studentId)));
+            const sid = String(data.studentId);
+            martialArts.setAttendance((prev: Set<string>) => new Set(prev).add(sid));
             setLastCheckedInStudent({ ...data, _ts: Date.now() });
-            refreshPayersAndAttendance(selectedMonth, selectedYear, paymentFilter);
+            // Defer full refresh to update list colors/status without flickering the bubble/emerald state
+            setTimeout(() => common.refreshPayers(selectedMonth, selectedYear, paymentFilter), 1000);
         },
         'student.checked-out': (data: any) => {
-            martialArts.setAttendance((prev: Set<string>) => { const next = new Set(prev); next.delete(String(data.studentId)); return next; });
-            refreshPayersAndAttendance(selectedMonth, selectedYear, paymentFilter);
+            const sid = String(data.studentId);
+            martialArts.setAttendance((prev: Set<string>) => { const next = new Set(prev); next.delete(sid); return next; });
+            setTimeout(() => common.refreshPayers(selectedMonth, selectedYear, paymentFilter), 1000);
         },
         'schedule.updated': () => common.loadSchedules(),
     }, !!branding?.slug);
