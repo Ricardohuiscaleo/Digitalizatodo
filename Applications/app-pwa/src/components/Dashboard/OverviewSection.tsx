@@ -148,6 +148,112 @@ export default function OverviewSection(props: OverviewSectionProps) {
                             )}
                         </div>
                     </div>
+
+                    {/* Historial Mensual — Tarjetas Horizontales */}
+                    <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-zinc-100 mt-4 animate-in slide-in-from-bottom-2 duration-500">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Historial Mensual</h3>
+                            
+                            {/* Selector de Mes */}
+                            <div className="flex items-center gap-2 bg-zinc-50 rounded-full px-3 py-1 border border-zinc-100">
+                                <button 
+                                    onClick={() => setHistoryMonth(prev => prev === 1 ? 12 : prev - 1)}
+                                    className="text-zinc-400 hover:text-zinc-900 transition-colors"
+                                >
+                                    <ChevronLeft size={16} />
+                                </button>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-900 min-w-[60px] text-center">
+                                    {new Date(historyYear, historyMonth - 1).toLocaleDateString('es-CL', { month: 'short' })} {historyYear}
+                                </span>
+                                <button 
+                                    onClick={() => setHistoryMonth(prev => prev === 12 ? 1 : prev + 1)}
+                                    className="text-zinc-400 hover:text-zinc-900 transition-colors"
+                                >
+                                    <ChevronRight size={16} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {attendanceHistory.length > 0 ? (
+                            <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar -mx-2 px-2 snap-x">
+                                {(() => {
+                                    // Agrupar por día para las tarjetas
+                                    const groups: { [key: string]: any } = {};
+                                    attendanceHistory.forEach(record => {
+                                        const d = record.date;
+                                        if (!groups[d]) {
+                                            groups[d] = { count: 0 };
+                                        }
+                                        if (record.status === 'present') groups[d].count++;
+                                    });
+
+                                    // Generar todos los días del mes actual o seleccionado de forma descendente
+                                    const lastDay = new Date(historyYear, historyMonth, 0).getDate();
+                                    const todayNum = now.getDate();
+                                    const isCurrentMonth = historyMonth === (now.getMonth() + 1) && historyYear === now.getFullYear();
+                                    
+                                    // Si es el mes actual, empezamos desde el día actual, si no, desde el último día del mes
+                                    const startDay = isCurrentMonth ? todayNum : lastDay;
+                                    const days = [];
+                                    
+                                    for (let i = startDay; i >= 1; i--) {
+                                        const dStr = `${historyYear}-${String(historyMonth).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                                        const dateObj = new Date(historyYear, historyMonth - 1, i);
+                                        const dayName = dateObj.toLocaleDateString('es-CL', { weekday: 'short' });
+                                        const stats = groups[dStr];
+                                        const isToday = isCurrentMonth && i === todayNum;
+                                        
+                                        days.push(
+                                            <button
+                                                key={dStr}
+                                                onClick={() => setSelectedHistoryDate(dStr)}
+                                                className={`flex-shrink-0 w-20 aspect-[3/4] rounded-3xl p-3 flex flex-col items-center justify-between transition-all active:scale-95 snap-start shadow-sm border-2 ${
+                                                    isToday 
+                                                        ? 'bg-blue-50 border-blue-500 ring-2 ring-blue-100' 
+                                                        : 'bg-zinc-50 border-zinc-100 hover:bg-zinc-100'
+                                                }`}
+                                            >
+                                                <span className={`text-[9px] font-black uppercase tracking-widest ${isToday ? 'text-blue-600' : 'text-zinc-400'}`}>
+                                                    {dayName}
+                                                </span>
+                                                <span className={`text-2xl font-black tracking-tighter ${isToday ? 'text-blue-900' : 'text-zinc-900'}`}>
+                                                    {i}
+                                                </span>
+                                                <div className="flex flex-col items-center">
+                                                    {stats ? (
+                                                        <>
+                                                            <span className={`text-[14px] font-black leading-none ${isToday ? 'text-blue-600' : 'text-emerald-600'}`}>
+                                                                {stats.count}
+                                                            </span>
+                                                            <span className="text-[7px] font-black text-zinc-400 uppercase tracking-tighter">Asistencias</span>
+                                                        </>
+                                                    ) : (
+                                                        <span className="text-[7px] font-black text-zinc-300 uppercase tracking-tighter leading-tight text-center">Sin<br/>asistencia</span>
+                                                    )}
+                                                </div>
+                                            </button>
+                                        );
+                                    }
+                                    return days;
+                                })()}
+                            </div>
+                        ) : (
+                            <div className="py-8 bg-zinc-50 rounded-[2rem] border-2 border-dashed border-zinc-100 flex flex-col items-center justify-center">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300">Sin registros este mes</p>
+                            </div>
+                        )}
+
+                        {/* Link al listado completo */}
+                        <div className="mt-4 pt-4 border-t border-zinc-50">
+                            <button 
+                                onClick={() => setActiveTab?.('attendance')}
+                                className="w-full flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-colors"
+                            >
+                                Ver Detalle Completo
+                                <ArrowRight size={14} />
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
