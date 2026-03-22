@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { getRegistrationPage, registerStudent } from "@/lib/api";
-import { Loader2, CheckCircle2, Eye, EyeOff, Users } from "lucide-react";
+import { Loader2, CheckCircle2, Eye, EyeOff, Users, Calendar } from "lucide-react";
 
 type IndustryConfig = {
   memberLabel: string;
@@ -83,7 +83,7 @@ export default function RegisterPage() {
     guardian_name: "", guardian_email: "", guardian_phone: "",
     password: "", password_confirmation: "",
     is_self_register: false,
-    self_student: { category: "adults", belt: "", degrees: 0, modality: "gi" },
+    self_student: { category: "adults", belt: "", degrees: 0, modality: "gi", birth_date: "" },
     students: [] as any[],
     plan_id: null,
   });
@@ -121,8 +121,12 @@ export default function RegisterPage() {
     if (config.showBJJGraduation) {
       if (form.is_self_register && !form.self_student.belt)
         e.self_belt = "Selecciona tu cinturón";
+      if (form.is_self_register && !form.self_student.birth_date)
+        e.self_birth = "Fecha de nacimiento obligatoria";
       if (!form.is_self_register && form.students.some(s => !s.belt))
         e.students_belt = "Todos los alumnos deben tener un cinturón seleccionado";
+      if (!form.is_self_register && form.students.some(s => !s.birth_date))
+        e.students_birth = "Todos los alumnos deben tener fecha de nacimiento";
     }
 
     setErrors(e);
@@ -305,7 +309,18 @@ export default function RegisterPage() {
               </label>
 
               {form.is_self_register && config.showBJJGraduation && (
-                <div className="mt-8 space-y-5 pt-8 border-t border-zinc-800 animate-in fade-in zoom-in duration-500">
+                <div className="mt-8 space-y-6 pt-8 border-t border-zinc-800 animate-in fade-in zoom-in duration-500">
+                  <div className="space-y-3">
+                    <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500 flex items-center gap-2 px-1">
+                       <Calendar size={12} className="text-zinc-600" />
+                       Tu Fecha de Nacimiento
+                    </label>
+                    <input type="date" value={form.self_student.birth_date}
+                      onChange={e => setForm({ ...form, self_student: { ...form.self_student, birth_date: e.target.value } })}
+                      className={`w-full h-12 bg-zinc-950/50 rounded-2xl px-5 text-sm text-white border transition-all outline-none font-bold ${errors.self_birth ? "border-red-500/50" : "border-zinc-800 focus:border-amber-500/50"}`}
+                    />
+                  </div>
+
                   <div className="space-y-3">
                     <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500">Tu Cinturón actual</label>
                     <div className="flex gap-1.5 h-10">
@@ -372,7 +387,7 @@ export default function RegisterPage() {
                 {config.showSelfRegister ? `Otros ${config.membersLabel.toLowerCase()}` : `${config.membersLabel} a inscribir`}
               </label>
               <button type="button"
-                onClick={() => setForm({ ...form, students: [...form.students, { name: "", category: config.courseOptions[0].value, belt: "", degrees: 0, modality: "gi" }] })}
+                onClick={() => setForm({ ...form, students: [...form.students, { name: "", category: config.courseOptions[0].value, belt: "", degrees: 0, modality: "gi", birth_date: "" }] })}
                 className="text-[10px] font-black uppercase tracking-widest text-amber-500 hover:text-amber-400 transition-colors flex items-center gap-2">
                 <span className="w-5 h-5 bg-amber-500/10 rounded flex items-center justify-center">+</span>
                 Agregar
@@ -402,6 +417,17 @@ export default function RegisterPage() {
                         <option key={opt.value} value={opt.value} className="bg-zinc-900 text-white">{opt.label}</option>
                       ))}
                     </select>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500 flex items-center gap-2 px-1">
+                       <Calendar size={12} className="text-zinc-600" />
+                       Fecha de Nacimiento
+                    </label>
+                    <input type="date" value={s.birth_date}
+                      onChange={e => { const st = [...form.students]; st[i].birth_date = e.target.value; setForm({ ...form, students: st }); }}
+                      className={`w-full h-12 bg-zinc-950/50 rounded-2xl px-5 text-sm text-white border transition-all outline-none font-bold ${errors.students_birth ? "border-red-500/50" : "border-zinc-800 focus:border-amber-500/50"}`}
+                    />
                   </div>
 
                   {/* BJJ FIELDS */}
