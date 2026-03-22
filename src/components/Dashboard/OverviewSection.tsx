@@ -65,12 +65,12 @@ export default function OverviewSection(props: OverviewSectionProps) {
                         key={i} 
                         className={`${card.bgClass} rounded-2xl sm:rounded-[3rem] px-2 sm:px-8 py-3.5 sm:py-10 border border-zinc-100 shadow-sm flex flex-col justify-between aspect-square`}
                     >
-                        {/* Top: Icon (50%) + Number (50%) */}
-                        <div className="grid grid-cols-2 items-center gap-1 sm:gap-2">
-                            <div className="flex justify-start items-center">
+                        {/* Top: Icon (30%) + Number (70%) */}
+                        <div className="flex items-center justify-between gap-1 sm:gap-2">
+                            <div className="w-[30%] shrink-0 flex justify-start items-center">
                                 {card.icon}
                             </div>
-                            <div className="flex justify-end items-center">
+                            <div className="w-[70%] flex justify-end items-center">
                                 <p className={`text-xl sm:text-5xl font-black ${card.colorClass} tracking-tighter leading-none truncate`}>
                                     {card.value}
                                 </p>
