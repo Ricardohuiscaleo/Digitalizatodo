@@ -64,7 +64,7 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
         const approvedAmount = payer.payments?.filter((p: any) => p.status === 'approved').reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
         
         const hasReview = reviewAmount > 0;
-        const numEnrollments = payer.enrolledStudents.length;
+        const numEnrollments = (payer.enrolledStudents || payer.students || []).length;
         const displayAmount = paymentFilter === 'history' 
             ? (approvedAmount + reviewAmount + pendingAmount)
             : ((hasReview || (paymentFilter === 'pending' && reviewAmount > 0)) ? reviewAmount : (pendingAmount || 0));
@@ -219,7 +219,7 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                     const isPaid = (payer.status === 'paid');
                     const isReview = !isPaid && stats.hasReview;
 
-                    return payer.enrolledStudents.map((student: any) => {
+                    return (payer.enrolledStudents || payer.students || []).map((student: any) => {
                         const ringColor = isPaid ? 'ring-emerald-400' : isReview ? 'ring-amber-400' : 'ring-rose-400';
                         const dotColor = isPaid ? 'bg-emerald-500' : isReview ? 'bg-amber-400' : 'bg-rose-500';
 
