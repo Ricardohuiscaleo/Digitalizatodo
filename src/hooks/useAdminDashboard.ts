@@ -50,9 +50,17 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
     const [paymentFilter, setPaymentFilter] = useState('pending');
     const [selectedMonth, setSelectedMonth] = useState(nowCL().getMonth() + 1);
     const [selectedYear, setSelectedYear] = useState(nowCL().getFullYear());
-    const [historyMonth, setHistoryMonth] = useState(nowCL().getMonth());
-    const [historyYear, setHistoryYear] = useState(nowCL().getFullYear());
     const [now, setNow] = useState(nowCL());
+    const [historyMonth, setHistoryMonth] = useState(nowCL().getMonth() + 1);
+    const [historyYear, setHistoryYear] = useState(nowCL().getFullYear());
+
+    // Sincronización forzada para evitar estados cacheados (Ej: Marzo vs Febrero)
+    useEffect(() => {
+        const curM = nowCL().getMonth() + 1;
+        if (historyMonth !== curM && !isDemo) {
+            setHistoryMonth(curM);
+        }
+    }, []); // Una sola vez al montar
     const [regPageCode, setRegPageCode] = useState<string | null>(null);
     const [showQRModal, setShowQRModal] = useState(false);
     const [proofModalUrl, setProofModalUrl] = useState<string | null>(null);
