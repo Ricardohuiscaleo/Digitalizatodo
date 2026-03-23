@@ -191,6 +191,64 @@ const ModernDateInput = ({ value, onChange, placeholder, error, isDarkMode }: an
   );
 };
 
+const ALLIANCE_BJJ_GRADUATION = [
+  {
+    id: 'white',
+    name: 'Blanco',
+    level: 'Nivel fundamentos',
+    totalClasses: 150,
+    classesPerStripe: 30,
+    stripes: 4,
+    ibjjfMinYears: null,
+    color: '#ffffff',
+    textColor: 'text-zinc-400',
+  },
+  {
+    id: 'blue',
+    name: 'Azul',
+    level: 'Nivel intermedio bajo',
+    totalClasses: 325,
+    classesPerStripe: 65,
+    stripes: 4,
+    ibjjfMinYears: null,
+    color: '#1e40af',
+    textColor: 'text-blue-100',
+  },
+  {
+    id: 'purple',
+    name: 'Morado',
+    level: 'Nivel intermedio avanzado',
+    totalClasses: 375,
+    classesPerStripe: 75,
+    stripes: 4,
+    ibjjfMinYears: 2,
+    color: '#7e22ce',
+    textColor: 'text-purple-100',
+  },
+  {
+    id: 'brown',
+    name: 'Café',
+    level: 'Nivel avanzado',
+    totalClasses: 375,
+    classesPerStripe: 75,
+    stripes: 4,
+    ibjjfMinYears: 1.5,
+    color: '#78350f',
+    textColor: 'text-amber-100',
+  },
+  {
+    id: 'black',
+    name: 'Negro',
+    level: 'Maestría',
+    totalClasses: null,
+    classesPerStripe: null,
+    stripes: null,
+    ibjjfMinYears: 1.5,
+    color: '#18181b',
+    textColor: 'text-zinc-100',
+  },
+];
+
 export default function RegisterPage() {
   const { code } = useParams();
   const [tenant, setTenant] = useState<any>(null);
@@ -216,13 +274,12 @@ export default function RegisterPage() {
 
 
 
-  const BJJ_BELTS = [
-    { id: 'white', name: 'B', color: '#ffffff', textColor: 'text-zinc-400' },
-    { id: 'blue', name: 'A', color: '#1e40af', textColor: 'text-blue-100' },
-    { id: 'purple', name: 'M', color: '#7e22ce', textColor: 'text-purple-100' },
-    { id: 'brown', name: 'C', color: '#78350f', textColor: 'text-amber-100' },
-    { id: 'black', name: 'N', color: '#18181b', textColor: 'text-zinc-100', border: 'border-zinc-700' },
-  ];
+  const BJJ_BELTS = ALLIANCE_BJJ_GRADUATION.map(b => ({
+    id: b.id,
+    name: b.name[0],
+    color: b.color,
+    textColor: b.textColor,
+  }));
 
   useEffect(() => {
     getRegistrationPage(code as string).then(t => {
