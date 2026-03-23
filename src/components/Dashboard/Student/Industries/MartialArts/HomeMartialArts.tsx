@@ -1,19 +1,11 @@
 "use client";
 
 import React from "react";
-import { 
-    ChevronRight, 
-    CheckCircle2, 
-    RefreshCw,
-    CreditCard,
-    Camera,
-    QrCode,
-    Loader2
-} from "lucide-react";
+import { ChevronRight, CheckCircle2, RefreshCw, CreditCard, QrCode } from "lucide-react";
 import { todayCL } from "@/lib/utils";
-import { TodaySchedule } from "../../TodaySchedule";
 import { NavSection } from "@/components/Navigation/BottomNav";
-import { getBeltColor } from "@/lib/industryUtils";
+import { BeltDisplay } from "@/components/Dashboard/Industries/MartialArts/BeltDisplay";
+import { calcBeltProgress, getBeltHex } from "@/lib/industryUtils";
 
 interface HomeMartialArtsProps {
     guardian: any;
@@ -31,6 +23,7 @@ interface HomeMartialArtsProps {
     profileFileInputRef: React.MutableRefObject<HTMLInputElement | null>;
     setActiveScanner: (id: string | null) => void;
     vocab: any;
+    isDark?: boolean;
 }
 
 export function HomeMartialArts({
@@ -39,176 +32,195 @@ export function HomeMartialArts({
     hasPendingReview,
     totalDue,
     setActiveSection,
-    schedulesList,
     primaryColor,
     students,
-    isUploadingPhoto,
-    studentPhotoLoadingId,
-    studentForPhotoRef,
-    profileFileInputRef,
     setActiveScanner,
-    vocab
+    vocab,
+    isDark = false,
 }: HomeMartialArtsProps) {
+    const todayStr = todayCL();
+
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="mb-4">
-                <h1 className="text-2xl font-black text-zinc-900 leading-tight">Hola, {guardian.name.split(' ')[0]}</h1>
-                <p className="text-[11px] font-bold text-zinc-500 mt-1">Gestiona tu asistencia en el {vocab.placeLabel} 😊</p>
+        <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* Saludo */}
+            <div>
+                <h1 className={`text-2xl font-black leading-tight ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+                    Hola, {guardian.name.split(' ')[0]}
+                </h1>
+                <p className={`text-[11px] font-bold mt-0.5 ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                    Gestiona tus pagos y asistencia en el {vocab.placeLabel} 😊
+                </p>
             </div>
 
-            {/* Financial Status Card */}
+            {/* Estado financiero */}
             {totalDueOrReview ? (
                 hasPendingReview ? (
-                    <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-[2.5rem] p-6 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden group">
+                    <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-[2.5rem] p-6 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden">
                         <div className="relative z-10">
                             <div className="flex items-center gap-2 mb-1">
                                 <RefreshCw size={12} className="animate-[spin_3s_linear_infinite]" />
                                 <p className="text-[10px] font-black uppercase tracking-widest opacity-90">Pago en revisión</p>
                             </div>
                             <h2 className="text-4xl font-black mb-2">${Number(totalDue).toLocaleString("es-CL")}</h2>
-                            <p className="text-xs opacity-80 mb-4">Te notificaremos cuando sea aprobado 🔔</p>
-                            <button onClick={() => setActiveSection("payments")} className="bg-white/20 backdrop-blur-md border border-white/30 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-white/30 transition-all flex items-center gap-2">
+                            <button onClick={() => setActiveSection("payments")} className="bg-white/20 backdrop-blur-md border border-white/30 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2">
                                 Ver mis pagos <ChevronRight size={14} />
                             </button>
                         </div>
-                        <CreditCard className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10 -rotate-12 group-hover:scale-110 transition-transform duration-700" />
+                        <CreditCard className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10 -rotate-12" />
                     </div>
                 ) : (
-                    <div className="bg-gradient-to-br from-red-500 to-orange-600 rounded-[2.5rem] p-6 text-white shadow-xl shadow-red-500/20 relative overflow-hidden group">
+                    <div className="bg-gradient-to-br from-red-500 to-orange-600 rounded-[2.5rem] p-6 text-white shadow-xl shadow-red-500/20 relative overflow-hidden">
                         <div className="relative z-10">
                             <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Saldo pendiente</p>
                             <h2 className="text-4xl font-black mb-4">${Number(totalDue).toLocaleString("es-CL")}</h2>
-                            <button onClick={() => setActiveSection("payments")} className="bg-white/20 backdrop-blur-md border border-white/30 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-white/30 transition-all flex items-center gap-2">
+                            <button onClick={() => setActiveSection("payments")} className="bg-white/20 backdrop-blur-md border border-white/30 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2">
                                 Pagar ahora <ChevronRight size={14} />
                             </button>
                         </div>
-                        <CreditCard className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10 -rotate-12 group-hover:scale-110 transition-transform duration-700" />
+                        <CreditCard className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10 -rotate-12" />
                     </div>
                 )
             ) : (
-                <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-[2.5rem] p-6 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden">
-                    <div className="relative z-10">
-                        <CheckCircle2 className="w-8 h-8 mb-2" />
-                        <h2 className="text-xl font-black">¡Estás al día!</h2>
-                        <p className="text-xs opacity-80 mt-1">No tienes {vocab.cat1.toLowerCase()}s pendientes.</p>
+                <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-[2.5rem] p-5 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden">
+                    <div className="relative z-10 flex items-center gap-3">
+                        <CheckCircle2 className="w-7 h-7 shrink-0" />
+                        <div>
+                            <h2 className="text-lg font-black">¡Estás al día!</h2>
+                            <p className="text-[10px] opacity-80">Sin pagos pendientes 🎉</p>
+                        </div>
                     </div>
-                    <CreditCard className="absolute -right-4 -bottom-4 w-32 h-32 opacity-5 -rotate-12" />
                 </div>
             )}
 
-            {/* Premium Credits Card (Consumables) */}
+            {/* VIP Credits */}
             {students.some(s => s.consumable_credits > 0) && (
-              <div className="bg-zinc-950 rounded-[2.5rem] p-6 text-white shadow-2xl relative overflow-hidden group border border-[#c9a84c]/30">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-[#c9a84c]/10 rounded-full blur-3xl" />
-                <div className="relative z-10 flex justify-between items-center text-left">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="bg-[#c9a84c] text-black text-[7px] font-black uppercase px-2 py-0.5 rounded-full tracking-widest">VIP EXPERIENCE</span>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-[#c9a84c]">Clases Personalizadas</p>
+                <div className="bg-zinc-950 rounded-[2.5rem] p-5 text-white shadow-2xl relative overflow-hidden border border-[#c9a84c]/30">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#c9a84c]/10 rounded-full blur-3xl" />
+                    <div className="relative z-10 flex justify-between items-center">
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className="bg-[#c9a84c] text-black text-[7px] font-black uppercase px-2 py-0.5 rounded-full tracking-widest">VIP</span>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-[#c9a84c]">Clases Personalizadas</p>
+                            </div>
+                            <div className="flex items-baseline gap-1.5">
+                                <span className="text-4xl font-black">{students.reduce((a, s) => a + (s.consumable_credits || 0), 0)}</span>
+                                <span className="text-xs font-bold text-zinc-500 uppercase">Disponibles</span>
+                            </div>
+                        </div>
+                        <div className="w-12 h-12 border-2 border-[#c9a84c] rounded-full flex items-center justify-center animate-pulse">
+                            <span className="text-[#c9a84c] font-black text-xl">★</span>
+                        </div>
                     </div>
-                    <div className="flex items-baseline gap-2">
-                        <h2 className="text-4xl font-black text-white">{students.reduce((acc, s) => acc + (s.consumable_credits || 0), 0)}</h2>
-                        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Disponibles</span>
-                    </div>
-                  </div>
-                  <div className="bg-[#c9a84c]/10 p-4 rounded-3xl border border-[#c9a84c]/20">
-                     <div className="w-10 h-10 border-2 border-[#c9a84c] rounded-full flex items-center justify-center animate-pulse">
-                        <span className="text-[#c9a84c] font-black text-xl">★</span>
-                     </div>
-                  </div>
                 </div>
-                <div className="absolute -right-4 -bottom-4 w-32 h-32 text-[#c9a84c] opacity-5 -rotate-12 font-black text-8xl pointer-events-none select-none">VIP</div>
-              </div>
             )}
 
-            {/* Attendance Sections */}
-            <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-1">
-                    <div className="w-1 h-4 bg-orange-500 rounded-full" />
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.1em] text-zinc-400">
-                        Registrar asistencia {new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })}
+            {/* Cards de atletas */}
+            <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                    <div className="w-1 h-4 rounded-full" style={{ backgroundColor: primaryColor }} />
+                    <h3 className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                        {new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </h3>
                 </div>
+
                 {students.map((student: any) => {
-                    const todayStr = todayCL();
-                    const isPresentToday = (student.recent_attendance || []).some((a: any) => a.date === todayStr && a.status === 'present');
+                    const isPresent = (student.recent_attendance || []).some((a: any) => a.date === todayStr && a.status === 'present');
+                    const progress = student.belt_rank
+                        ? calcBeltProgress(student.belt_rank, student.degrees ?? 0, student.belt_classes_at_promotion ?? 0, student.total_attendances ?? 0)
+                        : null;
+
                     return (
-                        <div key={student.id} className={`bg-white rounded-[2.5rem] p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition-all border-2 ${isPresentToday ? 'border-emerald-400 shadow-emerald-50' : 'border-zinc-100'}`}>
-                            <div className="flex items-center gap-4 relative z-10">
-                                <button
-                                    type="button"
-                                    className={`w-16 h-16 rounded-full overflow-hidden bg-zinc-100 shadow-md shrink-0 relative cursor-pointer z-30 active:scale-95 transition-transform touch-none border-2 ${isPresentToday ? 'border-emerald-400' : 'border-zinc-50'}`}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        studentForPhotoRef.current = student.id;
-                                        profileFileInputRef.current?.click();
-                                    }}
-                                >
-                                    {(isUploadingPhoto && !studentPhotoLoadingId) || studentPhotoLoadingId === student.id ? (
-                                        <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] flex flex-col items-center justify-center z-20">
-                                            <Loader2 className="animate-spin text-orange-500" size={18} />
-                                        </div>
-                                    ) : null}
-                                    {student.photo ? (
-                                        <img src={student.photo} alt={student.name} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-2xl font-black text-zinc-200">{student.name[0]}</div>
-                                    )}
-                                    <div className="absolute bottom-0 right-0 w-6 h-6 bg-white rounded-full shadow-lg flex items-center justify-center text-zinc-400 border border-zinc-100 z-10">
-                                        <Camera className="w-3.5 h-3.5" />
-                                    </div>
-                                </button>
+                        <div key={student.id} className={`rounded-[2rem] p-4 border transition-all ${
+                            isPresent
+                                ? 'border-emerald-400 bg-emerald-50/50 shadow-emerald-100 shadow-md'
+                                : isDark ? 'bg-zinc-900/50 border-zinc-800' : 'bg-white border-zinc-100 shadow-sm'
+                        }`}>
+                            <div className="flex items-center gap-4">
+                                {/* Foto */}
+                                <div className={`w-16 h-16 rounded-2xl overflow-hidden shrink-0 border-2 ${isPresent ? 'border-emerald-400' : 'border-zinc-100'}`}>
+                                    {student.photo
+                                        ? <img src={student.photo} alt={student.name} className="w-full h-full object-cover" />
+                                        : <div className={`w-full h-full flex items-center justify-center text-2xl font-black ${isDark ? 'bg-zinc-800 text-zinc-600' : 'bg-zinc-100 text-zinc-300'}`}>{student.name[0]}</div>
+                                    }
+                                </div>
+
+                                {/* Info */}
                                 <div className="flex-1 min-w-0">
-                                    <h4 className="font-black text-zinc-900 truncate">{student.name}</h4>
-                                    <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider mb-2">{student.category === 'kids' ? vocab.cat1 : student.category === 'adult' ? vocab.cat2 : student.category}</p>
-                                    {student.belt_rank && (
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <div className={`h-2 w-16 rounded-full ${getBeltColor(student.belt_rank)}`} />
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
-                                                {student.belt_rank === 'white' ? 'Blanco' : student.belt_rank === 'blue' ? 'Azul' : student.belt_rank === 'purple' ? 'Morado' : student.belt_rank === 'brown' ? 'Café' : 'Negro'}
-                                                {(student.degrees ?? 0) > 0 && ` • ${student.degrees} ${student.degrees === 1 ? 'raya' : 'rayas'}`}
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                        <p className={`text-sm font-black truncate ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+                                            {student.name.split(' ').slice(0, 2).join(' ')}
+                                        </p>
+                                        {isPresent && (
+                                            <span className="flex items-center gap-1 text-[7px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full shrink-0">
+                                                <CheckCircle2 size={8} /> Presente
                                             </span>
-                                        </div>
+                                        )}
+                                    </div>
+                                    <p className={`text-[9px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                                        {student.category === 'kids' ? vocab.cat1 : vocab.cat2}
+                                    </p>
+                                    {student.belt_rank && (
+                                        <BeltDisplay beltRank={student.belt_rank} degrees={student.degrees ?? 0} size="sm" />
                                     )}
                                     {student.consumable_credits > 0 && (
-                                        <div className="mt-2 flex items-center gap-1.5">
+                                        <div className="mt-1 flex items-center gap-1">
                                             <div className="w-1.5 h-1.5 rounded-full bg-[#c9a84c] animate-pulse" />
-                                            <span className="text-[9px] font-black uppercase text-[#c9a84c] tracking-tighter">
-                                                {student.consumable_credits} Clases VIP
-                                            </span>
+                                            <span className="text-[8px] font-black uppercase text-[#c9a84c]">{student.consumable_credits} VIP</span>
                                         </div>
                                     )}
-                                    {isPresentToday ? (
-                                        <p className="text-[8px] font-black text-emerald-600 uppercase tracking-tighter flex items-center gap-1.5 bg-emerald-50 w-fit px-2 py-1 rounded-full border border-emerald-200 mt-2">
-                                            <CheckCircle2 size={10} /> Presente
-                                        </p>
-                                    ) : (
-                                        <p className="text-[8px] font-black text-indigo-500 uppercase tracking-tighter flex items-center gap-1.5 bg-indigo-50/50 w-fit px-2 py-1 rounded-full border border-indigo-100/50">
-                                            Registra tu asistencia 👉🏻
-                                        </p>
-                                    )}
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setActiveScanner(student.id); }}
-                                        className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center shadow-lg shadow-zinc-200 active:scale-90 transition-all shrink-0 relative group/qr z-20 border border-zinc-300"
-                                    >
-                                        <QrCode size={28} className="text-orange-400 group-hover/qr:scale-110 transition-transform" />
-                                    </button>
-                                </div>
+
+                                {/* QR */}
+                                <button
+                                    onClick={() => setActiveScanner(student.id)}
+                                    className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition-all shrink-0 border ${
+                                        isPresent
+                                            ? 'bg-emerald-500 border-emerald-400 shadow-emerald-200'
+                                            : 'bg-zinc-900 border-zinc-700 shadow-zinc-200'
+                                    }`}
+                                >
+                                    <QrCode size={26} className={isPresent ? 'text-white' : 'text-orange-400'} />
+                                </button>
                             </div>
+
+                            {/* Progreso BJJ */}
+                            {progress && (
+                                <div className={`mt-3 rounded-xl p-3 border ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-zinc-50 border-zinc-100'}`}>
+                                    <div className="flex items-center justify-between mb-1.5">
+                                        <span className={`text-[8px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                                            Progreso cinturón
+                                        </span>
+                                        <span className={`text-[9px] font-black ${
+                                            progress.isReadyForPromotion ? 'text-[#c9a84c]' : isDark ? 'text-zinc-500' : 'text-zinc-400'
+                                        }`}>
+                                            {progress.isReadyForPromotion
+                                                ? `¡Listo → ${progress.nextBeltName}!`
+                                                : `${progress.classesForPromotion} clases → ${progress.nextBeltName ?? 'Maestría'}`}
+                                        </span>
+                                    </div>
+                                    <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}>
+                                        <div className="h-full rounded-full transition-all duration-700"
+                                            style={{
+                                                width: `${progress.progressPct}%`,
+                                                backgroundColor: getBeltHex(student.belt_rank),
+                                                boxShadow: `0 0 6px ${getBeltHex(student.belt_rank)}60`
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="flex justify-between mt-1">
+                                        <span className={`text-[9px] font-black ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                                            {progress.classesInBelt} clases
+                                        </span>
+                                        <span className={`text-[9px] ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>
+                                            / {progress.totalForBelt}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     );
                 })}
             </div>
-
-            {/* Daily Schedule */}
-            <TodaySchedule 
-                key={schedulesList.map((s:any)=>`${s.id}-${s.subject}-${s.color}`).join(',')} 
-                schedules={schedulesList} 
-                primaryColor={primaryColor} 
-                vocab={vocab} 
-            />
         </div>
     );
 }
