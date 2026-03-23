@@ -80,6 +80,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
         setBjjForm({
             name: student.name || '',
             phone: student.phone || '',
+            email: student.email || '',
             belt_rank: student.belt_rank || '',
             degrees: student.degrees ?? 0,
             gender: student.gender || '',
@@ -97,6 +98,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
         const fields: [string, string, (v: any) => string][] = [
             ['name', 'Nombre', v => v],
             ['phone', 'Teléfono', v => v || '—'],
+            ['email', 'Correo', v => v || '—'],
             ['belt_rank', 'Cinturón', v => BELT_LABELS[v] || v || '—'],
             ['degrees', 'Rayas', v => String(v)],
             ['category', 'Categoría', v => CATEGORY_LABELS[v] || v],
@@ -124,9 +126,9 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
         if (!editingStudent || !branding?.slug || !token) return;
         const promote = promoteRef.current;
         setSaving(true);
-        const { name, phone, previous_classes, ...bjjData } = bjjForm;
+        const { name, phone, email, previous_classes, ...bjjData } = bjjForm;
         await Promise.all([
-            updateStudentProfile(branding.slug, token, editingStudent.id, { name, phone }),
+            updateStudentProfile(branding.slug, token, editingStudent.id, { name, phone, email }),
             updateStudentBjj(branding.slug, token, editingStudent.id, { ...bjjData, previous_classes, promote }),
         ]);
         setSaving(false);
@@ -450,6 +452,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                     {([
                                         { label: 'Nombre completo', key: 'name', type: 'text' },
                                         { label: 'Teléfono', key: 'phone', type: 'tel' },
+                                        { label: 'Correo', key: 'email', type: 'email' },
                                     ] as const).map(({ label, key, type }) => (
                                         <div key={key}>
                                             <label className={`text-[8px] font-black uppercase tracking-widest block mb-1 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>{label}</label>
@@ -559,28 +562,63 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                             </div>
 
                             {/* Clases anteriores al sistema */}
-                            <div className={`rounded-2xl p-3 border ${isDark ? 'bg-zinc-800/50 border-zinc-700' : 'bg-zinc-50 border-zinc-100'}`}>
-                                <div className="flex items-center justify-between mb-2">
-                                    <div>
-                                        <p className={`text-[8px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Clases anteriores al sistema</p>
-                                        <p className={`text-[9px] mt-0.5 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Clases reales en DB: {editingStudent.total_attendances != null ? editingStudent.total_attendances - (editingStudent.previous_classes ?? 0) : '—'}</p>
+                            {(() => {
+                                const realClasses = editingStudent.total_attendances != null
+                                    ? editingStudent.total_attendances - (editingStudent.previous_classes ?? 0)
+                                    : 0;
+                                const total = Number(bjjForm.previous_classes || 0) + realClasses;
+                                return (
+                                    <div className={`rounded-2xl border overflow-hidden ${
+                                        isDark ? 'bg-zinc-800/50 border-zinc-700' : 'bg-zinc-50 border-zinc-200'
+                                    }`}>
+                                        {/* Fila 1: label + input */}
+                                        <div className="flex items-center gap-3 px-4 py-3">
+                                            <div className="flex-1 min-w-0">
+                                                <p className={`text-[8px] font-black uppercase tracking-[0.2em] leading-tight ${
+                                                    isDark ? 'text-zinc-500' : 'text-zinc-400'
+                                                }`}>Clases anteriores</p>
+                                                <p className={`text-[8px] mt-0.5 ${
+                                                    isDark ? 'text-zinc-600' : 'text-zinc-500'
+                                                }`}>al sistema</p>
+                                            </div>
+                                            <input
+                                                type="text"
+                                                inputMode="numeric"
+                                                value={bjjForm.previous_classes || ''}
+                                                onChange={e => {
+                                                    const v = e.target.value.replace(/\D/g, '');
+                                                    setBjjForm((f: any) => ({ ...f, previous_classes: v === '' ? 0 : Number(v) }));
+                                                }}
+                                                placeholder="ej: 45"
+                                                className={`w-24 border rounded-xl px-3 py-2 text-sm font-black text-center focus:outline-none flex-shrink-0 ${
+                                                    isDark ? 'bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600' : 'bg-white border-zinc-200 text-zinc-900 placeholder:text-zinc-300'
+                                                }`}
+                                            />
+                                        </div>
+                                        {/* Fila 2: stats */}
+                                        <div className={`grid grid-cols-2 divide-x border-t ${
+                                            isDark ? 'divide-zinc-700 border-zinc-700' : 'divide-zinc-200 border-zinc-200'
+                                        }`}>
+                                            <div className="px-4 py-2.5">
+                                                <p className={`text-[8px] font-black uppercase tracking-widest ${
+                                                    isDark ? 'text-zinc-600' : 'text-zinc-400'
+                                                }`}>En sistema</p>
+                                                <p className={`text-xl font-black mt-0.5 ${
+                                                    isDark ? 'text-zinc-300' : 'text-zinc-700'
+                                                }`}>{realClasses}</p>
+                                            </div>
+                                            <div className="px-4 py-2.5">
+                                                <p className={`text-[8px] font-black uppercase tracking-widest ${
+                                                    isDark ? 'text-zinc-500' : 'text-zinc-400'
+                                                }`}>Total real</p>
+                                                <p className={`text-xl font-black mt-0.5 ${
+                                                    isDark ? 'text-white' : 'text-zinc-900'
+                                                }`}>{total}</p>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className={`text-right`}>
-                                        <p className={`text-[8px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Total</p>
-                                        <p className={`text-lg font-black ${isDark ? 'text-white' : 'text-zinc-900'}`}>
-                                            {Number(bjjForm.previous_classes || 0) + (editingStudent.total_attendances != null ? editingStudent.total_attendances - (editingStudent.previous_classes ?? 0) : 0)}
-                                        </p>
-                                    </div>
-                                </div>
-                                <input
-                                    type="number" min={0} value={bjjForm.previous_classes}
-                                    onChange={e => setBjjForm((f: any) => ({ ...f, previous_classes: Number(e.target.value) }))}
-                                    placeholder="0"
-                                    className={`w-full border rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none ${
-                                        isDark ? 'bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-700' : 'bg-white border-zinc-200 text-zinc-900'
-                                    }`}
-                                />
-                            </div>
+                                );
+                            })()}
                         </div>
 
                         {/* Acciones */}
