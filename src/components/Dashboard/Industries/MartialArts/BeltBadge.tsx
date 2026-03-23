@@ -23,12 +23,12 @@ export function BeltBadge({ beltRank, degrees = 0 }: BeltBadgeProps) {
     // Cinturón: rectángulo principal + nudo central + rayas doradas a la derecha
     const W = 52;
     const H = 14;
-    const tipW = 14;  // punta negra al extremo derecho
+    const tipW = 18;  // punta negra al extremo derecho
     const knotW = 10;
     const knotH = H;
     const knotX = 8;  // nudo cerca del extremo izquierdo (como cinturón real)
-    const stripeW = 3;
-    const stripeGap = 1.5;
+    const stripeW = 2.5;
+    const stripeGap = 1;
     const stripeCount = Math.min(degrees, 4);
 
     return (
@@ -38,17 +38,19 @@ export function BeltBadge({ beltRank, degrees = 0 }: BeltBadgeProps) {
             viewBox={`0 0 ${W} ${H}`}
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            style={{ display: "block" }}
+            style={{ display: "block", filter: "drop-shadow(0 0 2px rgba(0,0,0,0.8))" }}
         >
             {/* Cuerpo del cinturón */}
             <rect x={0} y={2} width={W} height={H - 4} rx={4} fill={hex}
-                stroke={beltStroke} strokeWidth={isWhite ? 0.8 : 0}
+                stroke={isWhite ? "#d4d4d8" : "rgba(255,255,255,0.15)"} strokeWidth={0.8}
             />
 
-            {/* Punta negra — extremo derecho */}
-            <rect x={W - tipW} y={2} width={tipW} height={H - 4} rx={0} fill="#18181b" />
+            {/* Punta negra — extremo derecho, con borde claro para contraste */}
+            <rect x={W - tipW} y={2} width={tipW} height={H - 4} rx={0} fill="#27272a" />
             {/* Redondear solo la esquina derecha de la punta */}
-            <rect x={W - 4} y={2} width={4} height={H - 4} rx={3} fill="#18181b" />
+            <rect x={W - 4} y={2} width={4} height={H - 4} rx={3} fill="#27272a" />
+            {/* Separador visible entre cuerpo y punta */}
+            <line x1={W - tipW} y1={2} x2={W - tipW} y2={H - 2} stroke="rgba(255,255,255,0.25)" strokeWidth={0.8} />
 
             {/* Nudo central — rectángulo más alto */}
             <rect x={knotX} y={0} width={knotW} height={knotH} rx={2}

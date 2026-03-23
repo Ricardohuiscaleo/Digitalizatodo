@@ -3,6 +3,7 @@
 import React from 'react';
 import { Search, Eye, RefreshCw, RefreshCw as RefreshCwIcon, CheckCircle2, XCircle, Calendar, ChevronDown, Users, ChevronRight } from 'lucide-react';
 import BubblePaymentModal from './BubblePaymentModal';
+import { StudentAvatar } from './Industries/MartialArts/StudentAvatar';
 
 interface PaymentsSectionProps {
     payers: any[];
@@ -236,11 +237,18 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                                 onTouchEnd={handleLongPressEnd}
                                 onClick={() => setBubbleModalPayer({ ...payer, _focusStudent: student })}
                             >
-                                <div className="relative">
-                                    <img src={student.photo || payer.photo} className={`w-[72px] h-[72px] min-w-[72px] min-h-[72px] rounded-full object-cover ring-4 ${ringColor}`} />
-                                    <div className={`absolute bottom-0 right-0 w-5 h-5 rounded-full border-2 border-white ${dotColor}`} />
-                                </div>
-                                <p className="text-[9px] font-black uppercase text-zinc-700 max-w-[72px] text-center line-clamp-2">{student.name.split(' ')[0]}</p>
+                            <StudentAvatar
+                                        photo={student.photo || payer.photo}
+                                        name={student.name}
+                                        size={72}
+                                        ring={`${ringColor} bg-zinc-100`}
+                                        beltRank={student.belt_rank}
+                                        degrees={student.degrees ?? 0}
+                                        payerStatus={isPaid ? 'paid' : isReview ? 'review' : 'pending'}
+                                        showPayerDot
+                                        isDark={false}
+                                    />
+                                <p className="text-[9px] font-black uppercase text-zinc-700 max-w-[72px] text-center line-clamp-2 mt-1">{student.name.split(' ')[0]}</p>
                             </div>
                         );
                     });

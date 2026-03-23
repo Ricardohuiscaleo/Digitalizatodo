@@ -3,12 +3,13 @@
 import React from 'react';
 import { 
     Users, CheckCircle2, RefreshCw, XCircle, 
-    CalendarCheck, ChevronLeft, ChevronRight, Clock, User,
+    ChevronLeft, ChevronRight, Clock, User,
     ArrowRight
 } from 'lucide-react';
 import TodaySchedule from './TodaySchedule';
 import { nowCL } from '@/lib/utils';
-import { BeltDisplay } from './Industries/MartialArts/BeltDisplay';
+import { getClassesSinceLastStripe } from '@/lib/industryUtils';
+import { StudentAvatar } from './Industries/MartialArts/StudentAvatar';
 
 interface OverviewSectionProps {
     allStudents: any[];
@@ -49,20 +50,25 @@ export default function OverviewSection(props: OverviewSectionProps) {
     }, []);
 
     // Memoized grouping for cards and preview
-    const groupedHistory = React.useMemo(() => {
+    const { groupedHistory, totalCountByStudent } = React.useMemo(() => {
         const groups: { [key: string]: { count: number, students: any[] } } = {};
+        const totalCount: { [studentId: string]: number } = {};
+        const studentMap = new Map(allStudents.map(s => [String(s.id), s]));
         attendanceHistory.forEach(record => {
             const d = record.date;
-            if (!groups[d]) {
-                groups[d] = { count: 0, students: [] };
-            }
+            if (!groups[d]) groups[d] = { count: 0, students: [] };
             if (record.status === 'present') {
                 groups[d].count++;
-                if (record.student) groups[d].students.push(record.student);
+                if (record.student) {
+                    const full = studentMap.get(String(record.student.id));
+                    groups[d].students.push(full ? { ...record.student, ...full } : record.student);
+                    const sid = String(record.student.id);
+                    totalCount[sid] = (totalCount[sid] ?? 0) + 1;
+                }
             }
         });
-        return groups;
-    }, [attendanceHistory]);
+        return { groupedHistory: groups, totalCountByStudent: totalCount };
+    }, [attendanceHistory, allStudents]);
 
     // Auto-scroll al final para ver lo más reciente
     React.useEffect(() => {
@@ -325,29 +331,38 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                         {hasStudents ? (
                                             <div
                                                 key={activePreviewDate}
-                                                className="flex gap-4 overflow-x-auto py-2 px-1 no-scrollbar snap-x animate-in fade-in slide-in-from-bottom-2 duration-500"
+                                                className="flex gap-6 overflow-x-auto py-2 px-1 no-scrollbar snap-x animate-in fade-in slide-in-from-bottom-2 duration-500"
                                             >
-                                                {todayStudents.map((student: any, idx: number) => (
+                                                {todayStudents.map((student: any, idx: number) => {
+                                                    const sid = String(student.id);
+                                                    const historyClasses = totalCountByStudent[sid] ?? 0;
+                                                    const classesSinceStripe = getClassesSinceLastStripe(student, historyClasses);
+                                                    const payerDot = student.payerStatus === 'paid'
+                                                        ? 'bg-emerald-500'
+                                                        : student.payerStatus === 'review'
+                                                        ? 'bg-amber-400'
+                                                        : 'bg-rose-500';
+                                                    return (
                                                     <div key={idx} className="flex flex-col items-center gap-1.5 flex-shrink-0 snap-start">
-                                                        <div className={`h-14 w-14 rounded-full ring-4 shadow-sm flex-shrink-0 ${avatarRing}`}>
-                                                            <div className="h-full w-full rounded-full overflow-hidden">
-                                                                {student.photo ? (
-                                                                    <img src={student.photo} className="h-full w-full object-cover" alt={student.name} />
-                                                                ) : (
-                                                                    <div className={`h-full w-full flex items-center justify-center ${ isDark ? 'text-zinc-500' : 'text-zinc-300' }`}>
-                                                                        <User size={20} />
-                                                                    </div>
-                                                                )}
-                                                            </div>
+                                                        <StudentAvatar
+                                                            photo={student.photo}
+                                                            name={student.name}
+                                                            size={56}
+                                                            beltRank={student.belt_rank}
+                                                            degrees={student.degrees ?? 0}
+                                                            classesCount={classesSinceStripe ?? undefined}
+                                                            payerStatus={student.payerStatus}
+                                                            isDark={isDark}
+                                                        />
+                                                        <div className="flex items-center gap-1 mt-1">
+                                                            <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${payerDot}`} />
+                                                            <span className={`text-[9px] font-black uppercase tracking-tighter truncate max-w-[56px] ${ isDark ? 'text-zinc-300' : 'text-zinc-600' }`}>
+                                                                {student.name.split(' ')[0]}
+                                                            </span>
                                                         </div>
-                                                        <span className={`text-[9px] font-black uppercase tracking-tighter truncate max-w-[56px] text-center ${ isDark ? 'text-zinc-400' : 'text-zinc-500' }`}>
-                                                            {student.name.split(' ')[0]}
-                                                        </span>
-                                                        {student.belt_rank && (
-                                                            <BeltDisplay beltRank={student.belt_rank} degrees={student.degrees ?? 0} size="sm" />
-                                                        )}
                                                     </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         ) : (
                                             <div className={`py-6 px-6 rounded-[2rem] border-2 border-dashed flex items-center justify-center ${ isDark ? 'bg-zinc-800/30 border-zinc-700' : 'bg-zinc-50 border-zinc-100' }`}>

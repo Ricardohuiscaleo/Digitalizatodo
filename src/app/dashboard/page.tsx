@@ -720,9 +720,11 @@ export default function App() {
 
             {/* Modal de Detalle de Historial */}
             {selectedHistoryDate && (
-                <HistoryDetailModal 
+<HistoryDetailModal 
                     date={selectedHistoryDate}
                     records={attendanceHistory.filter((r: any) => (r.date || r.created_at?.split('T')[0]) === selectedHistoryDate)}
+                    allStudents={allStudents}
+                    attendanceHistory={attendanceHistory}
                     branding={branding}
                     onClose={() => setSelectedHistoryDate(null)}
                 />

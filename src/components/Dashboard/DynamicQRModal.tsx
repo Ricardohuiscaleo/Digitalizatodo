@@ -74,7 +74,13 @@ export default function DynamicQRModal({
     // Recibir estudiante detectado desde el dashboard (WebSocket)
     useEffect(() => {
         if (checkedInStudent) {
-            setDetectedStudent(checkedInStudent);
+            // Normalizar: el evento WS usa studentName/studentPhoto, el fallback HTTP usa name/photo
+            const normalized = {
+                ...checkedInStudent,
+                name: checkedInStudent.name ?? checkedInStudent.studentName ?? 'Atleta',
+                photo: checkedInStudent.photo ?? checkedInStudent.studentPhoto ?? null,
+            };
+            setDetectedStudent(normalized);
             setContinueCountdown(7);
             if (window.navigator?.vibrate) window.navigator.vibrate(200);
         }
@@ -139,7 +145,7 @@ export default function DynamicQRModal({
                             </div>
                         </div>
 
-                        <h2 className="text-2xl font-black text-zinc-950 tracking-tighter mb-1">¡Hola, {detectedStudent.name.split(' ')[0]}!</h2>
+                        <h2 className="text-2xl font-black text-zinc-950 tracking-tighter mb-1">¡Hola, {(detectedStudent.name ?? detectedStudent.studentName ?? 'Atleta').split(' ')[0]}!</h2>
                         <p className="text-xl font-bold text-emerald-600 mb-6">Bienvenid@ 😊</p>
 
                         <div className="bg-emerald-50 rounded-2xl p-4 mb-8 border border-emerald-100">

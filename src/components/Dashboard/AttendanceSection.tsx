@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Search, Calendar, ChevronRight, CheckCircle2, QrCode } from 'lucide-react';
+import { StudentAvatar } from './Industries/MartialArts/StudentAvatar';
 
 interface AttendanceSectionProps {
     allStudents: any[];
@@ -144,23 +145,17 @@ const AttendanceSection: React.FC<AttendanceSectionProps> = ({
                                 className={`relative flex flex-col items-center p-3 rounded-2xl transition-all w-full ${isPresent ? 'bg-emerald-50 text-emerald-900 border-2 border-emerald-400 shadow-lg scale-105 z-10' : 'bg-white shadow-sm border border-zinc-100 active:scale-95'
                                     }`}
                             >
-                                <div className="relative mb-2">
-                                    <img
-                                        src={student.photo}
-                                        alt={student.name}
-                                        className={`w-16 h-16 rounded-full object-cover transition-all ${isPresent ? 'ring-4 ring-emerald-400' : ''}`}
+                                <StudentAvatar
+                                        photo={student.photo}
+                                        name={student.name}
+                                        size={64}
+                                        ring={isPresent ? 'ring-emerald-400 bg-zinc-100' : 'ring-zinc-200 bg-zinc-100'}
+                                        beltRank={student.belt_rank}
+                                        degrees={student.degrees ?? 0}
+                                        payerStatus={student.payerStatus}
+                                        showPayerDot={!isPresent}
+                                        isDark={false}
                                     />
-                                    {isPresent && (
-                                        <div className="absolute -bottom-2 -right-2 bg-emerald-500 rounded-full p-1 border-2 border-emerald-50 shadow-lg">
-                                            <CheckCircle2 className="text-white" size={16} />
-                                        </div>
-                                    )}
-                                    {!isPresent && student.payerStatus && student.payerStatus !== 'paid' && (
-                                        <div className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white shadow ${
-                                            student.payerStatus === 'review' ? 'bg-amber-400' : 'bg-rose-500'
-                                        }`} />
-                                    )}
-                                </div>
                                 <p className={`font-black text-[9px] text-center leading-tight line-clamp-2 w-full uppercase mt-1 ${isPresent ? 'text-emerald-900' : 'text-zinc-800'}`}>
                                     {student.name.split(' ')[0]}
                                 </p>

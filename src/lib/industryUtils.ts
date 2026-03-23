@@ -87,6 +87,20 @@ export function calcBeltProgress(beltRank: string, degrees: number, beltClassesA
     };
 }
 
+/** Clases desde la última rayita — para el globito verde del StudentAvatar */
+export function getClassesSinceLastStripe(student: {
+    belt_rank?: string | null;
+    previous_classes?: number;
+    belt_classes_at_promotion?: number;
+}, totalHistoryClasses: number): number | null {
+    const belt = (student.belt_rank || '').toLowerCase();
+    const beltData = ALLIANCE_BJJ_GRADUATION.find(b => b.id === belt);
+    if (!beltData || beltData.classesPerStripe === null) return null;
+    const total = (student.previous_classes ?? 0) + totalHistoryClasses;
+    const classesInBelt = Math.max(0, total - (student.belt_classes_at_promotion ?? 0));
+    return classesInBelt % beltData.classesPerStripe;
+}
+
 export const formatStudentCategory = (category: string | undefined, industry: string | undefined, defaultLabel: string = '') => {
     if (!category) return defaultLabel;
     
