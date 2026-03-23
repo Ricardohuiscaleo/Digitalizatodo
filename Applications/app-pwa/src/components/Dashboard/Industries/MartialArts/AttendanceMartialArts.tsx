@@ -79,8 +79,8 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
         setPendingChanges(null);
         setBjjForm({
             name: student.name || '',
-            phone: student.phone || '',
-            email: student.email || '',
+            phone: student.phone || student.guardian_phone || '',
+            email: student.email || student.guardian_email || '',
             belt_rank: student.belt_rank || '',
             degrees: student.degrees ?? 0,
             gender: student.gender || '',
