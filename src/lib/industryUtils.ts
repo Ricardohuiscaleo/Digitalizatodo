@@ -91,14 +91,14 @@ export function calcBeltProgress(beltRank: string, degrees: number, beltClassesA
 export function getClassesSinceLastStripe(student: {
     belt_rank?: string | null;
     previous_classes?: number;
-    belt_classes_at_promotion?: number;
+    degrees?: number;
 }, totalHistoryClasses: number): number | null {
     const belt = (student.belt_rank || '').toLowerCase();
     const beltData = ALLIANCE_BJJ_GRADUATION.find(b => b.id === belt);
     if (!beltData || beltData.classesPerStripe === null) return null;
-    const total = (student.previous_classes ?? 0) + totalHistoryClasses;
-    const classesInBelt = Math.max(0, total - (student.belt_classes_at_promotion ?? 0));
-    return classesInBelt % beltData.classesPerStripe;
+    // previous_classes = clases desde la última raya (ingresadas por el profe)
+    // totalHistoryClasses = clases registradas en el sistema
+    return (student.previous_classes ?? 0) + totalHistoryClasses;
 }
 
 export const formatStudentCategory = (category: string | undefined, industry: string | undefined, defaultLabel: string = '') => {
