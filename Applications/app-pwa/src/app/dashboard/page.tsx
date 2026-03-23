@@ -107,7 +107,10 @@ const EXPENSE_CATEGORIES = ["Materiales escolares", "Insumos de aseo", "Alimenta
 
 export default function App() {
     const { branding, setBranding } = useBranding();
-    const [isDark, setIsDark] = useState(false);
+    const [isDark, setIsDark] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return localStorage.getItem('tenant_industry') === 'martial_arts';
+    });
     const isMartialArts = branding?.industry === 'martial_arts';
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -159,19 +162,21 @@ export default function App() {
     } = useAdminDashboard(branding, setBranding);
 
     if (loading) return (
-        <div className="min-h-screen bg-stone-50 px-4 pt-6 pb-32 max-w-lg mx-auto space-y-4 animate-pulse">
+        <div className={`min-h-screen px-4 pt-6 pb-32 max-w-lg mx-auto space-y-4 animate-pulse ${
+            isMartialArts && isDark ? 'bg-[#09090b]' : 'bg-stone-50'
+        }`}>
             <div className="flex items-center justify-between mb-2">
                 <div className="space-y-2">
-                    <div className="h-7 w-36 bg-zinc-200 rounded-xl" />
-                    <div className="h-3 w-48 bg-zinc-100 rounded-lg" />
+                    <div className={`h-7 w-36 rounded-xl ${isMartialArts && isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
+                    <div className={`h-3 w-48 rounded-lg ${isMartialArts && isDark ? 'bg-zinc-900' : 'bg-zinc-100'}`} />
                 </div>
-                <div className="w-14 h-14 bg-zinc-200 rounded-full" />
+                <div className={`w-14 h-14 rounded-full ${isMartialArts && isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
             </div>
-            <div className="h-36 bg-zinc-200 rounded-[2.5rem]" />
-            <div className="h-4 w-32 bg-zinc-100 rounded-lg" />
-            <div className="h-24 bg-zinc-100 rounded-[2rem]" />
-            <div className="h-24 bg-zinc-100 rounded-[2rem]" />
-            <div className="h-24 bg-zinc-100 rounded-[2rem]" />
+            <div className={`h-36 rounded-[2.5rem] ${isMartialArts && isDark ? 'bg-zinc-900' : 'bg-zinc-200'}`} />
+            <div className={`h-4 w-32 rounded-lg ${isMartialArts && isDark ? 'bg-zinc-900' : 'bg-zinc-100'}`} />
+            <div className={`h-24 rounded-[2rem] ${isMartialArts && isDark ? 'bg-zinc-900' : 'bg-zinc-100'}`} />
+            <div className={`h-24 rounded-[2rem] ${isMartialArts && isDark ? 'bg-zinc-900' : 'bg-zinc-100'}`} />
+            <div className={`h-24 rounded-[2rem] ${isMartialArts && isDark ? 'bg-zinc-900' : 'bg-zinc-100'}`} />
         </div>
     );
 
