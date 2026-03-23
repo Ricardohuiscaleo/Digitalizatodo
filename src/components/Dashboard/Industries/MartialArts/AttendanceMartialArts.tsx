@@ -5,6 +5,7 @@ import { Search, CheckCircle2, QrCode, Edit2, X, Save, Loader2, User, MoreHorizo
 import { BeltDisplay } from './BeltDisplay';
 import { BeltBadge } from './BeltBadge';
 import { updateStudentBjj, updateStudentProfile } from '@/lib/api';
+import { ALLIANCE_BJJ_GRADUATION } from '@/lib/industryUtils';
 
 const BELT_OPTIONS = [
     { value: 'white', label: 'Blanco' },
@@ -41,6 +42,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
 
     const [editingStudent, setEditingStudent] = useState<any | null>(null);
     const [bjjForm, setBjjForm] = useState<any>({});
+    const [bjjError, setBjjError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [pendingChanges, setPendingChanges] = useState<{ label: string; from: string; to: string }[] | null>(null);
     const [editMode, setEditMode] = useState(false);
@@ -74,9 +76,31 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
     const MODALITY_LABELS: Record<string, string> = { gi: 'Gi', nogi: 'No-Gi', both: 'Ambos' };
     const CATEGORY_LABELS: Record<string, string> = { adults: 'Adulto', kids: 'Infantil' };
 
+    const getBjjMax = (belt: string) => {
+        const entry = ALLIANCE_BJJ_GRADUATION.find(b => b.id === belt);
+        if (!entry || entry.totalClasses === null || entry.classesPerStripe === null) return null;
+        return { maxTotal: entry.totalClasses, classesPerStripe: entry.classesPerStripe };
+    };
+
+    const validateBjj = (form: any, totalAttendances: number): string | null => {
+        const config = getBjjMax(form.belt_rank);
+        if (!config) return null; // negro: sin límite
+        const total = Number(form.previous_classes || 0) + totalAttendances;
+        if (total > config.maxTotal) {
+            const beltLabel = ALLIANCE_BJJ_GRADUATION.find(b => b.id === form.belt_rank)?.name ?? form.belt_rank;
+            return `Con ${total} clases totales ya corresponde cinturón superior (máx ${config.maxTotal} para ${beltLabel})`;
+        }
+        const minForDegrees = form.degrees * config.classesPerStripe;
+        if (minForDegrees > total) {
+            return `Para ${form.degrees} raya${form.degrees !== 1 ? 's' : ''} se necesitan al menos ${minForDegrees} clases (tienes ${total})`;
+        }
+        return null;
+    };
+
     const openEdit = (student: any) => {
         setEditingStudent(student);
         setPendingChanges(null);
+        setBjjError(null);
         setBjjForm({
             name: student.name || '',
             phone: student.phone || student.guardian_phone || '',
@@ -116,6 +140,9 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
     };
 
     const handleRequestSave = (promote: boolean) => {
+        const err = validateBjj(bjjForm, editingStudent?.total_attendances ?? 0);
+        if (err) { setBjjError(err); return; }
+        setBjjError(null);
         const changes = buildChangeSummary();
         if (promote) changes.push({ label: 'Promoción', from: '—', to: '✓ Promover cinturón' });
         setPendingChanges(changes.length > 0 ? changes : [{ label: 'Sin cambios', from: '', to: '' }]);
@@ -489,7 +516,17 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                 <p className={`text-[8px] font-black uppercase tracking-[0.2em] mb-2 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Cinturón actual</p>
                                 <div className="flex gap-2 flex-wrap">
                                     {BELT_OPTIONS.map(b => (
-                                        <button key={b.value} onClick={() => setBjjForm((f: any) => ({ ...f, belt_rank: b.value }))}
+                                        <button key={b.value} onClick={() => {
+                                            const config = ALLIANCE_BJJ_GRADUATION.find(entry => entry.id === b.value);
+                                            const total = Number(bjjForm.previous_classes || 0) + (editingStudent?.total_attendances ?? 0);
+                                            const maxDegrees = (config && config.classesPerStripe) ? Math.min(4, Math.floor(total / config.classesPerStripe)) : 4;
+                                            setBjjForm((f: any) => ({
+                                                ...f,
+                                                belt_rank: b.value,
+                                                degrees: Math.min(f.degrees, maxDegrees)
+                                            }));
+                                            setBjjError(null);
+                                        }}
                                             className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border-2 transition-all ${
                                                 bjjForm.belt_rank === b.value
                                                     ? 'border-[#c9a84c] bg-[#c9a84c]/10 text-[#c9a84c]'
@@ -502,21 +539,35 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                             </div>
 
                             {/* Rayas */}
-                            <div>
-                                <p className={`text-[8px] font-black uppercase tracking-[0.2em] mb-2 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Rayas actuales</p>
-                                <div className="flex gap-2">
-                                    {[0,1,2,3,4].map(n => (
-                                        <button key={n} onClick={() => setBjjForm((f: any) => ({ ...f, degrees: n }))}
-                                            className={`w-10 h-10 rounded-xl text-sm font-black border-2 transition-all ${
-                                                bjjForm.degrees === n
-                                                    ? 'border-[#c9a84c] bg-[#c9a84c]/10 text-[#c9a84c]'
-                                                    : isDark ? 'border-zinc-800 text-zinc-500' : 'border-zinc-100 text-zinc-400'
-                                            }`}>
-                                            {n}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                            {(() => {
+                                const config = ALLIANCE_BJJ_GRADUATION.find(b => b.id === bjjForm.belt_rank);
+                                const total = Number(bjjForm.previous_classes || 0) + (editingStudent?.total_attendances ?? 0);
+                                const maxAllowed = (config && config.classesPerStripe) ? Math.min(4, Math.floor(total / config.classesPerStripe)) : 4;
+                                return (
+                                    <div>
+                                        <p className={`text-[8px] font-black uppercase tracking-[0.2em] mb-2 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Rayas actuales</p>
+                                        <div className="flex gap-2">
+                                            {[0,1,2,3,4].map(n => {
+                                                const disabled = n > maxAllowed && bjjForm.belt_rank !== 'black';
+                                                return (
+                                                    <button key={n}
+                                                        disabled={disabled}
+                                                        onClick={() => { setBjjForm((f: any) => ({ ...f, degrees: n })); setBjjError(null); }}
+                                                        className={`w-10 h-10 rounded-xl text-sm font-black border-2 transition-all ${
+                                                            disabled
+                                                                ? isDark ? 'border-zinc-800 text-zinc-700 opacity-30' : 'border-zinc-100 text-zinc-200 opacity-40'
+                                                                : bjjForm.degrees === n
+                                                                    ? 'border-[#c9a84c] bg-[#c9a84c]/10 text-[#c9a84c]'
+                                                                    : isDark ? 'border-zinc-800 text-zinc-500' : 'border-zinc-100 text-zinc-400'
+                                                        }`}>
+                                                        {n}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })()}
 
                             {/* Categoría y Modalidad */}
                             <div className="grid grid-cols-2 gap-3">
@@ -561,13 +612,17 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
 
                             {/* Clases anteriores al sistema */}
                             {(() => {
-                                const realClasses = editingStudent.total_attendances != null
-                                    ? editingStudent.total_attendances - (editingStudent.previous_classes ?? 0)
-                                    : 0;
-                                const total = Number(bjjForm.previous_classes || 0) + realClasses;
+                                const inSystem = editingStudent?.total_attendances ?? 0;
+                                const prevClasses = Number(bjjForm.previous_classes || 0);
+                                const total = prevClasses + inSystem;
+                                const config = ALLIANCE_BJJ_GRADUATION.find(b => b.id === bjjForm.belt_rank);
+                                const maxTotal = (config && config.totalClasses) ? config.totalClasses : null;
+                                const overLimit = maxTotal !== null && total > maxTotal;
                                 return (
                                     <div className={`rounded-2xl border overflow-hidden ${
-                                        isDark ? 'bg-zinc-800/50 border-zinc-700' : 'bg-zinc-50 border-zinc-200'
+                                        overLimit
+                                            ? 'border-rose-400 bg-rose-500/5'
+                                            : isDark ? 'bg-zinc-800/50 border-zinc-700' : 'bg-zinc-50 border-zinc-200'
                                     }`}>
                                         {/* Fila 1: label + input */}
                                         <div className="flex items-center gap-3 px-4 py-3">
@@ -586,37 +641,60 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                                 onChange={e => {
                                                     const v = e.target.value.replace(/\D/g, '');
                                                     setBjjForm((f: any) => ({ ...f, previous_classes: v === '' ? 0 : Number(v) }));
+                                                    setBjjError(null);
                                                 }}
                                                 placeholder="ej: 45"
                                                 className={`w-24 border rounded-xl px-3 py-2 text-sm font-black text-center focus:outline-none flex-shrink-0 ${
-                                                    isDark ? 'bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600' : 'bg-white border-zinc-200 text-zinc-900 placeholder:text-zinc-300'
+                                                    overLimit
+                                                        ? 'border-rose-400 bg-rose-500/10 text-rose-500'
+                                                        : isDark ? 'bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-600' : 'bg-white border-zinc-200 text-zinc-900 placeholder:text-zinc-300'
                                                 }`}
                                             />
                                         </div>
                                         {/* Fila 2: stats */}
-                                        <div className={`grid grid-cols-2 divide-x border-t ${
+                                        <div className={`grid grid-cols-3 divide-x border-t ${
                                             isDark ? 'divide-zinc-700 border-zinc-700' : 'divide-zinc-200 border-zinc-200'
                                         }`}>
-                                            <div className="px-4 py-2.5">
+                                            <div className="px-3 py-2.5">
                                                 <p className={`text-[8px] font-black uppercase tracking-widest ${
                                                     isDark ? 'text-zinc-600' : 'text-zinc-400'
-                                                }`}>En sistema</p>
+                                                }`}>Anteriores</p>
                                                 <p className={`text-xl font-black mt-0.5 ${
                                                     isDark ? 'text-zinc-300' : 'text-zinc-700'
-                                                }`}>{realClasses}</p>
+                                                }`}>{prevClasses}</p>
                                             </div>
-                                            <div className="px-4 py-2.5">
+                                            <div className="px-3 py-2.5">
                                                 <p className={`text-[8px] font-black uppercase tracking-widest ${
-                                                    isDark ? 'text-zinc-500' : 'text-zinc-400'
-                                                }`}>Total real</p>
+                                                    isDark ? 'text-zinc-600' : 'text-zinc-400'
+                                                }`}>Sistema</p>
                                                 <p className={`text-xl font-black mt-0.5 ${
-                                                    isDark ? 'text-white' : 'text-zinc-900'
+                                                    isDark ? 'text-zinc-300' : 'text-zinc-700'
+                                                }`}>{inSystem}</p>
+                                            </div>
+                                            <div className="px-3 py-2.5">
+                                                <p className={`text-[8px] font-black uppercase tracking-widest ${
+                                                    overLimit ? 'text-rose-400' : isDark ? 'text-zinc-500' : 'text-zinc-400'
+                                                }`}>Total{maxTotal ? ` / ${maxTotal}` : ''}</p>
+                                                <p className={`text-xl font-black mt-0.5 ${
+                                                    overLimit ? 'text-rose-500' : isDark ? 'text-white' : 'text-zinc-900'
                                                 }`}>{total}</p>
                                             </div>
                                         </div>
+                                        {overLimit && (
+                                            <p className="px-4 py-2 text-[9px] font-black text-rose-500 uppercase tracking-widest border-t border-rose-400/30">
+                                                ⚠ Supera el máximo para {BELT_OPTIONS.find(b => b.value === bjjForm.belt_rank)?.label} — considera promover
+                                            </p>
+                                        )}
                                     </div>
                                 );
                             })()}
+
+                            {/* Error de validación */}
+                            {bjjError && (
+                                <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest px-1">
+                                    ⚠ {bjjError}
+                                </p>
+                            )}
                         </div>
 
                         {/* Acciones */}

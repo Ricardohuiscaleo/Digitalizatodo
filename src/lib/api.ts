@@ -827,6 +827,7 @@ export async function getGuardianSettlement(tenantId: string, token: string, gua
 export async function updateStudentProfile(tenantId: string, token: string, studentId: string | number, data: {
     name?: string;
     phone?: string;
+    email?: string;
 }) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/students/${studentId}`, {
