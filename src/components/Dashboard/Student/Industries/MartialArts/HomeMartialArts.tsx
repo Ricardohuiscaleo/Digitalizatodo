@@ -161,8 +161,14 @@ export function HomeMartialArts({
                                 <div className="flex-1 min-w-0">
                                     <h4 className="font-black text-zinc-900 truncate">{student.name}</h4>
                                     <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider mb-2">{student.category === 'kids' ? vocab.cat1 : student.category === 'adult' ? vocab.cat2 : student.category}</p>
-                                    {student.label && (
-                                        <div className={`mt-1.5 w-full h-1 rounded-full ${getBeltColor(student.label)}`} />
+                                    {student.belt_rank && (
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <div className={`h-2 w-16 rounded-full ${getBeltColor(student.belt_rank)}`} />
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                                                {student.belt_rank === 'white' ? 'Blanco' : student.belt_rank === 'blue' ? 'Azul' : student.belt_rank === 'purple' ? 'Morado' : student.belt_rank === 'brown' ? 'Café' : 'Negro'}
+                                                {(student.degrees ?? 0) > 0 && ` • ${student.degrees} ${student.degrees === 1 ? 'raya' : 'rayas'}`}
+                                            </span>
+                                        </div>
                                     )}
                                     {student.consumable_credits > 0 && (
                                         <div className="mt-2 flex items-center gap-1.5">

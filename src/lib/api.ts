@@ -824,6 +824,27 @@ export async function getGuardianSettlement(tenantId: string, token: string, gua
     }
 }
 
+export async function updateStudentBjj(tenantId: string, token: string, studentId: string | number, data: {
+    belt_rank?: string | null;
+    degrees?: number | null;
+    gender?: string | null;
+    weight?: number | null;
+    height?: number | null;
+    modality?: string | null;
+    category?: string | null;
+    birth_date?: string | null;
+    promote?: boolean;
+}) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/students/${studentId}/bjj`, {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        return await safeJson(response);
+    } catch { return null; }
+}
+
 export async function deleteGuardian(tenantId: string, token: string, guardianId: number | string, data: FormData) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/payers/${guardianId}`, {
