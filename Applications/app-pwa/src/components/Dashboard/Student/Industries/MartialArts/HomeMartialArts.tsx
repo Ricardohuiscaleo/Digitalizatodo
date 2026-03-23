@@ -188,31 +188,35 @@ export function HomeMartialArts({
                                 <div className={`mt-3 rounded-xl p-3 border ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-zinc-50 border-zinc-100'}`}>
                                     <div className="flex items-center justify-between mb-1.5">
                                         <span className={`text-[8px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
-                                            Progreso cinturón
+                                            {progress.isReadyForBelt
+                                                ? `¡Listo para ${progress.nextBeltName ?? 'Maestría'}!`
+                                                : progress.nextStripe
+                                                    ? `Hacia raya ${progress.nextStripe}`
+                                                    : 'Progreso'}
                                         </span>
-                                        <span className={`text-[9px] font-black ${
-                                            progress.isReadyForPromotion ? 'text-[#c9a84c]' : isDark ? 'text-zinc-500' : 'text-zinc-400'
-                                        }`}>
-                                            {progress.isReadyForPromotion
-                                                ? `¡Listo → ${progress.nextBeltName}!`
-                                                : `${progress.classesForPromotion} clases → ${progress.nextBeltName ?? 'Maestría'}`}
+                                        <span className={`text-[9px] font-black ${progress.isReadyForBelt ? 'text-[#c9a84c]' : isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                                            {progress.isReadyForBelt
+                                                ? `→ ${progress.nextBeltName}`
+                                                : progress.classesForNextStripe != null
+                                                    ? `${progress.classesForNextStripe} clases → ${progress.nextStripe}★`
+                                                    : `${progress.classesForPromotion} → ${progress.nextBeltName}`}
                                         </span>
                                     </div>
                                     <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}>
                                         <div className="h-full rounded-full transition-all duration-700"
                                             style={{
                                                 width: `${progress.progressPct}%`,
-                                                backgroundColor: getBeltHex(student.belt_rank),
+                                                backgroundColor: progress.isReadyForBelt ? '#c9a84c' : getBeltHex(student.belt_rank),
                                                 boxShadow: `0 0 6px ${getBeltHex(student.belt_rank)}60`
                                             }}
                                         />
                                     </div>
                                     <div className="flex justify-between mt-1">
                                         <span className={`text-[9px] font-black ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                                            {progress.classesInBelt} clases
+                                            {progress.classesInCurrentStripe} / {progress.classesPerStripe} clases
                                         </span>
                                         <span className={`text-[9px] ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>
-                                            / {progress.totalForBelt}
+                                            {progress.classesInBelt} total en cinturón
                                         </span>
                                     </div>
                                 </div>

@@ -86,6 +86,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
             height: student.height || '',
             modality: student.modality || 'gi',
             category: student.category || 'adults',
+            previous_classes: student.previous_classes ?? 0,
         });
     };
 
@@ -99,6 +100,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
             ['degrees', 'Rayas', v => String(v)],
             ['category', 'Categoría', v => CATEGORY_LABELS[v] || v],
             ['modality', 'Modalidad', v => MODALITY_LABELS[v] || v],
+            ['previous_classes', 'Clases anteriores', v => String(v ?? 0)],
             ['weight', 'Peso (kg)', v => v ? `${v} kg` : '—'],
             ['height', 'Altura (m)', v => v ? `${v} m` : '—'],
         ];
@@ -121,10 +123,10 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
         if (!editingStudent || !branding?.slug || !token) return;
         const promote = promoteRef.current;
         setSaving(true);
-        const { name, phone, ...bjjData } = bjjForm;
+        const { name, phone, previous_classes, ...bjjData } = bjjForm;
         await Promise.all([
             updateStudentProfile(branding.slug, token, editingStudent.id, { name, phone }),
-            updateStudentBjj(branding.slug, token, editingStudent.id, { ...bjjData, promote }),
+            updateStudentBjj(branding.slug, token, editingStudent.id, { ...bjjData, previous_classes, promote }),
         ]);
         setSaving(false);
         setPendingChanges(null);
@@ -552,6 +554,30 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                         />
                                     </div>
                                 ))}
+                            </div>
+
+                            {/* Clases anteriores al sistema */}
+                            <div className={`rounded-2xl p-3 border ${isDark ? 'bg-zinc-800/50 border-zinc-700' : 'bg-zinc-50 border-zinc-100'}`}>
+                                <div className="flex items-center justify-between mb-2">
+                                    <div>
+                                        <p className={`text-[8px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Clases anteriores al sistema</p>
+                                        <p className={`text-[9px] mt-0.5 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Clases reales en DB: {editingStudent.total_attendances != null ? editingStudent.total_attendances - (editingStudent.previous_classes ?? 0) : '—'}</p>
+                                    </div>
+                                    <div className={`text-right`}>
+                                        <p className={`text-[8px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Total</p>
+                                        <p className={`text-lg font-black ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+                                            {Number(bjjForm.previous_classes || 0) + (editingStudent.total_attendances != null ? editingStudent.total_attendances - (editingStudent.previous_classes ?? 0) : 0)}
+                                        </p>
+                                    </div>
+                                </div>
+                                <input
+                                    type="number" min={0} value={bjjForm.previous_classes}
+                                    onChange={e => setBjjForm((f: any) => ({ ...f, previous_classes: Number(e.target.value) }))}
+                                    placeholder="0"
+                                    className={`w-full border rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none ${
+                                        isDark ? 'bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-700' : 'bg-white border-zinc-200 text-zinc-900'
+                                    }`}
+                                />
                             </div>
                         </div>
 

@@ -51,30 +51,39 @@ const BELT_ORDER = ['white', 'blue', 'purple', 'brown', 'black'] as const;
 
 /** Calcula el progreso de un alumno hacia el siguiente nivel */
 export function calcBeltProgress(beltRank: string, degrees: number, beltClassesAtPromotion: number, totalAttendances: number) {
-    const belt = ALLIANCE_BJJ_GRADUATION.find(b => b.id === beltRank);
-    if (!belt || belt.totalClasses === null) return null; // negro = sin progreso calculable
+    const beltData = ALLIANCE_BJJ_GRADUATION.find(b => b.id === beltRank);
+    if (!beltData || beltData.totalClasses === null) return null;
+    const belt = beltData as { id: string; name: string; totalClasses: number; classesPerStripe: number | null; stripes: number | null };
 
     const classesInBelt = Math.max(0, totalAttendances - beltClassesAtPromotion);
     const nextBeltIdx = BELT_ORDER.indexOf(beltRank as any) + 1;
     const nextBelt = nextBeltIdx < ALLIANCE_BJJ_GRADUATION.length ? ALLIANCE_BJJ_GRADUATION[nextBeltIdx] : null;
 
-    // Rayas ganadas (calculadas, no las manuales del staff)
-    const earnedStripes = belt.classesPerStripe ? Math.min(4, Math.floor(classesInBelt / belt.classesPerStripe)) : 0;
-    const classesForNextStripe = belt.classesPerStripe
-        ? belt.classesPerStripe - (classesInBelt % belt.classesPerStripe)
-        : null;
-    const classesForPromotion = Math.max(0, belt.totalClasses - classesInBelt);
-    const progressPct = Math.min(100, Math.round((classesInBelt / belt.totalClasses) * 100));
+    // Raya actual calculada por clases (no la manual del staff)
+    const currentStripe = belt.classesPerStripe ? Math.min(4, Math.floor(classesInBelt / belt.classesPerStripe)) : 0;
+    const classesInCurrentStripe = belt.classesPerStripe ? classesInBelt % belt.classesPerStripe : 0;
+    const classesForNextStripe = belt.classesPerStripe ? belt.classesPerStripe - classesInCurrentStripe : null;
+    const nextStripe = currentStripe + 1;
+    const isReadyForBelt = classesInBelt >= belt.totalClasses;
+
+    // Progreso hacia la PRÓXIMA RAYA (no el cinturón completo)
+    const progressPct = belt.classesPerStripe
+        ? Math.min(100, Math.round((classesInCurrentStripe / belt.classesPerStripe) * 100))
+        : Math.min(100, Math.round((classesInBelt / (belt.totalClasses ?? 1)) * 100));
 
     return {
         classesInBelt,
         totalForBelt: belt.totalClasses,
-        progressPct,
-        earnedStripes,
+        classesPerStripe: belt.classesPerStripe,
+        classesInCurrentStripe,
         classesForNextStripe,
-        classesForPromotion,
+        currentStripe,
+        nextStripe: nextStripe <= 4 ? nextStripe : null,
+        progressPct,
         nextBeltName: nextBelt?.name ?? null,
-        isReadyForPromotion: classesInBelt >= belt.totalClasses,
+        isReadyForBelt,
+        isReadyForPromotion: isReadyForBelt, // alias para compatibilidad
+        classesForPromotion: Math.max(0, belt.totalClasses - classesInBelt),
     };
 }
 
