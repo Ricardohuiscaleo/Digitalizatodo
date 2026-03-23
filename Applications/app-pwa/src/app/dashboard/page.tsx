@@ -498,6 +498,7 @@ export default function App() {
                                         setProofModalUrl={setProofModalUrl}
                                         bubbleModalPayer={bubbleModalPayer}
                                         vocab={vocab}
+                                        isDark={isDark}
                                     />
                                 )
                             )}
