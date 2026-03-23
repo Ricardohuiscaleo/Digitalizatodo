@@ -31,6 +31,7 @@ import { buyConsumablePack } from "@/lib/api";
 export default function StudentDashboard() {
     const common = useStudentCommon();
     const [activeSection, setActiveSection] = useState<NavSection>("home");
+    const [isDark, setIsDark] = useState(false);
     
     const slug = common.branding?.slug;
     const token = typeof window !== 'undefined' ? (localStorage.getItem("auth_token") || localStorage.getItem("staff_token")) : null;
@@ -191,11 +192,15 @@ export default function StudentDashboard() {
     );
 
     return (
-        <div className="min-h-screen bg-stone-50 overflow-x-hidden font-sans pb-32">
+        <div className={`min-h-screen overflow-x-hidden font-sans pb-32 transition-colors duration-500 ${
+            isDark ? 'bg-[#09090b]' : 'bg-stone-50'
+        }`}>
             <NotificationToast notification={common.toastNotification} onDismiss={() => common.setToastNotification(null)} />
 
             {/* Header */}
-            <header className="flex items-center justify-between px-6 py-4 fixed top-0 left-0 right-0 bg-stone-50/80 backdrop-blur-md z-[80] border-b border-zinc-100">
+            <header className={`flex items-center justify-between px-6 py-4 fixed top-0 left-0 right-0 backdrop-blur-md z-[80] border-b transition-colors duration-500 ${
+                isDark ? 'bg-zinc-950/80 border-zinc-800' : 'bg-stone-50/80 border-zinc-100'
+            }`}>
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl overflow-hidden bg-white border border-zinc-100 flex items-center justify-center shadow-sm">
                         {common.branding?.logo ? (
@@ -206,7 +211,9 @@ export default function StudentDashboard() {
                     </div>
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                            <h1 className="text-lg font-black uppercase tracking-tighter text-zinc-950 leading-none">{common.branding?.name || 'Academy'}</h1>
+                            <h1 className={`text-lg font-black uppercase tracking-tighter leading-none ${
+                                isDark ? 'text-white' : 'text-zinc-950'
+                            }`}>{common.branding?.name || 'Academy'}</h1>
                             <button onClick={() => common.setShowPushModal(true)} className="shrink-0 mt-0.5">
                                 <div className={`w-3 h-3 rounded-full border-2 border-white shadow-sm transition-colors duration-500 ${
                                     common.pushPermission === 'granted' ? 'bg-emerald-500 animate-pulse' :
@@ -278,7 +285,8 @@ export default function StudentDashboard() {
                             studentForPhotoRef={studentForPhotoRef} 
                             profileFileInputRef={profileFileInputRef as any} 
                             setActiveScanner={martialArts.setActiveScanner} 
-                            vocab={vocab} 
+                            vocab={vocab}
+                            isDark={isDark}
                         />
                     )
                 )}
@@ -317,7 +325,9 @@ export default function StudentDashboard() {
                         vocab={vocab} 
                         onAccountSwitch={common.handleAccountSwitch} 
                         isSchoolTreasury={isSchoolTreasury} 
-                        appUpdates={common.appUpdates} 
+                        appUpdates={common.appUpdates}
+                        isDark={isDark}
+                        onToggleDark={() => setIsDark(d => !d)}
                     />
                 )}
 

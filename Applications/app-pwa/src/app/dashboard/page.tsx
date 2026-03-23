@@ -107,6 +107,8 @@ const EXPENSE_CATEGORIES = ["Materiales escolares", "Insumos de aseo", "Alimenta
 
 export default function App() {
     const { branding, setBranding } = useBranding();
+    const [isDark, setIsDark] = useState(false);
+    const isMartialArts = branding?.industry === 'martial_arts';
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -174,7 +176,9 @@ export default function App() {
     );
 
     return (
-        <div className="flex flex-col h-screen bg-white font-sans relative overflow-hidden text-zinc-950">
+        <div className={`flex flex-col h-screen font-sans relative overflow-hidden text-zinc-950 transition-colors duration-500 ${
+            isMartialArts && isDark ? 'bg-[#09090b]' : 'bg-white'
+        }`}>
             {/* Banner Web Push — aparece una sola vez si nunca ha dado permiso */}
             {showPushBanner && (
                 <div className="fixed bottom-24 left-3 right-3 z-[200] animate-in slide-in-from-bottom-4 duration-300">
@@ -220,7 +224,9 @@ export default function App() {
                 }}
             />
             {/* HEADER DINÁMICO - Oculto en Desktop ya que se integra en el Content */}
-            <header className="bg-white px-2 py-3 flex items-center justify-between sticky top-0 z-50 border-b border-zinc-50 shrink-0 md:hidden">
+            <header className={`px-2 py-3 flex items-center justify-between sticky top-0 z-50 border-b shrink-0 md:hidden transition-colors duration-500 ${
+                isMartialArts && isDark ? 'bg-zinc-950/90 border-zinc-800' : 'bg-white border-zinc-50'
+            }`}>
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full overflow-hidden border border-zinc-100 shadow-sm">
                         {branding?.logo ? (
@@ -231,7 +237,7 @@ export default function App() {
                     </div>
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                            <h1 className="text-lg font-black uppercase tracking-tighter text-zinc-950 leading-none">{branding?.name || 'Academy'}</h1>
+                            <h1 className={`text-lg font-black uppercase tracking-tighter leading-none ${ isDark ? 'text-white' : 'text-zinc-950' }`}>{branding?.name || 'Academy'}</h1>
                             <button onClick={() => setShowPushModal(true)} className="shrink-0 mt-0.5">
                                 <div className={`w-3 h-3 rounded-full border-2 border-white shadow-sm transition-colors duration-500 ${
                                     pushPermission === 'granted' ? 'bg-emerald-500 animate-pulse' :
@@ -247,15 +253,28 @@ export default function App() {
                     </div>
                 </div>
                 {/* Notification Bell */}
-                <button 
-                    onClick={() => setShowNotifications(!showNotifications)}
-                    className="relative w-10 h-10 flex items-center justify-center rounded-full border border-zinc-100 shadow-sm bg-white"
-                >
-                    <Bell size={20} className="text-zinc-600" />
-                    {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                <div className="flex items-center gap-2">
+                    {isMartialArts && (
+                        <button onClick={() => setIsDark(d => !d)}
+                            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 border ${
+                                isDark ? 'bg-zinc-900 border-zinc-700 text-[#c9a84c]' : 'bg-zinc-50 border-zinc-100 text-zinc-400'
+                            }`}>
+                            {isDark
+                                ? <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                                : <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                            }
+                        </button>
                     )}
-                </button>
+                    <button 
+                        onClick={() => setShowNotifications(!showNotifications)}
+                        className="relative w-10 h-10 flex items-center justify-center rounded-full border border-zinc-100 shadow-sm bg-white"
+                    >
+                        <Bell size={20} className="text-zinc-600" />
+                        {unreadCount > 0 && (
+                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                        )}
+                    </button>
+                </div>
             </header>
 
             {/* Notification Dropdown */}
@@ -323,7 +342,7 @@ export default function App() {
                         </div>
                         <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                                <h2 className="text-sm font-black uppercase tracking-tighter text-zinc-950 truncate leading-none">{branding?.name || 'Academy'}</h2>
+                                <h2 className={`text-sm font-black uppercase tracking-tighter text-zinc-950 truncate leading-none ${ isDark ? 'text-white' : 'text-zinc-950' }`}>{branding?.name || 'Academy'}</h2>
                                 <button onClick={() => setShowPushModal(true)} className="shrink-0">
                                     <div className={`w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm transition-colors duration-500 ${
                                         pushPermission === 'granted' ? 'bg-emerald-500 animate-pulse' :
@@ -358,11 +377,13 @@ export default function App() {
                 </aside>
 
                 {/* CONTENIDO PRINCIPAL */}
-                <main className="flex-1 overflow-y-auto pb-28 md:pb-8 hide-scrollbar relative bg-white">
+                <main className={`flex-1 overflow-y-auto pb-28 md:pb-8 hide-scrollbar relative transition-colors duration-500 ${
+                    isMartialArts && isDark ? 'bg-[#09090b]' : 'bg-white'
+                }`}>
                     <div className="max-w-6xl mx-auto py-2 md:py-8 px-2 md:px-8">
                         <div key={activeTab} className="w-full animate-in fade-in duration-150">
                             <div className="hidden md:flex justify-between items-center mb-8">
-                                <h2 className="text-2xl font-black uppercase tracking-tighter text-zinc-950">
+                                <h2 className={`text-2xl font-black uppercase tracking-tighter ${ isDark ? 'text-white' : 'text-zinc-950' }`}>
                                     {activeTab === 'dashboard' ? 'Resumen General' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? (branding?.industry === 'school_treasury' ? 'Cuotas' : 'Estado de Pagos') : activeTab === 'settings' ? 'Configuración' : 'Mi Perfil'}
                                 </h2>
                                 {isDemo && <span className="bg-emerald-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Modo Demo Activo</span>}
@@ -385,6 +406,7 @@ export default function App() {
                                     feesSummary={feesSummary}
                                     vocab={vocab}
                                     setActiveTab={setActiveTab}
+                                    isDark={isDark}
                                 />
                             )}
                             {activeTab === 'attendance' && (
@@ -402,6 +424,7 @@ export default function App() {
                                         vocab={vocab}
                                         token={token}
                                         onStudentUpdated={forceSync}
+                                        isDark={isDark}
                                     />
                                 ) : (
                                 <AttendanceSection 
@@ -717,7 +740,9 @@ export default function App() {
             )}
 
             {/* NAV CON ESTILO PREMIUM - Solo visible en Mobile */}
-            <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-50 pt-3 pb-8 px-6 flex justify-between items-center h-22 z-50 md:hidden text-zinc-950">
+            <nav className={`fixed bottom-0 left-0 right-0 pt-3 pb-8 px-6 flex justify-between items-center h-22 z-50 md:hidden transition-colors duration-500 ${
+                isMartialArts && isDark ? 'bg-zinc-950/95 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-50 text-zinc-950'
+            } border-t`}>
                 <TabButton icon={LayoutDashboard} label="Inicio" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} primaryColor={branding?.primaryColor} />
                 {branding?.industry !== 'school_treasury' && (
                     <TabButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} />

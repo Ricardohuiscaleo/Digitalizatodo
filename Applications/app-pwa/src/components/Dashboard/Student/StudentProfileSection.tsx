@@ -6,11 +6,15 @@ import {
     Loader2, 
     Check, 
     X, 
-    LogOut
+    LogOut,
+    Moon,
+    Sun,
+    Trophy
 } from "lucide-react";
 import { updateStudentName } from "@/lib/api";
 import AppUpdatesAccordion from "../AppUpdatesAccordion";
-import { getBeltColor, formatStudentCategory } from "@/lib/industryUtils";
+import { getBeltColor, formatStudentCategory, calcBeltProgress, getBeltHex } from "@/lib/industryUtils";
+import { BeltDisplay } from "@/components/Dashboard/Industries/MartialArts/BeltDisplay";
 
 interface StudentProfileSectionProps {
     guardian: any;
@@ -34,6 +38,8 @@ interface StudentProfileSectionProps {
     onAccountSwitch: (tenant: any) => void;
     isSchoolTreasury?: boolean;
     appUpdates?: any[];
+    isDark?: boolean;
+    onToggleDark?: () => void;
 }
 
 export function StudentProfileSection({
@@ -57,7 +63,9 @@ export function StudentProfileSection({
     vocab,
     onAccountSwitch,
     isSchoolTreasury = false,
-    appUpdates = []
+    appUpdates = [],
+    isDark = false,
+    onToggleDark,
 }: StudentProfileSectionProps) {
 
     const handleUpdateStudentName = async () => {
@@ -75,15 +83,132 @@ export function StudentProfileSection({
         setSavingStudentName(false);
     };
 
+    const isSelf = (s: any) => s.name.trim().toLowerCase() === guardian.name.trim().toLowerCase();
+    const selfStudent = students.find(isSelf);
+    const otherStudents = students.filter(s => !isSelf(s));
+
+    const renderProgress = (student: any) => {
+        const progress = !isSchoolTreasury && student.belt_rank
+            ? calcBeltProgress(student.belt_rank, student.degrees ?? 0, student.belt_classes_at_promotion ?? 0, student.total_attendances ?? 0)
+            : null;
+        if (!progress) return null;
+        return (
+            <div className={`mt-3 rounded-2xl p-3 border ${
+                isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-zinc-50 border-zinc-100'
+            }`}>
+                <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                        <Trophy size={11} className="text-[#c9a84c]" />
+                        <span className={`text-[8px] font-black uppercase tracking-widest ${
+                            isDark ? 'text-zinc-500' : 'text-zinc-400'
+                        }`}>Progreso</span>
+                    </div>
+                    {progress.isReadyForPromotion && (
+                        <span className="text-[8px] font-black text-[#c9a84c] animate-pulse">¡Listo para promover!</span>
+                    )}
+                </div>
+                <div className={`h-2 rounded-full overflow-hidden mb-1.5 ${
+                    isDark ? 'bg-zinc-800' : 'bg-zinc-200'
+                }`}>
+                    <div className="h-full rounded-full transition-all duration-700"
+                        style={{ width: `${progress.progressPct}%`, backgroundColor: getBeltHex(student.belt_rank), boxShadow: `0 0 6px ${getBeltHex(student.belt_rank)}60` }}
+                    />
+                </div>
+                <div className="flex items-center justify-between">
+                    <span className={`text-[10px] font-black ${ isDark ? 'text-zinc-300' : 'text-zinc-700' }`}>
+                        {progress.classesInBelt}
+                        <span className={`text-[9px] ml-0.5 ${ isDark ? 'text-zinc-600' : 'text-zinc-400' }`}>/ {progress.totalForBelt} clases</span>
+                    </span>
+                    <span className={`text-[9px] font-black ${
+                        progress.isReadyForPromotion ? 'text-[#c9a84c]' : isDark ? 'text-zinc-500' : 'text-zinc-400'
+                    }`}>
+                        {progress.isReadyForPromotion
+                            ? `→ ${progress.nextBeltName}`
+                            : `${progress.classesForPromotion} clases → ${progress.nextBeltName ?? 'Maestría'}`}
+                    </span>
+                </div>
+            </div>
+        );
+    };
+
+    const renderStudentCard = (student: any, isSelfCard = false) => (
+        <div key={student.id} className={`rounded-[2rem] p-4 border transition-all group ${
+            isDark ? 'bg-zinc-900/50 border-zinc-800' : 'bg-white border-zinc-100 hover:shadow-md'
+        }`}>
+            <div className="flex items-center gap-4">
+                <div className="relative shrink-0">
+                    <button
+                        onClick={() => { studentForPhotoRef.current = String(student.id); profileFileInputRef.current?.click(); }}
+                        className="w-14 h-14 rounded-2xl bg-zinc-50 flex items-center justify-center overflow-hidden border border-zinc-100 relative transition-transform active:scale-90"
+                    >
+                        {studentPhotoLoadingId === String(student.id) ? (
+                            <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
+                                <Loader2 className="text-orange-500 animate-spin" size={16} />
+                            </div>
+                        ) : student.photo ? (
+                            <img src={student.photo} className="w-full h-full object-cover" alt={student.name} />
+                        ) : (
+                            <User size={20} className="text-zinc-200" />
+                        )}
+                    </button>
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-orange-500 text-white rounded-lg flex items-center justify-center shadow-lg border-2 border-white pointer-events-none">
+                        <Camera className="w-3 h-3" />
+                    </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                    {editingStudentId === String(student.id) ? (
+                        <div className="flex items-center gap-2">
+                            <input autoFocus value={editingStudentName}
+                                onChange={(e) => setEditingStudentName(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleUpdateStudentName()}
+                                className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1 text-sm font-bold focus:outline-none focus:border-zinc-400"
+                            />
+                            <button onClick={handleUpdateStudentName} disabled={savingStudentName} className="text-emerald-500 p-1.5 rounded-lg">
+                                {savingStudentName ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                            </button>
+                            <button onClick={() => setEditingStudentId(null)} className="text-zinc-400 p-1.5 rounded-lg"><X size={16} /></button>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="flex items-center gap-2">
+                                <p className={`text-sm font-black truncate ${ isDark ? 'text-white' : 'text-zinc-900' }`}>
+                                    {student.name.split(' ').slice(0, 2).join(' ')}
+                                </p>
+                                {isSelfCard && <span className="text-[7px] font-black uppercase tracking-widest text-orange-400 bg-orange-50 px-1.5 py-0.5 rounded-full border border-orange-100 shrink-0">Titular</span>}
+                                <button
+                                    onClick={() => { setEditingStudentId(String(student.id)); setEditingStudentName(student.name); }}
+                                    className="opacity-0 group-hover:opacity-100 p-1 text-zinc-300 hover:text-zinc-600 transition-all shrink-0"
+                                >
+                                    <Settings size={12} />
+                                </button>
+                            </div>
+                            <p className={`text-[10px] font-black uppercase tracking-widest ${ isDark ? 'text-zinc-500' : 'text-zinc-400' }`}>
+                                {formatStudentCategory(student.category, isSchoolTreasury ? 'school_treasury' : 'martial_arts', vocab.memberLabel)}
+                            </p>
+                            {!isSchoolTreasury && student.belt_rank && (
+                                <div className="mt-1.5">
+                                    <BeltDisplay beltRank={student.belt_rank} degrees={student.degrees ?? 0} size="md" />
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            </div>
+            {renderProgress(student)}
+        </div>
+    );
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-            {/* Guardian Profile Card — compacta */}
-            <div className="bg-zinc-900 text-white rounded-[2rem] px-5 py-4 shadow-xl relative overflow-hidden group">
+            {/* Guardian / Self Card */}
+            <div className={`rounded-[2rem] px-5 py-5 shadow-xl relative overflow-hidden ${
+                isDark ? 'bg-zinc-900/80 border border-zinc-800' : 'bg-zinc-900'
+            } text-white`}>
                 <div className="relative z-10 flex items-center gap-3">
                     <div className="relative flex-shrink-0">
                         <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center overflow-hidden border border-white/20">
-                            {guardian.photo ? (
-                                <img src={guardian.photo} className="w-full h-full object-cover" alt="Profile" />
+                            {(selfStudent?.photo || guardian.photo) ? (
+                                <img src={selfStudent?.photo || guardian.photo} className="w-full h-full object-cover" alt="Profile" />
                             ) : (
                                 <User size={28} className="text-white/40" />
                             )}
@@ -93,106 +218,50 @@ export function StudentProfileSection({
                                 </div>
                             )}
                         </div>
-                        <button 
-                            onClick={() => profileFileInputRef.current?.click()}
+                        <button
+                            onClick={() => {
+                                if (selfStudent) { studentForPhotoRef.current = String(selfStudent.id); profileFileInputRef.current?.click(); }
+                                else profileFileInputRef.current?.click();
+                            }}
                             className="absolute -bottom-1 -right-1 w-6 h-6 bg-orange-500 text-white rounded-lg flex items-center justify-center shadow-lg border-2 border-zinc-900 transition-transform active:scale-90"
                         >
                             <Camera size={11} />
                         </button>
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-orange-400">Apoderado</p>
-                        <h2 className="text-base font-black truncate leading-tight">{guardian.name}</h2>
-                        <p className="text-[10px] opacity-50 truncate">{guardian.email}</p>
+                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-orange-400">
+                            {selfStudent ? 'Titular · Atleta' : 'Titular'}
+                        </p>
+                        <h2 className="text-base font-black truncate leading-tight">
+                            {guardian.name.split(' ').slice(0, 2).join(' ')}
+                        </h2>
+                        {selfStudent?.belt_rank && (
+                            <div className="mt-1">
+                                <BeltDisplay beltRank={selfStudent.belt_rank} degrees={selfStudent.degrees ?? 0} size="sm" />
+                            </div>
+                        )}
                     </div>
+                    {onToggleDark && (
+                        <button onClick={onToggleDark}
+                            className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center transition-all active:scale-90 hover:bg-white/20 shrink-0">
+                            {isDark ? <Sun size={14} className="text-[#c9a84c]" /> : <Moon size={14} className="text-zinc-400" />}
+                        </button>
+                    )}
                 </div>
+                {/* Progreso del titular si también es atleta */}
+                {selfStudent && renderProgress(selfStudent)}
                 <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl" />
             </div>
 
-            {/* Students List ("Mis hijos") */}
-            <div className="space-y-4">
-                <div className="flex items-center justify-between mb-2 ml-1">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Mis {vocab.memberLabel.toLowerCase()}s</h3>
+            {/* Otros alumnos */}
+            {otherStudents.length > 0 && (
+                <div className="space-y-4">
+                    <h3 className={`text-[10px] font-black uppercase tracking-[0.2em] ml-1 ${ isDark ? 'text-zinc-500' : 'text-zinc-400' }`}>
+                        Mis {vocab.memberLabel.toLowerCase()}s
+                    </h3>
+                    {otherStudents.map(s => renderStudentCard(s, false))}
                 </div>
-                {students.map((student: any) => (
-                    <div key={student.id} className="bg-white border border-zinc-100 rounded-[2rem] p-4 flex items-center justify-between group hover:shadow-md transition-all">
-                        <div className="flex items-center gap-4 flex-1 min-w-0">
-                            <div className="relative shrink-0">
-                                <button 
-                                    onClick={() => {
-                                        studentForPhotoRef.current = String(student.id);
-                                        profileFileInputRef.current?.click();
-                                    }}
-                                    className="w-14 h-14 rounded-2xl bg-zinc-50 flex items-center justify-center overflow-hidden border border-zinc-100 relative transition-transform active:scale-90"
-                                >
-                                    {studentPhotoLoadingId === String(student.id) ? (
-                                        <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
-                                            <Loader2 className="text-orange-500 animate-spin" size={16} />
-                                        </div>
-                                    ) : student.photo ? (
-                                        <img src={student.photo} className="w-full h-full object-cover" alt={student.name} />
-                                    ) : (
-                                        <User size={20} className="text-zinc-200" />
-                                    )}
-                                </button>
-                                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-orange-500 text-white rounded-lg flex items-center justify-center shadow-lg border-2 border-white pointer-events-none">
-                                    <Camera className="w-3 h-3" />
-                                </div>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                {editingStudentId === String(student.id) ? (
-                                    <div className="flex items-center gap-2">
-                                        <input 
-                                            autoFocus
-                                            value={editingStudentName}
-                                            onChange={(e) => setEditingStudentName(e.target.value)}
-                                            onKeyDown={(e) => e.key === 'Enter' && handleUpdateStudentName()}
-                                            className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-2 py-1 text-sm font-bold focus:outline-none focus:border-zinc-400"
-                                        />
-                                        <button 
-                                            onClick={handleUpdateStudentName}
-                                            disabled={savingStudentName}
-                                            className="text-emerald-500 hover:bg-emerald-50 p-1.5 rounded-lg transition-colors"
-                                        >
-                                            {savingStudentName ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                                        </button>
-                                        <button 
-                                            onClick={() => setEditingStudentId(null)}
-                                            className="text-zinc-400 hover:bg-zinc-50 p-1.5 rounded-lg transition-colors"
-                                        >
-                                            <X size={16} />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="flex items-center gap-2">
-                                            <p className="text-sm font-black text-zinc-900 truncate">{student.name}</p>
-                                            <button 
-                                                onClick={() => {
-                                                    setEditingStudentId(String(student.id));
-                                                    setEditingStudentName(student.name);
-                                                }}
-                                                className="opacity-0 group-hover:opacity-100 p-1 text-zinc-300 hover:text-zinc-600 transition-all"
-                                            >
-                                                <Settings size={12} />
-                                            </button>
-                                        </div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                                            {formatStudentCategory(student.category, isSchoolTreasury ? 'school_treasury' : 'martial_arts', vocab.memberLabel)}
-                                        </p>
-                                        {!isSchoolTreasury && student.label && (
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <div className={`w-8 h-1.5 rounded-full ${getBeltColor(student.label)}`} />
-                                                <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400">{student.label}</span>
-                                            </div>
-                                        )}
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
+            )}
 
             <AppUpdatesAccordion appUpdates={appUpdates} />
 
