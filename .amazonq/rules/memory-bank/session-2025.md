@@ -10,7 +10,7 @@
 ---
 
 ## Último commit frontend
-`e5b639f` — feat: UI improvements — sliding pill tabs, fees section cleanup, modal fixes
+`2836d37` — feat(martial-arts): StudentAvatar globitos, BJJ Alliance clases desde última raya
 
 ## Último commit backend conocido
 `85b3cc0` — cambios de Notification.php, ExpenseUpdated, branding push
@@ -256,3 +256,45 @@ Se ha transformado la experiencia de gestión de asistencia de Artes Marciales h
 | `OverviewSection.tsx` | UI Principal Staff | Fusión de secciones, visor dinámico y animaciones |
 | `AdminModals.tsx` | Modales de Detalle | Implementación de staggered entrance y springy transitions |
 | `useRealtimeChannel.ts` | Sincronización | Soporte para recarga de historial en vivo |
+
+---
+
+## StudentAvatar & Sistema BJJ Alliance (Fase 11)
+
+### 1. Nuevo componente `StudentAvatar.tsx`
+- Foto circular con dos globitos de estado superpuestos
+- **Verde** (clases desde última raya): `top:-2, left:-2` — usa `getClassesSinceLastStripe()`
+- **Dorado** (rayas actuales): `offset=-12` — centrado sobre borde derecho del ring
+- No renderiza globito verde para negro ni si `degrees === 0` para dorado
+
+### 2. `getClassesSinceLastStripe()` en `industryUtils.ts`
+Fórmula: `(previous_classes + historialClases - belt_classes_at_promotion) % classesPerStripe`
+- Retorna `null` para negro (sin límite)
+- Tabla: Blanco=30, Azul=65, Morado=75, Café=75
+
+### 3. `OverviewSection` — `totalCountByStudent`
+- Renombrado de `monthlyCountByStudent` → `totalCountByStudent`
+- Ahora acumula **todo el historial** del alumno (no solo el mes actual)
+- Gap del visor de asistentes: `gap-6`
+
+### 4. `AdminModals` — `HistoryDetailModal`
+- Eliminado badge de cinturón (beltLabel/beltHex)
+- Usa `getClassesSinceLastStripe` para el globito verde
+
+### 5. Backend `StudentController::index()`
+- Agregados al `map()`: `belt_rank`, `degrees`, `previous_classes`, `belt_classes_at_promotion`, `total_attendances`
+
+### Pendiente: Validaciones en editar perfil BJJ
+Regla: `previous_classes + total_attendances ≤ máximo del cinturón`
+- Blanco: máx 150 — Azul: máx 325 — Morado/Café: máx 375
+- `degrees` máximo = 4 (5ta raya = promoción)
+- Al cambiar cinturón → recalcular rayas y clases máximas permitidas
+- Ver detalle en `martial_arts_architecture.md` — sección "Sistema BJJ Alliance — Validaciones"
+
+| Archivo | Cambio |
+|---------|--------|
+| `StudentAvatar.tsx` | **NUEVO**: componente con globitos verde y dorado |
+| `src/lib/industryUtils.ts` | `getClassesSinceLastStripe()` + `ALLIANCE_BJJ_GRADUATION` |
+| `src/components/Dashboard/OverviewSection.tsx` | `totalCountByStudent`, gap-6 |
+| `src/components/Dashboard/Admin/AdminModals.tsx` | Sin badge cinturón, usa `getClassesSinceLastStripe` |
+| `saas-backend/StudentController.php` | Campos BJJ en listado |
