@@ -1,8 +1,17 @@
 "use client";
 
-import React from 'react';
-import { Search, Calendar, ChevronRight, CheckCircle2, QrCode } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Calendar, ChevronRight, CheckCircle2, QrCode, Edit2, X, Save, Loader2 } from 'lucide-react';
 import { getBeltColor } from '@/lib/industryUtils';
+import { updateStudentBjj } from '@/lib/api';
+
+const BELT_OPTIONS = [
+    { value: 'white', label: 'Blanco' },
+    { value: 'blue', label: 'Azul' },
+    { value: 'purple', label: 'Morado' },
+    { value: 'brown', label: 'Café' },
+    { value: 'black', label: 'Negro' },
+];
 
 interface AttendanceMartialArtsProps {
     allStudents: any[];
@@ -15,6 +24,8 @@ interface AttendanceMartialArtsProps {
     setShowQRModal: (s: boolean) => void;
     branding: any;
     vocab: any;
+    token: string | null;
+    onStudentUpdated?: () => void;
 }
 
 /**
@@ -31,11 +42,39 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
     setSelectedHistoryDate,
     setShowQRModal,
     branding,
-    vocab
+    vocab,
+    token,
+    onStudentUpdated
 }) => {
-    const filteredStudents = allStudents.filter(s => 
+    const filteredStudents = allStudents.filter(s =>
         s.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const [editingStudent, setEditingStudent] = useState<any | null>(null);
+    const [bjjForm, setBjjForm] = useState<any>({});
+    const [saving, setSaving] = useState(false);
+
+    const openEdit = (student: any) => {
+        setEditingStudent(student);
+        setBjjForm({
+            belt_rank: student.belt_rank || '',
+            degrees: student.degrees ?? 0,
+            gender: student.gender || '',
+            weight: student.weight || '',
+            height: student.height || '',
+            modality: student.modality || 'gi',
+            category: student.category || 'adults',
+        });
+    };
+
+    const handleSave = async (promote: boolean) => {
+        if (!editingStudent || !branding?.slug || !token) return;
+        setSaving(true);
+        await updateStudentBjj(branding.slug, token, editingStudent.id, { ...bjjForm, promote });
+        setSaving(false);
+        setEditingStudent(null);
+        onStudentUpdated?.();
+    };
 
 
     return (
@@ -109,12 +148,20 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                         )}
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <button
-                                            onClick={() => toggleAttendance(student.id)}
-                                            className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${isPresent ? 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200' : 'bg-emerald-500 text-white shadow-md shadow-emerald-100'}`}
-                                        >
-                                            {isPresent ? 'Quitar' : 'Marcar'}
-                                        </button>
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                onClick={() => openEdit(student)}
+                                                className="p-2 rounded-xl bg-zinc-100 text-zinc-400 hover:bg-zinc-200 transition-all"
+                                            >
+                                                <Edit2 size={14} />
+                                            </button>
+                                            <button
+                                                onClick={() => toggleAttendance(student.id)}
+                                                className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${isPresent ? 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200' : 'bg-emerald-500 text-white shadow-md shadow-emerald-100'}`}
+                                            >
+                                                {isPresent ? 'Quitar' : 'Marcar'}
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             );
@@ -158,6 +205,12 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                     <div className={`mt-1.5 w-full h-1 rounded-full ${getBeltColor(student.label)}`} />
                                 )}
                             </button>
+                            <button
+                                onClick={() => openEdit(student)}
+                                className="absolute top-1 right-1 w-6 h-6 bg-white rounded-full shadow border border-zinc-100 flex items-center justify-center z-20"
+                            >
+                                <Edit2 size={10} className="text-zinc-400" />
+                            </button>
                         </div>
                     );
                 })}
@@ -188,6 +241,104 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                 </div>
                             </div>
                         ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Modal BJJ */}
+            {editingStudent && (
+                <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-end justify-center p-4" onClick={() => setEditingStudent(null)}>
+                    <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-zinc-50">
+                            <div>
+                                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Editar perfil BJJ</p>
+                                <h3 className="text-base font-black text-zinc-900">{editingStudent.name.split(' ')[0]}</h3>
+                            </div>
+                            <button onClick={() => setEditingStudent(null)} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center">
+                                <X size={14} className="text-zinc-400" />
+                            </button>
+                        </div>
+
+                        <div className="px-6 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
+                            {/* Cinturón */}
+                            <div>
+                                <label className="text-[9px] font-black uppercase tracking-widest text-zinc-400 block mb-2">Cinturón</label>
+                                <div className="flex gap-2 flex-wrap">
+                                    {BELT_OPTIONS.map(b => (
+                                        <button key={b.value} onClick={() => setBjjForm((f: any) => ({ ...f, belt_rank: b.value }))}
+                                            className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border-2 transition-all ${
+                                                bjjForm.belt_rank === b.value ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-100 text-zinc-400'
+                                            }`}>
+                                            {b.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Rayas */}
+                            <div>
+                                <label className="text-[9px] font-black uppercase tracking-widest text-zinc-400 block mb-2">Rayas actuales</label>
+                                <div className="flex gap-2">
+                                    {[0,1,2,3,4].map(n => (
+                                        <button key={n} onClick={() => setBjjForm((f: any) => ({ ...f, degrees: n }))}
+                                            className={`w-10 h-10 rounded-xl text-sm font-black border-2 transition-all ${
+                                                bjjForm.degrees === n ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-100 text-zinc-400'
+                                            }`}>
+                                            {n}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Categoría y Modalidad */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-zinc-400 block mb-1">Categoría</label>
+                                    <select value={bjjForm.category} onChange={e => setBjjForm((f: any) => ({ ...f, category: e.target.value }))}
+                                        className="w-full border border-zinc-100 rounded-xl px-3 py-2 text-xs font-bold text-zinc-700 bg-white">
+                                        <option value="adults">Adulto</option>
+                                        <option value="kids">Infantil</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-zinc-400 block mb-1">Modalidad</label>
+                                    <select value={bjjForm.modality} onChange={e => setBjjForm((f: any) => ({ ...f, modality: e.target.value }))}
+                                        className="w-full border border-zinc-100 rounded-xl px-3 py-2 text-xs font-bold text-zinc-700 bg-white">
+                                        <option value="gi">Gi</option>
+                                        <option value="nogi">No-Gi</option>
+                                        <option value="both">Ambos</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Peso y Altura */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-zinc-400 block mb-1">Peso (kg)</label>
+                                    <input type="number" value={bjjForm.weight} onChange={e => setBjjForm((f: any) => ({ ...f, weight: e.target.value }))}
+                                        className="w-full border border-zinc-100 rounded-xl px-3 py-2 text-xs font-bold text-zinc-700" placeholder="70" />
+                                </div>
+                                <div>
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-zinc-400 block mb-1">Altura (m)</label>
+                                    <input type="number" step="0.01" value={bjjForm.height} onChange={e => setBjjForm((f: any) => ({ ...f, height: e.target.value }))}
+                                        className="w-full border border-zinc-100 rounded-xl px-3 py-2 text-xs font-bold text-zinc-700" placeholder="1.75" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="px-6 pb-8 pt-4 space-y-2 border-t border-zinc-50">
+                            <button onClick={() => handleSave(true)} disabled={saving}
+                                style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
+                                className="w-full py-3.5 rounded-2xl text-white font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50">
+                                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                                Guardar y Promover cinturón
+                            </button>
+                            <button onClick={() => handleSave(false)} disabled={saving}
+                                className="w-full py-3 rounded-2xl bg-zinc-100 text-zinc-600 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50">
+                                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                                Guardar sin promover
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

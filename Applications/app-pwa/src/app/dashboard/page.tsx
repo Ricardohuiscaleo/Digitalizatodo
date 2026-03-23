@@ -388,6 +388,22 @@ export default function App() {
                                 />
                             )}
                             {activeTab === 'attendance' && (
+                                branding?.industry === 'martial_arts' ? (
+                                    <AttendanceMartialArts
+                                        allStudents={allStudents}
+                                        attendance={attendance}
+                                        searchTerm={searchTerm}
+                                        setSearchTerm={setSearchTerm}
+                                        attendanceHistory={attendanceHistory}
+                                        toggleAttendance={toggleAttendance}
+                                        setSelectedHistoryDate={setSelectedHistoryDate}
+                                        setShowQRModal={setShowQRModal}
+                                        branding={branding}
+                                        vocab={vocab}
+                                        token={token}
+                                        onStudentUpdated={forceSync}
+                                    />
+                                ) : (
                                 <AttendanceSection 
                                     allStudents={allStudents}
                                     attendance={attendance}
@@ -401,6 +417,7 @@ export default function App() {
                                     branding={branding}
                                     vocab={vocab}
                                 />
+                                )
                             )}
                             {activeTab === 'payments' && (
                                 branding?.industry === 'school_treasury' ? (
