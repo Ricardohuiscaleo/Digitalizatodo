@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, CheckCircle2, QrCode, Edit2, X, Save, Loader2, User, MoreHorizontal, Users, UserCheck, UserX } from 'lucide-react';
 import { BeltDisplay } from './BeltDisplay';
+import { BeltBadge } from './BeltBadge';
 import { updateStudentBjj, updateStudentProfile } from '@/lib/api';
 
 const BELT_OPTIONS = [
@@ -340,14 +341,14 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
             </div>
 
             {/* VISTA MOBILE: GRID */}
-            <div className="grid grid-cols-4 gap-2 md:hidden">
+            <div className="grid grid-cols-3 gap-2.5 md:hidden">
                 {displayedStudents.map(student => {
                     const isPresent = attendance.has(String(student.id));
                     return (
                         <div key={student.id} className="relative">
                             <button
                                 onClick={() => editMode ? openEdit(student) : toggleAttendance(student.id)}
-                                className={`relative flex flex-col items-center p-3 rounded-2xl transition-all w-full active:scale-95 ${
+                                className={`relative flex flex-col items-center p-3.5 rounded-2xl transition-all w-full active:scale-95 ${
                                     editMode
                                         ? isDark
                                             ? 'bg-zinc-900/60 border-2 border-dashed border-amber-500/50'
@@ -359,42 +360,43 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                                 : 'bg-white border border-zinc-100 shadow-sm'
                                 }`}
                             >
+                                {/* Foto + cinturón superpuesto */}
                                 <div className="relative mb-2">
-                                    <div className={`w-16 h-16 rounded-full overflow-hidden ring-2 ${
+                                    <div className={`w-[72px] h-[72px] rounded-full overflow-hidden ring-2 ${
                                         editMode ? 'ring-amber-400/40' : isPresent ? 'ring-emerald-400' : isDark ? 'ring-zinc-800' : 'ring-zinc-100'
                                     }`}>
                                         {student.photo
-                                            ? <img src={student.photo} alt={student.name} className="w-full h-full object-cover" />
-                                            : <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-zinc-800 text-zinc-600' : 'bg-zinc-100 text-zinc-300'}`}><User size={20} /></div>
+                                            ? <img src={student.photo} alt={student.name} className="w-full h-full object-cover" loading="lazy" />
+                                            : <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-zinc-800 text-zinc-600' : 'bg-zinc-100 text-zinc-300'}`}><User size={22} /></div>
                                         }
-                                        {/* Overlay lápiz en modo edición */}
                                         {editMode && (
                                             <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/40">
                                                 <Edit2 size={16} className="text-white/90" />
                                             </div>
                                         )}
                                     </div>
+                                    {/* Cinturón SVG superpuesto en la parte inferior */}
+                                    {!editMode && student.belt_rank && (
+                                        <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2">
+                                            <BeltBadge beltRank={student.belt_rank} degrees={student.degrees ?? 0} />
+                                        </div>
+                                    )}
                                     {!editMode && isPresent && (
-                                        <div className="absolute -bottom-1 -right-1 bg-emerald-500 rounded-full p-0.5 border-2 border-white shadow">
-                                            <CheckCircle2 className="text-white" size={14} />
+                                        <div className="absolute -top-0.5 -right-0.5 bg-emerald-500 rounded-full p-0.5 border-2 border-white shadow">
+                                            <CheckCircle2 className="text-white" size={12} />
                                         </div>
                                     )}
                                     {!editMode && !isPresent && student.payerStatus && student.payerStatus !== 'paid' && (
-                                        <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 ${isDark ? 'border-zinc-900' : 'border-white'} shadow ${
+                                        <div className={`absolute -top-1 -left-1 w-3 h-3 rounded-full border-2 ${isDark ? 'border-zinc-900' : 'border-white'} shadow ${
                                             student.payerStatus === 'review' ? 'bg-amber-400' : 'bg-rose-500'
                                         }`} />
                                     )}
                                 </div>
-                                <p className={`font-black text-[9px] text-center leading-tight line-clamp-2 w-full uppercase mt-1 ${
-                                    editMode ? 'text-amber-400' : isPresent ? 'text-emerald-600' : isDark ? 'text-zinc-300' : 'text-zinc-800'
+                                <p className={`font-black text-[10px] text-center leading-tight line-clamp-1 w-full uppercase mt-3 ${
+                                    editMode ? 'text-amber-400' : isPresent ? 'text-emerald-500' : isDark ? 'text-zinc-300' : 'text-zinc-700'
                                 }`}>
                                     {student.name.split(' ')[0]}
                                 </p>
-                                {!editMode && student.belt_rank && (
-                                    <div className="mt-1.5 w-full">
-                                        <BeltDisplay beltRank={student.belt_rank} degrees={student.degrees ?? 0} />
-                                    </div>
-                                )}
                             </button>
                         </div>
                     );
