@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Eye, RefreshCw, DollarSign } from 'lucide-react';
+import { StudentAvatar } from './Industries/MartialArts/StudentAvatar';
 
 interface BubblePaymentModalProps {
     payer: any;
@@ -96,10 +97,14 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
                             : payment.status === 'review' ? 'text-amber-600' : 'text-rose-600';
                         return (
                             <div key={idx} className="flex items-center gap-3 bg-zinc-50 rounded-2xl p-4 border border-zinc-100">
-                                <img
-                                    src={payment.student_photo || payer.photo}
-                                    className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm shrink-0"
-                                />
+                                <StudentAvatar
+                                        photo={payment.student_photo || payer.photo}
+                                        name={payment.student_name}
+                                        size={56}
+                                        beltRank={payment.belt_rank}
+                                        degrees={payment.degrees ?? 0}
+                                        isDark={false}
+                                    />
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
                                         <p className="text-sm font-black uppercase text-zinc-900 leading-none truncate">{payment.student_name}</p>

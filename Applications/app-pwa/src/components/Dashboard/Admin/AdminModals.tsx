@@ -1,14 +1,17 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { getClassesSinceLastStripe } from '@/lib/industryUtils';
 import { 
     CheckCircle2, 
     Users, 
     Sparkles, 
     DollarSign, 
     QrCode, 
-    X 
+    X,
+    User
 } from 'lucide-react';
+import { StudentAvatar } from '../Industries/MartialArts/StudentAvatar';
 
 /* ─── Proof Modal Component ─── */
 interface PaymentActionModalProps {
@@ -122,11 +125,13 @@ export function PaymentActionModal({ payer, onConfirm, onCancel, primaryColor, f
 interface HistoryDetailModalProps {
     date: string;
     records: any[];
+    allStudents?: any[];
+    attendanceHistory?: any[];
     branding: any;
     onClose: () => void;
 }
 
-export function HistoryDetailModal({ date, records, branding, onClose }: HistoryDetailModalProps) {
+export function HistoryDetailModal({ date, records, allStudents = [], attendanceHistory = [], branding, onClose }: HistoryDetailModalProps) {
     const [dragY, setDragY] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const startY = useRef(0);
@@ -138,6 +143,21 @@ export function HistoryDetailModal({ date, records, branding, onClose }: History
         return () => { document.body.style.overflow = ''; };
     }, [date]);
 
+    // Conteo mensual por estudiante desde el historial completo
+    const monthlyCount = useMemo(() => {
+        const map: { [id: string]: number } = {};
+        attendanceHistory.forEach(r => {
+            if (r.status === 'present' && r.student?.id) {
+                const sid = String(r.student.id);
+                map[sid] = (map[sid] ?? 0) + 1;
+            }
+        });
+        return map;
+    }, [attendanceHistory]);
+
+    // Mapa de allStudents para enriquecer con payerStatus
+    const studentMap = useMemo(() => new Map(allStudents.map(s => [String(s.id), s])), [allStudents]);
+
     if (!date) return null;
     const dateObj = new Date(date + 'T12:00:00');
     const dateStr = dateObj.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -147,78 +167,96 @@ export function HistoryDetailModal({ date, records, branding, onClose }: History
         startY.current = e.touches[0].pageY;
         setIsDragging(true);
     };
-
     const handleTouchMove = (e: React.TouchEvent) => {
         if (!isDragging) return;
         const deltaY = e.touches[0].pageY - startY.current;
-        if (deltaY > 0) {
-            e.preventDefault();
-            setDragY(deltaY);
-        }
+        if (deltaY > 0) { e.preventDefault(); setDragY(deltaY); }
     };
-
     const handleTouchEnd = () => {
         if (!isDragging) return;
         setIsDragging(false);
-        if (dragY > 100) onClose();
-        else setDragY(0);
+        if (dragY > 100) onClose(); else setDragY(0);
     };
 
     return (
         <div
-            className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in duration-200"
+            className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in duration-200"
             onClick={onClose}
         >
             <div
-                className={`bg-white w-full max-w-lg rounded-t-[2.5rem] md:rounded-[2.5rem] p-6 shadow-2xl ${
+                className={`bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-t-[2.5rem] md:rounded-[2.5rem] p-6 shadow-2xl ${
                     !isDragging ? 'transition-all duration-500 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)]' : ''
                 } animate-in fade-in slide-in-from-bottom-10`}
-                style={{ 
-                    transform: `translateY(${dragY}px)`, 
-                    opacity: 1 - dragY / 400
-                }}
+                style={{ transform: `translateY(${dragY}px)`, opacity: 1 - dragY / 400 }}
                 onClick={e => e.stopPropagation()}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
             >
                 <div className="flex justify-center mb-4 md:hidden">
-                    <div className="w-12 h-1.5 bg-zinc-200 rounded-full" />
+                    <div className="w-12 h-1.5 bg-zinc-700 rounded-full" />
                 </div>
 
-                <div className="mb-6">
-                    <h2 className="text-xl font-black text-zinc-900 uppercase tracking-tighter leading-none">{dateStr}</h2>
-                    <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-1">{records.length} asistentes</p>
+                <div className="mb-5">
+                    <h2 className="text-xl font-black text-white uppercase tracking-tighter leading-none">{dateStr}</h2>
+                    <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest mt-1">{records.length} asistentes</p>
                 </div>
 
-                <div ref={scrollRef} className="max-h-[310px] overflow-y-auto space-y-3 pr-2 scrollbar-hide">
-                    {records.map((r: any, i: number) => (
-                        <div 
-                            key={r.id} 
-                            style={{ animationDelay: `${i * 60}ms` }}
-                            className="flex items-center justify-between p-3 bg-zinc-50 rounded-2xl border border-zinc-100 animate-in fade-in slide-in-from-right-4 duration-500 fill-mode-both"
-                        >
-                            <div className="flex items-center gap-3">
-                                <img src={r.student?.photo} className="w-10 h-10 rounded-full object-cover border border-white shadow-sm" alt={r.student?.name} />
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-sm font-black text-zinc-900 uppercase leading-none">{r.student?.name}</p>
+                <div ref={scrollRef} className="max-h-[55vh] overflow-y-auto space-y-2 pr-1 scrollbar-hide">
+                    {records.map((r: any, i: number) => {
+                        const full = studentMap.get(String(r.student?.id));
+                        const payerStatus = full?.payerStatus ?? r.student?.payerStatus;
+                        const payerDot = payerStatus === 'paid' ? 'bg-emerald-500'
+                            : payerStatus === 'review' ? 'bg-amber-400'
+                            : 'bg-rose-500';
+                        const sid = String(r.student?.id);
+                        const historyClasses = monthlyCount[sid] ?? 0;
+                        const classesSinceStripe = getClassesSinceLastStripe(full ?? r.student ?? {}, historyClasses);
+                        const belt = full?.belt_rank ?? r.student?.belt_rank;
+                        const degrees = full?.degrees ?? r.student?.degrees ?? 0;
+                        const time = new Date(r.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+                        const isQr = r.registration_method === 'qr';
+
+                        return (
+                            <div
+                                key={r.id}
+                                style={{ animationDelay: `${i * 50}ms` }}
+                                className="flex items-center gap-3 p-3 bg-zinc-800 border border-zinc-700 rounded-2xl animate-in fade-in slide-in-from-right-4 duration-400 fill-mode-both"
+                            >
+                                {/* Foto + BeltBadge + contador clases */}
+                                <StudentAvatar
+                                    photo={r.student?.photo}
+                                    name={r.student?.name}
+                                    size={48}
+                                    beltRank={belt}
+                                    degrees={degrees}
+                                    classesCount={classesSinceStripe ?? undefined}
+                                    isDark
+                                />
+
+                                {/* Info */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-1.5">
+                                        <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${payerDot}`} />
+                                        <p className="text-[11px] font-black text-white uppercase tracking-tighter truncate">{r.student?.name}</p>
                                         {r.type === 'personalized' && (
-                                            <span className="bg-[#c9a84c] text-black text-[6px] font-black px-1.5 py-0.5 rounded-full">VIP SESSION</span>
+                                            <span className="bg-[#c9a84c] text-black text-[6px] font-black px-1.5 py-0.5 rounded-full shrink-0">VIP</span>
                                         )}
                                     </div>
-                                    <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest mt-1">
-                                        {r.registration_method === 'qr' ? 'Escaneado' : 'Manual'} • {new Date(r.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+                                    <p className="text-[9px] text-zinc-500 font-black uppercase tracking-widest mt-0.5">
+                                        {isQr ? 'QR' : 'Manual'} • {time}
                                     </p>
                                 </div>
+
+                                {/* Badge QR */}
+                                {isQr && (
+                                    <div className="bg-emerald-500/20 border border-emerald-500/30 p-1.5 rounded-xl shrink-0">
+                                        <QrCode size={14} className="text-emerald-400" />
+                                    </div>
+                                )}
                             </div>
-                            {r.registration_method === 'qr' && (
-                                <div className="bg-emerald-500 p-1.5 rounded-xl">
-                                    <QrCode size={14} className="text-white" />
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
         </div>

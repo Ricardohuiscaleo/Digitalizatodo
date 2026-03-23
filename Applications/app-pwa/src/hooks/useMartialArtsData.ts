@@ -45,7 +45,7 @@ export function useMartialArtsData(slug: string | undefined, token: string | nul
                 setAttendanceHistory(prev => [{
                     id: `local-${Date.now()}`,
                     student_id: studentId,
-                    student: { id: studentId, name: student?.name || 'Alumno', photo: student?.photo },
+                    student: { id: studentId, name: student?.name || 'Alumno', photo: student?.photo, belt_rank: student?.belt_rank, degrees: student?.degrees },
                     date: todayCL(),
                     status: 'present',
                     created_at: new Date().toISOString(),

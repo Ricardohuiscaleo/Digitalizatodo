@@ -158,10 +158,8 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
     return (
         <div className="space-y-4 px-0 pb-32">
 
-            {/* Header con contador */}
-            <div className={`rounded-[2rem] p-5 border flex items-center justify-between ${
-                isDark ? 'bg-zinc-900/60 border-zinc-800' : 'bg-white border-zinc-100 shadow-sm'
-            }`}>
+            {/* Header con contador — sin tarjeta */}
+            <div className="flex items-center justify-between px-1">
                 <div>
                     <p className={`text-[9px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
                         {vocab.unitLabel} hoy
@@ -188,32 +186,32 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
 
             {/* Buscador + Opciones */}
             <div className="relative" ref={optionsRef}>
-                <div className={`flex items-center gap-3 px-5 py-3.5 rounded-[2rem] border transition-all ${
+                <div className={`flex items-center gap-2.5 px-4 py-2 rounded-2xl border transition-all ${
                     isDark
-                        ? 'bg-zinc-900/60 border-zinc-800 focus-within:border-zinc-600'
-                        : 'bg-white border-zinc-100 shadow-sm focus-within:border-zinc-300'
+                        ? 'bg-zinc-800 border-zinc-700 focus-within:border-zinc-500'
+                        : 'bg-zinc-50 border-zinc-200 focus-within:border-zinc-300'
                 }`}>
-                    <Search size={18} className={isDark ? 'text-zinc-600' : 'text-zinc-300'} />
+                    <Search size={14} className={isDark ? 'text-zinc-500' : 'text-zinc-400'} />
                     <input
                         type="text"
                         placeholder={`Buscar ${vocab.memberLabel.toLowerCase()}...`}
-                        className={`flex-1 bg-transparent text-sm font-black uppercase tracking-widest placeholder:font-black placeholder:uppercase placeholder:tracking-widest focus:outline-none ${
+                        className={`flex-1 bg-transparent text-[11px] font-black uppercase tracking-widest placeholder:font-black placeholder:uppercase placeholder:tracking-widest focus:outline-none ${
                             isDark
-                                ? 'text-white placeholder:text-zinc-700'
-                                : 'text-zinc-950 placeholder:text-zinc-300'
+                                ? 'text-white placeholder:text-zinc-600'
+                                : 'text-zinc-950 placeholder:text-zinc-400'
                         }`}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                     <button
                         onClick={() => setShowOptions(v => !v)}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                        className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                             showOptions
-                                ? isDark ? 'bg-zinc-700 text-white' : 'bg-zinc-200 text-zinc-900'
+                                ? isDark ? 'bg-zinc-600 text-white' : 'bg-zinc-200 text-zinc-900'
                                 : isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600'
                         }`}
                     >
-                        <MoreHorizontal size={18} />
+                        <MoreHorizontal size={14} />
                     </button>
                 </div>
 
@@ -343,7 +341,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
             </div>
 
             {/* VISTA MOBILE: GRID */}
-            <div className="grid grid-cols-3 gap-2.5 md:hidden">
+            <div className="grid grid-cols-4 gap-2 md:hidden">
                 {displayedStudents.map(student => {
                     const isPresent = attendance.has(String(student.id));
                     return (
@@ -358,13 +356,13 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                         : isPresent
                                             ? 'bg-emerald-500/10 border-2 border-emerald-400 shadow-lg shadow-emerald-500/10'
                                             : isDark
-                                                ? 'bg-zinc-900/60 border border-zinc-800'
+                                                ? 'bg-zinc-800 border border-zinc-700'
                                                 : 'bg-white border border-zinc-100 shadow-sm'
                                 }`}
                             >
                                 {/* Foto + cinturón superpuesto */}
                                 <div className="relative mb-2">
-                                    <div className={`w-[72px] h-[72px] rounded-full overflow-hidden ring-2 ${
+                                    <div className={`w-14 h-14 rounded-full overflow-hidden ring-2 ${
                                         editMode ? 'ring-amber-400/40' : isPresent ? 'ring-emerald-400' : isDark ? 'ring-zinc-800' : 'ring-zinc-100'
                                     }`}>
                                         {student.photo
