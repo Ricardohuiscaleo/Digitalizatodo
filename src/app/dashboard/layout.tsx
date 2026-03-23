@@ -32,12 +32,15 @@ export default function DashboardLayout({
                         return;
                     }
                     if (profile.tenant) {
+                        const industry = profile.tenant.industry || profile.tenant.data?.industry;
+                        if (industry) localStorage.setItem('tenant_industry', industry);
                         setBranding({
                             id: profile.tenant.id,
                             slug: profile.tenant.slug,
                             name: profile.tenant.name,
                             logo: profile.tenant.logo,
-                            primaryColor: profile.tenant.primary_color
+                            primaryColor: profile.tenant.primary_color,
+                            industry,
                         });
                     }
                 }
