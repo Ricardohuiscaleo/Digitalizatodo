@@ -116,6 +116,10 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
                                         size={48}
                                         beltRank={payment.belt_rank}
                                         degrees={payment.degrees ?? 0}
+                                        classesCount={((payment.total_attendances || 0) + (payment.previous_classes || 0) - (payment.belt_classes_at_promotion || 0)) > 0 
+                                            ? ((payment.total_attendances || 0) + (payment.previous_classes || 0) - (payment.belt_classes_at_promotion || 0)) 
+                                            : undefined
+                                        }
                                         isDark={isDark}
                                     />
                                 </div>
