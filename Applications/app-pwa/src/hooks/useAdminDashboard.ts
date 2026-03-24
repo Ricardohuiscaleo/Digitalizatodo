@@ -21,8 +21,10 @@ import {
     getAppUpdates,
     getSchedules,
     getPlans,
-    resumeSession
+    resumeSession,
+    acceptTerms
 } from "@/lib/api";
+
 
 import { industryConfig } from "@/lib/constants";
 import { useTreasuryData } from './useTreasuryData';
@@ -80,7 +82,9 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
     const [showCreateExpense, setShowCreateExpense] = useState(false);
     const [showCreateFee, setShowCreateFee] = useState(false);
     const [showPushModal, setShowPushModal] = useState(false);
+    const [showTermsModal, setShowTermsModal] = useState(false);
     const [lastCheckedInStudent, setLastCheckedInStudent] = useState<any>(null);
+
     const [loadingSync, setLoadingSync] = useState(false);
 
     useEffect(() => {
@@ -171,7 +175,16 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
 
             if (profile) {
                 if (profile.user_type === 'guardian') { window.location.href = '/dashboard/student'; return; }
-                setUser({ ...profile, tenant_slug: profile.tenant?.slug || tenantSlug });
+                const userData = { ...profile, tenant_slug: profile.tenant?.slug || tenantSlug };
+                setUser(userData);
+
+                // Verificar si aceptó términos y si el tenant obliga a hacerlo
+                if (!profile.accepted_terms_at && profile.user_type === 'staff' && profile.tenant?.force_terms_acceptance !== false) {
+                    setShowTermsModal(true);
+                }
+
+
+
                 
                 // Load Branding
                 if (profile.tenant) {
@@ -315,7 +328,19 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         }
     };
 
+    const handleAcceptTerms = async () => {
+        if (!token || !branding?.slug) return;
+        const res = await acceptTerms(branding.slug, token);
+        if (res?.success) {
+            setShowTermsModal(false);
+            setUser((prev: any) => ({ ...prev, accepted_terms_at: new Date().toISOString() }));
+        } else {
+            alert(res?.message || "Error al aceptar los términos");
+        }
+    };
+
     const handleLoadDemo = () => {
+
         setIsDemo(true);
         const demoAttendance = new Set<string>();
         const demoHistory: any[] = [];
@@ -429,7 +454,9 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         showCreateExpense, setShowCreateExpense,
         showCreateFee, setShowCreateFee,
         showPushModal, setShowPushModal,
+        showTermsModal, setShowTermsModal,
         lastCheckedInStudent, setLastCheckedInStudent,
+
         loadingSync, setLoadingSync,
 
         // Spread specialized hooks (Common, Treasury, Martial Arts)
@@ -444,6 +471,8 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         allStudents, toggleAttendance,
         handlePriceInput, handleSavePrices, handleSaveBankInfo, handleLogoUpload,
         handlePaymentApprove, handleActivatePush, handleLoadDemo, handleConfirmPayment,
+        handleAcceptTerms,
+
         formatMoney: (a: number) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(a),
         STATUS_LABEL,
         longPressTimer
@@ -453,8 +482,9 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         selectedMonth, selectedYear, historyMonth, historyYear, 
         now, regPageCode, showQRModal, proofModalUrl, paymentActionPayer, 
         selectedHistoryDate, showNotifications, toastNotification, 
-        showCreateExpense, showCreateFee, showPushModal, 
+        showCreateExpense, showCreateFee, showPushModal, showTermsModal,
         lastCheckedInStudent, loadingSync,
+
         common, treasury, martialArts,
         allStudents, toggleAttendance, branding?.industry
     ]);

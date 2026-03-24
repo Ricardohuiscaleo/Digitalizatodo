@@ -102,6 +102,8 @@ import {
     ProofModal
 } from '@/components/Dashboard/Admin/AdminModals';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
+import TermsModal from '@/components/Dashboard/TermsModal';
+
 
 const EXPENSE_CATEGORIES = ["Materiales escolares", "Insumos de aseo", "Alimentación", "Actividades", "Infraestructura", "Servicios básicos", "Fiestas Patrias", "Navidad", "Pascua", "Día del Alumno", "Día del Profesor", "Otros"];
 
@@ -151,7 +153,9 @@ export default function App() {
         showInactivePayers, setShowInactivePayers, loadingSync, setLoadingSync,
         lastCheckedInStudent, setLastCheckedInStudent, showPushBanner, setShowPushBanner,
         pushPermission, setPushPermission, showPushModal, setShowPushModal,
+        showTermsModal, handleAcceptTerms,
         vocab, handleLogout, forceSync, refreshPayers,
+
         toggleAttendance, handleConfirmPayment, handleCreateExpense, handleDeleteExpense,
         handleCreateFee, handleApproveFeePayment, handlePriceInput, handleSavePrices,
         handleSaveBankInfo, handleLogoUpload, openFee, markAllNotificationsRead, markNotificationRead,
@@ -711,7 +715,15 @@ export default function App() {
                 </div>
             )}
 
+            {/* MODAL TERMINOS Y CONDICIONES (BLOQUEANTE) */}
+            <TermsModal 
+                isOpen={showTermsModal} 
+                onAccept={handleAcceptTerms} 
+                primaryColor={branding?.primaryColor} 
+            />
+
             {/* MODAL DE COMPROBANTE */}
+
             {proofModalUrl && (
                 <ProofModal 
                     url={proofModalUrl} 
