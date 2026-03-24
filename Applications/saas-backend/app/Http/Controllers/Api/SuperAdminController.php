@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\TenantUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Models\User;
@@ -49,7 +50,8 @@ class SuperAdminController extends Controller
         ]);
 
 
-        return DB::transaction(function () use ($validated) {
+        $tenantId = null;
+        $response = DB::transaction(function () use ($validated, &$tenantId) {
             // 1. Create Tenant
             $tenant = Tenant::create([
                 'id' => $validated['id'],
@@ -58,11 +60,12 @@ class SuperAdminController extends Controller
                 'industry' => $validated['industry'],
                 'email' => $validated['admin_email'], // Use admin_email as default business email
                 'active' => true,
-
                 'saas_plan' => $validated['saas_plan'] ?? 'free',
                 'saas_trial_ends_at' => now()->addDays(7),
                 'force_terms_acceptance' => true,
             ]);
+
+            $tenantId = $tenant->id;
 
             // 2. Create Owner User
             User::create([
@@ -78,7 +81,14 @@ class SuperAdminController extends Controller
                 'tenant' => $tenant
             ], 201);
         });
+
+        if ($tenantId) {
+            event(new TenantUpdated($tenantId, 'created'));
+        }
+
+        return $response;
     }
+
 
     /**
      * Update tenant settings (Plan, Active, etc.)
@@ -100,11 +110,14 @@ class SuperAdminController extends Controller
 
         $tenant->update($validated);
 
+        event(new TenantUpdated($id, 'updated'));
+
         return response()->json([
             'message' => 'Tenant updated successfully',
             'tenant' => $tenant
         ]);
     }
+
 
     /**
      * Reset the password for the tenant's primary admin.
@@ -125,9 +138,12 @@ class SuperAdminController extends Controller
         $newPassword = Str::random(8);
         $user->update(['password' => Hash::make($newPassword)]);
 
+        event(new TenantUpdated($id, 'reset_password'));
+
         return response()->json([
             'message' => 'Password reset successful',
             'new_password' => $newPassword
         ]);
     }
 }
+

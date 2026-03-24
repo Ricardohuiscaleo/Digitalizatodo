@@ -27,6 +27,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { getAllTenants, updateTenant, createTenant } from '@/lib/api';
+import { useRealtimeChannel } from '@/hooks/useRealtimeChannel';
+
 
 
 
@@ -36,6 +38,12 @@ export default function DeepAdminDashboard() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [tenants, setTenants] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const handleLogout = () => {
+    localStorage.removeItem('super_admin_token');
+    localStorage.removeItem('admin_user');
+    router.push('/login');
+  };
 
   React.useEffect(() => {
     const token = localStorage.getItem('super_admin_token');
@@ -47,11 +55,26 @@ export default function DeepAdminDashboard() {
     }
   }, [router]);
 
+  useRealtimeChannel('admin.global', {
+    'tenant.updated': () => {
+      const token = localStorage.getItem('super_admin_token');
+      if (token) fetchTenants(token);
+    }
+  }, isAuthorized);
+
+
+
   const fetchTenants = async (token: string) => {
     const data = await getAllTenants(token);
+    if (data === null) {
+      // Auth Error
+      handleLogout();
+      return;
+    }
     setTenants(data);
     setIsLoading(false);
   };
+
 
   const handleToggleActive = async (tenantId: string | number, currentStatus: boolean) => {
     const token = localStorage.getItem('super_admin_token');
@@ -166,14 +189,21 @@ export default function DeepAdminDashboard() {
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10 border border-white/10" />
               <div className="overflow-hidden">
-                <p className="text-sm font-bold truncate">Ricardo H.</p>
+                <p className="text-sm font-bold truncate">
+                  {typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('admin_user') || '{}')?.name || 'Administrador') : 'Administrador'}
+                </p>
                 <p className="text-[10px] text-cyan-500 font-black uppercase tracking-tighter">Master Access</p>
               </div>
+
             </div>
-            <button className="w-full flex items-center justify-between p-2 text-zinc-400 hover:text-white transition-colors group">
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center justify-between p-2 text-zinc-400 hover:text-white transition-colors group"
+            >
               <span className="text-[10px] font-black uppercase tracking-widest">Desconectar</span>
               <LogOut size={14} className="group-hover:translate-x-1 transition-transform" />
             </button>
+
           </div>
         </aside>
 
