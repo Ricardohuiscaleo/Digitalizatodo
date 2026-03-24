@@ -198,14 +198,22 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                 </div>
                 <button
                     onClick={() => setShowQRModal(true)}
-                    className="flex flex-col items-center justify-center gap-0.5 px-5 py-2.5 rounded-2xl shadow-lg active:scale-95 transition-all border-2"
-                    style={{ backgroundColor: 'rgba(13,148,136,0.15)', borderColor: '#0d9488', color: '#0d9488' }}
+                    className="flex items-center gap-3 px-8 py-1.5 rounded-2xl shadow-xl active:scale-95 transition-all border-2"
+                    style={{ 
+                        backgroundColor: isDark ? 'rgba(13,148,136,0.1)' : 'rgba(13,148,136,0.05)', 
+                        borderColor: '#0d9488', 
+                        color: '#0d9488' 
+                    }}
                 >
-                    <div className="flex items-center gap-1.5">
-                        <QrCode size={15} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">QR Dojo</span>
+                    <div className="p-1.5 rounded-lg bg-[#0d9488]/10 mr-0.5">
+                        <QrCode size={18} strokeWidth={3} />
                     </div>
-                    <span className="text-[8px] font-black uppercase tracking-[0.15em] opacity-80">Activar</span>
+                    <div className="text-left py-0.5">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] leading-none mb-0.5">QR Dojo</p>
+                        <p className={`text-[7px] font-black uppercase tracking-[0.1em] opacity-80 ${isDark ? 'text-[#0d9488]/60' : 'text-[#0d9488]/70'}`}>
+                            Activar
+                        </p>
+                    </div>
                 </button>
             </div>
 
@@ -314,9 +322,16 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                                 }
                                             </div>
                                             <div>
-                                                <p className={`text-sm font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-zinc-900'}`}>
-                                                    {student.name}
-                                                </p>
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                                        student.payment_status === 'overdue' ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]' :
+                                                        student.payment_status === 'pending' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]' :
+                                                        'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
+                                                    }`} />
+                                                    <p className={`text-sm font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+                                                        {student.name}
+                                                    </p>
+                                                </div>
                                                 {student.consumable_credits > 0 && (
                                                     <p className="text-[8px] font-black tracking-widest text-[#c9a84c] flex items-center gap-1 mt-0.5">
                                                         ★ {student.consumable_credits} SESIONES VIP
@@ -375,7 +390,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                         <div key={student.id} className="relative">
                             <button
                                 onClick={() => editMode ? openEdit(student) : toggleAttendance(student.id)}
-                                className={`relative flex flex-col items-center p-3.5 rounded-2xl transition-all w-full active:scale-95 ${
+                                className={`relative flex flex-col items-center justify-center p-2 rounded-2xl transition-all w-full aspect-square active:scale-95 ${
                                     editMode
                                         ? isDark
                                             ? 'bg-zinc-900/60 border-2 border-dashed border-amber-500/50'
@@ -387,11 +402,11 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                                 : 'bg-white border border-zinc-100 shadow-sm'
                                 }`}
                             >
-                                <div className="relative mb-2">
+                                <div className="relative">
                                     <StudentAvatar
                                         photo={student.photo}
                                         name={student.name}
-                                        size={56}
+                                        size={52}
                                         beltRank={!editMode ? student.belt_rank : null}
                                         degrees={student.degrees ?? 0}
                                         classesCount={!editMode ? classesCount : undefined}
@@ -404,21 +419,28 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                         }
                                     />
                                     {editMode && (
-                                        <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/40 pointer-events-none" style={{ borderRadius: '50%', width: 56, height: 56 }}>
+                                        <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/40 pointer-events-none" style={{ borderRadius: '50%', width: 52, height: 52 }}>
                                             <Edit2 size={16} className="text-white/90" />
                                         </div>
                                     )}
                                     {!editMode && isPresent && (
-                                        <div className="absolute -top-0.5 -right-0.5 bg-emerald-500 rounded-full p-0.5 border-2 border-white shadow z-20">
+                                        <div className="absolute -top-1 -right-1 bg-emerald-500 rounded-full p-0.5 border-2 border-white shadow z-20">
                                             <CheckCircle2 className="text-white" size={12} />
                                         </div>
                                     )}
                                 </div>
-                                <p className={`font-black text-[10px] text-center leading-tight line-clamp-1 w-full uppercase mt-3 ${
-                                    editMode ? 'text-amber-400' : isPresent ? 'text-emerald-500' : isDark ? 'text-zinc-300' : 'text-zinc-700'
-                                }`}>
-                                    {student.name.split(' ')[0]}
-                                </p>
+                                <div className="flex items-center justify-center gap-1 mt-1.5 px-0.5">
+                                    <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                                        student.payment_status === 'overdue' ? 'bg-rose-500 shadow-[0_0_5px_rgba(244,63,94,0.5)]' :
+                                        student.payment_status === 'pending' ? 'bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.5)]' :
+                                        'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]'
+                                    }`} />
+                                    <p className={`font-black text-[9px] text-center leading-none line-clamp-1 uppercase ${
+                                        editMode ? 'text-amber-400' : isPresent ? 'text-emerald-500' : isDark ? 'text-zinc-300' : 'text-zinc-700'
+                                    }`}>
+                                        {student.name.split(' ')[0]}
+                                    </p>
+                                </div>
                             </button>
                         </div>
                     );
