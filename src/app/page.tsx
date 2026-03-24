@@ -37,7 +37,8 @@ const getIndustryLabels = (industry: string) => {
     case 'school_treasury':
       return { staff: 'Staff', guardians: 'Apoderados', students: 'Alumnos' };
     case 'martial_arts':
-      return { staff: 'Staff', guardians: 'Clientes', students: 'Alumnos' };
+      return { staff: 'Staff', guardians: 'Titulares', students: 'Alumnos' };
+
     case 'health':
     case 'medical':
       return { staff: 'Staff', guardians: 'Pacientes', students: 'Consultas' };
@@ -90,8 +91,10 @@ export default function DeepAdminDashboard() {
       handleLogout();
       return;
     }
+    console.log('Tenants received from API:', data);
     setTenants(data);
     setIsLoading(false);
+
   };
 
 
