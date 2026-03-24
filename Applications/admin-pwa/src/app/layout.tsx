@@ -24,10 +24,11 @@ export const metadata: Metadata = {
   title: "Digitaliza Todo | Software Management",
   description: "Panel de gestión rápida para profesores y dueños.",
   icons: {
-    icon: "/icon.webp",
-    apple: "/icon.webp",
-    shortcut: "/icon.webp",
+    icon: "/D_Admin.png",
+    apple: "/D_Admin.png",
+    shortcut: "/D_Admin.png",
   },
+
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
