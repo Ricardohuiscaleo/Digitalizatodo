@@ -80,7 +80,9 @@ class TenantDiscoveryController extends Controller
             'industry' => $t->industry,
             'logo' => $t->logo ? (str_starts_with($t->logo, 'http') ? $t->logo : \Illuminate\Support\Facades\Storage::disk('public')->url($t->logo)) : '/icon.webp',
             'primary_color' => $t->primary_color ?? '#f59e0b',
+            'force_terms_acceptance' => $t->force_terms_acceptance ?? true,
             'detected_roles' => $data['roles']
+
             ];
         });
 
@@ -110,6 +112,8 @@ class TenantDiscoveryController extends Controller
             'industry' => $tenant->industry,
             'logo' => $tenant->logo ? (str_starts_with($tenant->logo, 'http') ? $tenant->logo : \Illuminate\Support\Facades\Storage::disk('public')->url($tenant->logo)) : '/icon.webp',
             'primary_color' => $tenant->primary_color ?? '#f59e0b',
+            'force_terms_acceptance' => $tenant->force_terms_acceptance ?? true,
         ]);
+
     }
 }

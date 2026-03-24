@@ -13,7 +13,7 @@ class Tenant extends Model implements HasAvatar
 {
     protected $fillable = [
         'id', 'slug', 'name', 'industry', 'email', 'phone', 'logo', 'primary_color',
-        'address', 'city', 'saas_plan', 'saas_trial_ends_at', 'active',
+        'address', 'city', 'saas_plan', 'saas_trial_ends_at', 'active', 'force_terms_acceptance',
         'bank_name', 'bank_account_type', 'bank_account_number',
         'bank_account_holder', 'bank_rut', 'bank_email', 'data',
     ];
@@ -25,9 +25,11 @@ class Tenant extends Model implements HasAvatar
 
     protected $casts = [
         'active' => 'boolean',
+        'force_terms_acceptance' => 'boolean',
         'saas_trial_ends_at' => 'date',
         'data' => 'array',
     ];
+
 
     // Relaciones
     public function users(): HasMany
