@@ -61,6 +61,8 @@ Route::get('w/clear-cache', function() {
 Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tenant}'], function () {
     // Info del tenant
     Route::get('info', [TenantDiscoveryController::class , 'show']);
+    Route::post('settings/accept-terms', [TenantDiscoveryController::class, 'acceptTerms']);
+
 
     // Planes públicos
     Route::get('plans', [PlanController::class , 'index']);
@@ -177,7 +179,9 @@ Route::post('admin/login', [AuthController::class, 'globalLogin']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('admin/tenants', [\App\Http\Controllers\Api\SuperAdminController::class, 'index']);
+    Route::get('admin/users', [\App\Http\Controllers\Api\SuperAdminController::class, 'users']);
     Route::post('admin/tenants', [\App\Http\Controllers\Api\SuperAdminController::class, 'store']);
+
     Route::patch('admin/tenants/{id}', [\App\Http\Controllers\Api\SuperAdminController::class, 'update']);
     Route::post('admin/tenants/{id}/reset-password', [\App\Http\Controllers\Api\SuperAdminController::class, 'resetPassword']);
 });
