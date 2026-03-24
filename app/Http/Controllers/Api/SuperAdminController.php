@@ -122,7 +122,7 @@ class SuperAdminController extends Controller
     /**
      * Reset the password for the tenant's primary admin.
      */
-    public function resetPassword($id)
+    public function resetPassword(Request $request, $id)
     {
         if (!is_null(auth()->user()->tenant_id)) {
             return response()->json(['error' => 'Unauthorized'], 403);
@@ -132,18 +132,19 @@ class SuperAdminController extends Controller
         $user = $tenant->users()->first();
 
         if (!$user) {
-            return response()->json(['error' => 'No user found for this tenant'], 404);
+            return response()->json(['error' => 'No admin user found for this tenant'], 404);
         }
 
-        $newPassword = Str::random(8);
-        $user->update(['password' => Hash::make($newPassword)]);
+        $newPassword = Str::random(10);
+        $user->password = Hash::make($newPassword);
+        $user->save();
 
-        event(new TenantUpdated($id, 'reset_password'));
+        // Signal update
+        event(new TenantUpdated($tenant, 'reset_password'));
 
         return response()->json([
-            'message' => 'Password reset successful',
+            'message' => 'Password reset successfully',
             'new_password' => $newPassword
         ]);
     }
 }
-

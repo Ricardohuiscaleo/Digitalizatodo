@@ -115,5 +115,22 @@ class TenantDiscoveryController extends Controller
             'force_terms_acceptance' => $tenant->force_terms_acceptance ?? true,
         ]);
 
+    public function acceptTerms(Request $request): JsonResponse
+    {
+        /** @var \App\Models\Tenant $tenant */
+        $tenant = app('currentTenant');
+
+        if (!$tenant) {
+            return response()->json(['message' => 'Academia no encontrada.'], 404);
+        }
+
+        $tenant->update([
+            'force_terms_acceptance' => false
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Términos aceptados correctamente.'
+        ]);
     }
 }
