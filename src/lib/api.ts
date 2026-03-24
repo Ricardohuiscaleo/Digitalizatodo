@@ -1,5 +1,6 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin.digitalizatodo.cl/api';
 
+
 const defaultHeaders = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
