@@ -134,7 +134,14 @@ export default function DeepAdminDashboard() {
   const stats = [
     { label: "Tenants Activos", value: tenants.filter(t => t.active).length.toString(), icon: Globe, trend: "Tiempo real", color: "text-cyan-400" },
     { label: "Usuarios Globales", value: tenants.reduce((acc, t) => acc + (t.users_count || 0), 0).toString(), icon: Users, trend: "Synced", color: "text-blue-400" },
-    { label: "Aceptación T&C", value: "TBD", icon: ShieldCheck, trend: "Nivel óptimo", color: "text-emerald-400" },
+    { 
+      label: "Aceptación T&C", 
+      value: tenants.length > 0 ? (Math.round((tenants.filter(t => !t.force_terms_acceptance).length / tenants.length) * 100)) + "%" : "0%",
+      detail: "CONTRATOS FIRMADOS", 
+      icon: CheckCircle2, 
+      color: "text-emerald-500",
+      bg: "bg-emerald-500/10" 
+    },
     { label: "Status Sistema", value: "Estable", icon: Activity, trend: "99.9% Uptime", color: "text-amber-400" },
   ];
 
