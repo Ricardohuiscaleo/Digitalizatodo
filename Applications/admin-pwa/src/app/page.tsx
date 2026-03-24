@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Users, 
   ShieldCheck, 
@@ -27,7 +28,27 @@ import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 
 export default function DeepAdminDashboard() {
+  const router = useRouter();
   const [filter, setFilter] = useState('all');
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  React.useEffect(() => {
+    const token = localStorage.getItem('super_admin_token');
+    if (!token) {
+      router.push('/login');
+    } else {
+      setIsAuthorized(true);
+    }
+  }, [router]);
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="h-8 w-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
 
   const stats = [
     { label: "Tenants Activos", value: "12", icon: Globe, trend: "+2 este mes", color: "text-cyan-400" },

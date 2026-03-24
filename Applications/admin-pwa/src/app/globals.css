@@ -4,36 +4,37 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.1 0 0); /* Black background */
-  --foreground: oklch(0.985 0 0);
+  --background: 0 0% 0%; /* #000000 */
+  --foreground: 0 0% 98%; /* #fafafa */
   
-  --card: oklch(0.15 0 0);
-  --card-foreground: oklch(0.985 0 0);
+  --card: 0 0% 10%; /* #1a1a1a */
+  --card-foreground: 0 0% 98%;
   
-  --popover: oklch(0.1 0 0);
-  --popover-foreground: oklch(0.985 0 0);
+  --popover: 0 0% 0%;
+  --popover-foreground: 0 0% 98%;
   
-  --primary: oklch(0.7 0.2 250); /* Neon Blue/Cyan for Engine look */
-  --primary-foreground: oklch(0.1 0 0);
+  --primary: 190 90% 50%; /* #22d3ee - Cyan */
+  --primary-foreground: 0 0% 0%;
   
-  --secondary: oklch(0.2 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
+  --secondary: 0 0% 15%;
+  --secondary-foreground: 0 0% 98%;
   
-  --muted: oklch(0.25 0 0);
-  --muted-foreground: oklch(0.6 0 0);
+  --muted: 0 0% 20%;
+  --muted-foreground: 0 0% 60%;
   
-  --accent: oklch(0.7 0.2 250);
-  --accent-foreground: oklch(0.1 0 0);
+  --accent: 190 90% 50%;
+  --accent-foreground: 0 0% 0%;
   
-  --destructive: oklch(0.5 0.2 25);
-  --destructive-foreground: oklch(1 0 0);
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
   
-  --border: oklch(0.25 0 0);
-  --input: oklch(0.25 0 0);
-  --ring: oklch(0.7 0.2 250);
+  --border: 0 0% 20%;
+  --input: 0 0% 20%;
+  --ring: 190 90% 50%;
   
   --radius: 1.25rem;
 }
+
 
 
 @theme inline {
