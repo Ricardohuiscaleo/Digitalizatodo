@@ -47,14 +47,16 @@ export async function getAllTenants(token: string) {
                 'Authorization': `Bearer ${token}`,
             },
         });
-        console.log('Fetch tenants status:', response.status);
+        if (!response.ok) return null;
         const data = await safeJson(response);
         return data?.tenants || [];
+
     } catch (error) {
         console.error('Error fetching all tenants:', error);
-        return [];
+        return null;
     }
 }
+
 
 
 export async function createTenant(token: string, data: any) {
