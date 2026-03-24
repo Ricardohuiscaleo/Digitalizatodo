@@ -42,8 +42,17 @@ class StudentController extends Controller
             ])
             ->get()
             ->map(function ($student) {
-                // Calcular si tiene pagos pendientes
-                $pendingPayments = $student->enrollments->sum(fn($e) => $e->payments()->where('status', 'pending')->count());
+                // Calcular estado de pagos
+                $hasOverdue = $student->enrollments->contains(fn($e) => $e->payments()->where('status', 'overdue')->exists());
+                $hasPending = $student->enrollments->contains(fn($e) => $e->payments()->where('status', 'pending')->exists());
+                
+                $paymentStatus = 'paid';
+                if ($hasOverdue) {
+                    $paymentStatus = 'overdue';
+                } elseif ($hasPending) {
+                    $paymentStatus = 'pending';
+                }
+
                 $todayAttendance = $student->attendances->first();
 
                 return [
@@ -53,8 +62,8 @@ class StudentController extends Controller
                     'photo' => $student->photo,
                     'course_id' => $student->course_id,
                     'course_name' => $student->course ? $student->course->name : null,
-                    'has_debt' => $pendingPayments > 0,
-                    'pending_count' => $pendingPayments,
+                    'has_debt' => $hasOverdue || $hasPending,
+                    'payment_status' => $paymentStatus,
                     'belt_rank' => $student->belt_rank,
                     'degrees' => (int)($student->degrees ?? 0),
                     'total_attendances' => $student->attendances()->count(),

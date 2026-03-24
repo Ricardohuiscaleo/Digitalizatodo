@@ -125,6 +125,13 @@ class GuardianController extends Controller
                         'gender' => $s->gender,
                         'weight' => $s->weight,
                         'height' => $s->height,
+                        'payment_status' => (function() use ($s) {
+                            $hasOverdue = $s->enrollments->contains(fn($e) => $e->payments->where('status', 'overdue')->count() > 0);
+                            $hasPending = $s->enrollments->contains(fn($e) => $e->payments->where('status', 'pending')->count() > 0);
+                            if ($hasOverdue) return 'overdue';
+                            if ($hasPending) return 'pending';
+                            return 'paid';
+                        })(),
                         'label' => $s->belt_rank ?? '', // Keep for retro-compatibility
                         'today_status' => $todayAttendance ? $todayAttendance->status : 'absent',
                         'method' => $todayAttendance ? $todayAttendance->registration_method : 'manual',
