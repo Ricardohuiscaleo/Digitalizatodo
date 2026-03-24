@@ -112,8 +112,10 @@ class TenantDiscoveryController extends Controller
             'industry' => $tenant->industry,
             'logo' => $tenant->logo ? (str_starts_with($tenant->logo, 'http') ? $tenant->logo : \Illuminate\Support\Facades\Storage::disk('public')->url($tenant->logo)) : '/icon.webp',
             'primary_color' => $tenant->primary_color ?? '#f59e0b',
-            'force_terms_acceptance' => $tenant->force_terms_acceptance ?? true,
+            'force_terms_acceptance' => false,
+
         ]);
+    }
 
     public function acceptTerms(Request $request): JsonResponse
     {
