@@ -26,7 +26,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
-import { getAllTenants, updateTenant, createTenant } from '@/lib/api';
+import { getAllTenants, updateTenant, createTenant, getAllUsers, resetTenantPassword } from '@/lib/api';
+
 import { useRealtimeChannel } from '@/hooks/useRealtimeChannel';
 
 
@@ -53,10 +54,14 @@ export default function DeepAdminDashboard() {
   const router = useRouter();
   const [filter, setFilter] = useState('all');
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [view, setView] = useState<'tenants' | 'users'>('tenants');
   const [tenants, setTenants] = useState<any[]>([]);
+  const [globalUsers, setGlobalUsers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingTenant, setEditingTenant] = useState<any>(null);
+
+
 
 
   const handleLogout = () => {
@@ -94,8 +99,24 @@ export default function DeepAdminDashboard() {
     console.log('Tenants received from API:', data);
     setTenants(data);
     setIsLoading(false);
-
   };
+
+  const fetchGlobalUsers = async (token: string) => {
+    setIsLoading(true);
+    const data = await getAllUsers(token);
+    if (data) setGlobalUsers(data);
+    setIsLoading(false);
+  };
+
+  React.useEffect(() => {
+    const token = localStorage.getItem('super_admin_token');
+    if (token) {
+        if (view === 'tenants') fetchTenants(token);
+        if (view === 'users') fetchGlobalUsers(token);
+    }
+  }, [view]);
+
+
 
 
   const handleToggleActive = async (tenantId: string | number, currentStatus: boolean) => {
@@ -211,18 +232,21 @@ export default function DeepAdminDashboard() {
             </div>
 
             <nav className="flex-1 space-y-1">
-              <SidebarItem icon={Globe} label="Tenants" active />
-              <SidebarItem icon={Users} label="Usuarios" />
-              <SidebarItem icon={Bell} label="Notificaciones" badge="3" />
-              <SidebarItem icon={TrendingUp} label="Analíticas" />
-              
-              <div className="pt-8 pb-4">
-                <p className="px-4 text-[9px] font-black uppercase tracking-[0.2em] text-zinc-600 mb-2">Núcleo Config</p>
-              </div>
-              <SidebarItem icon={Settings} label="Configuración" />
-              <ShieldCheck size={18} className="text-zinc-500 ml-4 inline-block mr-4" />
-              <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">Seguridad</span>
+              <SidebarItem 
+                icon={Globe} 
+                label="Tenants" 
+                active={view === 'tenants'} 
+                onClick={() => setView('tenants')} 
+              />
+              <SidebarItem 
+                icon={Users} 
+                label="Usuarios" 
+                active={view === 'users'} 
+                onClick={() => setView('users')} 
+              />
             </nav>
+
+
 
             <div className="pt-6 border-t border-white/5 space-y-4">
               <div className="flex items-center gap-3">
@@ -244,178 +268,231 @@ export default function DeepAdminDashboard() {
             </div>
           </aside>
 
-          <main className="flex-1 overflow-y-auto p-10 space-y-10 custom-scrollbar relative">
-            <header className="flex items-center justify-between">
+          <main className="flex-1 overflow-y-auto p-10 space-y-10 custom-scrollbar relative">            <header className="flex items-center justify-between">
               <div className="space-y-1">
-                <h1 className="text-4xl font-black tracking-tighter uppercase italic">Gestión de Tenants</h1>
-                <p className="text-xs text-zinc-500 font-bold uppercase tracking-[0.3em]">Operaciones de Infraestructura</p>
+                <h1 className="text-4xl font-black tracking-tighter uppercase italic">
+                  {view === 'tenants' ? 'Gestión de Tenants' : 'Administradores Globales'}
+                </h1>
+                <p className="text-xs text-zinc-500 font-bold uppercase tracking-[0.3em]">
+                  {view === 'tenants' ? 'Operaciones de Infraestructura' : 'Control de Identidades SaaS'}
+                </p>
               </div>
-              <Button 
-                onClick={() => setShowCreateModal(true)}
-                className="bg-white text-black hover:bg-zinc-200 rounded-2xl px-8 font-black uppercase tracking-widest text-[11px] shadow-[0_0_30px_rgba(255,255,255,0.1)] group"
-              >
-                <Plus size={16} className="mr-2 group-hover:rotate-90 transition-transform" /> Nueva Instancia
-              </Button>
+              {view === 'tenants' && (
+                <Button 
+                  onClick={() => setShowCreateModal(true)}
+                  className="bg-white text-black hover:bg-zinc-200 rounded-2xl px-8 font-black uppercase tracking-widest text-[11px] shadow-[0_0_30px_rgba(255,255,255,0.1)] group"
+                >
+                  <Plus size={16} className="mr-2 group-hover:rotate-90 transition-transform" /> Nueva Instancia
+                </Button>
+              )}
             </header>
 
-            <div className="grid grid-cols-4 gap-6">
-              {stats.map((stat, i) => (
-                <Card key={i} className="bg-zinc-900/40 border-white/5 p-6 space-y-4 relative overflow-hidden group hover:border-white/10 transition-colors">
-                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <stat.icon size={48} className={stat.color} />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{stat.label}</p>
-                    <p className="text-4xl font-black tracking-tighter italic">{stat.value}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-1.5 w-1.5 rounded-full bg-cyan-500 animate-pulse" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">{stat.trend}</span>
-                  </div>
-                </Card>
-              ))}
-            </div>
-
-            <div className="space-y-8">
-              <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-4">
-                <div className="flex items-center bg-zinc-900/50 rounded-full p-1 border border-white/5">
-                  <Button 
-                    variant={filter === 'all' ? 'default' : 'ghost'} 
-                    onClick={() => setFilter('all')}
-                    className={`rounded-full uppercase tracking-tighter text-[10px] font-black ${filter === 'all' ? 'bg-white text-black' : 'text-zinc-500'}`}
-                  >
-                    Todos
-                  </Button>
-                  <Button 
-                    variant={filter === 'pending' ? 'default' : 'ghost'} 
-                    onClick={() => setFilter('pending')}
-                    className={`rounded-full uppercase tracking-tighter text-[10px] font-black ${filter === 'pending' ? 'bg-amber-500' : 'text-zinc-500'}`}
-                  >
-                    Pendientes
-                  </Button>
-                  <div className="h-4 w-px bg-white/10 mx-2" />
-                  <Button 
-                    variant={filter === 'pro' ? 'default' : 'ghost'} 
-                    onClick={() => setFilter('pro')}
-                    className={`rounded-full uppercase tracking-tighter text-[10px] font-black ${filter === 'pro' ? 'bg-indigo-500' : 'text-zinc-500'}`}
-                  >
-                    Pro
-                  </Button>
-                  <Button 
-                    variant={filter === 'enterprise' ? 'default' : 'ghost'} 
-                    onClick={() => setFilter('enterprise')}
-                    className={`rounded-full uppercase tracking-tighter text-[10px] font-black ${filter === 'enterprise' ? 'bg-emerald-500' : 'text-zinc-500'}`}
-                  >
-                    Enterprise
-                  </Button>
+            {view === 'tenants' ? (
+              <>
+                <div className="grid grid-cols-4 gap-6">
+                  {stats.map((stat, i) => (
+                    <Card key={i} className="bg-zinc-900/40 border-white/5 p-6 space-y-4 relative overflow-hidden group hover:border-white/10 transition-colors">
+                      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <stat.icon size={48} className={stat.color} />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{stat.label}</p>
+                        <p className="text-4xl font-black tracking-tighter italic">{stat.value}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-1.5 rounded-full bg-cyan-500 animate-pulse" />
+                        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">{stat.trend}</span>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
-              </div>
 
-              <div className="space-y-4">
-                {isLoading ? (
-                  <div className="h-64 flex flex-col items-center justify-center space-y-4 grayscale opacity-50">
-                    <div className="h-12 w-12 border-4 border-white/10 border-t-white rounded-full animate-spin" />
-                    <p className="text-[10px] font-black uppercase tracking-widest italic">Sincronizando Núcleo...</p>
-                  </div>
-                ) : filteredTenants.length === 0 ? (
-                  <div className="h-64 border-2 border-dashed border-white/5 rounded-[40px] flex flex-col items-center justify-center space-y-4">
-                    <Globe size={48} className="text-zinc-800" />
-                    <div className="text-center">
-                      <p className="text-sm font-bold tracking-tight uppercase">No se encontraron tenants</p>
-                      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Verifica la conexión con el servidor API</p>
+                <div className="space-y-8">
+                  <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-4">
+                    <div className="flex items-center bg-zinc-900/50 rounded-full p-1 border border-white/5">
+                      <Button 
+                        variant={filter === 'all' ? 'default' : 'ghost'} 
+                        onClick={() => setFilter('all')}
+                        className={`rounded-full uppercase tracking-tighter text-[10px] font-black ${filter === 'all' ? 'bg-white text-black' : 'text-zinc-500'}`}
+                      >
+                        Todos
+                      </Button>
+                      <Button 
+                        variant={filter === 'pending' ? 'default' : 'ghost'} 
+                        onClick={() => setFilter('pending')}
+                        className={`rounded-full uppercase tracking-tighter text-[10px] font-black ${filter === 'pending' ? 'bg-amber-500' : 'text-zinc-500'}`}
+                      >
+                        Pendientes
+                      </Button>
+                      <div className="h-4 w-px bg-white/10 mx-2" />
+                      <Button 
+                        variant={filter === 'pro' ? 'default' : 'ghost'} 
+                        onClick={() => setFilter('pro')}
+                        className={`rounded-full uppercase tracking-tighter text-[10px] font-black ${filter === 'pro' ? 'bg-indigo-500' : 'text-zinc-500'}`}
+                      >
+                        Pro
+                      </Button>
+                      <Button 
+                        variant={filter === 'enterprise' ? 'default' : 'ghost'} 
+                        onClick={() => setFilter('enterprise')}
+                        className={`rounded-full uppercase tracking-tighter text-[10px] font-black ${filter === 'enterprise' ? 'bg-emerald-500' : 'text-zinc-500'}`}
+                      >
+                        Enterprise
+                      </Button>
                     </div>
                   </div>
-                ) : (
-                  filteredTenants.map((t) => (
-                    <div 
-                      key={t.id} 
-                      className={`group bg-zinc-900/20 border border-white/5 rounded-3xl p-6 flex items-center justify-between hover:bg-zinc-900/50 hover:border-white/10 transition-all backdrop-blur-sm ${!t.active ? 'opacity-60' : ''}`}
-                    >
-                      <div className="flex items-center gap-6">
-                        <div className="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-105 transition-transform">
-                          <Globe className={`group-hover:text-cyan-400 ${t.active ? 'text-zinc-400' : 'text-zinc-600'}`} size={24} />
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-3">
-                            <h3 className="font-bold text-lg tracking-tight">{t.name}</h3>
-                            <Badge 
-                              onClick={() => handleToggleActive(t.id, t.active)}
-                              className={`cursor-pointer transition-all border-none ${t.active ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20' : 'bg-red-500/10 text-red-500 hover:bg-red-500/20'}`}
-                            >
-                              {t.active ? 'ACTIVO' : 'INACTIVO'}
-                            </Badge>
-                            <Badge variant="outline" className="border-white/5 text-zinc-500 uppercase text-[9px]">PLAN {t.saas_plan || 'FREE'}</Badge>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                            <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest">ID: {t.id} &bull; {t.industry || 'N/A'}</p>
-                            
-                            <div className="h-3 w-px bg-white/10 hidden md:block" />
 
-                            <div className="flex items-center gap-3">
-                              <div className="flex items-center gap-1 text-zinc-400">
-                                <Users size={10} className="text-blue-400/50" />
-                                <span className="text-[9px] font-bold uppercase tracking-tight">
-                                  {t.users_count || 0} {getIndustryLabels(t.industry).staff}
-                                </span>
+                  <div className="space-y-4">
+                    {isLoading ? (
+                      <div className="h-64 flex flex-col items-center justify-center space-y-4 grayscale opacity-50">
+                        <div className="h-12 w-12 border-4 border-white/10 border-t-white rounded-full animate-spin" />
+                        <p className="text-[10px] font-black uppercase tracking-widest italic">Sincronizando Núcleo...</p>
+                      </div>
+                    ) : filteredTenants.length === 0 ? (
+                      <div className="h-64 border-2 border-dashed border-white/5 rounded-[40px] flex flex-col items-center justify-center space-y-4">
+                        <Globe size={48} className="text-zinc-800" />
+                        <div className="text-center">
+                          <p className="text-sm font-bold tracking-tight uppercase">No se encontraron tenants</p>
+                          <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Verifica la conexión con el servidor API</p>
+                        </div>
+                      </div>
+                    ) : (
+                      filteredTenants.map((t) => (
+                        <div 
+                          key={t.id} 
+                          className={`group bg-zinc-900/20 border border-white/5 rounded-3xl p-6 flex items-center justify-between hover:bg-zinc-900/50 hover:border-white/10 transition-all backdrop-blur-sm ${!t.active ? 'opacity-60' : ''}`}
+                        >
+                          <div className="flex items-center gap-6">
+                            <div className="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-105 transition-transform overflow-hidden">
+                              {t.logo ? (
+                                <img src={t.logo} alt={t.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <Globe className={`group-hover:text-cyan-400 ${t.active ? 'text-zinc-400' : 'text-zinc-600'}`} size={24} />
+                              )}
+                            </div>
+
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-3">
+                                <h3 className="font-bold text-lg tracking-tight">{t.name}</h3>
+                                <Badge 
+                                  onClick={() => handleToggleActive(t.id, t.active)}
+                                  className={`cursor-pointer transition-all border-none ${t.active ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20' : 'bg-red-500/10 text-red-500 hover:bg-red-500/20'}`}
+                                >
+                                  {t.active ? 'ACTIVO' : 'INACTIVO'}
+                                </Badge>
+                                <Badge variant="outline" className="border-white/5 text-zinc-500 uppercase text-[9px]">PLAN {t.saas_plan || 'FREE'}</Badge>
                               </div>
-                              <div className="flex items-center gap-1 text-zinc-400">
-                                <ShieldCheck size={10} className="text-cyan-400/50" />
-                                <span className="text-[9px] font-bold uppercase tracking-tight">
-                                  {t.guardians_count || 0} {getIndustryLabels(t.industry).guardians}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1 text-zinc-400">
-                                <Activity size={10} className="text-emerald-400/50" />
-                                <span className="text-[9px] font-bold uppercase tracking-tight">
-                                  {t.students_count || 0} {getIndustryLabels(t.industry).students}
-                                </span>
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                                <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest">ID: {t.id} &bull; {t.industry || 'N/A'}</p>
+                                
+                                <div className="h-3 w-px bg-white/10 hidden md:block" />
+
+                                <div className="flex items-center gap-3">
+                                  <div className="flex items-center gap-1 text-zinc-400">
+                                    <Users size={10} className="text-blue-400/50" />
+                                    <span className="text-[9px] font-bold uppercase tracking-tight">
+                                      {t.users_count || 0} {getIndustryLabels(t.industry).staff}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1 text-zinc-400">
+                                    <ShieldCheck size={10} className="text-cyan-400/50" />
+                                    <span className="text-[9px] font-bold uppercase tracking-tight">
+                                      {t.guardians_count || 0} {getIndustryLabels(t.industry).guardians}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1 text-zinc-400">
+                                    <Activity size={10} className="text-emerald-400/50" />
+                                    <span className="text-[9px] font-bold uppercase tracking-tight">
+                                      {t.students_count || 0} {getIndustryLabels(t.industry).students}
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
 
-                      <div className="flex items-center gap-12">
+                          <div className="flex items-center gap-12">
 
-                        <div className="text-right space-y-2">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Guardia T&C</p>
-                          <div className="flex items-center gap-4 justify-end">
-                            <span className={`text-[9px] font-black uppercase ${t.accepted_terms_at ? 'text-emerald-400' : 'text-amber-400'}`}>
-                              {t.accepted_terms_at ? 'Firmado' : 'Pendiente'}
-                            </span>
-                            <button 
-                              onClick={() => handleToggleForceTerms(t.id, t.force_terms_acceptance)}
-                              className={`h-11 w-20 rounded-full border relative transition-all duration-500 overflow-hidden ${t.force_terms_acceptance ? 'bg-cyan-500/10 border-cyan-500/50' : 'bg-zinc-800 border-zinc-700'}`}
-                            >
-                              <div className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-center h-8 w-8 rounded-full transition-all duration-500 ${t.force_terms_acceptance ? 'left-11 bg-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]' : 'left-1 bg-zinc-600'}`}>
-                                {t.force_terms_acceptance ? <Lock size={14} className="text-black" /> : <Unlock size={14} className="text-zinc-300" />}
+                            <div className="text-right space-y-2">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Guardia T&C</p>
+                              <div className="flex items-center gap-4 justify-end">
+                                <span className={`text-[9px] font-black uppercase ${t.accepted_terms_at ? 'text-emerald-400' : 'text-amber-400'}`}>
+                                  {t.accepted_terms_at ? 'Firmado' : 'Pendiente'}
+                                </span>
+                                <button 
+                                  onClick={() => handleToggleForceTerms(t.id, t.force_terms_acceptance)}
+                                  className={`h-11 w-20 rounded-full border relative transition-all duration-500 overflow-hidden ${t.force_terms_acceptance ? 'bg-cyan-500/10 border-cyan-500/50' : 'bg-zinc-800 border-zinc-700'}`}
+                                >
+                                  <div className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-center h-8 w-8 rounded-full transition-all duration-500 ${t.force_terms_acceptance ? 'left-11 bg-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]' : 'left-1 bg-zinc-600'}`}>
+                                    {t.force_terms_acceptance ? <Lock size={14} className="text-black" /> : <Unlock size={14} className="text-zinc-300" />}
+                                  </div>
+                                </button>
                               </div>
-                            </button>
+                            </div>
+
+                            <div className="flex gap-2">
+                              <Button variant="ghost" size="icon" className="rounded-2xl border border-white/5 hover:bg-white/5" onClick={() => window.open(`http://${t.id}.localhost:3000`, '_blank')}>
+                                <ExternalLink size={18} className="text-zinc-400" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="rounded-2xl border border-white/5 hover:bg-white/5"
+                                onClick={() => {
+                                  setEditingTenant({...t});
+                                  setShowEditModal(true);
+                                }}
+                              >
+                                <Settings size={18} className="text-zinc-400" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
-
-                        <div className="flex gap-2">
-                          <Button variant="ghost" size="icon" className="rounded-2xl border border-white/5 hover:bg-white/5" onClick={() => window.open(`http://${t.id}.localhost:3000`, '_blank')}>
-                            <ExternalLink size={18} className="text-zinc-400" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="rounded-2xl border border-white/5 hover:bg-white/5"
-                            onClick={() => {
-                              setEditingTenant({...t});
-                              setShowEditModal(true);
-                            }}
-                          >
-                            <Settings size={18} className="text-zinc-400" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
+                      ))
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-6">
+                <Card className="bg-zinc-900/40 border-white/10 overflow-hidden">
+                  <table className="w-full text-left">
+                    <thead className="bg-white/5 border-b border-white/10">
+                      <tr>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500">Administrador</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500">Organización</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500">Email</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {globalUsers.map((user) => (
+                        <tr key={user.id} className="hover:bg-white/5 transition-colors group">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8 border border-white/10" />
+                              <span className="text-sm font-bold">{user.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-col">
+                              <span className="text-xs font-bold text-cyan-400">{user.tenant?.name}</span>
+                              <span className="text-[9px] text-zinc-500 font-black uppercase tracking-tighter">Slug: {user.tenant?.slug}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-xs text-zinc-400 font-medium">{user.email}</td>
+                          <td className="px-6 py-4">
+                            <Badge className={user.active ? 'bg-emerald-500/10 text-emerald-500 border-none' : 'bg-zinc-800 text-zinc-500 border-none'}>
+                              {user.active ? 'DISPONIBLE' : 'SUSPENDIDO'}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </Card>
               </div>
-            </div>
+            )}
           </main>
         </div>
       </div>
@@ -535,22 +612,20 @@ export default function DeepAdminDashboard() {
                     value={editingTenant.name}
                     onChange={(e) => setEditingTenant({...editingTenant, name: e.target.value})}
                     className="w-full bg-black/50 border border-white/5 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500/50 transition-all outline-none"
-                    placeholder="Nombre de la empresa"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Industria</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Giro / Industria</label>
                     <select 
                       value={editingTenant.industry}
                       onChange={(e) => setEditingTenant({...editingTenant, industry: e.target.value})}
-                      className="w-full bg-black/50 border border-white/5 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500/50 transition-all appearance-none outline-none"
+                      className="w-full bg-black/50 border border-white/5 rounded-2xl px-4 py-3 text-sm appearance-none outline-none"
                     >
                       <option value="martial_arts">Artes Marciales</option>
                       <option value="school_treasury">Colegio / Instituto</option>
-                      <option value="medical">Clínica / Salud</option>
-                      <option value="other">Otro</option>
+                      <option value="medical">Salud / Clínica</option>
                     </select>
                   </div>
 
@@ -559,16 +634,53 @@ export default function DeepAdminDashboard() {
                     <select 
                       value={editingTenant.saas_plan}
                       onChange={(e) => setEditingTenant({...editingTenant, saas_plan: e.target.value})}
-                      className="w-full bg-black/50 border border-white/5 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500/50 transition-all appearance-none outline-none"
+                      className="w-full bg-black/50 border border-white/5 rounded-2xl px-4 py-3 text-sm appearance-none outline-none"
                     >
-                      <option value="free">Free</option>
                       <option value="starter">Starter</option>
                       <option value="pro">Pro</option>
                       <option value="enterprise">Enterprise</option>
                     </select>
                   </div>
                 </div>
+
+                {/* Admin Owner Section */}
+                <div className="pt-4 border-t border-white/5 space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-500">Identidad del Dueño</p>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5 grayscale opacity-70">
+                      <label className="text-[9px] font-bold uppercase text-zinc-600 ml-1">Administrador</label>
+                      <div className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs">
+                        {editingTenant.users?.[0]?.name || 'No asignado'}
+                      </div>
+                    </div>
+                    <div className="space-y-1.5 grayscale opacity-70">
+                      <label className="text-[9px] font-bold uppercase text-zinc-600 ml-1">Email Maestro</label>
+                      <div className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs truncate">
+                        {editingTenant.users?.[0]?.email || 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button 
+                    type="button"
+                    onClick={async () => {
+                      const token = localStorage.getItem('super_admin_token');
+                      if (!token) return;
+                      if (confirm('¿Emitir nueva clave segura para este tenant?')) {
+                        const res = await resetTenantPassword(token, editingTenant.id);
+                        if (res?.new_password) {
+                          alert(`NUEVA CLAVE GENERADA:\n\n${res.new_password}\n\nCópiala ahora, no se volverá a mostrar.`);
+                        }
+                      }
+                    }}
+                    className="w-full bg-zinc-800 hover:bg-zinc-700 text-[10px] font-black uppercase tracking-widest rounded-xl py-6 border border-white/5"
+                  >
+                    <Lock size={14} className="mr-2 text-cyan-500" /> Generar Nueva Clave DT_
+                  </Button>
+                </div>
               </div>
+
 
               <div className="pt-4 flex gap-3">
                 <Button type="button" variant="ghost" className="flex-1 rounded-2xl border border-white/5 uppercase text-[10px] font-black tracking-widest" onClick={() => setShowEditModal(false)}>

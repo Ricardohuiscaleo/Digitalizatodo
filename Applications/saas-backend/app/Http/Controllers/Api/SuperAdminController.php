@@ -23,13 +23,38 @@ class SuperAdminController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $tenants = Tenant::withCount(['users', 'students', 'guardians'])->get();
-
+        $tenants = Tenant::withCount(['users', 'students', 'guardians'])
+            ->with(['users' => function($q) {
+                $q->select('id', 'name', 'email', 'tenant_id')->oldest();
+            }])
+            ->get();
 
         return response()->json([
-            'tenants' => $tenants
+            'tenants' => $tenants,
+            'v' => 'metrics_v1' // Verification field
+        ]);
+
+    }
+
+    /**
+     * List all administrators across all tenants.
+     */
+    public function users()
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $users = User::whereNotNull('tenant_id')
+            ->with('tenant:id,name,slug')
+            ->select('id', 'name', 'email', 'tenant_id', 'active', 'created_at')
+            ->get();
+
+        return response()->json([
+            'users' => $users
         ]);
     }
+
 
     /**
      * Create a new tenant and its initial admin user.
@@ -136,12 +161,13 @@ class SuperAdminController extends Controller
             return response()->json(['error' => 'No admin user found for this tenant'], 404);
         }
 
-        $newPassword = Str::random(10);
+        $newPassword = 'dt_' . Str::random(24);
         $user->password = Hash::make($newPassword);
         $user->save();
 
         // Signal update
-        event(new TenantUpdated($tenant, 'reset_password'));
+        event(new TenantUpdated($id, 'reset_password'));
+
 
         return response()->json([
             'message' => 'Password reset successfully',
