@@ -800,6 +800,25 @@ export async function deleteSchedule(tenantSlug: string, token: string, id: numb
     } catch { return null; }
 }
 
+export async function acceptTerms(tenantSlug: string, token: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantSlug}/settings/accept-terms`, {
+            method: 'POST',
+            headers: { 
+                'Authorization': `Bearer ${token}`, 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json' 
+            },
+            body: JSON.stringify({ accepted_at: new Date().toISOString() }),
+        });
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error accepting terms:', error);
+        return { message: 'Error de conexión' };
+    }
+}
+
+
 export async function updateStudentName(tenantId: string, token: string, studentId: string | number, name: string) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/students/${studentId}/name`, {
