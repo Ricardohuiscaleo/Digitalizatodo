@@ -37,19 +37,29 @@ class StudentController extends Controller
         $students = $query
             ->with([
                 'course',
-                'enrollments' => fn($q) => $q->where('status', 'active'),
+                'enrollments.payments',
                 'attendances' => fn($q) => $q->where('date', now()->format('Y-m-d'))
             ])
             ->get()
             ->map(function ($student) {
                 // Calcular estado de pagos
-                $hasOverdue = $student->enrollments->contains(fn($e) => $e->payments()->where('status', 'overdue')->exists());
-                $hasPending = $student->enrollments->contains(fn($e) => $e->payments()->where('status', 'pending')->exists());
+                $now = now();
+                $hasOverdue = $student->enrollments->contains(function($e) use ($now) {
+                    return $e->payments->contains(function($p) use ($now) {
+                        return in_array($p->status, ['pending', 'overdue']) && $p->due_date && $p->due_date->isPast();
+                    });
+                });
+                
+                $hasPendingReview = $student->enrollments->contains(function($e) {
+                    return $e->payments->contains(function($p) {
+                        return in_array($p->status, ['pending_review', 'proof_uploaded']);
+                    });
+                });
                 
                 $paymentStatus = 'paid';
                 if ($hasOverdue) {
                     $paymentStatus = 'overdue';
-                } elseif ($hasPending) {
+                } elseif ($hasPendingReview) {
                     $paymentStatus = 'pending';
                 }
 
@@ -62,7 +72,7 @@ class StudentController extends Controller
                     'photo' => $student->photo,
                     'course_id' => $student->course_id,
                     'course_name' => $student->course ? $student->course->name : null,
-                    'has_debt' => $hasOverdue || $hasPending,
+                    'has_debt' => $hasOverdue || $hasPendingReview,
                     'payment_status' => $paymentStatus,
                     'belt_rank' => $student->belt_rank,
                     'degrees' => (int)($student->degrees ?? 0),

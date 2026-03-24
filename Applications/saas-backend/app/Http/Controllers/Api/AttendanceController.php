@@ -56,10 +56,21 @@ class AttendanceController extends Controller
                     'belt_rank' => $a->student->belt_rank,
                     'degrees' => (int)($a->student->degrees ?? 0),
                     'payment_status' => (function() use ($a) {
-                        $hasOverdue = $a->student->enrollments->contains(fn($e) => $e->payments->where('status', 'overdue')->count() > 0);
-                        $hasPending = $a->student->enrollments->contains(fn($e) => $e->payments->where('status', 'pending')->count() > 0);
+                        $now = now();
+                        $hasOverdue = $a->student->enrollments->contains(function($e) use ($now) {
+                            return $e->payments->contains(function($p) use ($now) {
+                                return in_array($p->status, ['pending', 'overdue']) && $p->due_date && $p->due_date->isPast();
+                            });
+                        });
+                        
+                        $hasPendingReview = $a->student->enrollments->contains(function($e) {
+                            return $e->payments->contains(function($p) {
+                                return in_array($p->status, ['pending_review', 'proof_uploaded']);
+                            });
+                        });
+                        
                         if ($hasOverdue) return 'overdue';
-                        if ($hasPending) return 'pending';
+                        if ($hasPendingReview) return 'pending';
                         return 'paid';
                     })()
                 ] : null,
