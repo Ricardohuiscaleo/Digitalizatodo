@@ -32,7 +32,23 @@ import { useRealtimeChannel } from '@/hooks/useRealtimeChannel';
 
 
 
+const getIndustryLabels = (industry: string) => {
+  switch (industry) {
+    case 'school_treasury':
+      return { staff: 'Staff', guardians: 'Apoderados', students: 'Alumnos' };
+    case 'martial_arts':
+      return { staff: 'Staff', guardians: 'Clientes', students: 'Alumnos' };
+    case 'health':
+    case 'medical':
+      return { staff: 'Staff', guardians: 'Pacientes', students: 'Consultas' };
+    default:
+      return { staff: 'Staff', guardians: 'Titulares', students: 'Estudiantes' };
+  }
+};
+
+
 export default function DeepAdminDashboard() {
+
   const router = useRouter();
   const [filter, setFilter] = useState('all');
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -327,19 +343,37 @@ export default function DeepAdminDashboard() {
                             </Badge>
                             <Badge variant="outline" className="border-white/5 text-zinc-500 uppercase text-[9px]">PLAN {t.saas_plan || 'FREE'}</Badge>
                           </div>
-                          <div className="flex items-center gap-4">
-                            <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest">ID: {t.id} &bull; Industria: {t.industry || 'N/A'}</p>
-                            <div className="flex items-center gap-1.5 text-zinc-400">
-                              <Users size={12} />
-                              <span className="text-[10px] font-medium tracking-tight uppercase">
-                                {t.users_count || 0} Usuarios
-                              </span>
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                            <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest">ID: {t.id} &bull; {t.industry || 'N/A'}</p>
+                            
+                            <div className="h-3 w-px bg-white/10 hidden md:block" />
+
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-1 text-zinc-400">
+                                <Users size={10} className="text-blue-400/50" />
+                                <span className="text-[9px] font-bold uppercase tracking-tight">
+                                  {t.users_count || 0} {getIndustryLabels(t.industry).staff}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 text-zinc-400">
+                                <ShieldCheck size={10} className="text-cyan-400/50" />
+                                <span className="text-[9px] font-bold uppercase tracking-tight">
+                                  {t.guardians_count || 0} {getIndustryLabels(t.industry).guardians}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 text-zinc-400">
+                                <Activity size={10} className="text-emerald-400/50" />
+                                <span className="text-[9px] font-bold uppercase tracking-tight">
+                                  {t.students_count || 0} {getIndustryLabels(t.industry).students}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-12">
+
                         <div className="text-right space-y-2">
                           <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Guardia T&C</p>
                           <div className="flex items-center gap-4 justify-end">

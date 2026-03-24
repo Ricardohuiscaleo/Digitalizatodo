@@ -23,7 +23,8 @@ class SuperAdminController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $tenants = Tenant::withCount('users')->get();
+        $tenants = Tenant::withCount(['users', 'students', 'guardians'])->get();
+
 
         return response()->json([
             'tenants' => $tenants
