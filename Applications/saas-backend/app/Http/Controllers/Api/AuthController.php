@@ -110,8 +110,16 @@ class AuthController extends Controller
                 'user_type' => $userType,
                 'role' => $role,
                 'user' => $user->only('id', 'name', 'email', 'phone'),
-                'tenant' => $tenant->only('id', 'slug', 'name', 'primary_color', 'logo'),
+                'tenant' => [
+                    'id' => $tenant->id,
+                    'slug' => $tenant->slug,
+                    'name' => $tenant->name,
+                    'primary_color' => $tenant->primary_color,
+                    'logo' => $tenant->logo,
+                    'force_terms_acceptance' => false,
+                ],
             ]);
+
         }
         catch (\Throwable $e) {
             return response()->json([
@@ -146,8 +154,10 @@ class AuthController extends Controller
                     'primary_color' => $tenant->primary_color,
                     'industry'      => $tenant->industry,
                     'data'          => $tenant->data,
+                    'force_terms_acceptance' => false,
                 ],
             ]);
+
         }
 
         if ($user instanceof Guardian) {
