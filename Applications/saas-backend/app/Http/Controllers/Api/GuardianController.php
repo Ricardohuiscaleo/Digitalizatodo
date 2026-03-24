@@ -78,6 +78,11 @@ class GuardianController extends Controller
                         'status' => $payment->status === 'pending_review' ? 'review' : $payment->status,
                         'due_date' => $payment->due_date?->format('d M, Y'),
                         'proof_url' => $payment->proof_image ? (str_starts_with($payment->proof_image, 'http') ? $payment->proof_image : $s3BaseUrl . $payment->proof_image) : null,
+                        'belt_rank' => $student->belt_rank,
+                        'degrees' => (int)($student->degrees ?? 0),
+                        'total_attendances' => $student->attendances()->count(),
+                        'previous_classes' => (int)($student->previous_classes ?? 0),
+                        'belt_classes_at_promotion' => (int)($student->belt_classes_at_promotion ?? 0),
                     ];
                     if ($payment->status === 'pending_review') {
                         $status = 'review';

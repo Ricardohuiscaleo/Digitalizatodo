@@ -224,7 +224,7 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
             )}
 
             {/* Mobile lista */}
-            <div className="md:hidden space-y-4 pb-12">
+            <div className="md:hidden space-y-3 pb-12 px-3">
                 {filteredPayers.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-16 gap-3">
                         <Users size={32} className={isDark ? 'text-zinc-700' : 'text-zinc-200'} />
@@ -240,71 +240,79 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                     const statusColor = isPaid ? 'text-emerald-500' : isReview ? 'text-amber-400' : 'text-rose-500';
                     const statusLabel = isPaid ? 'Al día' : isReview ? 'Por aprobar' : 'Pendiente';
                     const statusBg = isPaid ? 'bg-emerald-500/10' : isReview ? 'bg-amber-400/10' : 'bg-rose-500/10';
+                    const cardBg = isPaid 
+                        ? (isDark ? 'bg-emerald-500/[0.08] border-emerald-500/30' : 'bg-emerald-50 border-emerald-500/20')
+                        : isReview 
+                            ? (isDark ? 'bg-amber-400/[0.08] border-amber-400/30' : 'bg-amber-50 border-amber-400/20')
+                            : (isDark ? 'bg-rose-500/[0.08] border-rose-500/30' : 'bg-rose-50 border-rose-500/20');
 
                     return (
                         <button key={payer.id}
-                            className={`w-full flex flex-col gap-4 p-5 rounded-[2.2rem] border transition-all active:scale-[0.97] ${
-                                isDark ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white border-zinc-100 shadow-sm'
-                            }`}
+                            className={`w-full flex flex-col gap-2.5 py-2.5 px-4 rounded-[1.8rem] border transition-all active:scale-[0.97] ${cardBg}`}
                             onMouseDown={() => handleLongPressStart(payer.id)}
                             onMouseUp={handleLongPressEnd}
                             onTouchStart={() => handleLongPressStart(payer.id)}
                             onTouchEnd={handleLongPressEnd}
                             onClick={() => setBubbleModalPayer(payer)}
                         >
-                            <div className="flex items-center justify-between w-full">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex flex-shrink-0">
-                                        {students.slice(0, 2).map((student: any, i: number) => (
-                                            <div key={student.id} style={{ marginLeft: i > 0 ? -16 : 0, zIndex: 2 - i }} className="relative">
-                                                <StudentAvatar
-                                                    photo={student.photo || payer.photo}
-                                                    name={student.name}
-                                                    size={44}
-                                                    beltRank={student.belt_rank}
-                                                    degrees={student.degrees ?? 0}
-                                                    isDark={isDark}
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="text-left min-w-0">
-                                        <p className={`text-[13px] font-black uppercase tracking-tight truncate ${isDark ? 'text-white' : 'text-zinc-900'}`}>
-                                            {payer.name}
-                                        </p>
-                                        <div className="flex items-center gap-2 mt-0.5">
-                                            <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase border ${statusBg} ${statusColor} border-current/10`}>
-                                                {statusLabel}
+                            {/* Nivel 1 & 2: Alumnos (Avatar + Nombre Abajo) */}
+                            <div className="flex items-center gap-4 overflow-x-auto hide-scrollbar pt-2 pl-2 pb-1.5 min-h-[72px]">
+                                {students.slice(0, 4).map((student: any) => {
+                                    const classesCount = (student.total_attendances || 0) + (student.previous_classes || 0) - (student.belt_classes_at_promotion || 0);
+                                    
+                                    return (
+                                        <div key={student.id} className="flex flex-col items-center gap-1.5 flex-shrink-0">
+                                            <StudentAvatar
+                                                photo={student.photo || payer.photo}
+                                                name={student.name}
+                                                size={46}
+                                                beltRank={student.belt_rank}
+                                                degrees={student.degrees ?? 0}
+                                                classesCount={classesCount > 0 ? classesCount : undefined}
+                                                isDark={isDark}
+                                            />
+                                            <span className={`text-[8px] font-black uppercase tracking-tighter text-center max-w-[48px] truncate ${isDark ? 'text-zinc-500' : 'text-zinc-900/60'}`}>
+                                                {student.name.split(' ')[0]}
                                             </span>
-                                            {students.length > 0 && (
-                                                <span className={`text-[9px] font-bold ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
-                                                    {students.length} {students.length === 1 ? 'Alumno' : 'Alumnos'}
-                                                </span>
-                                            )}
                                         </div>
+                                    );
+                                })}
+                                {students.length > 4 && (
+                                    <div className="flex flex-col items-center gap-1.5 pr-2">
+                                        <div className={`w-11 h-11 rounded-full flex items-center justify-center text-[10px] font-black ${
+                                            isDark ? 'bg-zinc-800 text-zinc-600' : 'bg-zinc-100 text-zinc-300'
+                                        }`}>
+                                            +{students.length - 4}
+                                        </div>
+                                        <span className="text-[8px] font-black uppercase text-zinc-700">Más</span>
                                     </div>
-                                </div>
-                                <div className="text-right flex-shrink-0">
-                                    <p className={`text-lg font-black tracking-tighter ${statusColor}`}>
-                                        {formatMoney(stats.displayAmount)}
-                                    </p>
-                                </div>
+                                )}
                             </div>
 
-                            {students.length > 0 && (
-                                <div className={`flex items-center justify-between pt-3 border-t ${isDark ? 'border-zinc-800/50' : 'border-zinc-50'}`}>
-                                    <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar flex-1 mr-4">
-                                        {students.map((s: any) => (
-                                            <span key={s.id} className={`text-[9px] font-bold uppercase whitespace-nowrap px-2 py-1 rounded-lg ${
-                                                isDark ? 'bg-zinc-800 text-zinc-500' : 'bg-zinc-100 text-zinc-400'
-                                            }`}>
-                                                {s.name.split(' ')[0]}
-                                            </span>
-                                        ))}
-                                    </div>
-                                    <ChevronRight size={14} className={isDark ? 'text-zinc-700' : 'text-zinc-300'} />
+                            <div className={`space-y-2 pb-0.5 pt-2 border-t ${isDark ? 'border-white/5' : 'border-black/5'}`}>
+                                {/* Nivel 3: Titular */}
+                                <div className="text-left">
+                                    <p className={`text-[15px] font-black uppercase tracking-tight leading-none ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+                                        {payer.name}
+                                    </p>
                                 </div>
-                            )}
+
+                                {/* Nivel 4: Total y Botón Gestionar */}
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                        <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase border ${statusBg} ${statusColor} border-current/10 font-black`}>
+                                            {statusLabel}
+                                        </span>
+                                        <p className={`text-base font-black tracking-tighter ${statusColor}`}>
+                                            {formatMoney(stats.displayAmount)}
+                                        </p>
+                                    </div>
+                                    <div className={`flex items-center gap-1.5 pr-1 ${statusColor} opacity-70`}>
+                                        <span className="text-[9px] font-black uppercase tracking-widest">Gestionar</span>
+                                        <ChevronRight size={14} />
+                                    </div>
+                                </div>
+                            </div>
                         </button>
                     );
                 })}
