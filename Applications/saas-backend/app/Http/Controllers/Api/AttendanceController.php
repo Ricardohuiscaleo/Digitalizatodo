@@ -54,7 +54,14 @@ class AttendanceController extends Controller
                     'name' => $a->student->name,
                     'photo' => $a->student->photo,
                     'belt_rank' => $a->student->belt_rank,
-                    'degrees' => (int)($a->student->degrees ?? 0)
+                    'degrees' => (int)($a->student->degrees ?? 0),
+                    'payment_status' => (function() use ($a) {
+                        $hasOverdue = $a->student->enrollments->contains(fn($e) => $e->payments->where('status', 'overdue')->count() > 0);
+                        $hasPending = $a->student->enrollments->contains(fn($e) => $e->payments->where('status', 'pending')->count() > 0);
+                        if ($hasOverdue) return 'overdue';
+                        if ($hasPending) return 'pending';
+                        return 'paid';
+                    })()
                 ] : null,
                 'date' => $a->date instanceof \Carbon\Carbon ? $a->date->format('Y-m-d') : $a->date,
                 'status' => $a->status,
