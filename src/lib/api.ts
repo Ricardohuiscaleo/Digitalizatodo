@@ -57,6 +57,23 @@ export async function getAllTenants(token: string) {
     }
 }
 
+export async function getAllUsers(token: string) {
+    try {
+        const response = await fetch(`${API_URL}/admin/users`, {
+            method: 'GET',
+            headers: {
+                ...defaultHeaders,
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        if (!response.ok) return null;
+        const data = await safeJson(response);
+        return data?.users || [];
+    } catch (error) {
+        console.error('Error fetching all users:', error);
+        return null;
+    }
+}
 
 
 export async function createTenant(token: string, data: any) {
