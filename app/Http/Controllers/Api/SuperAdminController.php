@@ -46,7 +46,7 @@ class SuperAdminController extends Controller
             'admin_name' => 'required|string',
             'admin_email' => 'required|email|unique:users,email',
             'admin_password' => 'required|string|min:6',
-            'saas_plan' => 'string|in:free,pro,enterprise',
+            'saas_plan' => 'sometimes|string|in:free,pro,enterprise,starter',
         ]);
 
 
