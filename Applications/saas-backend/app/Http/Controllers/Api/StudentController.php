@@ -55,6 +55,15 @@ class StudentController extends Controller
                     'course_name' => $student->course ? $student->course->name : null,
                     'has_debt' => $pendingPayments > 0,
                     'pending_count' => $pendingPayments,
+                    'belt_rank' => $student->belt_rank,
+                    'degrees' => (int)($student->degrees ?? 0),
+                    'total_attendances' => $student->attendances()->count(),
+                    'previous_classes' => (int)($student->previous_classes ?? 0),
+                    'belt_classes_at_promotion' => (int)($student->belt_classes_at_promotion ?? 0),
+                    'modality' => $student->modality,
+                    'gender' => $student->gender,
+                    'weight' => $student->weight,
+                    'height' => $student->height,
                     'today_status' => $todayAttendance ? $todayAttendance->status : null,
                 ];
             });

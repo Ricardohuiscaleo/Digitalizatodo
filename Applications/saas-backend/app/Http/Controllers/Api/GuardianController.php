@@ -116,7 +116,16 @@ class GuardianController extends Controller
                         'name' => $s->name,
                         'category' => $s->category,
                         'photo' => $s->photo ? (str_starts_with($s->photo, 'http') ? $s->photo : $s3BaseUrl . $s->photo) : "https://i.pravatar.cc/150?img=" . $s->id,
-                        'label' => $s->belt_rank ?? '',
+                        'belt_rank' => $s->belt_rank,
+                        'degrees' => (int)($s->degrees ?? 0),
+                        'total_attendances' => $s->attendances()->count(),
+                        'previous_classes' => (int)($s->previous_classes ?? 0),
+                        'belt_classes_at_promotion' => (int)($s->belt_classes_at_promotion ?? 0),
+                        'modality' => $s->modality,
+                        'gender' => $s->gender,
+                        'weight' => $s->weight,
+                        'height' => $s->height,
+                        'label' => $s->belt_rank ?? '', // Keep for retro-compatibility
                         'today_status' => $todayAttendance ? $todayAttendance->status : 'absent',
                         'method' => $todayAttendance ? $todayAttendance->registration_method : 'manual',
                     ];

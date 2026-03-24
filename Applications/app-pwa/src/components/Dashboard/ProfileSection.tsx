@@ -1,21 +1,24 @@
 "use client";
 
 import React from 'react';
-import { Settings, DollarSign, LogOut, ChevronRight } from 'lucide-react';
+import { Settings, DollarSign, LogOut, ChevronRight, User } from 'lucide-react';
 import AppUpdatesAccordion from "./AppUpdatesAccordion";
+import { BeltDisplay } from './Industries/MartialArts/BeltDisplay';
 
 interface ProfileSectionProps {
     user: any;
     branding: any;
     appUpdates: any[];
     changeTab: (tab: string) => void;
+    isDark?: boolean;
 }
 
 const ProfileSection: React.FC<ProfileSectionProps> = ({
     user,
     branding,
     appUpdates,
-    changeTab
+    changeTab,
+    isDark = false
 }) => {
     const handleLogout = () => {
         const slug = localStorage.getItem("tenant_slug");
@@ -27,31 +30,73 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-24">
+        <div className={`space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-24 ${isDark ? 'bg-black text-white' : ''}`}>
             {/* Perfil Card */}
-            <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-8 text-center shadow-sm">
-                <div className="w-20 h-20 mx-auto mb-3 rounded-full overflow-hidden border-4 border-zinc-50 shadow-md">
-                    <img src={user?.photo || '/DLogo-v2.webp'} className="w-full h-full object-cover" alt="" />
+            <div className={`rounded-[2.5rem] p-8 text-center shadow-lg border transition-all ${
+                isDark ? 'bg-[#09090b] border-zinc-800' : 'bg-white border-zinc-100'
+            }`}>
+                <div className={`w-24 h-24 mx-auto mb-4 rounded-3xl overflow-hidden border-4 shadow-xl relative ${
+                    isDark ? 'border-zinc-800 bg-zinc-900' : 'border-zinc-50 bg-zinc-50'
+                }`}>
+                    {user?.photo ? (
+                        <img src={user.photo} className="w-full h-full object-cover" alt="" />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-zinc-300">
+                            <User size={40} />
+                        </div>
+                    )}
                 </div>
-                <h3 className="text-lg font-black text-zinc-900 uppercase tracking-tight">{user?.name || 'Admin'}</h3>
-                <p className="text-xs text-zinc-400 font-bold mb-2">{user?.email}</p>
-                <span className="inline-block bg-zinc-900 text-white text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full">Staff</span>
+                
+                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-orange-400 mb-1">
+                    Panel de Control · Staff
+                </p>
+                <h3 className={`text-xl font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+                    {user?.name || 'Admin'}
+                </h3>
+                <p className={`text-xs font-bold mb-4 ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>{user?.email}</p>
+                
+                {user?.belt_rank && isDark && (
+                    <div className="flex justify-center mb-2">
+                        <BeltDisplay beltRank={user.belt_rank} degrees={user.degrees ?? 0} size="md" />
+                    </div>
+                )}
+
+                <div className={`inline-block text-[8px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full ${
+                    isDark ? 'bg-zinc-800 text-zinc-300' : 'bg-zinc-900 text-white'
+                }`}>
+                    {branding?.tenant_name || 'Admin'}
+                </div>
             </div>
 
             {/* Menú */}
-            <div className="bg-white border border-zinc-100 rounded-3xl p-2">
-                <button onClick={() => changeTab('settings')} className="w-full flex items-center justify-between p-4 hover:bg-stone-50 rounded-2xl transition-all group">
+            <div className={`border rounded-[2.5rem] p-2 ${
+                isDark ? 'bg-[#09090b] border-zinc-800' : 'bg-white border-zinc-100 shadow-sm'
+            }`}>
+                <button onClick={() => changeTab('settings')} className={`w-full flex items-center justify-between p-4 rounded-3xl transition-all group ${
+                    isDark ? 'hover:bg-zinc-900/50' : 'hover:bg-zinc-50'
+                }`}>
                     <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400 group-hover:text-zinc-700 transition-colors"><Settings size={20} /></div>
-                        <span className="font-black text-sm text-zinc-700">Ajustes</span>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+                            isDark ? 'bg-zinc-900 text-zinc-500 group-hover:text-zinc-300' : 'bg-zinc-50 text-zinc-400 group-hover:text-zinc-700'
+                        }`}>
+                            <Settings size={20} />
+                        </div>
+                        <span className={`font-black text-sm ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>Ajustes de Cuenta</span>
                     </div>
                     <ChevronRight size={18} className="text-zinc-300" />
                 </button>
+                
                 {branding?.industry === 'school_treasury' && (
-                    <button onClick={() => changeTab('fees')} className="w-full flex items-center justify-between p-4 hover:bg-stone-50 rounded-2xl transition-all group">
+                    <button onClick={() => changeTab('fees')} className={`w-full flex items-center justify-between p-4 rounded-3xl transition-all group ${
+                        isDark ? 'hover:bg-zinc-900/50' : 'hover:bg-zinc-50'
+                    }`}>
                         <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400 group-hover:text-zinc-700 transition-colors"><DollarSign size={20} /></div>
-                            <span className="font-black text-sm text-zinc-700">Crear cuotas</span>
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+                                isDark ? 'bg-zinc-900 text-zinc-500 group-hover:text-zinc-300' : 'bg-zinc-50 text-zinc-400 group-hover:text-zinc-700'
+                            }`}>
+                                <DollarSign size={20} />
+                            </div>
+                            <span className={`font-black text-sm ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>Gestión de Cuotas</span>
                         </div>
                         <ChevronRight size={18} className="text-zinc-300" />
                     </button>
@@ -64,9 +109,9 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
             {/* Logout */}
             <button
                 onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 py-3 text-[10px] font-black uppercase tracking-widest text-rose-400 hover:text-rose-600 transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-rose-500/80 hover:text-rose-500 transition-colors"
             >
-                <LogOut size={13} />
+                <LogOut size={14} />
                 Cerrar Sesión
             </button>
 
@@ -75,15 +120,19 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                 href="https://digitalizatodo.cl"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex flex-col items-center gap-0.5 pt-4 pb-2 border-t border-zinc-100 group"
+                className={`flex flex-col items-center gap-0.5 pt-6 pb-2 border-t group ${
+                    isDark ? 'border-zinc-900' : 'border-zinc-100'
+                }`}
             >
-                <p className="text-[13px] font-black tracking-[0.25em] text-zinc-500 uppercase">Digitaliza Todo</p>
-                <p className="text-[10px] text-zinc-400 text-center mt-1">Somos una empresa de desarrollo de software a la medida</p>
-                <p className="text-[10px] font-semibold text-zinc-500 group-hover:text-zinc-700 transition-colors mt-1">¿Necesitas nuestros servicios? <span className="underline underline-offset-2">Haz click aquí</span></p>
-                <p className="text-[8px] text-orange-400/90 tracking-[0.3em] uppercase mt-2">Digitalizando en Arica, Chile 🇨🇱</p>
+                <p className={`text-[12px] font-black tracking-[0.25em] uppercase ${isDark ? 'text-zinc-700' : 'text-zinc-400'}`}>Digitaliza Todo</p>
+                <p className={`text-[9px] text-center mt-1 px-8 leading-relaxed ${isDark ? 'text-zinc-800' : 'text-zinc-400'}`}>
+                    Sistemas a medida para academias de alto rendimiento.
+                </p>
+                <p className="text-[8px] font-black text-orange-400/80 tracking-[0.3em] uppercase mt-3">Arica, Chile 🇨🇱</p>
             </a>
         </div>
     );
 };
 
 export default ProfileSection;
+

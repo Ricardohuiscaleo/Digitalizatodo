@@ -49,7 +49,13 @@ class AttendanceController extends Controller
             'attendance' => $attendances->map(fn($a) => [
                 'id' => $a->id,
                 'student_id' => $a->student_id,
-                'student' => $a->student ? ['id' => $a->student->id, 'name' => $a->student->name, 'photo' => $a->student->photo] : null,
+                'student' => $a->student ? [
+                    'id' => $a->student->id,
+                    'name' => $a->student->name,
+                    'photo' => $a->student->photo,
+                    'belt_rank' => $a->student->belt_rank,
+                    'degrees' => (int)($a->student->degrees ?? 0)
+                ] : null,
                 'date' => $a->date instanceof \Carbon\Carbon ? $a->date->format('Y-m-d') : $a->date,
                 'status' => $a->status,
                 'created_at' => $a->created_at,
