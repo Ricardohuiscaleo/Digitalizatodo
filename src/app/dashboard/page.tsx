@@ -540,6 +540,7 @@ export default function App() {
                                     branding={branding}
                                     appUpdates={appUpdates}
                                     changeTab={changeTab}
+                                    isDark={isDark}
                                 />
                             )}
                             {activeTab === 'fees' && (

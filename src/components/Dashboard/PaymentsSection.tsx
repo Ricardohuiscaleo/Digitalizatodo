@@ -219,6 +219,7 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                     onClose={() => setBubbleModalPayer(null)}
                     onApprove={(id) => { handlePaymentApprove(id); setBubbleModalPayer(null); }}
                     onViewProof={(url) => setProofModalUrl(url)}
+                    isDark={isDark}
                 />
             )}
 

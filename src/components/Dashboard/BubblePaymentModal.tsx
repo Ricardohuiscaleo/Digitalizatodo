@@ -13,6 +13,7 @@ interface BubblePaymentModalProps {
     onClose: () => void;
     onApprove: (id: string) => void;
     onViewProof: (url: string) => void;
+    isDark?: boolean;
 }
 
 const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({ 
@@ -23,7 +24,8 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
     getPayerRealStats, 
     onClose, 
     onApprove, 
-    onViewProof 
+    onViewProof,
+    isDark = false
 }) => {
     const [dragY, setDragY] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
@@ -44,7 +46,6 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
         if (!isDragging) return;
         const deltaY = e.touches[0].pageY - startY.current;
         if (deltaY > 0) { 
-            // Prevenimos el scroll solo si estamos arrastrando hacia abajo
             setDragY(deltaY); 
         }
     };
@@ -63,11 +64,15 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
 
     return (
         <div
-            className="fixed inset-0 z-[200] bg-zinc-950/70 backdrop-blur-md flex items-end justify-center animate-in fade-in duration-200"
+            className={`fixed inset-0 z-[200] backdrop-blur-md flex items-end justify-center animate-in fade-in duration-200 ${
+                isDark ? 'bg-black/80' : 'bg-zinc-950/70'
+            }`}
             onClick={onClose}
         >
             <div
-                className={`bg-white w-full rounded-t-[2.5rem] shadow-2xl ${!isDragging ? 'transition-all duration-300' : ''}`}
+                className={`w-full rounded-t-[2.5rem] shadow-2xl ${!isDragging ? 'transition-all duration-300' : ''} ${
+                    isDark ? 'bg-[#09090b] border-t border-zinc-800' : 'bg-white'
+                }`}
                 style={{ transform: `translateY(${dragY}px)`, opacity: 1 - dragY / 400 }}
                 onClick={e => e.stopPropagation()}
                 onTouchStart={handleTouchStart}
@@ -75,16 +80,20 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
                 onTouchEnd={handleTouchEnd}
             >
                 <div className="flex justify-center pt-4 pb-2">
-                    <div className="w-12 h-1.5 bg-zinc-200 rounded-full" />
+                    <div className={`w-12 h-1.5 rounded-full ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
                 </div>
 
-                <div className="px-6 pb-4 border-b border-zinc-100">
-                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-3">Desglose del Pago</p>
+                <div className={`px-6 pb-4 border-b ${isDark ? 'border-zinc-800/50' : 'border-zinc-100'}`}>
+                    <p className={`text-[9px] font-black uppercase tracking-[0.2em] mb-3 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Desglose del Pago</p>
                     <div className="flex items-center gap-3">
-                        <img src={payer.photo} className="w-12 h-12 rounded-full object-cover border-2 border-zinc-100 shadow-sm" />
+                        <img src={payer.photo} className={`w-12 h-12 rounded-full object-cover border-2 shadow-sm ${
+                            isDark ? 'border-zinc-800' : 'border-zinc-100'
+                        }`} />
                         <div>
-                            <p className="text-base font-black uppercase text-zinc-900 leading-none">{payer.name}</p>
-                            <p className="text-[10px] text-zinc-400 font-bold mt-0.5">{payer.enrolledStudents?.length} {vocab?.memberLabel || 'Miembro'}s</p>
+                            <p className={`text-base font-black uppercase leading-none ${isDark ? 'text-white' : 'text-zinc-900'}`}>{payer.name}</p>
+                            <p className={`text-[10px] font-bold mt-0.5 ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                                {payer.enrolledStudents?.length} {vocab?.memberLabel || 'Miembro'}s
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -93,34 +102,38 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
                     {payments?.map((payment: any, idx: number) => {
                         const statusLabel = payment.status === 'approved' || payment.status === 'paid' ? 'Pagado'
                             : payment.status === 'review' ? 'Por Aprobar' : 'Por Pagar';
-                        const statusColor = payment.status === 'approved' || payment.status === 'paid' ? 'text-emerald-600'
-                            : payment.status === 'review' ? 'text-amber-600' : 'text-rose-600';
+                        const statusColor = payment.status === 'approved' || payment.status === 'paid' ? 'text-emerald-500'
+                            : payment.status === 'review' ? 'text-amber-400' : 'text-rose-500';
                         return (
-                            <div key={idx} className="flex items-center gap-3 bg-zinc-50 rounded-2xl p-4 border border-zinc-100">
+                            <div key={idx} className={`flex items-center gap-3 rounded-2xl p-4 border ${
+                                isDark ? 'bg-zinc-900/50 border-zinc-800' : 'bg-zinc-50 border-zinc-100'
+                            }`}>
                                 <StudentAvatar
                                         photo={payment.student_photo || payer.photo}
                                         name={payment.student_name}
                                         size={56}
                                         beltRank={payment.belt_rank}
                                         degrees={payment.degrees ?? 0}
-                                        isDark={false}
+                                        isDark={isDark}
                                     />
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
-                                        <p className="text-sm font-black uppercase text-zinc-900 leading-none truncate">{payment.student_name}</p>
+                                        <p className={`text-sm font-black uppercase leading-none truncate ${isDark ? 'text-white' : 'text-zinc-900'}`}>{payment.student_name}</p>
                                         {(payment.type === 'single' || payment.type === 'pack_4' || payment.type === 'referral') && (
                                             <span className="bg-[#c9a84c] text-black text-[7px] font-black px-1.5 py-0.5 rounded-full">VIP</span>
                                         )}
                                     </div>
-                                    <p className="text-[10px] text-zinc-400 font-bold mt-1.5 uppercase">
+                                    <p className={`text-[10px] font-bold mt-1.5 uppercase ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
                                         Vence: {payment.due_date} • <span className={statusColor}>{statusLabel}</span>
                                     </p>
-                                    <p className="text-xl font-black text-zinc-950 mt-1 tracking-tighter">{formatMoney(payment.amount)}</p>
+                                    <p className={`text-xl font-black mt-1 tracking-tighter ${isDark ? 'text-white' : 'text-zinc-950'}`}>{formatMoney(payment.amount)}</p>
                                 </div>
                                 {payment.proof_url && (
                                     <button
                                         onClick={() => onViewProof(payment.proof_url)}
-                                        className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500 shrink-0 active:scale-95"
+                                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 active:scale-95 border ${
+                                            isDark ? 'bg-amber-400/10 border-amber-400/20 text-amber-500' : 'bg-amber-50 border-amber-100 text-amber-500'
+                                        }`}
                                     >
                                         <Eye size={16} />
                                     </button>
@@ -148,3 +161,4 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
 };
 
 export default BubblePaymentModal;
+
