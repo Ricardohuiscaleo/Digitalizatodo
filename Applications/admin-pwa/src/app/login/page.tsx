@@ -85,7 +85,8 @@ export default function LoginPage() {
                                             required
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
-                                            placeholder="admin@digitalizatodo.cl"
+                                            placeholder="info@digitalizatodo.cl"
+
                                             className="w-full h-16 bg-white/5 border border-white/5 rounded-2xl px-6 pl-14 font-bold text-sm text-white placeholder:text-zinc-600 focus:bg-white/10 focus:border-cyan-500/50 outline-none transition-all duration-300"
                                         />
                                         <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within/input:text-cyan-400 transition-colors" size={20} />
