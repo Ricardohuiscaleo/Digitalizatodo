@@ -224,7 +224,7 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
             )}
 
             {/* Mobile lista */}
-            <div className="md:hidden space-y-1.5 pb-6">
+            <div className="md:hidden space-y-4 pb-12">
                 {filteredPayers.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-16 gap-3">
                         <Users size={32} className={isDark ? 'text-zinc-700' : 'text-zinc-200'} />
@@ -233,69 +233,78 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                 )}
                 {filteredPayers.map(payer => {
                     const stats = getPayerRealStats(payer);
-                    const isPaid = payer.status === 'paid';
-                    const isReview = !isPaid && stats.hasReview;
+                    const isPaid = payer.status === 'paid' || (stats.approvedAmount > 0 && stats.pendingAmount === 0 && stats.reviewAmount === 0);
+                    const isReview = !isPaid && stats.reviewAmount > 0;
                     const students = payer.enrolledStudents || payer.students || [];
-                    const statusBg = isPaid
-                        ? isDark ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-emerald-400/30 bg-emerald-500/5'
-                        : isReview
-                            ? isDark ? 'border-amber-500/20 bg-amber-500/5' : 'border-amber-400/30 bg-amber-500/5'
-                            : isDark ? 'border-rose-500/20 bg-rose-500/5' : 'border-rose-400/20 bg-rose-500/5';
-                    const statusDot = isPaid ? 'bg-emerald-500' : isReview ? 'bg-amber-400' : 'bg-rose-500';
+                    
+                    const statusColor = isPaid ? 'text-emerald-500' : isReview ? 'text-amber-400' : 'text-rose-500';
                     const statusLabel = isPaid ? 'Al día' : isReview ? 'Por aprobar' : 'Pendiente';
-                    const statusText = isPaid ? 'text-emerald-500' : isReview ? 'text-amber-400' : 'text-rose-500';
-                    const avatarRing = isPaid
-                        ? isDark ? 'ring-emerald-500/60 bg-zinc-800' : 'ring-emerald-400 bg-zinc-100'
-                        : isReview
-                            ? isDark ? 'ring-amber-500/60 bg-zinc-800' : 'ring-amber-400 bg-zinc-100'
-                            : isDark ? 'ring-rose-500/60 bg-zinc-800' : 'ring-rose-400 bg-zinc-100';
+                    const statusBg = isPaid ? 'bg-emerald-500/10' : isReview ? 'bg-amber-400/10' : 'bg-rose-500/10';
+
                     return (
                         <button key={payer.id}
-                            className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl border transition-all active:scale-[0.98] ${statusBg}`}
+                            className={`w-full flex flex-col gap-4 p-5 rounded-[2.2rem] border transition-all active:scale-[0.97] ${
+                                isDark ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white border-zinc-100 shadow-sm'
+                            }`}
                             onMouseDown={() => handleLongPressStart(payer.id)}
                             onMouseUp={handleLongPressEnd}
                             onTouchStart={() => handleLongPressStart(payer.id)}
                             onTouchEnd={handleLongPressEnd}
                             onClick={() => setBubbleModalPayer(payer)}
                         >
-                            <div className="flex flex-shrink-0" style={{ width: students.length > 1 ? 64 : 48 }}>
-                                {students.slice(0, 2).map((student: any, i: number) => {
-                                    const inSystem = Math.max(0, (student.total_attendances ?? 0) - (student.previous_classes ?? 0));
-                                    const classesCount = (student.previous_classes ?? 0) + inSystem;
-                                    return (
-                                        <div key={student.id} style={{ marginLeft: i > 0 ? -16 : 0, zIndex: 2 - i }} className="relative">
-                                            <StudentAvatar
-                                                photo={student.photo || payer.photo}
-                                                name={student.name}
-                                                size={48}
-                                                beltRank={student.belt_rank}
-                                                degrees={student.degrees ?? 0}
-                                                classesCount={classesCount || undefined}
-                                                ring={avatarRing}
-                                                isDark={isDark}
-                                            />
+                            <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex flex-shrink-0">
+                                        {students.slice(0, 2).map((student: any, i: number) => (
+                                            <div key={student.id} style={{ marginLeft: i > 0 ? -16 : 0, zIndex: 2 - i }} className="relative">
+                                                <StudentAvatar
+                                                    photo={student.photo || payer.photo}
+                                                    name={student.name}
+                                                    size={44}
+                                                    beltRank={student.belt_rank}
+                                                    degrees={student.degrees ?? 0}
+                                                    isDark={isDark}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="text-left min-w-0">
+                                        <p className={`text-[13px] font-black uppercase tracking-tight truncate ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+                                            {payer.name}
+                                        </p>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase border ${statusBg} ${statusColor} border-current/10`}>
+                                                {statusLabel}
+                                            </span>
+                                            {students.length > 0 && (
+                                                <span className={`text-[9px] font-bold ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                                                    {students.length} {students.length === 1 ? 'Alumno' : 'Alumnos'}
+                                                </span>
+                                            )}
                                         </div>
-                                    );
-                                })}
-                            </div>
-                            <div className="flex-1 min-w-0 text-left">
-                                <p className={`text-[11px] font-black uppercase tracking-tight truncate ${
-                                    isDark ? 'text-white' : 'text-zinc-900'
-                                }`}>{payer.name}</p>
-                                <div className="flex items-center gap-1.5 mt-0.5">
-                                    <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${statusDot}`} />
-                                    <span className={`text-[9px] font-black uppercase tracking-widest ${statusText}`}>{statusLabel}</span>
+                                    </div>
                                 </div>
-                                {students.length > 0 && (
-                                    <p className={`text-[8px] font-bold mt-0.5 truncate ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>
-                                        {students.map((s: any) => s.name.split(' ')[0]).join(' · ')}
+                                <div className="text-right flex-shrink-0">
+                                    <p className={`text-lg font-black tracking-tighter ${statusColor}`}>
+                                        {formatMoney(stats.displayAmount)}
                                     </p>
-                                )}
+                                </div>
                             </div>
-                            <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                                <p className={`text-sm font-black ${statusText}`}>{formatMoney(stats.displayAmount)}</p>
-                                <ChevronRight size={14} className={isDark ? 'text-zinc-600' : 'text-zinc-300'} />
-                            </div>
+
+                            {students.length > 0 && (
+                                <div className={`flex items-center justify-between pt-3 border-t ${isDark ? 'border-zinc-800/50' : 'border-zinc-50'}`}>
+                                    <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar flex-1 mr-4">
+                                        {students.map((s: any) => (
+                                            <span key={s.id} className={`text-[9px] font-bold uppercase whitespace-nowrap px-2 py-1 rounded-lg ${
+                                                isDark ? 'bg-zinc-800 text-zinc-500' : 'bg-zinc-100 text-zinc-400'
+                                            }`}>
+                                                {s.name.split(' ')[0]}
+                                            </span>
+                                        ))}
+                                    </div>
+                                    <ChevronRight size={14} className={isDark ? 'text-zinc-700' : 'text-zinc-300'} />
+                                </div>
+                            )}
                         </button>
                     );
                 })}
