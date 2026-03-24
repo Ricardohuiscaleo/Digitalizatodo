@@ -98,44 +98,59 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
                     </div>
                 </div>
 
-                <div ref={scrollRef} className="px-6 pt-4 space-y-3 max-h-[55vh] overflow-y-auto pb-2">
+                <div ref={scrollRef} className="px-6 pt-4 space-y-4 max-h-[60vh] overflow-y-auto pb-6">
                     {payments?.map((payment: any, idx: number) => {
                         const statusLabel = payment.status === 'approved' || payment.status === 'paid' ? 'Pagado'
-                            : payment.status === 'review' ? 'Por Aprobar' : 'Por Pagar';
+                            : payment.status === 'review' || payment.status === 'pending_review' || payment.status === 'proof_uploaded' ? 'En Revisión' : 'Por Pagar';
                         const statusColor = payment.status === 'approved' || payment.status === 'paid' ? 'text-emerald-500'
-                            : payment.status === 'review' ? 'text-amber-400' : 'text-rose-500';
+                            : (payment.status === 'review' || payment.status === 'pending_review' || payment.status === 'proof_uploaded') ? 'text-amber-400' : 'text-rose-500';
+                        
                         return (
-                            <div key={idx} className={`flex items-center gap-3 rounded-2xl p-4 border ${
-                                isDark ? 'bg-zinc-900/50 border-zinc-800' : 'bg-zinc-50 border-zinc-100'
+                            <div key={idx} className={`flex items-start gap-3 rounded-[2rem] p-5 border transition-all ${
+                                isDark ? 'bg-zinc-900/40 border-zinc-800' : 'bg-zinc-50 border-zinc-100 shadow-sm'
                             }`}>
-                                <StudentAvatar
+                                <div className="mt-1">
+                                    <StudentAvatar
                                         photo={payment.student_photo || payer.photo}
                                         name={payment.student_name}
-                                        size={56}
+                                        size={48}
                                         beltRank={payment.belt_rank}
                                         degrees={payment.degrees ?? 0}
                                         isDark={isDark}
                                     />
+                                </div>
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <p className={`text-sm font-black uppercase leading-none truncate ${isDark ? 'text-white' : 'text-zinc-900'}`}>{payment.student_name}</p>
+                                    <div className="flex items-center justify-between gap-2 mb-1">
+                                        <p className={`text-sm font-black uppercase truncate ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+                                            {payment.student_name}
+                                        </p>
+                                        <p className={`text-lg font-black tracking-tighter ${isDark ? 'text-white' : 'text-zinc-950'}`}>
+                                            {formatMoney(payment.amount)}
+                                        </p>
+                                    </div>
+                                    
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <p className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                                            Vence: {payment.due_date}
+                                        </p>
+                                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                                            statusColor.replace('text-', 'bg-').replace('500', '500/10').replace('400', '400/10')
+                                        } ${statusColor} border-current/20`}>
+                                            {statusLabel}
+                                        </span>
                                         {(payment.type === 'single' || payment.type === 'pack_4' || payment.type === 'referral') && (
-                                            <span className="bg-[#c9a84c] text-black text-[7px] font-black px-1.5 py-0.5 rounded-full">VIP</span>
+                                            <span className="bg-[#c9a84c]/10 text-[#c9a84c] text-[8px] font-black px-2 py-0.5 rounded-full border border-[#c9a84c]/20">CLASE VIP</span>
                                         )}
                                     </div>
-                                    <p className={`text-[10px] font-bold mt-1.5 uppercase ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
-                                        Vence: {payment.due_date} • <span className={statusColor}>{statusLabel}</span>
-                                    </p>
-                                    <p className={`text-xl font-black mt-1 tracking-tighter ${isDark ? 'text-white' : 'text-zinc-950'}`}>{formatMoney(payment.amount)}</p>
                                 </div>
                                 {payment.proof_url && (
                                     <button
                                         onClick={() => onViewProof(payment.proof_url)}
-                                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 active:scale-95 border ${
-                                            isDark ? 'bg-amber-400/10 border-amber-400/20 text-amber-500' : 'bg-amber-50 border-amber-100 text-amber-500'
+                                        className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 active:scale-95 border transition-all ${
+                                            isDark ? 'bg-amber-400/10 border-amber-400/20 text-amber-500 hover:bg-amber-400/20' : 'bg-amber-50 border-amber-100 text-amber-500 hover:bg-amber-100'
                                         }`}
                                     >
-                                        <Eye size={16} />
+                                        <Eye size={18} />
                                     </button>
                                 )}
                             </div>
