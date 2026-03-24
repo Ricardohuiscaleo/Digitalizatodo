@@ -26,11 +26,16 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
+import { getAllTenants, updateTenant, createTenant } from '@/lib/api';
+
+
 
 export default function DeepAdminDashboard() {
   const router = useRouter();
   const [filter, setFilter] = useState('all');
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [tenants, setTenants] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   React.useEffect(() => {
     const token = localStorage.getItem('super_admin_token');
@@ -38,8 +43,62 @@ export default function DeepAdminDashboard() {
       router.push('/login');
     } else {
       setIsAuthorized(true);
+      fetchTenants(token);
     }
   }, [router]);
+
+  const fetchTenants = async (token: string) => {
+    const data = await getAllTenants(token);
+    setTenants(data);
+    setIsLoading(false);
+  };
+
+  const handleToggleActive = async (tenantId: string | number, currentStatus: boolean) => {
+    const token = localStorage.getItem('super_admin_token');
+    if (!token) return;
+
+    // Optimistic update
+    setTenants(prev => prev.map(t => t.id === tenantId ? { ...t, active: !currentStatus } : t));
+
+    const result = await updateTenant(token, tenantId, { active: !currentStatus });
+    if (!result) {
+      // Rollback on error
+      fetchTenants(token);
+    }
+  };
+
+  const handleToggleForceTerms = async (tenantId: string | number, current: boolean) => {
+    const token = localStorage.getItem('super_admin_token');
+    if (!token) return;
+
+    setTenants(prev => prev.map(t => t.id === tenantId ? { ...t, force_terms_acceptance: !current } : t));
+
+    const result = await updateTenant(token, tenantId, { force_terms_acceptance: !current });
+    if (!result) {
+      fetchTenants(token);
+    }
+  };
+
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newTenant, setNewTenant] = useState({
+    id: '', name: '', industry: 'martial_arts', 
+    admin_name: '', admin_email: '', admin_password: ''
+  });
+
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem('super_admin_token');
+    if (!token) return;
+
+    const result = await createTenant(token, newTenant);
+    if (result?.tenant) {
+      setShowCreateModal(false);
+      fetchTenants(token);
+      setNewTenant({ id: '', name: '', industry: 'martial_arts', admin_name: '', admin_email: '', admin_password: '' });
+    } else {
+      alert("Error al crear tenant: " + (result?.error || "Verifique los datos"));
+    }
+  };
 
   if (!isAuthorized) {
     return (
@@ -49,23 +108,27 @@ export default function DeepAdminDashboard() {
     );
   }
 
-
   const stats = [
-    { label: "Tenants Activos", value: "12", icon: Globe, trend: "+2 este mes", color: "text-cyan-400" },
-    { label: "Usuarios Globales", value: "1,280", icon: Users, trend: "+15% vs ayer", color: "text-blue-400" },
-    { label: "Aceptación T&C", value: "98.2%", icon: ShieldCheck, trend: "Nivel óptimo", color: "text-emerald-400" },
+    { label: "Tenants Activos", value: tenants.filter(t => t.active).length.toString(), icon: Globe, trend: "Tiempo real", color: "text-cyan-400" },
+    { label: "Usuarios Globales", value: tenants.reduce((acc, t) => acc + (t.users_count || 0), 0).toString(), icon: Users, trend: "Synced", color: "text-blue-400" },
+    { label: "Aceptación T&C", value: "TBD", icon: ShieldCheck, trend: "Nivel óptimo", color: "text-emerald-400" },
     { label: "Status Sistema", value: "Estable", icon: Activity, trend: "99.9% Uptime", color: "text-amber-400" },
   ];
 
-  const tenants = [
-    { id: 1, name: "Academia Artes Marciales", status: "activo", lastAction: "Hace 5m", termsAccepted: true, forceTerms: true, plan: "Pro" },
-    { id: 2, name: "Escuela de Música La Clave", status: "pendiente", lastAction: "Hace 1h", termsAccepted: false, forceTerms: true, plan: "Basic" },
-    { id: 3, name: "Gimnasio PowerFit", status: "activo", lastAction: "Hace 2d", termsAccepted: true, forceTerms: false, plan: "Enterprise" },
-    { id: 4, name: "Danza Studio Flow", status: "activo", lastAction: "Hace 12h", termsAccepted: true, forceTerms: true, plan: "Pro" },
-  ];
+
+  const filteredTenants = tenants.filter(t => {
+    if (filter === 'all') return true;
+    if (filter === 'pending') return !t.active;
+    if (filter === 'pro') return t.saas_plan === 'pro';
+    if (filter === 'enterprise') return t.saas_plan === 'enterprise';
+    return true;
+  });
 
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-cyan-500/30 font-sans">
+
+    <>
+      <div className="min-h-screen bg-black text-white selection:bg-cyan-500/30 font-sans">
+
       {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-500/5 blur-[120px] rounded-full" />
@@ -135,16 +198,39 @@ export default function DeepAdminDashboard() {
                 <Bell size={18} className="text-zinc-400" />
                 <span className="absolute top-2 right-2 h-2 w-2 bg-cyan-500 rounded-full border-2 border-black" />
               </button>
-              <Button className="rounded-full bg-white text-black font-black uppercase tracking-widest text-[10px] px-6">
+              <Button 
+                onClick={() => setShowCreateModal(true)}
+                className="rounded-full bg-white text-black font-black uppercase tracking-widest text-[10px] px-6 hover:bg-cyan-400 transition-all hover:shadow-[0_0_20px_rgba(34,211,238,0.5)]"
+              >
                 <Plus size={16} className="mr-2" /> Nuevo Tenant
               </Button>
+
             </div>
           </header>
 
           {/* Scroll Area */}
           <div className="flex-1 overflow-y-auto p-10 space-y-10 custom-scrollbar">
             
-            {/* Stats Grid */}
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center h-64 space-y-4">
+                <div className="h-12 w-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Conectando con el Núcleo...</p>
+              </div>
+            ) : tenants.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-64 space-y-4 border border-white/5 rounded-3xl bg-zinc-900/20">
+                    <Globe className="text-zinc-700" size={48} />
+                    <div className="text-center">
+                        <p className="text-sm font-bold uppercase tracking-tighter">No se encontraron tenants</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mt-1">Verifica la conexión con el servidor API</p>
+                    </div>
+                    <Button variant="outline" className="rounded-full text-[10px] border-white/10" onClick={() => fetchTenants(localStorage.getItem('super_admin_token') || '')}>
+                        Reintentar
+                    </Button>
+                </div>
+            ) : (
+                <>
+                {/* Stats Grid */}
+
             <div className="grid grid-cols-4 gap-6">
               {stats.map((stat, i) => (
                 <Card key={i} className="bg-zinc-900/40 border-white/5 p-6 space-y-4 hover:border-cyan-500/30 transition-all group overflow-hidden relative">
@@ -179,7 +265,23 @@ export default function DeepAdminDashboard() {
                   >
                     Pendientes
                   </Button>
+                  <div className="h-4 w-px bg-white/10 mx-2" />
+                  <Button 
+                    variant={filter === 'pro' ? 'default' : 'ghost'} 
+                    onClick={() => setFilter('pro')}
+                    className={`rounded-full uppercase tracking-tighter text-[10px] font-black ${filter === 'pro' ? 'bg-indigo-500' : 'text-zinc-500'}`}
+                  >
+                    Pro
+                  </Button>
+                  <Button 
+                    variant={filter === 'enterprise' ? 'default' : 'ghost'} 
+                    onClick={() => setFilter('enterprise')}
+                    className={`rounded-full uppercase tracking-tighter text-[10px] font-black ${filter === 'enterprise' ? 'bg-emerald-500' : 'text-zinc-500'}`}
+                  >
+                    Enterprise
+                  </Button>
                 </div>
+
                 <Button variant="ghost" className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">
                   <Filter size={14} className="mr-2" /> Ver Más Filtros
                 </Button>
@@ -187,24 +289,28 @@ export default function DeepAdminDashboard() {
 
               {/* Tenant Rows */}
               <div className="space-y-4">
-                {tenants.map((t) => (
+                {filteredTenants.map((t) => (
+
                   <div 
                     key={t.id} 
-                    className="group bg-zinc-900/20 border border-white/5 rounded-3xl p-6 flex items-center justify-between hover:bg-zinc-900/50 hover:border-white/10 transition-all backdrop-blur-sm"
+                    className={`group bg-zinc-900/20 border border-white/5 rounded-3xl p-6 flex items-center justify-between hover:bg-zinc-900/50 hover:border-white/10 transition-all backdrop-blur-sm ${!t.active ? 'opacity-60' : ''}`}
                   >
                     <div className="flex items-center gap-6">
                       <div className="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 group-hover:scale-105 transition-transform">
-                        <Globe className="text-zinc-400 group-hover:text-cyan-400" size={24} />
+                        <Globe className={`group-hover:text-cyan-400 ${t.active ? 'text-zinc-400' : 'text-zinc-600'}`} size={24} />
                       </div>
                       <div className="space-y-1">
                         <div className="flex items-center gap-3">
                           <h3 className="font-bold text-lg tracking-tight">{t.name}</h3>
-                          <Badge className={t.status === 'activo' ? 'bg-emerald-500/10 text-emerald-500 border-none' : 'bg-amber-500/10 text-amber-500 border-none'}>
-                            {t.status.toUpperCase()}
+                          <Badge 
+                            onClick={() => handleToggleActive(t.id, t.active)}
+                            className={`cursor-pointer transition-all border-none ${t.active ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20' : 'bg-red-500/10 text-red-500 hover:bg-red-500/20'}`}
+                          >
+                            {t.active ? 'ACTIVO' : 'INACTIVO'}
                           </Badge>
-                          <Badge variant="outline" className="border-white/5 text-zinc-500 uppercase text-[9px]">PLAN {t.plan}</Badge>
+                          <Badge variant="outline" className="border-white/5 text-zinc-500 uppercase text-[9px]">PLAN {t.saas_plan || 'FREE'}</Badge>
                         </div>
-                        <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest">ID: {t.id}0023 &bull; Último acceso: {t.lastAction}</p>
+                        <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest">ID: {t.id} &bull; Industria: {t.industry || 'N/A'}</p>
                       </div>
                     </div>
 
@@ -213,20 +319,23 @@ export default function DeepAdminDashboard() {
                         <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Guardia T&C</p>
                         <div className="flex items-center gap-4 justify-end">
                           <div className="flex flex-col items-end">
-                            <span className={`text-[9px] font-black uppercase ${t.termsAccepted ? 'text-emerald-400' : 'text-amber-400'}`}>
-                              {t.termsAccepted ? 'Firmado' : 'Pendiente'}
+                            <span className={`text-[9px] font-black uppercase ${t.accepted_terms_at ? 'text-emerald-400' : 'text-amber-400'}`}>
+                              {t.accepted_terms_at ? 'Firmado' : 'Pendiente'}
                             </span>
                           </div>
-                          <button className={`h-11 w-20 rounded-full border relative transition-all duration-500 overflow-hidden ${t.forceTerms ? 'bg-cyan-500/10 border-cyan-500/50' : 'bg-zinc-800 border-zinc-700'}`}>
-                            <div className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-center h-8 w-8 rounded-full transition-all duration-500 ${t.forceTerms ? 'left-11 bg-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]' : 'left-1 bg-zinc-600'}`}>
-                              {t.forceTerms ? <Lock size={14} className="text-black" /> : <Unlock size={14} className="text-zinc-300" />}
+                          <button 
+                            onClick={() => handleToggleForceTerms(t.id, t.force_terms_acceptance)}
+                            className={`h-11 w-20 rounded-full border relative transition-all duration-500 overflow-hidden ${t.force_terms_acceptance ? 'bg-cyan-500/10 border-cyan-500/50' : 'bg-zinc-800 border-zinc-700'}`}
+                          >
+                            <div className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-center h-8 w-8 rounded-full transition-all duration-500 ${t.force_terms_acceptance ? 'left-11 bg-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]' : 'left-1 bg-zinc-600'}`}>
+                              {t.force_terms_acceptance ? <Lock size={14} className="text-black" /> : <Unlock size={14} className="text-zinc-300" />}
                             </div>
                           </button>
                         </div>
                       </div>
 
                       <div className="flex gap-2">
-                         <Button variant="ghost" size="icon" className="rounded-2xl border border-white/5 hover:bg-white/5">
+                         <Button variant="ghost" size="icon" className="rounded-2xl border border-white/5 hover:bg-white/5" onClick={() => window.open(`http://${t.id}.localhost:3000`, '_blank')}>
                             <ExternalLink size={18} className="text-zinc-400" />
                          </Button>
                          <Button variant="ghost" size="icon" className="rounded-2xl border border-white/5 hover:bg-white/5">
@@ -238,12 +347,120 @@ export default function DeepAdminDashboard() {
                 ))}
               </div>
             </div>
-          </div>
-        </main>
+          </>
+        )}
       </div>
-    </div>
+    </main>
+  </div>
+</div>
+
+
+    {/* Create Tenant Modal */}
+    {showCreateModal && (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowCreateModal(false)} />
+        <Card className="relative w-full max-w-lg bg-zinc-900 border-white/10 p-8 space-y-6 shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden">
+          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-right from-cyan-500 to-blue-600" />
+          
+          <div className="space-y-1">
+            <h2 className="text-2xl font-black tracking-tighter uppercase">Nuevo Nucleo</h2>
+            <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest">Instanciar nueva organización SaaS</p>
+          </div>
+
+          <form onSubmit={handleCreateSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest px-1">ID / SLUG</label>
+                <input 
+                  required
+                  placeholder="ej: academia-oro"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-cyan-500/50 outline-none transition-all placeholder:text-zinc-700"
+                  value={newTenant.id}
+                  onChange={e => setNewTenant({...newTenant, id: e.target.value})}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest px-1">Giro / Industria</label>
+                <select 
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-cyan-500/50 outline-none transition-all"
+                  value={newTenant.industry}
+                  onChange={e => setNewTenant({...newTenant, industry: e.target.value})}
+                >
+                  <option value="martial_arts" className="bg-zinc-900">Artes Marciales (Gimbox)</option>
+                  <option value="school_treasury" className="bg-zinc-900">Tesorería Escolar (Colify)</option>
+                  <option value="fitness" className="bg-zinc-900">Gimnasios / Fitness</option>
+                  <option value="dance" className="bg-zinc-900">Danza / Academias</option>
+                  <option value="clinic" className="bg-zinc-900">Salud / Clínicas</option>
+                  <option value="education" className="bg-zinc-900">Educación / Talleres</option>
+                  <option value="default" className="bg-zinc-900">Otro Giro</option>
+
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest px-1">Nombre Comercial</label>
+              <input 
+                required
+                placeholder="Nombre de la institución"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-cyan-500/50 outline-none transition-all placeholder:text-zinc-700"
+                value={newTenant.name}
+                onChange={e => setNewTenant({...newTenant, name: e.target.value})}
+              />
+            </div>
+
+            <div className="pt-4 border-t border-white/5 space-y-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-500">Credenciales Dueño Principal</p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest px-1">Nombre Admin</label>
+                  <input 
+                    required
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-cyan-500/50 outline-none transition-all"
+                    value={newTenant.admin_name}
+                    onChange={e => setNewTenant({...newTenant, admin_name: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest px-1">Email Maestro</label>
+                  <input 
+                    required
+                    type="email"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-cyan-500/50 outline-none transition-all"
+                    value={newTenant.admin_email}
+                    onChange={e => setNewTenant({...newTenant, admin_email: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest px-1">Clave de Acceso</label>
+                <input 
+                  required
+                  type="password"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-cyan-500/50 outline-none transition-all"
+                  value={newTenant.admin_password}
+                  onChange={e => setNewTenant({...newTenant, admin_password: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-4 pt-6">
+              <Button type="button" variant="ghost" className="flex-1 rounded-xl" onClick={() => setShowCreateModal(false)}>Cancelar</Button>
+              <Button type="submit" className="flex-1 rounded-xl bg-cyan-500 text-black font-black uppercase tracking-widest">
+                Crear Instancia
+              </Button>
+            </div>
+          </form>
+        </Card>
+      </div>
+    )}
+    </>
   );
 }
+
+
 
 function SidebarItem({ icon: Icon, label, active = false, badge = null }: any) {
   return (

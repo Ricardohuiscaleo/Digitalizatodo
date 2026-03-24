@@ -1,6 +1,5 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://admin.digitalizatodo.cl/api';
 
-
 const defaultHeaders = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -18,61 +17,49 @@ async function safeJson(response: Response) {
     return response.ok ? {} : null;
 }
 
-// ─── Super Admin Endpoints (Hypothetical) ───────────────────────────────────
+// ─── Super Admin Authentication ──────────────────────────────────────────
 
-export async function getGlobalStats(token: string) {
+export async function loginAdmin(credentials: any) {
     try {
-        const response = await fetch(`${API_URL}/super-admin/stats`, {
-            method: 'GET',
-            headers: {
-                ...defaultHeaders,
-                'Authorization': `Bearer ${token}`,
-            },
+        console.log('Intentando login en:', `${API_URL}/admin/login`);
+        const response = await fetch(`${API_URL}/admin/login`, {
+            method: 'POST',
+            headers: defaultHeaders,
+            body: JSON.stringify(credentials),
         });
+        console.log('Login response status:', response.status);
         return await safeJson(response);
     } catch (error) {
-        console.error('Error fetching global stats:', error);
-        return null;
+        console.error('Login error:', error);
+        return { message: 'Network error or server down' };
     }
 }
 
+// ─── Global Tenant Management ──────────────────────────────────────────────
+
 export async function getAllTenants(token: string) {
     try {
-        const response = await fetch(`${API_URL}/super-admin/tenants`, {
+        console.log('Fetching tenants from:', `${API_URL}/admin/tenants`);
+        const response = await fetch(`${API_URL}/admin/tenants`, {
             method: 'GET',
             headers: {
                 ...defaultHeaders,
                 'Authorization': `Bearer ${token}`,
             },
         });
-        return await safeJson(response);
+        console.log('Fetch tenants status:', response.status);
+        const data = await safeJson(response);
+        return data?.tenants || [];
     } catch (error) {
         console.error('Error fetching all tenants:', error);
         return [];
     }
 }
 
-export async function getTenantTermsAcceptance(token: string) {
-    try {
-        const response = await fetch(`${API_URL}/super-admin/terms-acceptance`, {
-            method: 'GET',
-            headers: {
-                ...defaultHeaders,
-                'Authorization': `Bearer ${token}`,
-            },
-        });
-        return await safeJson(response);
-    } catch (error) {
-        console.error('Error fetching terms acceptance:', error);
-        return [];
-    }
-}
 
-// ─── App Updates (Super Admin can Create/Delete) ────────────────────────────
-
-export async function createGlobalAppUpdate(token: string, data: any) {
+export async function createTenant(token: string, data: any) {
     try {
-        const response = await fetch(`${API_URL}/super-admin/app-updates`, {
+        const response = await fetch(`${API_URL}/admin/tenants`, {
             method: 'POST',
             headers: {
                 ...defaultHeaders,
@@ -82,7 +69,40 @@ export async function createGlobalAppUpdate(token: string, data: any) {
         });
         return await safeJson(response);
     } catch (error) {
-        console.error('Error creating app update:', error);
+        console.error('Error creating tenant:', error);
+        return null;
+    }
+}
+
+export async function updateTenant(token: string, id: string | number, data: any) {
+    try {
+        const response = await fetch(`${API_URL}/admin/tenants/${id}`, {
+            method: 'PATCH',
+            headers: {
+                ...defaultHeaders,
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(data),
+        });
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error updating tenant:', error);
+        return null;
+    }
+}
+
+export async function resetTenantPassword(token: string, id: string | number) {
+    try {
+        const response = await fetch(`${API_URL}/admin/tenants/${id}/reset-password`, {
+            method: 'POST',
+            headers: {
+                ...defaultHeaders,
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error resetting password:', error);
         return null;
     }
 }

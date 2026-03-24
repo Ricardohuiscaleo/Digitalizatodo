@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { ShieldCheck, ArrowRight, Loader2, Lock, Mail, Terminal } from 'lucide-react';
+import { loginAdmin } from '@/lib/api';
+
 
 export default function LoginPage() {
     const [isLoading, setIsLoading] = useState(false);
@@ -14,17 +16,23 @@ export default function LoginPage() {
         setIsLoading(true);
         setError(null);
         
-        setTimeout(() => {
-            if (email === "info@digitalizatodo.cl" && password === "admin8447") {
-                localStorage.setItem('super_admin_token', 'mock_token_123');
-
+        try {
+            const data = await loginAdmin({ email, password });
+            
+            if (data?.token) {
+                localStorage.setItem('super_admin_token', data.token);
+                localStorage.setItem('admin_user', JSON.stringify(data.user));
                 window.location.href = "/";
             } else {
-                setError("ACCESO DENEGADO: CREDENCIALES INVÁLIDAS");
+                setError(data?.message || "ACCESO DENEGADO: CREDENCIALES INVÁLIDAS");
                 setIsLoading(false);
             }
-        }, 1500);
+        } catch (err) {
+            setError("ERROR DE CONEXIÓN CON EL NÚCLEO");
+            setIsLoading(false);
+        }
     };
+
 
     return (
         <div className="min-h-screen bg-black flex items-center justify-center p-6 font-sans relative overflow-hidden selection:bg-cyan-500/30">
