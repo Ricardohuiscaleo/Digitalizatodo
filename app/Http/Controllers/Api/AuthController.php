@@ -13,8 +13,41 @@ use Illuminate\Support\Str;
 class AuthController extends Controller
 {
     /**
+     * POST /api/admin/login
+     * Global login for Super Admins (tenant_id IS NULL)
+     */
+    public function globalLogin(Request $request): JsonResponse
+    {
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string',
+        ]);
+
+        $user = User::where('email', $credentials['email'])
+            ->whereNull('tenant_id') // Crucial: Only users without tenant_id
+            ->first();
+
+        if (!$user || !Hash::check($credentials['password'], $user->password)) {
+            return response()->json(['message' => 'Acceso denegado. Solo administradores globales.'], 401);
+        }
+
+        if (!$user->active) {
+            return response()->json(['message' => 'Cuenta desactivada.'], 403);
+        }
+
+        $token = $user->createToken('super-admin-access')->plainTextToken;
+
+        return response()->json([
+            'token' => $token,
+            'user' => $user->only('id', 'name', 'email'),
+            'is_super_admin' => true
+        ]);
+    }
+
+    /**
      * POST /api/{tenant}/auth/login
      */
+
     public function login(Request $request): JsonResponse
     {
         $credentials = $request->validate([
