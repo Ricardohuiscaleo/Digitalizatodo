@@ -31,7 +31,8 @@ export const getEcho = (): Echo<any> | null => {
     key,
     wsHost: host,
     wsPort: parseInt(port),
-    wssPort: parseInt(port),
+    wssPort: 443,
+
     forceTLS: scheme === 'https',
     enabledTransports: ['ws', 'wss'],
     activityTimeout: 30000,
