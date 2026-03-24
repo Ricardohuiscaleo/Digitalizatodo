@@ -15,8 +15,9 @@ export default function LoginPage() {
         setError(null);
         
         setTimeout(() => {
-            if (email === "admin@digitalizatodo.cl" && password === "admin123") {
+            if (email === "info@digitalizatodo.cl" && password === "admin8447") {
                 localStorage.setItem('super_admin_token', 'mock_token_123');
+
                 window.location.href = "/";
             } else {
                 setError("ACCESO DENEGADO: CREDENCIALES INVÁLIDAS");
