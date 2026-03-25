@@ -52,6 +52,8 @@ export interface ScheduleEntry {
     color?: string | null;
 }
 
+const getLabel = (s: ScheduleEntry) => s.subject || s.name || null;
+
 interface Props {
     schedules: ScheduleEntry[];
     editable?: boolean;
@@ -79,7 +81,7 @@ interface CellModalProps {
 }
 
 function CellModal({ day, slot, existing, editable, onSave, onDelete, onClose }: CellModalProps) {
-    const [value, setValue] = useState(existing?.subject || "");
+    const [value, setValue] = useState((existing && getLabel(existing)) || "");
     const [color, setColor] = useState(existing?.color || SUBJECT_COLORS[10].hex);
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -120,7 +122,7 @@ function CellModal({ day, slot, existing, editable, onSave, onDelete, onClose }:
                                 {dayName} · {fmtTime(start)} – {fmtTime(end)}
                             </p>
                             <p className="text-base font-black uppercase text-zinc-900 mt-0.5">
-                                {existing?.subject || "Celda vacía"}
+                                {(existing && getLabel(existing)) || "Celda vacía"}
                             </p>
                         </div>
                         <button onClick={onClose} className="w-8 h-8 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-400">
@@ -198,7 +200,7 @@ function CellModal({ day, slot, existing, editable, onSave, onDelete, onClose }:
                             className="h-10 rounded-xl flex items-center justify-center text-[11px] font-black uppercase tracking-widest"
                             style={getColorStyle(existing?.color)}
                         >
-                            {existing?.subject || "Sin asignatura"}
+                            {(existing && getLabel(existing)) || "Sin asignatura"}
                         </div>
                     </div>
                 )}
@@ -231,7 +233,7 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
     const buildDayItems = (dayIdx: number) => {
         const daySched = slots
             .map(slot => ({ slot, cell: getCell(dayIdx, slot) }))
-            .filter(({ cell }) => cell?.subject);
+            .filter(({ cell }) => cell && getLabel(cell));
         type ClassItem = { type: 'class'; slot: string; cell: ScheduleEntry; dur: string | null };
         type BreakItem = { type: 'break'; start: string; end: string; dur: string };
         const grouped: ClassItem[] = [];
@@ -240,7 +242,7 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
             const start = fmtTime(slot.split('|')[0]);
             const end = fmtTime(slot.split('|')[1]);
             const lastEnd = (last?.cell as any)?._end || (last ? fmtTime(last.cell.end_time) : null);
-            if (last && last.cell.subject === cell!.subject && lastEnd === start) {
+            if (last && getLabel(last.cell) === getLabel(cell!) && lastEnd === start) {
                 (last.cell as any)._end = end;
             } else {
                 grouped.push({ type: 'class', slot, cell: { ...cell!, _end: end } as any, dur: null });
@@ -275,7 +277,8 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
         const existing = getCell(modalCell.day, modalCell.slot);
         if (existing) {
             await onUpdate?.(existing.id, {
-                subject: value,
+                subject: existing.subject !== null ? value : null,
+                name: existing.name !== null ? value : null,
                 color,
                 day_of_week: existing.day_of_week,
                 start_time: toHHMM(existing.start_time),
@@ -358,10 +361,10 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
                                             className={`min-h-[36px] rounded-lg flex items-center justify-center p-1 transition-all border ${
                                                 editable ? "cursor-pointer hover:opacity-80" : ""
                                             }`}
-                                            style={cell?.subject ? getColorStyle(cell.color) : { backgroundColor: "#f9fafb", borderColor: "#f4f4f5" }}
+                                            style={(cell && getLabel(cell)) ? getColorStyle(cell.color) : { backgroundColor: "#f9fafb", borderColor: "#f4f4f5" }}
                                         >
                                             <span className="text-[8px] font-black uppercase text-center leading-tight">
-                                                {cell?.subject || (editable ? <span style={{ opacity: 0.3 }}>+</span> : "–")}
+                                                {(cell && getLabel(cell)) || (editable ? <span style={{ opacity: 0.3 }}>+</span> : "–")}
                                             </span>
                                         </div>
                                     );
@@ -454,7 +457,7 @@ export default function WeeklySchedule({ schedules, editable = false, onSave, on
                                                         <span className="text-[10px] font-black leading-none opacity-60">{end}</span>
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-black uppercase truncate">{cell.subject}</p>
+                                                        <p className="text-sm font-black uppercase truncate">{getLabel(cell)}</p>
                                                         {item.dur && <p className="text-[9px] font-bold opacity-60 mt-0.5">{item.dur}</p>}
                                                     </div>
                                                     {editable && <Edit2 size={14} style={{ opacity: 0.5 }} className="shrink-0" />}
