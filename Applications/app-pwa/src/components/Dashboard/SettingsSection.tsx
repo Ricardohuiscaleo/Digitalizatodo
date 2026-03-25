@@ -647,7 +647,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                                     : 'text-zinc-500 hover:text-zinc-400'
                                                 }`}
                                             >
-                                                <Users size={12} className={dojoType === 'adulto' ? 'animate-pulse' : ''} /> Adulto
+                                                <Users size={12} className={dojoType === 'adulto' ? 'text-indigo-400' : ''} /> Adulto
                                             </button>
                                             <button 
                                                 onClick={() => setDojoType('kids')}
@@ -657,7 +657,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                                     : 'text-zinc-500 hover:text-zinc-400'
                                                 }`}
                                             >
-                                                <Baby size={12} className={dojoType === 'kids' ? 'animate-bounce' : ''} /> Kids
+                                                <Baby size={12} className={dojoType === 'kids' ? 'text-emerald-400' : ''} /> Kids
                                             </button>
                                         </div>
                                     </div>
@@ -699,7 +699,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                             <div key={plan.id} className={`p-5 rounded-[28px] border ${isDark ? 'bg-zinc-900 border-zinc-800 shadow-[0_8px_32px_rgba(0,0,0,0.5)]' : 'bg-zinc-50 border-zinc-200 shadow-sm'} space-y-4 relative overflow-hidden`}>
                                                 {dojoType === 'kids' && (
                                                     <div className="absolute top-0 right-0 p-2">
-                                                        <span className="bg-emerald-500/10 text-emerald-500 text-[7px] font-black px-2 py-0.5 rounded-bl-xl uppercase tracking-tighter border-l border-b border-emerald-500/10 animate-pulse">
+                                                        <span className="bg-emerald-500/10 text-emerald-500 text-[7px] font-black px-2 py-0.5 rounded-bl-xl uppercase tracking-tighter border-l border-b border-emerald-500/10">
                                                             Modo Hermanos
                                                         </span>
                                                     </div>
@@ -716,7 +716,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                                             {billingCycleLabels[plan.billing_cycle] || plan.billing_cycle?.replace('_', ' ') || 'PLAN'}
                                                         </span>
                                                         <p className={`text-[11px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>
-                                                            {dojoType === 'kids' ? 'SER PARTE DEL DOJO KIDS' : 'SER PARTE DEL DOJO'} - {billingCycleLabels[plan.billing_cycle] || 'MENSUAL'}
+                                                            {billingCycleLabels[plan.billing_cycle] || 'MENSUAL'} {dojoType === 'kids' ? 'SER PARTE DEL DOJO KIDS' : 'SER PARTE DEL DOJO'}
                                                         </p>
                                                     </div>
                                                 </div>
