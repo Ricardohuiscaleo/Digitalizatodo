@@ -41,6 +41,7 @@ class TenantTermController extends Controller
             // Deactivate old terms
             TenantTerm::where('tenant_id', $tenant->id)->update(['active' => false]);
 
+            $lastVersion = TenantTerm::where('tenant_id', $tenant->id)->max('version') ?: 0;
             $nextVersion = $lastVersion + 1;
             $contentHash = hash('sha256', $tenant->id . $request->content . $nextVersion);
 
