@@ -125,6 +125,25 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
         'semi_annual': 'SEMESTRAL',
         'annual': 'ANUAL'
     };
+
+    const getVipPlanDecorations = (name: string, price: number) => {
+        const n = (name || '').toUpperCase();
+        if (n.includes('SUELTA') || n.includes('INDIVIDUAL')) {
+            return { badge: 'CLASE INDIVIDUAL', duration: '1 HORA', highlight: null };
+        }
+        if (n.includes('PACK 4') || n.includes('4 CLASES')) {
+            const unitPrice = Math.round(price / 4);
+            return { 
+                badge: 'MEJOR VALOR', 
+                duration: `$${new Intl.NumberFormat('es-CL').format(unitPrice)} C/U`, 
+                highlight: 'AHORRO REAL' 
+            };
+        }
+        if (n.includes('REFERIDO')) {
+            return { badge: 'PARA ALUMNOS DEL GRUPO', duration: '1 HORA', highlight: 'BENEFICIO ESPECIAL' };
+        }
+        return { badge: 'SESIÓN VIP', duration: 'SESIÓN', highlight: null };
+    };
     const [vipPacks, setVipPacks] = useState([
         { id: 'v1', name: 'CLASE SUELTA', description: 'Ideal para probar la metodología. Sin compromiso previo.', price: 18000, duration: '1 HORA', badge: 'CLASE INDIVIDUAL' },
         { id: 'v2', name: 'PACK 4 CLASES', description: 'Ahorra $7.000 vs. precio unitario. Progresión real en 4 sesiones.', price: 65000, duration: '$16.250 C/U', badge: 'MEJOR VALOR', highlight: 'AHORRO REAL' },
@@ -724,31 +743,53 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                     {/* DB VIP Packs */}
                                     {localPlans
                                         .filter(p => p.category === 'vip')
-                                        .map((plan) => (
-                                            <div key={plan.id} className={`p-5 rounded-[28px] border ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-50 border-zinc-200 shadow-sm'} space-y-4`}>
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-widest bg-amber-500/10 text-amber-500 border border-amber-500/20">
-                                                            VIP · {billingCycleLabels[plan.billing_cycle] || 'SESIÓN'}
-                                                        </span>
-                                                        <p className={`text-[11px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>
-                                                            VIP 1-A-1 - {billingCycleLabels[plan.billing_cycle] || 'MENSUAL'}
-                                                        </p>
-                                                    </div>
-                                                </div>
+                                        .map((plan) => {
+                                            const deco = getVipPlanDecorations(plan.name, plan.price);
+                                            return (
+                                                <div key={plan.id} className={`p-5 rounded-[32px] border relative overflow-hidden group transition-all duration-300 ${
+                                                    isDark ? 'bg-zinc-900 border-zinc-800 hover:border-amber-500/30' : 'bg-white border-zinc-200 shadow-sm hover:border-amber-500/30'
+                                                }`}>
+                                                    {deco.highlight && (
+                                                        <div className="absolute top-0 right-0 px-4 py-1.5 bg-amber-500 rounded-bl-2xl">
+                                                            <p className="text-[8px] font-black text-white uppercase tracking-widest">{deco.highlight}</p>
+                                                        </div>
+                                                    )}
 
-                                                <div className="space-y-1.5">
-                                                    <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ml-1">VALOR BASE (CLP)</p>
-                                                    <div className={`flex items-center px-4 py-3 rounded-2xl ${isDark ? 'bg-zinc-950' : 'bg-white'} border ${isDark ? 'border-zinc-800' : 'border-zinc-200 shadow-sm'}`}>
-                                                        <span className="text-zinc-500 font-bold mr-2 text-[13px]">$</span>
-                                                        <input type="text" inputMode="numeric" className={`w-full bg-transparent text-[15px] font-black ${isDark ? 'text-zinc-100' : 'text-zinc-950'} outline-none`}
-                                                            value={plan.price === 0 ? '' : new Intl.NumberFormat('es-CL').format(plan.price)} 
-                                                            onChange={e => handlePlanPriceInput(plan.id, e.target.value)} 
-                                                            placeholder="0" />
+                                                    <div className="space-y-4">
+                                                        <div className="space-y-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest">{deco.badge}</p>
+                                                                <span className="text-[7px] font-black bg-zinc-500/10 text-zinc-500 px-1.5 py-0.5 rounded-md uppercase tracking-widest">
+                                                                    {billingCycleLabels[plan.billing_cycle] || 'SESIÓN'}
+                                                                </span>
+                                                            </div>
+                                                            <h4 className={`text-[15px] font-black uppercase tracking-tighter ${isDark ? 'text-zinc-100' : 'text-zinc-950'}`}>{plan.name}</h4>
+                                                            <p className="text-[11px] font-medium text-zinc-500 leading-tight pr-12">{plan.description || 'Ideal para probar la metodología.'}</p>
+                                                        </div>
+
+                                                        <div className="flex items-end justify-between pt-2">
+                                                            <div className="flex flex-col gap-1">
+                                                                <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">VALOR BASE</p>
+                                                                <div className="flex items-center">
+                                                                    <span className={`text-[24px] font-black tracking-tighter ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>$</span>
+                                                                    <input type="text" inputMode="numeric" 
+                                                                        className={`w-32 bg-transparent text-[24px] font-black tracking-tighter ${isDark ? 'text-zinc-100' : 'text-zinc-900'} outline-none border-b border-dashed border-zinc-700 focus:border-amber-500 transition-colors`}
+                                                                        value={plan.price === 0 ? '' : new Intl.NumberFormat('es-CL').format(plan.price)} 
+                                                                        onChange={e => handlePlanPriceInput(plan.id, e.target.value)} 
+                                                                        placeholder="0" />
+                                                                </div>
+                                                                <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em]">{isDark ? 'CLP ·' : 'CLP ·'} {deco.duration}</p>
+                                                            </div>
+                                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                                                                isDark ? 'bg-zinc-950 border-zinc-800 text-amber-500 hover:bg-amber-500 hover:text-white' : 'bg-zinc-50 border-zinc-100 text-amber-600 hover:bg-amber-500 hover:text-white'
+                                                            } border`}>
+                                                                <Save size={18} />
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ))
+                                            );
+                                        })
                                     }
 
                                     {/* Template Packs (Only if NO DB VIP packs yet) */}
