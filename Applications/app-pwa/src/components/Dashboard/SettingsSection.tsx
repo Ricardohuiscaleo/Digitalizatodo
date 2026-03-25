@@ -109,10 +109,12 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
     // Terms editor state
     const [termsContent, setTermsContent] = useState('');
     const [savingTerms, setSavingTerms] = useState(false);
+    const [isTermsPreview, setIsTermsPreview] = useState(false);
 
     useEffect(() => {
-        if (tenantTerms?.content) {
-            setTermsContent(tenantTerms.content);
+        // Only set terms if we actually have them AND we aren't currently editing (to avoid overwriting unsaved work if terms re-fetch)
+        if (tenantTerms?.content !== undefined) {
+            setTermsContent(tenantTerms?.content || '');
         }
     }, [tenantTerms]);
 
@@ -623,20 +625,48 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
 
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between px-1">
-                                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Editor de Contenido</p>
-                                    <div className="flex items-center gap-2">
+                                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{isTermsPreview ? 'Vista Previa' : 'Editor de Contenido'}</p>
+                                    <div className="flex items-center gap-3">
                                         {termsLoading && <Loader2 className="animate-spin text-blue-500" size={10} />}
-                                        <span className="text-[8px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-500/10 px-2 py-0.5 rounded-lg border border-indigo-500/20">Markdown</span>
+                                        <button 
+                                            onClick={() => setIsTermsPreview(!isTermsPreview)}
+                                            className={`text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border transition-all flex items-center gap-1.5 ${
+                                                isTermsPreview 
+                                                    ? 'bg-emerald-500 text-white border-emerald-400' 
+                                                    : 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20 hover:bg-indigo-500/20'
+                                            }`}
+                                        >
+                                            <Edit2 size={10} />
+                                            {isTermsPreview ? 'Editar' : 'Previsualizar'}
+                                        </button>
                                     </div>
                                 </div>
+                                
                                 {termsLoading ? (
-                                    <div className={`w-full ${isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-zinc-50 border-zinc-100'} border rounded-[28px] h-[350px] flex items-center justify-center`}>
+                                    <div className={`w-full ${isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-zinc-50 border-zinc-100'} border rounded-[28px] h-[400px] flex items-center justify-center`}>
                                         <Loader2 className="animate-spin text-blue-500/30" size={32} />
+                                    </div>
+                                ) : isTermsPreview ? (
+                                    <div className={`w-full ${isDark ? 'bg-zinc-950 border-zinc-800 text-zinc-300' : 'bg-zinc-50 border-zinc-100 text-zinc-800'} border rounded-[28px] px-8 py-8 h-[400px] overflow-y-auto hide-scrollbar prose prose-sm max-w-none`}>
+                                        {termsContent ? termsContent.split('\n').map((line, i) => {
+                                            if (line.startsWith('# ')) return <h1 key={i} className="text-xl font-black mb-4 mt-2 border-b border-zinc-800 pb-2">{line.replace('# ', '')}</h1>;
+                                            if (line.startsWith('## ')) return <h2 key={i} className="text-lg font-black mb-3 mt-6 text-indigo-500">{line.replace('## ', '')}</h2>;
+                                            if (line.startsWith('### ')) return <h3 key={i} className="text-md font-black mb-2 mt-4 text-emerald-500">{line.replace('### ', '')}</h3>;
+                                            if (line.startsWith('- ') || line.startsWith('* ')) return <li key={i} className="ml-4 mb-2 text-[13px] leading-relaxed list-disc">{line.replace(/^[-*] /, '')}</li>;
+                                            if (line.trim() === '---') return <hr key={i} className="my-6 border-zinc-800" />;
+                                            if (line.trim() === '') return <div key={i} className="h-4" />;
+                                            return <p key={i} className="mb-4 text-[13px] leading-relaxed font-medium">{line}</p>;
+                                        }) : (
+                                            <div className="flex flex-col items-center justify-center h-full opacity-20">
+                                                <FileText size={48} className="mb-4" />
+                                                <p className="text-[10px] uppercase font-black tracking-widest">Sin contenido para previsualizar</p>
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
                                     <textarea 
-                                        className={`w-full ${isDark ? 'bg-zinc-950 border-zinc-800 text-zinc-200' : 'bg-zinc-50 border-zinc-100 text-zinc-700'} border rounded-[28px] px-6 py-5 text-[14px] font-medium outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder-zinc-800 min-h-[350px] leading-relaxed resize-none shadow-inner`}
-                                        placeholder="# Título del Contrato\n\n1. Reglas Generales\n2. Compromisos de pago..."
+                                        className={`w-full ${isDark ? 'bg-zinc-950 border-zinc-800 text-zinc-200 shadow-inner' : 'bg-zinc-50 border-zinc-100 text-zinc-700 shadow-sm'} border rounded-[28px] px-8 py-7 text-[14px] font-medium outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder-zinc-800 h-[400px] leading-relaxed resize-none`}
+                                        placeholder="# Título del Contrato\n\n## 1. Reglas\n- Cláusula importante\n\n## 2. Pagos\nDetalle aquí..."
                                         value={termsContent}
                                         onChange={(e) => setTermsContent(e.target.value)}
                                     />
