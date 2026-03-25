@@ -822,11 +822,16 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                     ? tenantTerms.hash.match(/.{1,16}/g) || [] 
                                     : ["SIN_FIRMA_ACTIVA", "ESPERANDO_DATOS", "PUBLIQUE_CAMBIOS", "PARA_GENERAR"]
                                 ).map((row: string, i: number) => (
-                                    <div key={i} className="flex items-center gap-4 mb-2 last:mb-0 group">
-                                        <span className="text-[9px] font-black text-zinc-600 w-4">{(i + 1).toString().padStart(2, '0')}</span>
-                                        <p className={`text-[11px] font-mono font-bold ${isDark ? 'text-zinc-400' : 'text-zinc-500'} tracking-[0.3em] uppercase group-hover:text-blue-500 transition-colors`}>
-                                            {row}
-                                        </p>
+                                    <div key={i} className="mb-4 last:mb-0 group">
+                                        <div className="flex items-center gap-2 mb-1.5 px-1">
+                                            <span className="text-[9px] font-black text-blue-500/60 transition-colors group-hover:text-blue-500">{(i + 1).toString().padStart(2, '0')}</span>
+                                            <div className="h-px flex-1 bg-zinc-500/10 group-hover:bg-blue-500/20 transition-colors" />
+                                        </div>
+                                        <div className={`p-3.5 rounded-2xl border ${isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-zinc-100'} transition-all group-hover:border-blue-500/30 shadow-sm`}>
+                                            <p className={`text-[12px] font-mono font-bold ${isDark ? 'text-zinc-300' : 'text-zinc-500'} tracking-[0.3em] uppercase text-center`}>
+                                                {row}
+                                            </p>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -1089,7 +1094,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                                                         <div className="flex items-center gap-2">
                                                                             <span className="text-[8px] font-bold text-zinc-500 uppercase">Certificación v:</span>
                                                                             <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded bg-white border border-zinc-100 dark:bg-zinc-950 dark:border-zinc-800 ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                                                                                {hVersion.toUpperCase() || 'V3.0'}
+                                                                                V{tenantTerms?.version || '1.0'} {(tenantTerms?.version && parseFloat(tenantTerms.version) > 0) ? '' : '.0'}
                                                                             </span>
                                                                         </div>
                                                                     </div>
