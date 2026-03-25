@@ -20,6 +20,7 @@ class Schedule extends Model
         'start_time',
         'end_time',
         'capacity',
+        'category',
     ];
 
     public function tenant(): BelongsTo

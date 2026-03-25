@@ -347,7 +347,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                     {showScheduleForm && (
                         <div className="p-4 bg-emerald-50/30 space-y-3 border-b border-zinc-100">
                              <div className="grid grid-cols-2 gap-2">
-                                <select className="bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black uppercase outline-none focus:ring-2 focus:ring-emerald-500"
+                                <select className="bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black uppercase text-zinc-950 outline-none focus:ring-2 focus:ring-emerald-500"
                                     value={scheduleForm.day_of_week} onChange={e => setScheduleForm({ ...scheduleForm, day_of_week: e.target.value })}>
                                     <option value="1">Lunes</option>
                                     <option value="2">Martes</option>
@@ -357,7 +357,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                     <option value="6">Sábado</option>
                                     <option value="0">Domingo</option>
                                 </select>
-                                <select className="bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black uppercase outline-none focus:ring-2 focus:ring-emerald-500"
+                                <select className="bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black uppercase text-zinc-950 outline-none focus:ring-2 focus:ring-emerald-500"
                                     value={scheduleForm.category} onChange={e => setScheduleForm({ ...scheduleForm, category: e.target.value })}>
                                     <option value="GI">GI (Jiujitsu)</option>
                                     <option value="NO-GI">NO-GI</option>
@@ -366,9 +366,9 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                 </select>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
-                                <input type="time" className="bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black outline-none focus:ring-2 focus:ring-emerald-500"
+                                <input type="time" className="bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black text-zinc-950 outline-none focus:ring-2 focus:ring-emerald-500"
                                     value={scheduleForm.start_time} onChange={e => setScheduleForm({ ...scheduleForm, start_time: e.target.value })} />
-                                <input type="time" className="bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black outline-none focus:ring-2 focus:ring-emerald-500"
+                                <input type="time" className="bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black text-zinc-950 outline-none focus:ring-2 focus:ring-emerald-500"
                                     value={scheduleForm.end_time} onChange={e => setScheduleForm({ ...scheduleForm, end_time: e.target.value })} />
                             </div>
                             <div className="flex gap-2">
