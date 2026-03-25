@@ -12,6 +12,7 @@ class TenantTerm extends Model
         'content',
         'active',
         'version',
+        'hash',
     ];
 
     protected $casts = [

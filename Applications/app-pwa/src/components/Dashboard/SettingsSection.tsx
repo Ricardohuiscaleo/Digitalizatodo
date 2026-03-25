@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { 
     Camera, Save, ClipboardPaste, CreditCard, Edit2, Loader2, Sparkles, 
     Trash2, LogOut, RefreshCw, Users, X, FileText, ChevronRight, 
-    Banknote, Settings as SettingsIcon, ShieldCheck, Calendar
+    Banknote, Settings as SettingsIcon, ShieldCheck, Calendar, Wallet, Plus, Fingerprint, ClipboardCheck
 } from 'lucide-react';
 import { deleteRegistrationPage, generateRegistrationPage } from "@/lib/api";
 
@@ -98,6 +98,8 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
     // Modals visibility
     const [showPricingModal, setShowPricingModal] = useState(false);
     const [showBankModal, setShowBankModal] = useState(false);
+    const [fingerprintCopied, setFingerprintCopied] = useState(false);
+    const [showSignatureModal, setShowSignatureModal] = useState(false);
     const [showTermsModal, setShowTermsModal] = useState(false);
     const [showSchedulesModal, setShowSchedulesModal] = useState(false);
     
@@ -110,6 +112,54 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
     const [termsSections, setTermsSections] = useState<any[]>([]);
     const [savingTerms, setSavingTerms] = useState(false);
     const [isTermsPreview, setIsTermsPreview] = useState(false);
+    const [localPlans, setLocalPlans] = useState<any[]>([]);
+    const [savingPlans, setSavingPlans] = useState(false);
+
+    // Sync localPlans when modal opens or plansList changes
+    useEffect(() => {
+        if (showPricingModal && plansList) {
+            setLocalPlans([...plansList]);
+        }
+    }, [showPricingModal, plansList]);
+
+    const handlePlanPriceInput = (planId: string, value: string) => {
+        const cleanValue = value.replace(/\D/g, '');
+        const numericValue = cleanValue === '' ? 0 : parseInt(cleanValue);
+        setLocalPlans(prev => prev.map(p => p.id === planId ? { ...p, price: numericValue } : p));
+    };
+
+    const handlePlanDiscountInput = (planId: string, field: string, value: string) => {
+        const cleanValue = value.replace(/\D/g, '');
+        const numericValue = cleanValue === '' ? 0 : parseInt(cleanValue);
+        setLocalPlans(prev => prev.map(p => p.id === planId ? { ...p, [field]: numericValue } : p));
+    };
+
+    const handleSaveAllPlans = async () => {
+        setSavingPlans(true);
+        try {
+            const modified = localPlans.filter(lp => {
+                const original = plansList.find((p: any) => p.id === lp.id);
+                return !original || 
+                       String(original.price) !== String(lp.price) || 
+                       String(original.family_discount_min_students) !== String(lp.family_discount_min_students) ||
+                       String(original.family_discount_percent) !== String(lp.family_discount_percent);
+            });
+
+            for (const plan of modified) {
+                await handleUpdatePlan(plan.id, {
+                    name: plan.name,
+                    price: plan.price,
+                    family_discount_min_students: plan.family_discount_min_students,
+                    family_discount_percent: plan.family_discount_percent
+                });
+            }
+            setShowPricingModal(false);
+        } catch (error) {
+            console.error('Error saving plans:', error);
+        } finally {
+            setSavingPlans(false);
+        }
+    };
 
     useEffect(() => {
         if (tenantTerms?.content) {
@@ -220,8 +270,32 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
 
     const handleSaveTerms = async () => {
         setSavingTerms(true);
+        
+        // 1. Prepare Automated Updates
+        const nextSections = [...termsSections];
+        const todayMonth = new Intl.DateTimeFormat('es-CL', { month: 'short', year: 'numeric' }).format(new Date());
+        const fullDate = new Intl.DateTimeFormat('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date());
+
+        // 2. Automate Header (Index 0)
+        if (nextSections[0]?.title.includes('ENCABEZADO')) {
+            const h = getHeaderParts(nextSections[0].content);
+            const currentVerStr = h.version.match(/(\d+(\.\d+)?)/)?.[0] || '3.0';
+            const nextVer = (parseFloat(currentVerStr) + 0.1).toFixed(1);
+            
+            const autoTitle = `REGLAMENTO Y CONDICIONES - ${branding?.name?.toUpperCase() || 'LA ACADEMIA'}`;
+            const autoVer = `Versión: ${nextVer} (${todayMonth})`;
+            
+            nextSections[0].content = `# ${autoTitle}\n*${autoVer}*\n\n${h.intro}`;
+        }
+
+        // 3. Automate Footer (Last Index)
+        if (nextSections.length > 1 && nextSections[nextSections.length - 1].title.includes('FIRMA')) {
+            const f = getFooterParts(nextSections[nextSections.length - 1].content);
+            nextSections[nextSections.length - 1].content = `**Gestión Digital por:** ${branding?.name || 'Staff App'} | **Última actualización:** ${fullDate}\n**ID Registro Digital:** ${user?.tenant_id || '0'}`;
+        }
+
         // Serialize to JSON for storage
-        await handleUpdateTenantTerms(JSON.stringify(termsSections));
+        await handleUpdateTenantTerms(JSON.stringify(nextSections));
         setSavingTerms(false);
         setShowTermsModal(false);
     };
@@ -439,49 +513,96 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
             {showPricingModal && (
                 <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
                     <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowPricingModal(false)} />
-                    <div className={`${isDark ? 'bg-zinc-900' : 'bg-white'} w-full sm:max-w-sm rounded-t-[36px] sm:rounded-[40px] border ${isDark ? 'border-zinc-800' : 'border-zinc-100'} shadow-2xl relative z-10 overflow-hidden animate-in slide-in-from-bottom duration-400`}>
-                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-80" />
-                        <div className="p-8 space-y-6">
-                            <div className="flex items-start justify-between">
+                    <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'} w-full sm:max-w-lg rounded-t-[36px] sm:rounded-[40px] border shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom duration-400`}>
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-80" />
+                        
+                        {/* Header */}
+                        <div className="px-[5px] pt-8 pb-4 space-y-4">
+                            <div className="flex items-start justify-between px-4">
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 rounded-[20px] bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-inner">
-                                        <CreditCard className="text-indigo-500" size={24} />
+                                        <Wallet className="text-indigo-500" size={24} />
                                     </div>
                                     <div>
-                                        <h4 className={`text-[16px] font-black uppercase tracking-tighter ${isDark ? 'text-zinc-100' : 'text-zinc-950'} leading-none`}>Mensualidades</h4>
-                                        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-1">Valores base de la academia</p>
+                                        <h4 className={`text-[16px] font-black uppercase tracking-tighter ${isDark ? 'text-zinc-100' : 'text-zinc-950'} leading-none`}>Planes y Precios</h4>
+                                        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-1">Configuración de mensualidades</p>
                                     </div>
                                 </div>
                                 <button onClick={() => setShowPricingModal(false)} className={`p-2 ${isDark ? 'text-zinc-600 hover:text-zinc-400 bg-zinc-950' : 'text-zinc-400 hover:text-zinc-600 bg-zinc-50'} active:scale-90 transition-all rounded-full`}>
                                     <X size={20} />
                                 </button>
                             </div>
+                        </div>
 
-                            <div className={`divide-y ${isDark ? 'divide-zinc-800/50 bg-zinc-950 border-zinc-800' : 'divide-zinc-100 bg-zinc-50 border-zinc-100'} rounded-[28px] border shadow-inner overflow-hidden`}>
-                                {[{ label: vocab?.cat1 || 'KIDS', field: 'cat1' as const }, { label: vocab?.cat2 || 'ADULTOS', field: 'cat2' as const }].map(({ label, field }) => (
-                                    <div key={field} className="flex items-center px-6 py-5">
-                                        <span className="text-[11px] font-black text-zinc-500 uppercase tracking-widest w-24 shrink-0">{label}</span>
-                                        <input type="text" inputMode="numeric" className={`flex-1 bg-transparent text-[15px] font-black ${isDark ? 'text-white' : 'text-zinc-950'} focus:ring-0 outline-none text-right placeholder-zinc-800`}
-                                            value={formatCLP(prices[field])} onChange={e => handlePriceInput(field, e.target.value)} placeholder="$ 0" />
+                        {/* List Area */}
+                        <div className="flex-1 overflow-y-auto px-[5px] pb-6 space-y-4 hide-scrollbar">
+                            <div className="px-4 space-y-4">
+                                {localPlans.length > 0 ? localPlans.map((plan) => (
+                                    <div key={plan.id} className={`p-5 rounded-[28px] border ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-50 border-zinc-200 shadow-sm'} space-y-4`}>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-widest ${
+                                                    plan.billing_cycle === 'monthly_from_enrollment' ? 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20' :
+                                                    plan.billing_cycle === 'quarterly' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' :
+                                                    plan.billing_cycle === 'annual' ? 'bg-purple-500/10 text-purple-500 border border-purple-500/20' :
+                                                    isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-zinc-200 text-zinc-600'
+                                                }`}>
+                                                    {plan.billing_cycle?.replace('_', ' ') || 'PLAN'}
+                                                </span>
+                                                <p className={`text-[11px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>{plan.name}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Price Input */}
+                                        <div className="space-y-1.5">
+                                            <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ml-1">Valor Base (CLP)</p>
+                                            <div className={`flex items-center px-4 py-3 rounded-2xl ${isDark ? 'bg-zinc-950' : 'bg-white'} border ${isDark ? 'border-zinc-800' : 'border-zinc-200 shadow-sm transition-all hover:border-indigo-500/30'}`}>
+                                                <span className="text-zinc-500 font-bold mr-2 text-[13px]">$</span>
+                                                <input type="text" inputMode="numeric" className={`w-full bg-transparent text-[15px] font-black ${isDark ? 'text-zinc-100' : 'text-zinc-950'} outline-none`}
+                                                    value={plan.price === 0 ? '' : new Intl.NumberFormat('es-CL').format(plan.price)} 
+                                                    onChange={e => handlePlanPriceInput(plan.id, e.target.value)} 
+                                                    placeholder="0" />
+                                            </div>
+                                        </div>
+
+                                        {/* Discount Rules */}
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                                <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ml-1">Dscto. Familiar desde</p>
+                                                <div className={`flex items-center px-3 py-2 rounded-xl ${isDark ? 'bg-zinc-950' : 'bg-white'} border ${isDark ? 'border-zinc-800' : 'border-zinc-200 shadow-sm'}`}>
+                                                    <input type="text" inputMode="numeric" className={`w-full bg-transparent text-[11px] font-bold ${isDark ? 'text-zinc-300' : 'text-zinc-700'} outline-none`}
+                                                        value={plan.family_discount_min_students === 0 ? '' : plan.family_discount_min_students} 
+                                                        onChange={e => handlePlanDiscountInput(plan.id, 'family_discount_min_students', e.target.value)} 
+                                                        placeholder="2 alumnos" />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ml-1">% Descuento</p>
+                                                <div className={`flex items-center px-3 py-2 rounded-xl ${isDark ? 'bg-zinc-950' : 'bg-white'} border ${isDark ? 'border-zinc-800' : 'border-zinc-200 shadow-sm'}`}>
+                                                    <input type="text" inputMode="numeric" className={`w-full bg-transparent text-[11px] font-bold ${isDark ? 'text-zinc-300' : 'text-zinc-700'} outline-none`}
+                                                        value={plan.family_discount_percent === 0 ? '' : `${plan.family_discount_percent}%`} 
+                                                        onChange={e => handlePlanDiscountInput(plan.id, 'family_discount_percent', e.target.value)} 
+                                                        placeholder="15%" />
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                ))}
-                                <div className="flex items-center px-6 py-5">
-                                    <span className="text-[11px] font-black text-zinc-500 uppercase tracking-widest w-24 shrink-0">Desc. desde</span>
-                                    <input type="text" inputMode="numeric" className={`flex-1 bg-transparent text-[15px] font-black ${isDark ? 'text-white' : 'text-zinc-950'} focus:ring-0 outline-none text-right placeholder-zinc-800`}
-                                        value={prices.discountThreshold === 0 ? '' : prices.discountThreshold} onChange={e => { const v = e.target.value.replace(/\D/g, ''); setPrices((p: any) => ({ ...p, discountThreshold: v === '' ? 0 : parseInt(v) })); }} placeholder="2 alumnos" />
-                                </div>
-                                <div className="flex items-center px-6 py-5">
-                                    <span className="text-[11px] font-black text-zinc-500 uppercase tracking-widest w-24 shrink-0">Descuento</span>
-                                    <input type="text" inputMode="numeric" className={`flex-1 bg-transparent text-[15px] font-black ${isDark ? 'text-white' : 'text-zinc-950'} focus:ring-0 outline-none text-right placeholder-zinc-800`}
-                                        value={prices.discountPercentage === 0 ? '' : `${prices.discountPercentage}%`} onChange={e => { const v = e.target.value.replace(/\D/g, ''); setPrices((p: any) => ({ ...p, discountPercentage: v === '' ? 0 : Math.min(100, parseInt(v)) })); }} placeholder="15%" />
-                                </div>
+                                )) : (
+                                    <div className="py-12 text-center">
+                                        <Loader2 className="animate-spin text-indigo-400 mx-auto mb-3" size={32} />
+                                        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Cargando planes...</p>
+                                    </div>
+                                )}
                             </div>
 
-                            <button onClick={() => { handleSavePrices(); setShowPricingModal(false); }}
-                                style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
-                                className="w-full h-16 text-white font-black rounded-[24px] active:scale-95 transition-all text-[12px] uppercase tracking-[0.25em] shadow-xl shadow-indigo-500/20">
-                                Guardar Precios
-                            </button>
+                            <div className="px-4 pt-2">
+                                <button onClick={handleSaveAllPlans}
+                                    disabled={savingPlans}
+                                    style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
+                                    className="w-full h-16 text-white font-black rounded-[24px] active:scale-95 transition-all text-[12px] uppercase tracking-[0.25em] shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2 disabled:opacity-50">
+                                    {savingPlans ? <Loader2 className="animate-spin" size={20} /> : <><Save size={20} /> Guardar Planes</>}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -493,8 +614,8 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                     <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowSchedulesModal(false)} />
                     <div className={`${isDark ? 'bg-zinc-900' : 'bg-white'} w-full sm:max-w-lg rounded-t-[36px] sm:rounded-[40px] border ${isDark ? 'border-zinc-800' : 'border-zinc-100'} shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom duration-400`}>
                         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-80" />
-                        <div className="p-8 pb-4 space-y-4">
-                            <div className="flex items-start justify-between">
+                        <div className="px-[5px] py-8 pb-4 space-y-4">
+                            <div className="flex items-start justify-between px-4">
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 rounded-[20px] bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shadow-inner">
                                         <Calendar className="text-emerald-500" size={24} />
@@ -516,7 +637,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                             </div>
                         </div>
 
-                        <div className="overflow-y-auto flex-1 px-8 pb-10 hide-scrollbar pt-2">
+                        <div className="overflow-y-auto flex-1 px-[5px] pb-10 hide-scrollbar pt-2">
                             {schedulesLoading ? (
                                 <div className="p-12 flex justify-center"><Loader2 className="animate-spin text-emerald-400" size={32} /></div>
                             ) : (
@@ -668,14 +789,89 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                 </div>
             )}
 
+            {/* MODAL: CERTIFICADO DIGITAL */}
+            {showSignatureModal && (
+                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+                    <div 
+                        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                        onClick={() => setShowSignatureModal(false)}
+                    />
+                    <div className={`relative w-full max-w-[360px] ${isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-zinc-200'} border rounded-[3rem] p-8 space-y-8 animate-in zoom-in-95 duration-200 shadow-2xl overflow-hidden`}>
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500" />
+                        
+                        <div className="flex flex-col items-center text-center space-y-4">
+                            <div className={`w-20 h-20 rounded-[2.5rem] ${isDark ? 'bg-blue-500/10' : 'bg-blue-50'} border border-blue-500/20 flex items-center justify-center shadow-2xl relative`}>
+                                <ShieldCheck className="text-blue-500" size={40} />
+                                <div className="absolute inset-0 rounded-[2.5rem] border border-blue-500/20 animate-ping opacity-20" />
+                            </div>
+                            <div className="space-y-1">
+                                <h2 className={`text-xl font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-zinc-950'}`}>Certificado Digital</h2>
+                                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest px-4 py-1 bg-zinc-500/5 rounded-full inline-block border border-zinc-500/10">SHA-256 Integrity System</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between px-1">
+                                <p className="text-[10px] font-black text-indigo-500 uppercase flex items-center gap-2">
+                                    <span className="w-1 h-1 bg-indigo-500 rounded-full" /> Registro de Integridad (SHA-256)
+                                </p>
+                            </div>
+                            
+                            <div className={`p-5 rounded-[2.5rem] ${isDark ? 'bg-black border-zinc-900' : 'bg-zinc-50 border-zinc-100'} border h-[120px] overflow-y-auto hide-scrollbar shadow-inner`}>
+                                {(tenantTerms?.hash 
+                                    ? tenantTerms.hash.match(/.{1,16}/g) || [] 
+                                    : ["SIN_FIRMA_ACTIVA", "ESPERANDO_DATOS", "PUBLIQUE_CAMBIOS", "PARA_GENERAR"]
+                                ).map((row: string, i: number) => (
+                                    <div key={i} className="flex items-center gap-4 mb-2 last:mb-0 group">
+                                        <span className="text-[9px] font-black text-zinc-600 w-4">{(i + 1).toString().padStart(2, '0')}</span>
+                                        <p className={`text-[11px] font-mono font-bold ${isDark ? 'text-zinc-400' : 'text-zinc-500'} tracking-[0.3em] uppercase group-hover:text-blue-500 transition-colors`}>
+                                            {row}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                            <p className="text-[9px] font-medium text-zinc-500 text-center px-4 italic">
+                                * Los caracteres mostrados corresponden a la firma criptográfica única de este documento.
+                            </p>
+                        </div>
+
+                        <div className={`p-6 rounded-[32px] ${isDark ? 'bg-zinc-900/50' : 'bg-zinc-100'} space-y-3 border border-white/5`}>
+                            <div className="flex justify-between items-center text-[10px]">
+                                <span className="font-bold text-zinc-500 uppercase tracking-tighter">Versión Documento</span>
+                                <span className={`font-black ${isDark ? 'text-white' : 'text-zinc-950'}`}>v{tenantTerms?.version || 'X'}.0</span>
+                            </div>
+                            <div className="flex justify-between items-center text-[10px]">
+                                <span className="font-bold text-zinc-500 uppercase tracking-tighter">Fecha de Emisión</span>
+                                <span className={`font-black ${isDark ? 'text-white' : 'text-zinc-950'}`}>{new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-[10px]">
+                                <span className="font-bold text-zinc-500 uppercase tracking-tighter">Proveedor Cert</span>
+                                <span className="font-black text-blue-400 flex items-center gap-1.5">
+                                    <Sparkles size={12} className="text-blue-500" /> Digitaliza Todo SSL
+                                </span>
+                            </div>
+                        </div>
+
+                        <button 
+                            onClick={() => setShowSignatureModal(false)}
+                            className={`w-full h-16 rounded-[24px] ${isDark ? 'bg-white text-black' : 'bg-zinc-950 text-white'} font-black uppercase tracking-widest active:scale-95 transition-all text-[11px] shadow-2xl`}
+                        >
+                            Cerrar Certificado
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* MODAL: BANCO */}
             {showBankModal && (
                 <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
                     <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowBankModal(false)} />
-                    <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'} w-full sm:max-w-sm rounded-t-[36px] sm:rounded-[40px] border shadow-2xl relative z-10 overflow-hidden animate-in slide-in-from-bottom duration-400`}>
+                    <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'} w-full sm:max-w-sm rounded-t-[36px] sm:rounded-[40px] border shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom duration-400`}>
                         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 to-orange-500 opacity-80" />
-                        <div className="p-8 space-y-6">
-                            <div className="flex items-start justify-between">
+                        
+                        {/* Header */}
+                        <div className="px-[5px] pt-8 pb-4 space-y-4">
+                            <div className="flex items-start justify-between px-4">
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 rounded-[20px] bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shadow-inner">
                                         <Banknote className="text-amber-500" size={24} />
@@ -694,6 +890,11 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                     </button>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Content Area */}
+                        <div className="flex-1 overflow-y-auto px-[5px] pb-6 space-y-6 hide-scrollbar">
+                            <div className="px-4 space-y-6">
 
                             <div className={`${isDark ? 'divide-zinc-800/30 bg-zinc-950 border-zinc-800' : 'divide-zinc-100 bg-zinc-50 border-zinc-100'} divide-y rounded-[28px] border shadow-inner overflow-hidden`}>
                                 {([
@@ -703,8 +904,8 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                     { label: 'Titular', field: 'holder_name', placeholder: 'Nombre' },
                                     { label: 'RUT', field: 'holder_rut', placeholder: '12.345.678-9' },
                                 ] as const).map(({ label, field, placeholder }) => (
-                                    <div key={field} className="flex items-center px-6 py-4">
-                                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest w-20 shrink-0">{label}</span>
+                                    <div key={field} className="flex items-center px-4 py-4">
+                                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest w-16 shrink-0">{label}</span>
                                         <input type="text" className={`flex-1 bg-transparent text-[13px] font-black ${isDark ? 'text-zinc-100' : 'text-zinc-950'} focus:ring-0 outline-none text-right placeholder-zinc-800`}
                                             value={bankData[field] || ''} onChange={e => setBankData((p: any) => ({ ...p, [field]: e.target.value }))} placeholder={placeholder} />
                                     </div>
@@ -719,16 +920,19 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
+        )}
 
             {/* MODAL: TÉRMINOS */}
             {showTermsModal && (
                 <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
                     <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowTermsModal(false)} />
-                    <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'} w-full sm:max-w-lg rounded-t-[36px] sm:rounded-[40px] border shadow-2xl relative z-10 overflow-hidden animate-in slide-in-from-bottom duration-400`}>
+                    <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'} w-full sm:max-w-lg rounded-t-[36px] sm:rounded-[40px] border shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom duration-400`}>
                         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-80" />
-                        <div className="p-8 space-y-6">
-                            <div className="flex items-start justify-between">
+                        
+                        {/* Header */}
+                        <div className="px-[5px] pt-8 pb-4 space-y-4">
+                            <div className="flex items-start justify-between px-4">
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 rounded-[20px] bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shadow-inner">
                                         <FileText className="text-blue-500" size={24} />
@@ -742,28 +946,48 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                     <X size={20} />
                                 </button>
                             </div>
+                        </div>
+
+                        {/* Content Area */}
+                        <div className="flex-1 overflow-y-auto px-[5px] pb-6 space-y-6 hide-scrollbar">
+                            <div className="px-4 space-y-6">
 
                             <div className="space-y-4 max-h-[50vh] overflow-y-auto px-1 hide-scrollbar">
-                                <div className={`flex items-center justify-between sticky top-0 ${isDark ? 'bg-zinc-900' : 'bg-white'} py-2 z-10`}>
-                                    <p className={`text-[10px] font-black ${isDark ? 'text-zinc-500' : 'text-zinc-500'} uppercase tracking-widest`}>{isTermsPreview ? 'Vista Previa' : 'Editor para Administración'}</p>
-                                    <div className="flex items-center gap-3">
-                                        {termsLoading && <Loader2 className="animate-spin text-blue-500" size={10} />}
+                                <div className={`flex items-center justify-between sticky top-0 z-50 py-4 -mx-1 px-1 ${isDark ? 'bg-zinc-900/80' : 'bg-white/80'} backdrop-blur-md border-b ${isDark ? 'border-zinc-800' : 'border-zinc-100'} mb-6`}>
+                                    <div className="flex items-center gap-2">
+                                        <div className={`flex items-center gap-2 px-4 py-2 rounded-2xl border ${
+                                            isTermsPreview 
+                                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' 
+                                                : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-500'
+                                        }`}>
+                                            <div className={`w-2 h-2 rounded-full animate-pulse ${isTermsPreview ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
+                                            <span className="text-[11px] font-black uppercase tracking-widest">
+                                                {isTermsPreview ? 'Muestra' : 'Editor'}
+                                            </span>
+                                        </div>
+                                        {termsLoading && <Loader2 className="animate-spin text-blue-500" size={14} />}
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-2">
                                         {!isTermsPreview && (
                                             <button onClick={addTermsSection}
-                                                className="text-[9px] font-black uppercase text-indigo-500 hover:text-indigo-600 flex items-center gap-1 bg-indigo-500/5 px-3 py-1.5 rounded-xl border border-indigo-500/10 transition-all active:scale-95">
-                                                + Sección
+                                                className="h-11 px-4 rounded-2xl bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 active:scale-90 transition-all flex items-center gap-2 border border-indigo-400">
+                                                <Plus size={18} />
+                                                <span className="text-[10px] font-black uppercase tracking-widest mb-0.5">Sección</span>
                                             </button>
                                         )}
                                         <button 
                                             onClick={() => setIsTermsPreview(!isTermsPreview)}
-                                            className={`text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1.5 ${
+                                            className={`h-11 px-4 rounded-2xl border transition-all flex items-center gap-2 active:scale-90 ${
                                                 isTermsPreview 
-                                                    ? 'bg-emerald-500 text-white border-emerald-400' 
-                                                    : 'bg-zinc-500/10 text-zinc-500 border-zinc-500/20'
+                                                    ? 'bg-zinc-950 text-white border-zinc-800' 
+                                                    : 'bg-white text-zinc-950 border-zinc-200'
                                             }`}
                                         >
-                                            {isTermsPreview ? <Edit2 size={10} /> : <FileText size={10} />}
-                                            {isTermsPreview ? 'Editar' : 'Previsualizar'}
+                                            {isTermsPreview ? <Edit2 size={16} /> : <FileText size={16} />}
+                                            <span className="text-[10px] font-black uppercase tracking-widest mb-0.5">
+                                                {isTermsPreview ? 'Editar' : 'Mirar'}
+                                            </span>
                                         </button>
                                     </div>
                                 </div>
@@ -796,6 +1020,22 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                         )}
 
                                         {/* Dynamic footer from JSON */}
+                                        <div 
+                                            onClick={() => setShowSignatureModal(true)}
+                                            className="mt-12 pt-8 border-t border-zinc-200/50 dark:border-zinc-800/50 flex flex-col items-center gap-4 text-center cursor-pointer group"
+                                        >
+                                            <div className={`p-3 rounded-2xl ${fingerprintCopied ? 'bg-green-500/10 border-green-500/30' : 'bg-zinc-100/50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800'} border transition-all active:scale-95`}>
+                                                {fingerprintCopied ? <ClipboardCheck className="text-green-500" size={24} /> : <Fingerprint className="text-zinc-400 group-hover:text-blue-500 transition-colors" size={24} />}
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2 justify-center">
+                                                    {fingerprintCopied ? <span className="text-green-500">¡Hash Copiado!</span> : <span>Certificación SHA-256</span>}
+                                                </p>
+                                                <p className="text-[9px] font-mono text-zinc-400 break-all max-w-[280px] group-hover:text-zinc-300 transition-colors">
+                                                    {tenantTerms?.hash || '0x ESPERANDO PUBLICACIÓN...'}
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
                                 ) : (
                                     <div className="space-y-6 pb-4">
@@ -806,106 +1046,122 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                             const isFooter = i === termsSections.length - 1 && sec.title.includes('FIRMA');
                                             
                                             return (
-                                                <div key={i} className={`relative group p-6 rounded-[32px] border ${isDark ? 'bg-zinc-950 border-zinc-800 focus-within:border-blue-500/50' : 'bg-zinc-50 border-zinc-200 focus-within:border-blue-500/50'} transition-all shadow-sm`}>
-                                                    <div className="flex items-center justify-between mb-4">
-                                                        <div className="flex items-center gap-3 flex-1">
-                                                            <span className={`w-6 h-6 rounded-full ${isDark ? 'bg-zinc-900 text-zinc-500' : 'bg-white text-zinc-300'} border flex items-center justify-center text-[10px] font-black`}>
-                                                                {i + 1}
-                                                            </span>
-                                                            <input 
-                                                                type="text"
-                                                                placeholder={isHeader ? "Título del Documento" : isFooter ? "Firma y Registro" : "Título de la Sección"}
-                                                                className={`bg-transparent text-[13px] font-black ${isDark ? 'text-white' : 'text-zinc-950'} uppercase tracking-tight outline-none w-full`}
-                                                                value={sec.title}
-                                                                onChange={(e) => updateTermsSection(i, 'title', e.target.value)}
-                                                                readOnly={isHeader || isFooter}
-                                                            />
+                                                <div key={i} className={`relative group p-5 rounded-[40px] border ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-50 border-zinc-200 shadow-sm'} transition-all mb-6 last:mb-0`}>
+                                                    {/* Row 1: Triple Metadata Pill */}
+                                                    <div className="flex items-center justify-between mb-6">
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border ${isDark ? 'bg-zinc-800 border-zinc-700 text-zinc-300' : 'bg-white border-zinc-200 text-zinc-400'} text-[8px] font-black uppercase tracking-widest`}>
+                                                                BLOQUE {i + 1}
+                                                            </div>
+                                                            <div className={`px-3 py-1 rounded-full border ${
+                                                                isHeader ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' :
+                                                                isFooter ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
+                                                                'bg-zinc-700/50 border-zinc-600 text-zinc-300'
+                                                            } text-[8px] font-black uppercase tracking-widest`}>
+                                                                {isHeader ? 'ENCABEZADO' : isFooter ? 'FIRMA' : 'CONTENIDO'}
+                                                            </div>
+                                                            {isHeader && (
+                                                                <div className={`px-3 py-1 rounded-full border ${isDark ? 'bg-zinc-800 border-zinc-700 text-zinc-400' : 'bg-white border-zinc-200 text-zinc-400'} text-[8px] font-black uppercase tracking-widest`}>
+                                                                    AUTO-VERSIÓN
+                                                                </div>
+                                                            )}
                                                         </div>
+                                                        
                                                         {(!isHeader && !isFooter) && (
                                                             <button onClick={() => removeTermsSection(i)}
-                                                                className="p-2 text-zinc-600 hover:text-rose-500 transition-colors">
-                                                                <Trash2 size={16} />
+                                                                className={`p-3 rounded-2xl ${isDark ? 'bg-zinc-950' : 'bg-white shadow-sm border border-zinc-100'} text-zinc-400 hover:text-rose-500 transition-all active:scale-90`}>
+                                                                <Trash2 size={14} />
                                                             </button>
                                                         )}
                                                     </div>
+
+                                                    {/* Body Area */}
+                                                    <div className="space-y-6">
                                                     
                                                     {isHeader ? (() => {
-                                                        const { title: hTitle, version: hVersion, intro: hIntro } = getHeaderParts(sec.content);
+                                                        const { version: hVersion, intro: hIntro } = getHeaderParts(sec.content);
                                                         return (
-                                                            <div className="space-y-4 pl-9">
-                                                                <div className="grid grid-cols-2 gap-4">
+                                                            <div className="space-y-4">
+                                                                {/* Header Info Block */}
+                                                                <div className={`p-5 rounded-3xl ${isDark ? 'bg-indigo-500/5' : 'bg-indigo-50'} border border-indigo-500/10 flex items-center justify-between`}>
                                                                     <div className="space-y-1">
-                                                                        <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest pl-1">Título Oficial</p>
-                                                                        <input 
-                                                                            type="text"
-                                                                            className={`w-full px-3 py-2 rounded-xl border ${isDark ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-white border-zinc-100 text-zinc-900'} text-xs font-bold outline-none focus:border-blue-500/50`}
-                                                                            value={hTitle}
-                                                                            onChange={(e) => updateHeaderContent(i, { title: e.target.value })}
-                                                                        />
+                                                                        <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">Reglamento Oficial</p>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-[8px] font-bold text-zinc-500 uppercase">Certificación v:</span>
+                                                                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded bg-white border border-zinc-100 dark:bg-zinc-950 dark:border-zinc-800 ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                                                                                {hVersion.toUpperCase() || 'V3.0'}
+                                                                            </span>
+                                                                        </div>
                                                                     </div>
-                                                                    <div className="space-y-1">
-                                                                        <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest pl-1">Versión / Vigencia</p>
-                                                                        <input 
-                                                                            type="text"
-                                                                            className={`w-full px-3 py-2 rounded-xl border ${isDark ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-white border-zinc-100 text-zinc-900'} text-xs font-bold outline-none focus:border-blue-500/50`}
-                                                                            value={hVersion}
-                                                                            onChange={(e) => updateHeaderContent(i, { version: e.target.value })}
-                                                                        />
+                                                                    <div className="p-3 rounded-2xl bg-white/50 dark:bg-black/20 border border-indigo-500/20">
+                                                                        <ShieldCheck size={20} className="text-indigo-500" />
                                                                     </div>
                                                                 </div>
-                                                                <div className="space-y-1">
-                                                                    <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest pl-1">Introducción / Declaración</p>
+
+                                                                <div className="space-y-2">
+                                                                    <p className={`text-[9px] font-black ${isDark ? 'text-indigo-400' : 'text-indigo-500'} uppercase tracking-widest pl-1`}>INTRODUCCIÓN / DECLARACIÓN (EDITABLE)</p>
                                                                     <textarea 
-                                                                        className={`w-full px-3 py-2 rounded-xl border ${isDark ? 'bg-zinc-900 border-zinc-800 text-zinc-400' : 'bg-white border-zinc-100 text-zinc-600'} text-xs font-medium outline-none focus:border-blue-500/50 min-h-[80px] leading-relaxed resize-none`}
+                                                                        className={`w-full px-4 py-4 rounded-2xl border ${isDark ? 'bg-black border-zinc-700/50 text-zinc-300' : 'bg-white border-zinc-200 text-zinc-600 shadow-inner'} text-[13px] font-medium outline-none focus:ring-2 focus:ring-indigo-500/20 active:border-indigo-500/50 min-h-[140px] leading-relaxed resize-none transition-all`}
                                                                         value={hIntro}
                                                                         onChange={(e) => updateHeaderContent(i, { intro: e.target.value })}
+                                                                        placeholder="Escribe la declaración inicial aquí..."
                                                                     />
                                                                 </div>
                                                             </div>
                                                         );
                                                     })() : isFooter ? (() => {
-                                                        const { branding: fBrand, updated: fUpdate, regId: fId } = getFooterParts(sec.content);
                                                         return (
-                                                            <div className="space-y-4 pl-9">
-                                                                <div className="grid grid-cols-3 gap-3">
-                                                                    <div className="space-y-1">
-                                                                        <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest pl-1">Gestión por</p>
-                                                                        <input 
-                                                                            type="text"
-                                                                            className={`w-full px-3 py-2 rounded-xl border ${isDark ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-white border-zinc-100 text-zinc-900'} text-[11px] font-bold outline-none`}
-                                                                            value={fBrand}
-                                                                            onChange={(e) => updateFooterContent(i, { branding: e.target.value })}
-                                                                        />
+                                                            <div className="space-y-4">
+                                                                {/* Digital Fingerprint Block */}
+                                                                <div 
+                                                                    onClick={() => setShowSignatureModal(true)}
+                                                                    className={`p-6 rounded-[32px] ${isDark ? 'bg-zinc-950' : 'bg-white'} border border-dashed ${isDark ? 'border-zinc-700' : 'border-zinc-200'} flex flex-col items-center justify-center gap-4 cursor-pointer group active:scale-[0.98] transition-all`}
+                                                                >
+                                                                    <div className={`w-12 h-12 rounded-2xl ${fingerprintCopied ? 'bg-green-500/10 border-green-500/30' : (isDark ? 'bg-blue-500/10' : 'bg-blue-50')} flex items-center justify-center border ${fingerprintCopied ? '' : 'border-blue-500/20'} transition-colors`}>
+                                                                        {fingerprintCopied ? <ClipboardCheck className="text-green-500" size={24} /> : <Fingerprint className="text-blue-500 group-hover:scale-110 transition-transform" size={24} />}
                                                                     </div>
-                                                                    <div className="space-y-1">
-                                                                        <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest pl-1">Actualizado el</p>
-                                                                        <input 
-                                                                            type="text"
-                                                                            className={`w-full px-3 py-2 rounded-xl border ${isDark ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-white border-zinc-100 text-zinc-900'} text-[11px] font-bold outline-none`}
-                                                                            value={fUpdate}
-                                                                            onChange={(e) => updateFooterContent(i, { updated: e.target.value })}
-                                                                        />
+                                                                    <div className="text-center space-y-1">
+                                                                        <p className="text-[10px] font-black tracking-widest leading-none uppercase">
+                                                                            {fingerprintCopied ? <span className="text-green-500">¡Copiado al Portapapeles!</span> : <span className="text-zinc-500">SHA-256 (Huella de Integridad)</span>}
+                                                                        </p>
+                                                                        <div className="flex flex-col items-center gap-1 mt-2">
+                                                                            <p className="text-[9px] font-mono text-zinc-400 break-all px-4 py-2 bg-zinc-500/5 rounded-xl border border-zinc-500/10 inline-block group-hover:border-blue-500/30 transition-colors">
+                                                                                HASH: {tenantTerms?.hash ? tenantTerms.hash.substring(0, 32).toUpperCase() : '0x ESPERANDO PUBLICACIÓN...'}
+                                                                            </p>
+                                                                            <p className="text-[8px] font-black text-blue-500/40 uppercase tracking-tighter">Criptografía de 256 BITS</p>
+                                                                        </div>
                                                                     </div>
-                                                                    <div className="space-y-1">
-                                                                        <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest pl-1">ID Registro</p>
-                                                                        <input 
-                                                                            type="text"
-                                                                            className={`w-full px-3 py-2 rounded-xl border ${isDark ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-white border-zinc-100 text-zinc-900'} text-[11px] font-bold outline-none`}
-                                                                            value={fId}
-                                                                            onChange={(e) => updateFooterContent(i, { regId: e.target.value })}
-                                                                        />
-                                                                    </div>
+                                                                    <p className="text-[8px] font-medium text-zinc-400 italic text-center max-w-[220px]">
+                                                                        Toca la huella para copiar el certificado completo. Valida que el documento corresponde a la versión v{tenantTerms?.version || 'X'}.
+                                                                    </p>
                                                                 </div>
                                                             </div>
                                                         );
                                                     })() : (
-                                                        <textarea 
-                                                            className={`w-full bg-transparent text-[13px] font-medium ${isDark ? 'text-zinc-400' : 'text-zinc-600'} outline-none min-h-[120px] leading-relaxed resize-none pl-9`}
-                                                            placeholder="Escribe el contenido aquí..."
-                                                            value={sec.content}
-                                                            onChange={(e) => updateTermsSection(i, 'content', e.target.value)}
-                                                        />
+                                                        <div className="space-y-5">
+                                                            <div className="space-y-2">
+                                                                <p className={`text-[9px] font-black ${isDark ? 'text-blue-400' : 'text-blue-500'} uppercase tracking-widest pl-1`}>TÍTULO DE SECCIÓN (EDITABLE)</p>
+                                                                <input 
+                                                                    type="text"
+                                                                    placeholder="Ej: 1. RIESGOS Y SALUD"
+                                                                    className={`w-full px-4 py-3 rounded-xl border ${isDark ? 'bg-black border-zinc-700 text-white' : 'bg-white border-zinc-100 text-zinc-950 shadow-inner'} text-[11px] font-black uppercase tracking-tight outline-none focus:ring-2 focus:ring-blue-500/20 transition-all`}
+                                                                    value={sec.title}
+                                                                    onChange={(e) => updateTermsSection(i, 'title', e.target.value)}
+                                                                />
+                                                            </div>
+
+                                                            <div className="space-y-2">
+                                                                <p className={`text-[9px] font-black ${isDark ? 'text-blue-400' : 'text-blue-500'} uppercase tracking-widest pl-1`}>CONTENIDO DE SECCIÓN (EDITABLE)</p>
+                                                                <textarea 
+                                                                    className={`w-full rounded-2xl border ${isDark ? 'bg-black border-zinc-700/50 text-zinc-300' : 'bg-white border-zinc-100 text-zinc-600 shadow-inner'} text-[13px] font-medium outline-none focus:ring-2 focus:ring-blue-500/20 active:border-blue-500/50 min-h-[160px] leading-relaxed resize-none p-4 transition-all`}
+                                                                    placeholder="Escribe el contenido aquí..."
+                                                                    value={sec.content}
+                                                                    onChange={(e) => updateTermsSection(i, 'content', e.target.value)}
+                                                                />
+                                                            </div>
+                                                        </div>
                                                     )}
+                                                    </div>
                                                 </div>
                                             );
                                         })}
@@ -924,7 +1180,8 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
+        )}
 
             {/* SISTEMA */}
             <div className="space-y-3 mt-8">
