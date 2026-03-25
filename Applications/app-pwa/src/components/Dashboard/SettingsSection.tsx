@@ -276,22 +276,16 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
         const todayMonth = new Intl.DateTimeFormat('es-CL', { month: 'short', year: 'numeric' }).format(new Date());
         const fullDate = new Intl.DateTimeFormat('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date());
 
-        // 2. Automate Header (Index 0)
+        // 2. Automate Header (Index 0): Save ONLY the intro text, strip hardcoded header
         if (nextSections[0]?.title.includes('ENCABEZADO')) {
             const h = getHeaderParts(nextSections[0].content);
-            const currentVerStr = h.version.match(/(\d+(\.\d+)?)/)?.[0] || '3.0';
-            const nextVer = (parseFloat(currentVerStr) + 0.1).toFixed(1);
-            
-            const autoTitle = `REGLAMENTO Y CONDICIONES - ${branding?.name?.toUpperCase() || 'LA ACADEMIA'}`;
-            const autoVer = `Versión: ${nextVer} (${todayMonth})`;
-            
-            nextSections[0].content = `# ${autoTitle}\n*${autoVer}*\n\n${h.intro}`;
+            nextSections[0].content = h.intro;
         }
 
-        // 3. Automate Footer (Last Index)
+        // 3. Automate Footer (Last Index): Save ONLY the footer text, strip hardcoded metadata
         if (nextSections.length > 1 && nextSections[nextSections.length - 1].title.includes('FIRMA')) {
             const f = getFooterParts(nextSections[nextSections.length - 1].content);
-            nextSections[nextSections.length - 1].content = `**Gestión Digital por:** ${branding?.name || 'Staff App'} | **Última actualización:** ${fullDate}\n**ID Registro Digital:** ${user?.tenant_id || '0'}`;
+            nextSections[nextSections.length - 1].content = f.text;
         }
 
         // Serialize to JSON for storage
@@ -370,20 +364,20 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
     };
 
     const getFooterParts = (content: string) => {
-        if (!content) return { branding: '', updated: '', regId: '' };
+        if (!content) return { branding: '', updated: '', regId: '', text: '' };
         const lines = content.split('\n');
-        let branding = '';
-        let updated = '';
-        let regId = '';
         
-        const line0 = lines[0] || '';
+        const line0 = lines.find(l => l.includes('**Gestión Digital por:**')) || '';
         const parts = line0.split('|');
-        branding = parts[0]?.replace(/\*\*Gestión Digital por:\*\*/g, '').replace(/\*\*/g, '').replace(':', '').trim();
-        updated = parts[1]?.replace(/\*\*Última actualización:\*\*/g, '').replace(/\*\*/g, '').replace(':', '').trim();
+        const branding = parts[0]?.replace(/\*\*Gestión Digital por:\*\*/g, '').replace(/\*\*/g, '').replace(':', '').trim();
+        const updated = parts[1]?.replace(/\*\*Última actualización:\*\*/g, '').replace(/\*\*/g, '').replace(':', '').trim();
         
-        regId = (lines[1] || '').replace(/\*\*ID Registro Digital:\*\*/g, '').replace(/\*\*/g, '').replace(':', '').trim();
+        const regLine = lines.find(l => l.includes('**ID Registro Digital:**')) || '';
+        const regId = regLine.replace(/\*\*ID Registro Digital:\*\*/g, '').replace(/\*\*/g, '').replace(':', '').trim();
         
-        return { branding, updated, regId };
+        const text = lines.filter(l => l !== line0 && l !== regLine).join('\n').trim();
+        
+        return { branding, updated, regId, text };
     };
 
     const updateFooterContent = (index: number, parts: { branding?: string, updated?: string, regId?: string }) => {
@@ -822,13 +816,12 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                     ? tenantTerms.hash.match(/.{1,16}/g) || [] 
                                     : ["SIN_FIRMA_ACTIVA", "ESPERANDO_DATOS", "PUBLIQUE_CAMBIOS", "PARA_GENERAR"]
                                 ).map((row: string, i: number) => (
-                                    <div key={i} className="mb-4 last:mb-0 group">
-                                        <div className="flex items-center gap-2 mb-1.5 px-1">
-                                            <span className="text-[9px] font-black text-blue-500/60 transition-colors group-hover:text-blue-500">{(i + 1).toString().padStart(2, '0')}</span>
-                                            <div className="h-px flex-1 bg-zinc-500/10 group-hover:bg-blue-500/20 transition-colors" />
+                                    <div key={i} className="flex items-center gap-3 mb-2 last:mb-0 group">
+                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center border ${isDark ? 'bg-black border-zinc-800 text-zinc-600' : 'bg-white shadow-sm border-zinc-100 text-zinc-400'} text-[9px] font-black transition-all group-hover:border-blue-500/30 group-hover:text-blue-500`}>
+                                            {(i + 1).toString().padStart(2, '0')}
                                         </div>
-                                        <div className={`p-3.5 rounded-2xl border ${isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-zinc-100'} transition-all group-hover:border-blue-500/30 shadow-sm`}>
-                                            <p className={`text-[12px] font-mono font-bold ${isDark ? 'text-zinc-300' : 'text-zinc-500'} tracking-[0.3em] uppercase text-center`}>
+                                        <div className={`flex-1 p-3.5 rounded-2xl border ${isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-zinc-50 shadow-sm'} transition-all group-hover:border-blue-500/30`}>
+                                            <p className={`text-[12px] font-mono font-bold ${isDark ? 'text-zinc-400' : 'text-zinc-500'} tracking-[0.3em] uppercase text-center`}>
                                                 {row}
                                             </p>
                                         </div>
@@ -1006,14 +999,31 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                         {/* Dynamic content from JSON */}
 
                                         {termsSections.length > 0 ? termsSections.map((sec, i) => {
-                                            const isHeaderOrFooter = (i === 0 && sec.title.includes('ENCABEZADO')) || (i === termsSections.length - 1 && sec.title.includes('FIRMA'));
+                                            const isHeader = i === 0 && sec.title.includes('ENCABEZADO');
+                                            const isFooter = i === termsSections.length - 1 && sec.title.includes('FIRMA');
+                                            
+                                            let displayContent = sec.content;
+                                            
+                                            if (isHeader) {
+                                                const todayMonth = new Intl.DateTimeFormat('es-CL', { month: 'short', year: 'numeric' }).format(new Date());
+                                                const autoTitle = `REGLAMENTO Y CONDICIONES - ${branding?.name?.toUpperCase() || 'LA ACADEMIA'}`;
+                                                const autoVer = `Versión: ${tenantTerms?.version || '1.0'} (${todayMonth})`;
+                                                displayContent = `# ${autoTitle}\n*${autoVer}*\n\n${sec.content}`;
+                                            }
+                                            
+                                            if (isFooter) {
+                                                const fullDate = new Intl.DateTimeFormat('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date());
+                                                const metaLine = `**Gestión Digital por:** ${branding?.name || 'Staff App'} | **Última actualización:** ${fullDate}\n**ID Registro Digital:** ${user?.tenant_id || '0'}`;
+                                                displayContent = `${sec.content}\n\n${metaLine}`;
+                                            }
+
                                             return (
                                                 <div key={i} className="mb-8 last:mb-0">
-                                                    {!isHeaderOrFooter && sec.title && (
+                                                    {!isHeader && !isFooter && sec.title && (
                                                         <h3 className="text-lg font-black mb-3 text-indigo-500 uppercase tracking-tight">{sec.title}</h3>
                                                     )}
                                                     <div className="text-[13px] leading-relaxed font-medium whitespace-pre-wrap">
-                                                        {renderMarkdown(sec.content)}
+                                                        {renderMarkdown(displayContent)}
                                                     </div>
                                                 </div>
                                             );
