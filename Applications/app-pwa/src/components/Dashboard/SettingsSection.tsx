@@ -144,6 +144,53 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
         }
         return { badge: 'SESIÓN VIP', duration: 'SESIÓN', highlight: null };
     };
+
+    // VIP CRUD State
+    const [isCreatingVip, setIsCreatingVip] = useState(false);
+    const [isSavingVip, setIsSavingVip] = useState(false);
+    const [newVipForm, setNewVipForm] = useState({
+        name: '',
+        price: '',
+        description: '',
+        billing_cycle: 'monthly_from_enrollment'
+    });
+
+    const onVipDelete = async (id: number) => {
+        if (!window.confirm('¿Estás seguro de eliminar este plan permanentemente?')) return;
+        try {
+            await handleDeletePlan(id);
+        } catch (error) {
+            console.error('Error al eliminar el plan:', error);
+        }
+    };
+
+    const onVipCreate = async () => {
+        if (!newVipForm.name || !newVipForm.price) return;
+
+        setIsSavingVip(true);
+        try {
+            const data = {
+                ...newVipForm,
+                price: parseFloat(newVipForm.price.replace(/\./g, '')),
+                category: 'vip',
+                active: 1,
+                is_recurring: 1
+            };
+
+            await handleCreatePlan(data);
+            setIsCreatingVip(false);
+            setNewVipForm({
+                name: '',
+                price: '',
+                description: '',
+                billing_cycle: 'monthly_from_enrollment'
+            });
+        } catch (error) {
+            console.error('Error al crear el plan:', error);
+        } finally {
+            setIsSavingVip(false);
+        }
+    };
     const [vipPacks, setVipPacks] = useState([
         { id: 'v1', name: 'CLASE SUELTA', description: 'Ideal para probar la metodología. Sin compromiso previo.', price: 18000, duration: '1 HORA', badge: 'CLASE INDIVIDUAL' },
         { id: 'v2', name: 'PACK 4 CLASES', description: 'Ahorra $7.000 vs. precio unitario. Progresión real en 4 sesiones.', price: 65000, duration: '$16.250 C/U', badge: 'MEJOR VALOR', highlight: 'AHORRO REAL' },
@@ -740,6 +787,109 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                 </div>
                             ) : (
                                 <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-500">
+                                    {/* Action Bar: Add New Pack */}
+                                    <div className="flex items-center justify-between mb-2">
+                                        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest pl-2">Gestión de Packs VIP</p>
+                                        {!isCreatingVip && (
+                                            <button 
+                                                onClick={() => setIsCreatingVip(true)}
+                                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                                                    isDark ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white' : 'bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white'
+                                                } border border-amber-500/20 active:scale-95`}
+                                            >
+                                                <Plus size={14} />
+                                                Nuevo Pack
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Create Form Card */}
+                                    {isCreatingVip && (
+                                        <div className={`p-6 rounded-[32px] border-2 border-dashed ${isDark ? 'bg-zinc-950 border-amber-500/30' : 'bg-white border-amber-500/30'} space-y-5 animate-in zoom-in-95 duration-300 shadow-2xl shadow-amber-500/10`}>
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <p className="text-[9px] font-black text-amber-500 uppercase tracking-[0.3em]">Configurando Nuevo Pack</p>
+                                                    <button onClick={() => setIsCreatingVip(false)} className="text-zinc-500 hover:text-zinc-300 transition-colors">
+                                                        <X size={18} />
+                                                    </button>
+                                                </div>
+
+                                                <div className="space-y-3">
+                                                    <div className="space-y-1.5">
+                                                        <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ml-1">NOMBRE DEL PACK</p>
+                                                        <input 
+                                                            type="text" 
+                                                            placeholder="Ej: PACK 8 CLASES, CLASE PRUEBA..."
+                                                            className={`w-full px-4 py-3 rounded-2xl ${isDark ? 'bg-zinc-900' : 'bg-zinc-100'} border ${isDark ? 'border-zinc-800' : 'border-zinc-200'} text-[13px] font-black outline-none focus:border-amber-500 transition-all`}
+                                                            value={newVipForm.name}
+                                                            onChange={e => setNewVipForm({...newVipForm, name: e.target.value})}
+                                                        />
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <div className="space-y-1.5">
+                                                            <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ml-1">PRECIO (CLP)</p>
+                                                            <input 
+                                                                type="text" 
+                                                                inputMode="numeric"
+                                                                placeholder="0"
+                                                                className={`w-full px-4 py-3 rounded-2xl ${isDark ? 'bg-zinc-900' : 'bg-zinc-100'} border ${isDark ? 'border-zinc-800' : 'border-zinc-200'} text-[13px] font-black outline-none focus:border-amber-500 transition-all`}
+                                                                value={newVipForm.price}
+                                                                onChange={e => {
+                                                                    const val = e.target.value.replace(/\D/g, '');
+                                                                    setNewVipForm({...newVipForm, price: val ? new Intl.NumberFormat('es-CL').format(parseInt(val)) : ''});
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-1.5">
+                                                            <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ml-1">CICLO</p>
+                                                            <select 
+                                                                className={`w-full px-4 py-3 rounded-2xl ${isDark ? 'bg-zinc-900' : 'bg-zinc-100'} border ${isDark ? 'border-zinc-800' : 'border-zinc-200'} text-[10px] font-black uppercase outline-none focus:border-amber-500 transition-all appearance-none`}
+                                                                value={newVipForm.billing_cycle}
+                                                                onChange={e => setNewVipForm({...newVipForm, billing_cycle: e.target.value})}
+                                                            >
+                                                                {Object.entries(billingCycleLabels).map(([val, label]) => (
+                                                                    <option key={val} value={val}>{label}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-1.5">
+                                                        <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ml-1">DESCRIPCIÓN COMERCIAL</p>
+                                                        <textarea 
+                                                            placeholder="Ej: Incluye 8 sesiones individuales de 1 hora."
+                                                            className={`w-full px-4 py-3 rounded-2xl ${isDark ? 'bg-zinc-900' : 'bg-zinc-100'} border ${isDark ? 'border-zinc-800' : 'border-zinc-200'} text-[12px] font-medium outline-none focus:border-amber-500 transition-all min-h-[80px] resize-none`}
+                                                            value={newVipForm.description}
+                                                            onChange={e => setNewVipForm({...newVipForm, description: e.target.value})}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex gap-2">
+                                                    <button 
+                                                        onClick={() => setIsCreatingVip(false)}
+                                                        className={`flex-1 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest ${isDark ? 'bg-zinc-900 text-zinc-500' : 'bg-zinc-100 text-zinc-400'} active:scale-95 transition-all`}
+                                                    >
+                                                        Cancelar
+                                                    </button>
+                                                    <button 
+                                                        onClick={onVipCreate}
+                                                        disabled={isSavingVip}
+                                                        className={`flex-[2] py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-amber-500 text-white shadow-lg shadow-amber-500/20 active:scale-95 transition-all flex items-center justify-center gap-2`}
+                                                    >
+                                                        {isSavingVip ? <Loader2 className="animate-spin" size={14} /> : <Plus size={14} />}
+                                                        Crear Pack VIP
+                                                    </button>
+                                                </div>
+                                                
+                                                <p className="text-[8px] font-medium text-zinc-500 text-center italic">
+                                                    Tip: Los nombres que incluyen 'Pack', 'Suelta' o 'Referido' activan insignias automáticas.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* DB VIP Packs */}
                                     {localPlans
                                         .filter(p => p.category === 'vip')
@@ -780,10 +930,20 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                                                 </div>
                                                                 <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em]">{isDark ? 'CLP ·' : 'CLP ·'} {deco.duration}</p>
                                                             </div>
-                                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                                                                isDark ? 'bg-zinc-950 border-zinc-800 text-amber-500 hover:bg-amber-500 hover:text-white' : 'bg-zinc-50 border-zinc-100 text-amber-600 hover:bg-amber-500 hover:text-white'
-                                                            } border`}>
-                                                                <Save size={18} />
+                                                            <div className="flex items-center gap-2">
+                                                                <button 
+                                                                    onClick={() => onVipDelete(plan.id)}
+                                                                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                                                                        isDark ? 'bg-zinc-950 border-zinc-800 text-zinc-600 hover:text-rose-500' : 'bg-zinc-50 border-zinc-100 text-zinc-400 hover:text-rose-500'
+                                                                    } border active:scale-90`}
+                                                                >
+                                                                    <Trash2 size={16} />
+                                                                </button>
+                                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                                                                    isDark ? 'bg-zinc-950 border-zinc-800 text-amber-500 hover:bg-amber-500 hover:text-white' : 'bg-zinc-50 border-zinc-100 text-amber-600 hover:bg-amber-500 hover:text-white'
+                                                                } border`}>
+                                                                    <Save size={18} />
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
