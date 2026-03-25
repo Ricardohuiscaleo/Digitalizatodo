@@ -613,10 +613,10 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                             <div className="w-12 h-12 rounded-2xl bg-zinc-500/10 flex items-center justify-center mx-auto mb-2">
                                                 <Info size={24} className="text-zinc-400" />
                                             </div>
-                                            <p className={`text-[13px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-300' : 'text-zinc-600'}`}>No se encontraron planes {dojoType}</p>
+                                            <p className={`text-[13px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-300' : 'text-zinc-600'}`}>No se encontraron planes para {dojoType}</p>
                                             <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest leading-relaxed">
                                                 {dojoType === 'kids' 
-                                                    ? "Asegúrate de que tus planes de Niños incluyan 'Kids', 'Niños' o 'Infantil' en su nombre." 
+                                                    ? "Tips: Nombra tus planes con 'Kids' o 'Niños'. Además, verifica que el Plan pertenezca a tu ID de academia (Tenant ID)." 
                                                     : "Mostrando solo planes que no están marcados como Kids."}
                                             </p>
                                         </div>
@@ -727,14 +727,14 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-2">
                                                         <span className="text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-widest bg-amber-500/10 text-amber-500 border border-amber-500/20">
-                                                            SESIÓN VIP
+                                                            VIP · {billingCycleLabels[plan.billing_cycle] || 'SESIÓN'}
                                                         </span>
                                                         <p className={`text-[11px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>{plan.name}</p>
                                                     </div>
                                                 </div>
 
                                                 <div className="space-y-1.5">
-                                                    <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ml-1">Valor Unitario (CLP)</p>
+                                                    <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ml-1">VALOR BASE (CLP)</p>
                                                     <div className={`flex items-center px-4 py-3 rounded-2xl ${isDark ? 'bg-zinc-950' : 'bg-white'} border ${isDark ? 'border-zinc-800' : 'border-zinc-200 shadow-sm'}`}>
                                                         <span className="text-zinc-500 font-bold mr-2 text-[13px]">$</span>
                                                         <input type="text" inputMode="numeric" className={`w-full bg-transparent text-[15px] font-black ${isDark ? 'text-zinc-100' : 'text-zinc-950'} outline-none`}
@@ -747,7 +747,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                         ))
                                     }
 
-                                    {/* Template Packs (If no DB VIP packs yet) */}
+                                    {/* Template Packs (Only if NO DB VIP packs yet) */}
                                     {localPlans.filter(p => p.category === 'vip').length === 0 && (
                                         <>
                                             <div className="text-center space-y-1 mb-6">
