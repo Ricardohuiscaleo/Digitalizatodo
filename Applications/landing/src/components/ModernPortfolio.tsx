@@ -54,7 +54,8 @@ const ModernPortfolio = () => {
         { title: 'Agente RAG',       category: 'Inteligencia Artificial', image: 'agenterag.com.webp',              tags: ['Python', 'LLM', 'FastAPI'],        link: 'https://agenterag.com',             delay: 200 },
         { title: 'Matemágica',       category: 'EdTech & IA',             image: 'matemagica.agenterag.com.webp',   tags: ['PWA', 'Learning', 'IA'],           link: 'https://matemagica.agenterag.com',  delay: 0   },
         { title: 'Colegio Agente RAG',category: 'Corporativo EdTech',     image: 'colegio.agenterag.com.webp',      tags: ['Web Design', 'SEO', 'Automation'], link: 'https://colegio.agenterag.com',     delay: 100 },
-        { title: 'Automotora Online', category: 'E-commerce Auto',        image: 'demo.automotora.online.webp',     tags: ['Sales', 'WhatsApp API'],           link: 'https://demo.automotora.online',    delay: 200 },
+        { title: 'Integração Arica', category: 'Martial Arts SaaS',      image: 'integracao.jpg',                  tags: ['BJJ', 'Schedules', 'OLED Design'], link: '/integracao-arica',           delay: 200 },
+        { title: 'Automotora Online', category: 'E-commerce Auto',        image: 'demo.automotora.online.webp',     tags: ['Sales', 'WhatsApp API'],           link: 'https://demo.automotora.online',    delay: 0   },
     ];
 
     return (

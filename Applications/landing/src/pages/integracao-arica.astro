@@ -1,0 +1,611 @@
+---
+import ModernLayout from '../layouts/ModernLayout.astro';
+---
+
+<ModernLayout title="Integração Arica | Jiu Jitsu Brasilero | Carlson Gracie Lineage">
+  <div class="page-container">
+    <header class="navbar">
+      <div class="nav-content">
+        <div class="logo-group">
+          <div class="logo-circle">
+            <span>IA</span>
+          </div>
+          <div class="logo-text">
+            <span class="brand">INTEGRAÇÃO</span>
+            <span class="city">ARICA</span>
+          </div>
+        </div>
+        <a href="https://wa.me/56945392581" class="cta-mini">AGENDAR CLASE</a>
+      </div>
+    </header>
+
+    <main>
+      <!-- Hero Section -->
+      <section class="hero-bjj">
+        <div class="overlay"></div>
+        <div class="hero-content">
+          <p class="subtitle">CARLSON GRACIE LINEAGE</p>
+          <h1>INTEGRAÇÃO <span class="gold-text">ARICA</span></h1>
+          <p class="tagline">JIU JITSU • HORARIO DE CLASES</p>
+          <div class="hero-badges">
+            <span class="badge">GI</span>
+            <span class="badge">NO-GI</span>
+            <span class="badge">KIDS</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Schedule Section -->
+      <section class="schedule-section">
+        <h2 class="section-title">HORARIOS</h2>
+        
+        <div class="schedule-grid">
+          <!-- GI Section -->
+          <div class="schedule-category">
+            <div class="cat-header">
+              <span class="cat-icon">🥋</span>
+              <h3>KIMONO / GI</h3>
+              <span class="cat-info">Adultos • Lun, Mié, Vie</span>
+            </div>
+            
+            <div class="time-slots">
+              <div class="slot morning">
+                <span class="period">MAÑANA</span>
+                <span class="time">10:30</span>
+                <span class="level">INICIANTES</span>
+              </div>
+              <div class="slot night">
+                <span class="period">NOCHE</span>
+                <span class="time">20:30</span>
+                <div class="levels">
+                  <span>INIC.</span>
+                  <span>INTER.</span>
+                  <span>AVANZ.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NO-GI Section -->
+          <div class="schedule-category">
+            <div class="cat-header nogi">
+              <span class="cat-icon">👊</span>
+              <h3>NO-GI</h3>
+              <span class="cat-info">Adultos & Jóvenes • Mar, Jue</span>
+            </div>
+            <div class="time-slots">
+              <div class="slot night">
+                <span class="time">20:00</span>
+                <div class="levels">
+                  <span>INIC.</span>
+                  <span>INTER.</span>
+                  <span>AVANZ.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- KIDS Section -->
+          <div class="schedule-category">
+            <div class="cat-header kids">
+              <span class="cat-icon">👦</span>
+              <h3>KIDS</h3>
+              <span class="cat-info">6 a 10 años • Lun, Mié, Vie</span>
+            </div>
+            <div class="time-slots">
+              <div class="slot night">
+                <span class="time">19:00</span>
+                <span class="level">6-10 AÑOS</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pricing Section -->
+      <section class="pricing-section">
+        <h2 class="section-title">PLANES DE MEMBRESÍA</h2>
+        
+        <div class="pricing-grid">
+          <div class="price-card">
+            <span class="plan-name">MENSUAL</span>
+            <span class="plan-duration">1 mes</span>
+            <div class="price-value">$50.000</div>
+            <span class="price-mo">$50.000/mes</span>
+          </div>
+
+          <div class="price-card highlight">
+            <div class="save-badge">AHORRA $15.000</div>
+            <span class="plan-name">TRIMESTRAL</span>
+            <span class="plan-duration">3 meses</span>
+            <div class="price-value">$135.000</div>
+            <span class="price-mo">$45.000/mes</span>
+          </div>
+
+          <div class="price-card highlight">
+            <div class="save-badge">AHORRA $45.000</div>
+            <span class="plan-name">SEMESTRAL</span>
+            <span class="plan-duration">6 meses</span>
+            <div class="price-value">$255.000</div>
+            <span class="price-mo">$42.500/mes</span>
+          </div>
+
+          <div class="price-card featured">
+            <div class="best-value">★ MEJOR VALOR</div>
+            <div class="save-badge gold">AHORRA $120.000</div>
+            <span class="plan-name">ANUAL</span>
+            <span class="plan-duration">12 meses</span>
+            <div class="price-value">$480.000</div>
+            <span class="price-mo">$40.000/mes</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- CTA Footer -->
+      <section class="cta-section">
+        <div class="cta-content">
+          <h3>¿LISTO PARA COMENZAR?</h3>
+          <p>Agenda tu clase de prueba gratuita hoy mismo.</p>
+          <a href="https://wa.me/56945392581" class="btn-whatsapp">
+            <i data-lucide="phone"></i> WHATSAPP
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer-bjj">
+      <div class="footer-bottom">
+        <p>Arica, Chile | Carlson Gracie Lineage</p>
+        <p>Inscríbete hoy • @integracao_arica</p>
+      </div>
+    </footer>
+  </div>
+</ModernLayout>
+
+<style>
+  :root {
+    --gold: #d4af37;
+    --gold-bright: #ffd700;
+    --black: #050505;
+    --zinc-900: #09090b;
+    --zinc-800: #18181b;
+    --zinc-700: #27272a;
+    --zinc-500: #71717a;
+    --cyan: #00d2ff;
+    --neonyre: #39FF14;
+  }
+
+  /* Override ModernLayout background */
+  body {
+    background: var(--black) !important;
+    color: white !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  .page-container {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Navbar */
+  .navbar {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    background: rgba(5, 5, 5, 0.8);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--zinc-800);
+    padding: 1rem 0;
+  }
+
+  .nav-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1.5rem;
+  }
+
+  .logo-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .logo-circle {
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 900;
+    color: var(--gold);
+  }
+
+  .logo-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+  }
+
+  .brand {
+    font-size: 1.1rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+  }
+
+  .city {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--zinc-500);
+  }
+
+  .cta-mini {
+    background: var(--gold);
+    color: var(--black);
+    padding: 0.5rem 1rem;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 900;
+    text-decoration: none;
+    transition: transform 0.3s;
+  }
+
+  .cta-mini:hover {
+    transform: scale(1.05);
+  }
+
+  /* Hero Section */
+  .hero-bjj {
+    height: 70vh;
+    min-height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+    padding: 2rem;
+    background: url('https://images.unsplash.com/photo-1558507652-2d9626c4e67a?q=80&w=1974&auto=format&fit=crop') center/cover;
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(5,5,5,0.7), var(--black));
+    z-index: 1;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    margin-top: 4rem;
+  }
+
+  .subtitle {
+    font-size: 0.75rem;
+    letter-spacing: 0.5em;
+    color: var(--zinc-500);
+    margin-bottom: 1rem;
+  }
+
+  h1 {
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+
+  .gold-text {
+    color: var(--gold-bright);
+    text-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+  }
+
+  .tagline {
+    font-size: 0.9rem;
+    letter-spacing: 0.2em;
+    color: var(--zinc-500);
+    margin-bottom: 2rem;
+  }
+
+  .hero-badges {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .badge {
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--zinc-700);
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+  }
+
+  /* Schedule Section */
+  .schedule-section {
+    padding: 6rem 1.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .section-title {
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 900;
+    letter-spacing: 0.4em;
+    color: var(--gold);
+    margin-bottom: 4rem;
+    text-transform: uppercase;
+  }
+
+  .schedule-grid {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+
+  .schedule-category {
+    background: var(--zinc-900);
+    border: 1px solid var(--zinc-800);
+    border-radius: 2rem;
+    overflow: hidden;
+    padding: 2rem;
+    transition: transform 0.3s, border-color 0.3s;
+  }
+
+  .schedule-category:hover {
+    transform: translateY(-5px);
+    border-color: var(--zinc-700);
+  }
+
+  .cat-header {
+    border-bottom: 1px solid var(--zinc-800);
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .cat-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 900;
+    margin-bottom: 0.25rem;
+  }
+
+  .cat-info {
+    font-size: 0.75rem;
+    color: var(--zinc-500);
+    font-weight: 500;
+  }
+
+  .time-slots {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .slot {
+    background: rgba(255,255,255,0.03);
+    padding: 1.5rem;
+    border-radius: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    border: 1px solid transparent;
+    transition: background 0.3s;
+  }
+
+  .period {
+    font-size: 0.6rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+  }
+
+  .time {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: var(--gold-bright);
+    line-height: 1;
+  }
+
+  .level {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--zinc-500);
+    letter-spacing: 0.05em;
+  }
+
+  .levels {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .levels span {
+    font-size: 0.6rem;
+    font-weight: 900;
+    padding: 0.2rem 0.5rem;
+    background: var(--zinc-800);
+    border-radius: 4px;
+    color: var(--zinc-500);
+  }
+
+  /* Pricing Section */
+  .pricing-section {
+    padding: 6rem 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    background: linear-gradient(to bottom, transparent, rgba(212, 175, 55, 0.03), transparent);
+  }
+
+  .pricing-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+
+  .price-card {
+    background: var(--zinc-900);
+    border: 1px solid var(--zinc-800);
+    border-radius: 2rem;
+    padding: 2.5rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: all 0.3s ease;
+  }
+
+  .price-card:hover {
+    background: var(--zinc-800);
+    border-color: var(--zinc-700);
+  }
+
+  .plan-name {
+    font-size: 0.8rem;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    color: var(--zinc-500);
+    margin-bottom: 0.5rem;
+  }
+
+  .plan-duration {
+    font-size: 0.7rem;
+    color: var(--zinc-500);
+    margin-bottom: 1.5rem;
+  }
+
+  .price-value {
+    font-size: 2.5rem;
+    font-weight: 900;
+    margin-bottom: 0.5rem;
+  }
+
+  .price-mo {
+    font-size: 0.7rem;
+    color: var(--zinc-500);
+  }
+
+  /* Highlights */
+  .save-badge {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #10b981;
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 99px;
+    font-size: 0.65rem;
+    font-weight: 900;
+    width: max-content;
+  }
+
+  .save-badge.gold {
+    background: var(--gold);
+    color: var(--black);
+  }
+
+  .best-value {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--gold);
+    color: var(--black);
+    padding: 0.25rem 1rem;
+    border-radius: 6px;
+    font-size: 0.6rem;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+
+  .price-card.featured {
+    border-color: var(--gold);
+    background: rgba(212, 175, 55, 0.05);
+  }
+
+  /* CTA Part */
+  .cta-section {
+    padding: 8rem 1.5rem;
+    text-align: center;
+  }
+
+  .cta-content h3 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    margin-bottom: 1rem;
+  }
+
+  .cta-content p {
+    color: var(--zinc-500);
+    margin-bottom: 3rem;
+  }
+
+  .btn-whatsapp {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--neonyre);
+    color: var(--black);
+    padding: 1.25rem 2.5rem;
+    border-radius: 99px;
+    font-weight: 900;
+    text-decoration: none;
+    transition: transform 0.3s;
+  }
+
+  .btn-whatsapp:hover {
+    transform: scale(1.05) rotate(1deg);
+  }
+
+  /* Footer */
+  .footer-bjj {
+    padding: 4rem 1.5rem;
+    border-top: 1px solid var(--zinc-800);
+    text-align: center;
+  }
+
+  .footer-bottom p {
+    font-size: 0.75rem;
+    color: var(--zinc-700);
+    margin: 0.5rem 0;
+  }
+
+  /* Tablet/Desktop Tweaks */
+  @media (min-width: 1024px) {
+    .pricing-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .hero-bjj {
+      height: 60vh;
+    }
+    
+    .pricing-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .save-badge {
+      position: relative;
+      bottom: auto;
+      left: auto;
+      transform: none;
+      margin: 1rem auto 0;
+    }
+  }
+</style>
