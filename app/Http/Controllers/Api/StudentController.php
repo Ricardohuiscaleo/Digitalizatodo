@@ -84,6 +84,10 @@ class StudentController extends Controller
                     'weight' => $student->weight,
                     'height' => $student->height,
                     'today_status' => $todayAttendance ? $todayAttendance->status : null,
+                    'belt_rank' => $student->belt_rank,
+                    'degrees' => $student->degrees ?? 0,
+                    'previous_classes' => $student->previous_classes ?? 0,
+                    'belt_classes_at_promotion' => $student->belt_classes_at_promotion ?? 0,
                 ];
             });
 
