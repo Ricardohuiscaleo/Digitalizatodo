@@ -168,47 +168,50 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
     };
 
     return (
-        <div className="space-y-3 px-0 pb-10">
+        <div className="space-y-4 px-0 pb-10">
             {/* BRANDING */}
-            <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-zinc-100 flex items-center gap-3">
+            <div className="bg-[#0f0f10] rounded-2xl px-5 py-4 shadow-xl border border-zinc-800/50 flex items-center gap-4">
                 <div className="relative shrink-0">
-                    <img src={branding?.logo || "/icon.webp"} className="w-10 h-10 rounded-full object-cover border border-zinc-100" alt="Logo" />
-                    <button onClick={() => fileInputRef.current?.click()} className="absolute -bottom-1 -right-1 bg-white text-zinc-950 p-0.5 rounded-full border border-zinc-200 shadow active:scale-90">
-                        <Camera size={10} />
+                    <img src={branding?.logo || "/icon.webp"} className="w-12 h-12 rounded-full object-cover border-2 border-zinc-800 shadow-inner" alt="Logo" />
+                    <button onClick={() => fileInputRef.current?.click()} 
+                        className="absolute -bottom-1 -right-1 bg-white text-zinc-950 p-1 rounded-full border border-zinc-200 shadow-lg active:scale-90 transition-all">
+                        <Camera size={12} />
                     </button>
                     <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleLogoUpload} />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <h3 className="text-xs font-black uppercase tracking-tighter text-zinc-950 truncate leading-none">{branding?.name || 'Academy'}</h3>
-                    <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Plataforma de Gestión v4.7</p>
-                        <button onClick={handleLoadDemo} className="text-[7px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-200 px-1.5 py-0.5 rounded-full active:scale-95 transition-all">Demo</button>
+                    <h3 className="text-[13px] font-black uppercase tracking-tighter text-zinc-100 truncate leading-none mb-1">
+                        {branding?.name || 'Academy'}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                        <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest opacity-80">PLATAFORMA DE GESTIÓN V4.7</p>
+                        <span className="text-[7px] font-black uppercase tracking-[0.2em] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full">Demo</span>
                     </div>
                 </div>
             </div>
 
             {/* LINK DE REGISTRO */}
-            <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-zinc-100">
-                <p className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-2">Link de Registro Titulares</p>
+            <div className="bg-[#0f0f10] rounded-2xl px-5 py-4 shadow-xl border border-zinc-800/50">
+                <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-3">Link de Registro Titulares</p>
                 {regPageCode ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                         <div className="flex items-center gap-2">
-                            <p className="flex-1 text-[9px] font-bold text-zinc-500 truncate bg-zinc-50 rounded-xl px-3 py-2 border border-zinc-100">
+                            <p className="flex-1 text-[10px] font-bold text-zinc-300 truncate bg-zinc-900 rounded-xl px-4 py-3 border border-zinc-800">
                                 {`https://app.digitalizatodo.cl/r/${regPageCode}`}
                             </p>
                             <button onClick={() => handleCopyClipboard(`https://app.digitalizatodo.cl/r/${regPageCode}`)}
-                                className={`shrink-0 text-[8px] font-black uppercase px-3 py-2 rounded-xl border transition-all active:scale-95 ${copied ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-zinc-50 text-zinc-600 border-zinc-200'}`}>
-                                {copied ? '✓ Copiado' : 'Copiar'}
+                                className={`shrink-0 text-[9px] font-black uppercase px-4 py-3 rounded-xl border transition-all active:scale-95 ${copied ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-zinc-800 text-zinc-100 border-zinc-700'}`}>
+                                {copied ? '✓ COPIADO' : 'COPIAR'}
                             </button>
                         </div>
                         <div className="flex gap-2">
                             <button onClick={async () => { setGeneratingPage(true); await deleteRegistrationPage(user.tenant_slug || user.tenant_id, token ?? ''); const r = await generateRegistrationPage(user.tenant_slug || user.tenant_id, token ?? ''); setGeneratingPage(false); if (r?.code) setRegPageCode(r.code); }}
                                 disabled={generatingPage}
-                                className="flex-1 h-8 bg-zinc-100 text-zinc-600 text-[8px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-1 active:scale-95 transition-all disabled:opacity-40">
-                                {generatingPage ? <Loader2 className="animate-spin" size={10} /> : '↺ Nuevo link'}
+                                className="flex-1 h-10 bg-zinc-900 border border-zinc-800 text-zinc-400 text-[9px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-40">
+                                {generatingPage ? <Loader2 className="animate-spin" size={12} /> : <><RefreshCw size={12} /> Nuevo link</>}
                             </button>
                             <button onClick={async () => { await deleteRegistrationPage(user.tenant_slug || user.tenant_id, token ?? ''); setRegPageCode(null); }}
-                                className="flex-1 h-8 bg-red-50 text-red-400 text-[8px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-1 active:scale-95 transition-all border border-red-100">
+                                className="flex-1 h-10 bg-rose-500/10 text-rose-400 text-[9px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-1 active:scale-95 transition-all border border-rose-500/20">
                                 Eliminar link
                             </button>
                         </div>
@@ -217,112 +220,109 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                     <button onClick={async () => { setGeneratingPage(true); const r = await generateRegistrationPage(user.tenant_slug || user.tenant_id, token ?? ''); setGeneratingPage(false); if (r?.code) setRegPageCode(r.code); }}
                         disabled={generatingPage}
                         style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
-                        className="w-full h-9 text-white text-[9px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-40">
-                        {generatingPage ? <Loader2 className="animate-spin" size={12} /> : <><Sparkles size={12} /> Generar página de registro</>}
+                        className="w-full h-11 text-white text-[10px] font-black uppercase tracking-[0.15em] rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 active:scale-95 transition-all disabled:opacity-40">
+                        {generatingPage ? <Loader2 className="animate-spin" size={14} /> : <><Sparkles size={14} /> Generar página de registro</>}
                     </button>
                 )}
             </div>
 
             {/* PRECIOS — oculto para school_treasury */}
             {branding?.industry !== 'school_treasury' && (
-                <>
-                    <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden">
-                        <div className="px-4 py-2 border-b border-zinc-50 flex items-center justify-between">
+                <div className="space-y-3">
+                    <div className="bg-[#0f0f10] rounded-2xl shadow-xl border border-zinc-800/50 overflow-hidden">
+                        <div className="px-5 py-3 border-b border-zinc-800/50 flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <CreditCard size={14} style={{ color: branding?.primaryColor || '#6366f1' }} />
-                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Configurar Mensualidad</span>
+                                <CreditCard size={14} className="text-zinc-500" style={{ color: branding?.primaryColor || '#6366f1' }} />
+                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Configurar Mensualidad</span>
                             </div>
-                            <Edit2 size={10} className="text-zinc-300" />
                         </div>
-                        <div className="divide-y divide-zinc-50">
-                            {[{ label: vocab?.cat1, field: 'cat1' as const }, { label: vocab?.cat2, field: 'cat2' as const }].map(({ label, field }) => (
-                                <div key={field} className="flex items-center px-4 py-2">
-                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest w-20 shrink-0">{label}</span>
-                                    <input type="text" inputMode="numeric" className="flex-1 bg-transparent text-xs font-black text-zinc-950 focus:ring-0 outline-none text-right"
+                        <div className="divide-y divide-zinc-800/50">
+                            {[{ label: vocab?.cat1 || 'KIDS', field: 'cat1' as const }, { label: vocab?.cat2 || 'ADULTOS', field: 'cat2' as const }].map(({ label, field }) => (
+                                <div key={field} className="flex items-center px-5 py-3">
+                                    <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest w-24 shrink-0">{label}</span>
+                                    <input type="text" inputMode="numeric" className="flex-1 bg-transparent text-[13px] font-black text-zinc-100 focus:ring-0 outline-none text-right placeholder-zinc-700"
                                         value={formatCLP(prices[field])} onChange={e => handlePriceInput(field, e.target.value)} placeholder="$ 0" />
                                 </div>
                             ))}
-                            <div className="flex items-center px-4 py-2">
-                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest w-20 shrink-0">Desc. desde</span>
-                                <input type="text" inputMode="numeric" className="flex-1 bg-transparent text-xs font-black text-zinc-950 focus:ring-0 outline-none text-right"
-                                    value={prices.discountThreshold === 0 ? '' : prices.discountThreshold} onChange={e => { const v = e.target.value.replace(/\D/g, ''); setPrices((p: any) => ({ ...p, discountThreshold: v === '' ? 0 : parseInt(v) })); }} placeholder="0 inscritos" />
+                            <div className="flex items-center px-5 py-3">
+                                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest w-24 shrink-0">Desc. desde</span>
+                                <input type="text" inputMode="numeric" className="flex-1 bg-transparent text-[13px] font-black text-zinc-100 focus:ring-0 outline-none text-right placeholder-zinc-700"
+                                    value={prices.discountThreshold === 0 ? '' : prices.discountThreshold} onChange={e => { const v = e.target.value.replace(/\D/g, ''); setPrices((p: any) => ({ ...p, discountThreshold: v === '' ? 0 : parseInt(v) })); }} placeholder="0 alumnos" />
                             </div>
-                            <div className="flex items-center px-4 py-2">
-                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest w-20 shrink-0">Descuento</span>
-                                <input type="text" inputMode="numeric" className="flex-1 bg-transparent text-xs font-black text-zinc-950 focus:ring-0 outline-none text-right"
+                            <div className="flex items-center px-5 py-3">
+                                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest w-24 shrink-0">Descuento</span>
+                                <input type="text" inputMode="numeric" className="flex-1 bg-transparent text-[13px] font-black text-zinc-100 focus:ring-0 outline-none text-right placeholder-zinc-700"
                                     value={prices.discountPercentage === 0 ? '' : `${prices.discountPercentage}%`} onChange={e => { const v = e.target.value.replace(/\D/g, ''); setPrices((p: any) => ({ ...p, discountPercentage: v === '' ? 0 : Math.min(100, parseInt(v)) })); }} placeholder="0%" />
                             </div>
                         </div>
                     </div>
                     <button onClick={handleSavePrices} 
                         style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
-                        className="w-full text-white font-black py-4 rounded-2xl active:scale-95 transition-all text-[10px] uppercase tracking-widest flex items-center justify-center gap-2">
-                        <Save size={16} /> Guardar Configuración de Precios
+                        className="w-full text-white font-black py-4 rounded-2xl active:scale-95 transition-all text-[11px] uppercase tracking-[0.2em] shadow-lg shadow-indigo-500/20">
+                        Guardar Configuración de Precios
                     </button>
-                </>
+                </div>
             )}
 
-            {/* GESTIÓN DE PLANES (Solo para Martial Arts o si tiene planes) */}
+            {/* GESTIÓN DE PLANES */}
             {(branding?.industry === 'martial_arts' || (plansList && plansList.length > 0)) && (
-                <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden mt-6">
-                    <div className="px-4 py-3 border-b border-zinc-50 flex items-center justify-between bg-zinc-50/50">
-                        <span className="text-[10px] font-black text-zinc-950 uppercase tracking-widest flex items-center gap-2">
-                            <Sparkles size={14} className="text-indigo-500" /> Gestión de Planes
+                <div className="bg-[#0f0f10] rounded-2xl shadow-xl border border-zinc-800/50 overflow-hidden mt-6">
+                    <div className="px-5 py-4 border-b border-zinc-800/50 flex items-center justify-between bg-zinc-900/40">
+                        <span className="text-[10px] font-black text-zinc-200 uppercase tracking-widest flex items-center gap-2">
+                            <Sparkles size={14} className="text-indigo-400" /> Gestión de Planes
                         </span>
                         <button onClick={() => { setEditingPlan(null); setPlanForm({ name: '', price: '', billing_cycle: 'monthly_from_enrollment' }); setShowPlanForm(true); }}
-                            className="text-[9px] font-black uppercase tracking-widest bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full active:scale-95 transition-all">
+                            className="text-[9px] font-black uppercase tracking-widest bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1.5 rounded-full active:scale-95 transition-all">
                             + Nuevo Plan
                         </button>
                     </div>
 
                     {showPlanForm && (
-                        <div className="p-4 bg-indigo-50/30 space-y-3 border-b border-zinc-100">
-                            <input type="text" placeholder="Nombre (ej: Plan Anual)" className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black uppercase outline-none focus:ring-2 focus:ring-indigo-500"
+                        <div className="p-5 bg-indigo-500/5 space-y-4 border-b border-zinc-800">
+                            <input type="text" placeholder="Nombre (ej: Plan Anual)" 
+                                className="w-full bg-[#161618] border border-zinc-800 rounded-xl px-4 py-3 text-[11px] font-black uppercase text-zinc-100 outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder-zinc-600"
                                 value={planForm.name} onChange={e => setPlanForm({ ...planForm, name: e.target.value })} />
                             <div className="grid grid-cols-2 gap-2">
-                                <input type="text" inputMode="numeric" placeholder="Precio ($ 0)" className="bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black uppercase outline-none focus:ring-2 focus:ring-indigo-500"
+                                <input type="text" inputMode="numeric" placeholder="Precio ($ 0)" 
+                                    className="bg-[#161618] border border-zinc-800 rounded-xl px-4 py-3 text-[11px] font-black uppercase text-zinc-100 outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder-zinc-600"
                                     value={formatCLP(parseCLP(planForm.price))} onChange={e => setPlanForm({ ...planForm, price: String(parseCLP(e.target.value)) })} />
-                                <select className="bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black uppercase outline-none focus:ring-2 focus:ring-indigo-500"
+                                <select className="bg-[#161618] border border-zinc-800 rounded-xl px-4 py-3 text-[11px] font-black uppercase text-zinc-100 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                                     value={planForm.billing_cycle} onChange={e => setPlanForm({ ...planForm, billing_cycle: e.target.value })}>
                                     <option value="monthly_fixed">Mensual Fijo</option>
-                                    <option value="monthly_from_enrollment">Mensual Corrido</option>
+                                    <option value="monthly_from_enrollment">Mes Corrido</option>
                                     <option value="quarterly">Trimestral</option>
                                     <option value="semi_annual">Semestral</option>
                                     <option value="annual">Anual</option>
                                 </select>
                             </div>
-                            <div className="flex gap-2">
-                                <button onClick={() => setShowPlanForm(false)} className="flex-1 h-10 bg-zinc-200 text-zinc-600 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all">Cancelar</button>
-                                <button onClick={async () => { 
-                                    if (editingPlan) await handleUpdatePlan(editingPlan.id, planForm);
-                                    else await handleCreatePlan(planForm);
-                                    setShowPlanForm(false);
-                                }}
-                                    className="flex-1 h-10 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all">
+                            <div className="flex gap-2 pt-2">
+                                <button onClick={() => setShowPlanForm(false)} className="flex-1 h-11 bg-zinc-800 text-zinc-400 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all">Cancelar</button>
+                                <button onClick={async () => { if (editingPlan) await handleUpdatePlan(editingPlan.id, planForm); else await handleCreatePlan(planForm); setShowPlanForm(false); }}
+                                    className="flex-1 h-11 bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-indigo-500/20">
                                     {editingPlan ? 'Actualizar' : 'Crear'}
                                 </button>
                             </div>
                         </div>
                     )}
 
-                    <div className="divide-y divide-zinc-50">
+                    <div className="divide-y divide-zinc-800/50">
                         {plansLoading ? (
-                            <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-zinc-300" size={20} /></div>
+                            <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-zinc-600" size={24} /></div>
                         ) : (
                             plansList.map((plan: any) => (
-                                <div key={plan.id} className="flex items-center justify-between px-4 py-4 hover:bg-zinc-50 transition-colors">
+                                <div key={plan.id} className="flex items-center justify-between px-5 py-4 hover:bg-zinc-900/40 transition-colors">
                                     <div className="flex-1">
-                                        <p className="text-[10px] font-black text-zinc-950 uppercase tracking-tighter leading-none mb-1">{plan.name}</p>
+                                        <p className="text-[11px] font-black text-zinc-100 uppercase tracking-tighter leading-none mb-1.5">{plan.name}</p>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded uppercase tracking-widest">{formatCLP(plan.price)}</span>
-                                            <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">{plan.billing_cycle === 'monthly_from_enrollment' ? 'Mes corrido' : plan.billing_cycle}</span>
+                                            <span className="text-[9px] font-black text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded uppercase tracking-widest border border-indigo-500/10">{formatCLP(plan.price)}</span>
+                                            <span className="text-[8px] font-black text-zinc-500 uppercase tracking-[0.1em]">{plan.billing_cycle.replace('_', ' ')}</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <button onClick={() => { setEditingPlan(plan); setPlanForm({ name: plan.name, price: String(plan.price), billing_cycle: plan.billing_cycle }); setShowPlanForm(true); }}
-                                            className="p-2 text-zinc-400 hover:text-indigo-600 active:scale-90 transition-all"><Edit2 size={14} /></button>
+                                            className="p-2.5 text-zinc-500 hover:text-indigo-400 active:scale-90 transition-all"><Edit2 size={16} /></button>
                                         <button onClick={async () => { if(confirm('¿Eliminar plan?')) await handleDeletePlan(plan.id); }}
-                                            className="p-2 text-zinc-400 hover:text-rose-500 active:scale-90 transition-all"><Trash2 size={14} /></button>
+                                            className="p-2.5 text-zinc-500 hover:text-rose-400 active:scale-90 transition-all"><Trash2 size={16} /></button>
                                     </div>
                                 </div>
                             ))
@@ -331,23 +331,23 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                 </div>
             )}
 
-            {/* GESTIÓN DE HORARIOS (Solo para Martial Arts) */}
+            {/* GESTIÓN DE HORARIOS */}
             {branding?.industry === 'martial_arts' && (
-                <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden mt-6">
-                    <div className="px-4 py-3 border-b border-zinc-50 flex items-center justify-between bg-zinc-50/50">
-                        <span className="text-[10px] font-black text-zinc-950 uppercase tracking-widest flex items-center gap-2">
-                            <Sparkles size={14} className="text-emerald-500" /> Gestión de Horarios
+                <div className="bg-[#0f0f10] rounded-2xl shadow-xl border border-zinc-800/50 overflow-hidden mt-6">
+                    <div className="px-5 py-4 border-b border-zinc-800/50 flex items-center justify-between bg-zinc-900/40">
+                        <span className="text-[10px] font-black text-zinc-200 uppercase tracking-widest flex items-center gap-2">
+                            <Sparkles size={14} className="text-emerald-400" /> Gestión de Horarios
                         </span>
                         <button onClick={() => { setEditingSchedule(null); setScheduleForm({ name: '', day_of_week: '1', start_time: '18:00', end_time: '19:30', category: 'GI' }); setShowScheduleForm(true); }}
-                            className="text-[9px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full active:scale-95 transition-all">
+                            className="text-[9px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-full active:scale-95 transition-all">
                             + Nuevo Horario
                         </button>
                     </div>
 
                     {showScheduleForm && (
-                        <div className="p-4 bg-emerald-50/30 space-y-3 border-b border-zinc-100">
+                        <div className="p-5 bg-emerald-500/5 space-y-4 border-b border-zinc-800">
                              <div className="grid grid-cols-2 gap-2">
-                                <select className="bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black uppercase text-zinc-950 outline-none focus:ring-2 focus:ring-emerald-500"
+                                <select className="bg-[#161618] border border-zinc-800 rounded-xl px-4 py-3 text-[11px] font-black uppercase text-zinc-100 outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
                                     value={scheduleForm.day_of_week} onChange={e => setScheduleForm({ ...scheduleForm, day_of_week: e.target.value })}>
                                     <option value="1">Lunes</option>
                                     <option value="2">Martes</option>
@@ -357,7 +357,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                     <option value="6">Sábado</option>
                                     <option value="0">Domingo</option>
                                 </select>
-                                <select className="bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black uppercase text-zinc-950 outline-none focus:ring-2 focus:ring-emerald-500"
+                                <select className="bg-[#161618] border border-zinc-800 rounded-xl px-4 py-3 text-[11px] font-black uppercase text-zinc-100 outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
                                     value={scheduleForm.category} onChange={e => setScheduleForm({ ...scheduleForm, category: e.target.value })}>
                                     <option value="GI">GI (Jiujitsu)</option>
                                     <option value="NO-GI">NO-GI</option>
@@ -366,51 +366,47 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                 </select>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
-                                <input type="time" className="bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black text-zinc-950 outline-none focus:ring-2 focus:ring-emerald-500"
+                                <input type="time" className="bg-[#161618] border border-zinc-800 rounded-xl px-4 py-3 text-[11px] font-black text-zinc-100 outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
                                     value={scheduleForm.start_time} onChange={e => setScheduleForm({ ...scheduleForm, start_time: e.target.value })} />
-                                <input type="time" className="bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black text-zinc-950 outline-none focus:ring-2 focus:ring-emerald-500"
+                                <input type="time" className="bg-[#161618] border border-zinc-800 rounded-xl px-4 py-3 text-[11px] font-black text-zinc-100 outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
                                     value={scheduleForm.end_time} onChange={e => setScheduleForm({ ...scheduleForm, end_time: e.target.value })} />
                             </div>
-                            <div className="flex gap-2">
-                                <button onClick={() => setShowScheduleForm(false)} className="flex-1 h-10 bg-zinc-200 text-zinc-600 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all">Cancelar</button>
-                                <button onClick={async () => { 
-                                    if (editingSchedule) await handleUpdateSchedule(editingSchedule.id, scheduleForm);
-                                    else await handleCreateSchedule(scheduleForm);
-                                    setShowScheduleForm(false);
-                                }}
-                                    className="flex-1 h-10 bg-emerald-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all">
+                            <div className="flex gap-2 pt-2">
+                                <button onClick={() => setShowScheduleForm(false)} className="flex-1 h-11 bg-zinc-800 text-zinc-400 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all">Cancelar</button>
+                                <button onClick={async () => { if (editingSchedule) await handleUpdateSchedule(editingSchedule.id, scheduleForm); else await handleCreateSchedule(scheduleForm); setShowScheduleForm(false); }}
+                                    className="flex-1 h-11 bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-emerald-500/20">
                                     {editingSchedule ? 'Actualizar' : 'Crear'}
                                 </button>
                             </div>
                         </div>
                     )}
 
-                    <div className="divide-y divide-zinc-50">
+                    <div className="divide-y divide-zinc-800/50">
                         {schedulesLoading ? (
-                            <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-zinc-300" size={20} /></div>
+                            <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-zinc-600" size={24} /></div>
                         ) : (
                             schedulesList.sort((a: any, b: any) => a.day_of_week - b.day_of_week).map((sch: any) => (
-                                <div key={sch.id} className="flex items-center justify-between px-4 py-3 hover:bg-zinc-50 transition-colors">
+                                <div key={sch.id} className="flex items-center justify-between px-5 py-4 hover:bg-zinc-900/40 transition-colors">
                                     <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-0.5">
-                                            <p className="text-[10px] font-black text-zinc-950 uppercase tracking-tighter">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <p className="text-[11px] font-black text-zinc-100 uppercase tracking-tighter">
                                                 {['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][sch.day_of_week]}
                                             </p>
-                                            <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${
-                                                sch.category === 'KIDS' ? 'bg-orange-50 text-orange-600' : 
-                                                sch.category === 'NO-GI' ? 'bg-zinc-900 text-zinc-100' : 
-                                                'bg-emerald-50 text-emerald-600'
+                                            <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest border ${
+                                                sch.category === 'KIDS' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 
+                                                sch.category === 'NO-GI' ? 'bg-zinc-800 text-zinc-100 border-zinc-700' : 
+                                                'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                                             }`}>
                                                 {sch.category || 'GI'}
                                             </span>
                                         </div>
-                                        <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">{sch.start_time.substring(0,5)} — {sch.end_time.substring(0,5)}</p>
+                                        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{sch.start_time.substring(0,5)} — {sch.end_time.substring(0,5)}</p>
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <button onClick={() => { setEditingSchedule(sch); setScheduleForm({ name: sch.name || '', day_of_week: String(sch.day_of_week), start_time: sch.start_time.substring(0,5), end_time: sch.end_time.substring(0,5), category: sch.category || 'GI' }); setShowScheduleForm(true); }}
-                                            className="p-2 text-zinc-400 hover:text-emerald-600 active:scale-90 transition-all"><Edit2 size={14} /></button>
+                                            className="p-2.5 text-zinc-500 hover:text-emerald-400 active:scale-90 transition-all"><Edit2 size={16} /></button>
                                         <button onClick={async () => { if(confirm('¿Eliminar horario?')) await handleDeleteSchedule(sch.id); }}
-                                            className="p-2 text-zinc-400 hover:text-rose-500 active:scale-90 transition-all"><Trash2 size={14} /></button>
+                                            className="p-2.5 text-zinc-500 hover:text-rose-400 active:scale-90 transition-all"><Trash2 size={16} /></button>
                                     </div>
                                 </div>
                             ))
@@ -420,18 +416,18 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
             )}
 
             {/* DATOS BANCARIOS */}
-            <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden mt-6">
-                <div className="px-4 py-3 border-b border-zinc-50 flex items-center justify-between">
-                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
-                        <CreditCard size={14} style={{ color: branding?.primaryColor || '#6366f1' }} /> Datos Bancarios
+            <div className="bg-[#0f0f10] rounded-2xl shadow-xl border border-zinc-800/50 overflow-hidden mt-6">
+                <div className="px-5 py-4 border-b border-zinc-800/50 flex items-center justify-between bg-zinc-900/40">
+                    <span className="text-[10px] font-black text-zinc-300 uppercase tracking-widest flex items-center gap-2">
+                        <CreditCard size={14} className="text-zinc-500" /> Datos Bancarios
                     </span>
                     <button onClick={handlePasteHeuristic}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-full text-[9px] font-black uppercase tracking-widest transition-all active:scale-95"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-full text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 border border-zinc-700"
                     >
-                        <ClipboardPaste size={14} /> Pegar Copiado
+                        <ClipboardPaste size={14} /> PEGAR COPIADO
                     </button>
                 </div>
-                <div className="divide-y divide-zinc-50">
+                <div className="divide-y divide-zinc-800/50">
                     {([
                         { label: 'Banco', field: 'bank_name', placeholder: 'Ej: Banco Estado' },
                         { label: 'Tipo Cta.', field: 'account_type', placeholder: 'Cuenta Corriente / Vista' },
@@ -439,9 +435,9 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                         { label: 'Titular', field: 'holder_name', placeholder: 'Nombre del titular' },
                         { label: 'RUT', field: 'holder_rut', placeholder: '12.345.678-9' },
                     ] as const).map(({ label, field, placeholder }) => (
-                        <div key={field} className="flex items-center px-4 py-2">
-                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest w-20 shrink-0">{label}</span>
-                            <input type="text" className="flex-1 bg-transparent text-xs font-black text-zinc-950 focus:ring-0 outline-none text-right"
+                        <div key={field} className="flex items-center px-5 py-3">
+                            <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest w-24 shrink-0">{label}</span>
+                            <input type="text" className="flex-1 bg-transparent text-[13px] font-black text-zinc-100 focus:ring-0 outline-none text-right placeholder-zinc-800"
                                 value={bankData[field] || ''} onChange={e => setBankData((p: any) => ({ ...p, [field]: e.target.value }))} placeholder={placeholder} />
                         </div>
                     ))}
@@ -450,33 +446,33 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
 
             <button onClick={handleSaveBankData}
                 style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
-                className="w-full text-white font-black py-4 rounded-2xl active:scale-95 transition-all text-[10px] uppercase tracking-widest flex items-center justify-center gap-2">
-                <Save size={16} /> Guardar Datos Bancarios
+                className="w-full text-white font-black py-4 rounded-2xl active:scale-95 transition-all text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20">
+                <Save size={18} /> Guardar Datos Bancarios
             </button>
 
             {/* ACCIONES DE SISTEMA */}
-            <div className="space-y-2 mt-8">
-                <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-zinc-100 flex items-center justify-between">
+            <div className="space-y-3 mt-8">
+                <div className="bg-[#0f0f10] rounded-2xl px-5 py-4 shadow-xl border border-zinc-800/50 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <Users size={16} className="text-zinc-400" />
-                        <span className="text-[10px] font-black uppercase text-zinc-700 tracking-widest">Mostrar alumnos inactivos</span>
+                        <Users size={18} className="text-zinc-500" />
+                        <span className="text-[10px] font-black uppercase text-zinc-300 tracking-widest">Mostrar alumnos inactivos</span>
                     </div>
                     <button onClick={() => setShowInactivePayers(!showInactivePayers)}
-                        className={`w-10 h-6 rounded-full transition-all relative ${showInactivePayers ? 'bg-emerald-500' : 'bg-zinc-200'}`}>
-                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${showInactivePayers ? 'left-5' : 'left-1'}`} />
+                        className={`w-12 h-7 rounded-full transition-all relative ${showInactivePayers ? 'bg-emerald-500' : 'bg-zinc-800'}`}>
+                        <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-lg transition-all ${showInactivePayers ? 'left-6' : 'left-1'}`} />
                     </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                     <button onClick={forceSync} disabled={loadingSync}
-                        className="h-14 bg-zinc-950 text-white rounded-2xl flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 transition-all">
-                        <RefreshCw size={18} className={loadingSync ? "animate-spin" : ""} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Sincronizar Cloud</span>
+                        className="h-16 bg-zinc-100 text-zinc-950 rounded-2xl flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 transition-all shadow-xl font-black uppercase text-[10px] tracking-widest">
+                        <RefreshCw size={20} className={loadingSync ? "animate-spin" : ""} />
+                        Sincronizar Cloud
                     </button>
                     <button onClick={handleLogout}
-                        className="h-14 bg-white border border-zinc-100 text-rose-500 rounded-2xl flex items-center justify-center gap-2 active:scale-95 shadow-sm transition-all focus:bg-rose-50">
-                        <LogOut size={18} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Cerrar Sesión</span>
+                        className="h-16 bg-[#0f0f10] border border-rose-500/20 text-rose-500 rounded-2xl flex items-center justify-center gap-2 active:scale-95 shadow-lg transition-all focus:bg-rose-500/5 font-black uppercase text-[10px] tracking-widest">
+                        <LogOut size={20} />
+                        Cerrar Sesión
                     </button>
                 </div>
             </div>
