@@ -57,6 +57,11 @@ class Tenant extends Model implements HasAvatar
         return $this->logo ?Storage::disk('public')->url($this->logo) : null;
     }
 
+    public function terms(): HasMany
+    {
+        return $this->hasMany(TenantTerm::class, 'tenant_id', 'id');
+    }
+
     // Helpers
     public function getActiveStudentsCountAttribute(): int
     {
