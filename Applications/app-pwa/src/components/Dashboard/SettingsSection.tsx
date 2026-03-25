@@ -24,11 +24,25 @@ interface SettingsSectionProps {
     setBankData: React.Dispatch<React.SetStateAction<any>>;
     handleSaveBankData: () => void;
     formatCLP: (n: number) => string;
+    parseCLP: (s: string) => number;
     showInactivePayers: boolean;
     setShowInactivePayers: (v: boolean) => void;
     loadingSync: boolean;
     forceSync: () => void;
     handleLogout: () => void;
+    // New Props for Management
+    plansList: any[];
+    plansLoading: boolean;
+    loadPlans: () => void;
+    handleCreatePlan: (data: any) => Promise<any>;
+    handleUpdatePlan: (id: number, data: any) => Promise<any>;
+    handleDeletePlan: (id: number) => Promise<any>;
+    schedulesList: any[];
+    schedulesLoading: boolean;
+    loadSchedules: () => void;
+    handleCreateSchedule: (data: any) => Promise<any>;
+    handleUpdateSchedule: (id: number, data: any) => Promise<any>;
+    handleDeleteSchedule: (id: number) => Promise<any>;
 }
 
 const SettingsSection: React.FC<SettingsSectionProps> = ({
@@ -51,13 +65,33 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
     setBankData,
     handleSaveBankData,
     formatCLP,
+    parseCLP,
     showInactivePayers,
     setShowInactivePayers,
     loadingSync,
     forceSync,
-    handleLogout
+    handleLogout,
+    plansList,
+    plansLoading,
+    loadPlans,
+    handleCreatePlan,
+    handleUpdatePlan,
+    handleDeletePlan,
+    schedulesList,
+    schedulesLoading,
+    loadSchedules,
+    handleCreateSchedule,
+    handleUpdateSchedule,
+    handleDeleteSchedule
 }) => {
     const [copied, setCopied] = useState(false);
+    const [showPlanForm, setShowPlanForm] = useState(false);
+    const [editingPlan, setEditingPlan] = useState<any>(null);
+    const [planForm, setPlanForm] = useState({ name: '', price: '', billing_cycle: 'monthly_from_enrollment' });
+    
+    const [showScheduleForm, setShowScheduleForm] = useState(false);
+    const [editingSchedule, setEditingSchedule] = useState<any>(null);
+    const [scheduleForm, setScheduleForm] = useState({ name: '', day_of_week: '1', start_time: '18:00', end_time: '19:30', category: 'GI' });
 
     const handleCopyClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
@@ -226,6 +260,163 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                         <Save size={16} /> Guardar Configuración de Precios
                     </button>
                 </>
+            )}
+
+            {/* GESTIÓN DE PLANES (Solo para Martial Arts o si tiene planes) */}
+            {(branding?.industry === 'martial_arts' || (plansList && plansList.length > 0)) && (
+                <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden mt-6">
+                    <div className="px-4 py-3 border-b border-zinc-50 flex items-center justify-between bg-zinc-50/50">
+                        <span className="text-[10px] font-black text-zinc-950 uppercase tracking-widest flex items-center gap-2">
+                            <Sparkles size={14} className="text-indigo-500" /> Gestión de Planes
+                        </span>
+                        <button onClick={() => { setEditingPlan(null); setPlanForm({ name: '', price: '', billing_cycle: 'monthly_from_enrollment' }); setShowPlanForm(true); }}
+                            className="text-[9px] font-black uppercase tracking-widest bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full active:scale-95 transition-all">
+                            + Nuevo Plan
+                        </button>
+                    </div>
+
+                    {showPlanForm && (
+                        <div className="p-4 bg-indigo-50/30 space-y-3 border-b border-zinc-100">
+                            <input type="text" placeholder="Nombre (ej: Plan Anual)" className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black uppercase outline-none focus:ring-2 focus:ring-indigo-500"
+                                value={planForm.name} onChange={e => setPlanForm({ ...planForm, name: e.target.value })} />
+                            <div className="grid grid-cols-2 gap-2">
+                                <input type="text" inputMode="numeric" placeholder="Precio ($ 0)" className="bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black uppercase outline-none focus:ring-2 focus:ring-indigo-500"
+                                    value={formatCLP(parseCLP(planForm.price))} onChange={e => setPlanForm({ ...planForm, price: String(parseCLP(e.target.value)) })} />
+                                <select className="bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black uppercase outline-none focus:ring-2 focus:ring-indigo-500"
+                                    value={planForm.billing_cycle} onChange={e => setPlanForm({ ...planForm, billing_cycle: e.target.value })}>
+                                    <option value="monthly_fixed">Mensual Fijo</option>
+                                    <option value="monthly_from_enrollment">Mensual Corrido</option>
+                                    <option value="quarterly">Trimestral</option>
+                                    <option value="semi_annual">Semestral</option>
+                                    <option value="annual">Anual</option>
+                                </select>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => setShowPlanForm(false)} className="flex-1 h-10 bg-zinc-200 text-zinc-600 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all">Cancelar</button>
+                                <button onClick={async () => { 
+                                    if (editingPlan) await handleUpdatePlan(editingPlan.id, planForm);
+                                    else await handleCreatePlan(planForm);
+                                    setShowPlanForm(false);
+                                }}
+                                    className="flex-1 h-10 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all">
+                                    {editingPlan ? 'Actualizar' : 'Crear'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="divide-y divide-zinc-50">
+                        {plansLoading ? (
+                            <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-zinc-300" size={20} /></div>
+                        ) : (
+                            plansList.map((plan: any) => (
+                                <div key={plan.id} className="flex items-center justify-between px-4 py-4 hover:bg-zinc-50 transition-colors">
+                                    <div className="flex-1">
+                                        <p className="text-[10px] font-black text-zinc-950 uppercase tracking-tighter leading-none mb-1">{plan.name}</p>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded uppercase tracking-widest">{formatCLP(plan.price)}</span>
+                                            <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">{plan.billing_cycle === 'monthly_from_enrollment' ? 'Mes corrido' : plan.billing_cycle}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <button onClick={() => { setEditingPlan(plan); setPlanForm({ name: plan.name, price: String(plan.price), billing_cycle: plan.billing_cycle }); setShowPlanForm(true); }}
+                                            className="p-2 text-zinc-400 hover:text-indigo-600 active:scale-90 transition-all"><Edit2 size={14} /></button>
+                                        <button onClick={async () => { if(confirm('¿Eliminar plan?')) await handleDeletePlan(plan.id); }}
+                                            className="p-2 text-zinc-400 hover:text-rose-500 active:scale-90 transition-all"><Trash2 size={14} /></button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* GESTIÓN DE HORARIOS (Solo para Martial Arts) */}
+            {branding?.industry === 'martial_arts' && (
+                <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden mt-6">
+                    <div className="px-4 py-3 border-b border-zinc-50 flex items-center justify-between bg-zinc-50/50">
+                        <span className="text-[10px] font-black text-zinc-950 uppercase tracking-widest flex items-center gap-2">
+                            <Sparkles size={14} className="text-emerald-500" /> Gestión de Horarios
+                        </span>
+                        <button onClick={() => { setEditingSchedule(null); setScheduleForm({ name: '', day_of_week: '1', start_time: '18:00', end_time: '19:30', category: 'GI' }); setShowScheduleForm(true); }}
+                            className="text-[9px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full active:scale-95 transition-all">
+                            + Nuevo Horario
+                        </button>
+                    </div>
+
+                    {showScheduleForm && (
+                        <div className="p-4 bg-emerald-50/30 space-y-3 border-b border-zinc-100">
+                             <div className="grid grid-cols-2 gap-2">
+                                <select className="bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black uppercase outline-none focus:ring-2 focus:ring-emerald-500"
+                                    value={scheduleForm.day_of_week} onChange={e => setScheduleForm({ ...scheduleForm, day_of_week: e.target.value })}>
+                                    <option value="1">Lunes</option>
+                                    <option value="2">Martes</option>
+                                    <option value="3">Miércoles</option>
+                                    <option value="4">Jueves</option>
+                                    <option value="5">Viernes</option>
+                                    <option value="6">Sábado</option>
+                                    <option value="0">Domingo</option>
+                                </select>
+                                <select className="bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black uppercase outline-none focus:ring-2 focus:ring-emerald-500"
+                                    value={scheduleForm.category} onChange={e => setScheduleForm({ ...scheduleForm, category: e.target.value })}>
+                                    <option value="GI">GI (Jiujitsu)</option>
+                                    <option value="NO-GI">NO-GI</option>
+                                    <option value="KIDS">KIDS</option>
+                                    <option value="OPEN MAT">OPEN MAT</option>
+                                </select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <input type="time" className="bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black outline-none focus:ring-2 focus:ring-emerald-500"
+                                    value={scheduleForm.start_time} onChange={e => setScheduleForm({ ...scheduleForm, start_time: e.target.value })} />
+                                <input type="time" className="bg-white border border-zinc-200 rounded-xl px-4 py-2 text-[10px] font-black outline-none focus:ring-2 focus:ring-emerald-500"
+                                    value={scheduleForm.end_time} onChange={e => setScheduleForm({ ...scheduleForm, end_time: e.target.value })} />
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => setShowScheduleForm(false)} className="flex-1 h-10 bg-zinc-200 text-zinc-600 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all">Cancelar</button>
+                                <button onClick={async () => { 
+                                    if (editingSchedule) await handleUpdateSchedule(editingSchedule.id, scheduleForm);
+                                    else await handleCreateSchedule(scheduleForm);
+                                    setShowScheduleForm(false);
+                                }}
+                                    className="flex-1 h-10 bg-emerald-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all">
+                                    {editingSchedule ? 'Actualizar' : 'Crear'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="divide-y divide-zinc-50">
+                        {schedulesLoading ? (
+                            <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-zinc-300" size={20} /></div>
+                        ) : (
+                            schedulesList.sort((a: any, b: any) => a.day_of_week - b.day_of_week).map((sch: any) => (
+                                <div key={sch.id} className="flex items-center justify-between px-4 py-3 hover:bg-zinc-50 transition-colors">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-0.5">
+                                            <p className="text-[10px] font-black text-zinc-950 uppercase tracking-tighter">
+                                                {['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][sch.day_of_week]}
+                                            </p>
+                                            <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${
+                                                sch.category === 'KIDS' ? 'bg-orange-50 text-orange-600' : 
+                                                sch.category === 'NO-GI' ? 'bg-zinc-900 text-zinc-100' : 
+                                                'bg-emerald-50 text-emerald-600'
+                                            }`}>
+                                                {sch.category || 'GI'}
+                                            </span>
+                                        </div>
+                                        <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">{sch.start_time.substring(0,5)} — {sch.end_time.substring(0,5)}</p>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <button onClick={() => { setEditingSchedule(sch); setScheduleForm({ name: sch.name || '', day_of_week: String(sch.day_of_week), start_time: sch.start_time.substring(0,5), end_time: sch.end_time.substring(0,5), category: sch.category || 'GI' }); setShowScheduleForm(true); }}
+                                            className="p-2 text-zinc-400 hover:text-emerald-600 active:scale-90 transition-all"><Edit2 size={14} /></button>
+                                        <button onClick={async () => { if(confirm('¿Eliminar horario?')) await handleDeleteSchedule(sch.id); }}
+                                            className="p-2 text-zinc-400 hover:text-rose-500 active:scale-90 transition-all"><Trash2 size={14} /></button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
             )}
 
             {/* DATOS BANCARIOS */}

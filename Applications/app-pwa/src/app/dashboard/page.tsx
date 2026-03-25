@@ -159,10 +159,13 @@ export default function App() {
         toggleAttendance, handleConfirmPayment, handleCreateExpense, handleDeleteExpense,
         handleCreateFee, handleApproveFeePayment, handlePriceInput, handleSavePrices,
         handleSaveBankInfo, handleLogoUpload, openFee, markAllNotificationsRead, markNotificationRead,
-        loadExpenses, loadSchedules, loadFees,
+        loadExpenses, loadSchedules, loadPlans, loadFees,
         formatMoney, formatCLP, parseCLP, handlePaymentApprove, handleActivatePush,
         handleDeleteFee, handleLongPressStart, handleLongPressEnd, handleLoadDemo,
-        allStudents, STATUS_LABEL
+        handleCreatePlan, handleUpdatePlan, handleDeletePlan,
+        handleCreateSchedule, handleUpdateSchedule, handleDeleteSchedule,
+        allStudents, STATUS_LABEL,
+        plansList, plansLoading
     } = useAdminDashboard(branding, setBranding);
 
     if (loading) return (
@@ -527,11 +530,25 @@ export default function App() {
                                     setBankData={setBankData}
                                     handleSaveBankData={handleSaveBankInfo}
                                     formatCLP={formatCLP}
+                                    parseCLP={parseCLP}
                                     showInactivePayers={showInactivePayers}
                                     setShowInactivePayers={setShowInactivePayers}
                                     loadingSync={loadingSync}
                                     forceSync={forceSync}
                                     handleLogout={handleLogout}
+                                    // New Props
+                                    plansList={plansList}
+                                    plansLoading={plansLoading}
+                                    loadPlans={loadPlans}
+                                    handleCreatePlan={handleCreatePlan}
+                                    handleUpdatePlan={handleUpdatePlan}
+                                    handleDeletePlan={handleDeletePlan}
+                                    schedulesList={schedulesList}
+                                    schedulesLoading={schedulesLoading}
+                                    loadSchedules={loadSchedules}
+                                    handleCreateSchedule={handleCreateSchedule}
+                                    handleUpdateSchedule={handleUpdateSchedule}
+                                    handleDeleteSchedule={handleDeleteSchedule}
                                 />
                             )}
                             {activeTab === 'profile' && (

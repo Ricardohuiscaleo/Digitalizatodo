@@ -46,6 +46,18 @@ class Plan extends Model
             return $next;
         }
 
+        if ($this->billing_cycle === 'quarterly') {
+            return $enrollmentDate->copy()->addMonths(3);
+        }
+
+        if ($this->billing_cycle === 'semi_annual') {
+            return $enrollmentDate->copy()->addMonths(6);
+        }
+
+        if ($this->billing_cycle === 'annual') {
+            return $enrollmentDate->copy()->addYear();
+        }
+
         // monthly_from_enrollment: 30 días desde la inscripción
         return $enrollmentDate->copy()->addDays(30);
     }

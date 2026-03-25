@@ -128,8 +128,12 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         const newIndex = tabs.indexOf(newTab);
         setTabDirection(newIndex > currentIndex ? 1 : -1);
         setActiveTab(newTab);
-        if (newTab === 'settings' && !regPageCode) {
-            getRegistrationPageCode(user?.tenant_slug ?? '', token ?? '').then(r => { if (r?.code) setRegPageCode(r.code); });
+        if (newTab === 'settings') {
+            if (!regPageCode) {
+                getRegistrationPageCode(user?.tenant_slug ?? '', token ?? '').then(r => { if (r?.code) setRegPageCode(r.code); });
+            }
+            common.loadPlans();
+            common.loadSchedules();
         }
         if (newTab === 'expenses') common.loadExpenses();
         if (newTab === 'schedule') common.loadSchedules();

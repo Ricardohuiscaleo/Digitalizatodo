@@ -759,6 +759,38 @@ export async function getPlans(tenantId: string, token: string) {
     }
 }
 
+export async function createPlan(tenantId: string, token: string, data: any) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/plans`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        return await safeJson(response);
+    } catch { return null; }
+}
+
+export async function updatePlan(tenantId: string, token: string, id: number, data: any) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/plans/${id}`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        return await safeJson(response);
+    } catch { return null; }
+}
+
+export async function deletePlan(tenantId: string, token: string, id: number) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/plans/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+        });
+        return await safeJson(response);
+    } catch { return null; }
+}
+
 export async function getSchedules(tenantSlug: string, token?: string) {
     try {
         const headers: any = { 'Accept': 'application/json' };

@@ -10,6 +10,13 @@ import {
     createExpense,
     deleteExpense,
     getSchedules, 
+    createSchedule,
+    updateSchedule,
+    deleteSchedule,
+    getPlans, 
+    createPlan,
+    updatePlan,
+    deletePlan,
     getNotifications, 
     markAllNotificationsRead,
     markNotificationRead,
@@ -28,6 +35,8 @@ export function useDashboardCommon(slug: string | undefined, token: string | nul
     const [expensesSummary, setExpensesSummary] = useState<any[]>([]);
     const [expensesLoading, setExpensesLoading] = useState(false);
     const [schedulesLoading, setSchedulesLoading] = useState(false);
+    const [plansList, setPlansList] = useState<any[]>([]);
+    const [plansLoading, setPlansLoading] = useState(false);
 
     const [expandedPayerId, setExpandedPayerId] = useState<string | null>(null);
     const [historyPage, setHistoryPage] = useState(0);
@@ -82,6 +91,56 @@ export function useDashboardCommon(slug: string | undefined, token: string | nul
         setSchedulesList(data?.schedules ?? []);
         setSchedulesLoading(false);
     }, [slug, token]);
+
+    const loadPlans = useCallback(async () => {
+        if (!slug || !token) return;
+        setPlansLoading(true);
+        const data = await getPlans(slug, token);
+        setPlansList(data ?? []);
+        setPlansLoading(false);
+    }, [slug, token]);
+
+    const handleCreatePlan = async (data: any) => {
+        if (!slug || !token) return;
+        const res = await createPlan(slug, token, data);
+        if (res) await loadPlans();
+        return res;
+    };
+
+    const handleUpdatePlan = async (id: number, data: any) => {
+        if (!slug || !token) return;
+        const res = await updatePlan(slug, token, id, data);
+        if (res) await loadPlans();
+        return res;
+    };
+
+    const handleDeletePlan = async (id: number) => {
+        if (!slug || !token) return;
+        const res = await deletePlan(slug, token, id);
+        if (res) await loadPlans();
+        return res;
+    };
+
+    const handleCreateSchedule = async (data: any) => {
+        if (!slug || !token) return;
+        const res = await createSchedule(slug, token, data);
+        if (res) await loadSchedules();
+        return res;
+    };
+
+    const handleUpdateSchedule = async (id: number, data: any) => {
+        if (!slug || !token) return;
+        const res = await updateSchedule(slug, token, id, data);
+        if (res) await loadSchedules();
+        return res;
+    };
+
+    const handleDeleteSchedule = async (id: number) => {
+        if (!slug || !token) return;
+        const res = await deleteSchedule(slug, token, id);
+        if (res) await loadSchedules();
+        return res;
+    };
 
     const longPressTimer = useRef<NodeJS.Timeout | undefined>(undefined);
 
@@ -186,6 +245,7 @@ export function useDashboardCommon(slug: string | undefined, token: string | nul
         expensesList, setExpensesList, expensesTotal, setExpensesTotal,
         expensesSummary, setExpensesSummary, expensesLoading, setExpensesLoading,
         schedulesLoading, setSchedulesLoading,
+        plansList, setPlansList, plansLoading, setPlansLoading,
         expandedPayerId, setExpandedPayerId, historyPage, setHistoryPage,
         copied, setCopied, paymentDropdownOpen, setPaymentDropdownOpen,
         longPressPayerId, setLongPressPayerId, bubbleModalPayer, setBubbleModalPayer,
@@ -195,8 +255,10 @@ export function useDashboardCommon(slug: string | undefined, token: string | nul
         expenseProductPhoto, setExpenseProductPhoto, expenseSubmitting, setExpenseSubmitting,
         expenseFormError, setExpenseFormError, expenseDeletingId, setExpenseDeletingId,
         expenseLightbox, setExpenseLightbox,
-        refreshPayers, loadExpenses, loadSchedules, toggleAttendance,
+        refreshPayers, loadExpenses, loadSchedules, loadPlans, toggleAttendance,
         handleCreateExpense, handleDeleteExpense, handleLongPressStart, handleLongPressEnd,
+        handleCreatePlan, handleUpdatePlan, handleDeletePlan,
+        handleCreateSchedule, handleUpdateSchedule, handleDeleteSchedule,
         markAllNotificationsRead: markAllNotificationsReadHandler,
         markNotificationRead: markNotificationReadHandler,
         formatCLP, parseCLP
@@ -207,8 +269,10 @@ export function useDashboardCommon(slug: string | undefined, token: string | nul
         longPressPayerId, bubbleModalPayer, generatingPage, showInactivePayers, 
         showPushBanner, pushPermission, expenseForm, expenseReceiptPhoto, 
         expenseProductPhoto, expenseSubmitting, expenseFormError, expenseDeletingId, 
-        expenseLightbox, refreshPayers, loadExpenses, loadSchedules, toggleAttendance,
+        expenseLightbox, refreshPayers, loadExpenses, loadSchedules, loadPlans, toggleAttendance,
         handleCreateExpense, handleDeleteExpense, handleLongPressStart, handleLongPressEnd,
+        handleCreatePlan, handleUpdatePlan, handleDeletePlan,
+        handleCreateSchedule, handleUpdateSchedule, handleDeleteSchedule,
         markAllNotificationsReadHandler, markNotificationReadHandler
     ]);
 }
