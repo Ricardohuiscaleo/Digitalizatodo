@@ -12,7 +12,7 @@ class Plan extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'tenant_id', 'name', 'description', 'price', 'billing_cycle', 'billing_day',
+        'tenant_id', 'name', 'category', 'description', 'price', 'billing_cycle', 'is_recurring', 'billing_day',
         'family_discount_percent', 'family_discount_min_students', 'active',
     ];
 
@@ -20,6 +20,7 @@ class Plan extends Model
         'price' => 'decimal:2',
         'family_discount_percent' => 'decimal:2',
         'active' => 'boolean',
+        'is_recurring' => 'boolean',
     ];
 
     public function tenant(): BelongsTo
