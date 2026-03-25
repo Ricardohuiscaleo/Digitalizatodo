@@ -241,6 +241,84 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
         setTermsSections(termsSections.filter((_, i) => i !== index));
     };
 
+    const renderMarkdown = (text: string) => {
+        if (!text) return null;
+        return text.split('\n').map((line, i) => {
+            if (line.startsWith('# ')) {
+                return <h1 key={i} className={`text-xl font-black mb-4 uppercase tracking-tighter ${isDark ? 'text-white' : 'text-zinc-950'}`}>{line.replace('# ', '')}</h1>;
+            }
+            if (line.startsWith('## ')) {
+                return <h2 key={i} className="text-lg font-black mb-3 uppercase tracking-tight text-indigo-500">{line.replace('## ', '')}</h2>;
+            }
+            
+            // Simple bold/italic parts
+            const parts = line.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+            return (
+                <div key={i} className="mb-1">
+                    {parts.map((part, j) => {
+                        if (part.startsWith('**') && part.endsWith('**')) 
+                            return <strong key={j} className={`font-black ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>{part.slice(2, -2)}</strong>;
+                        if (part.startsWith('*') && part.endsWith('*')) 
+                            return <em key={j} className={`font-bold italic ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>{part.slice(1, -1)}</em>;
+                        return part;
+                    })}
+                </div>
+            );
+        });
+    };
+
+    const getHeaderParts = (content: string) => {
+        if (!content) return { title: '', version: '', intro: '' };
+        const lines = content.split('\n');
+        let title = '';
+        let version = '';
+        
+        const titleLine = lines.find(l => l.startsWith('# '));
+        const versionLine = lines.find(l => l.startsWith('*') && l.endsWith('*'));
+        
+        if (titleLine) title = titleLine.replace('# ', '');
+        if (versionLine) version = versionLine.slice(1, -1);
+        
+        // Intro is everything else (excluding title and version lines)
+        const intro = lines
+            .filter(l => l !== titleLine && l !== versionLine)
+            .join('\n')
+            .trim();
+            
+        return { title, version, intro };
+    };
+
+    const updateHeaderContent = (index: number, parts: { title?: string, version?: string, intro?: string }) => {
+        const current = getHeaderParts(termsSections[index].content);
+        const next = { ...current, ...parts };
+        const newContent = `# ${next.title}\n*${next.version}*\n\n${next.intro}`;
+        updateTermsSection(index, 'content', newContent);
+    };
+
+    const getFooterParts = (content: string) => {
+        if (!content) return { branding: '', updated: '', regId: '' };
+        const lines = content.split('\n');
+        let branding = '';
+        let updated = '';
+        let regId = '';
+        
+        const line0 = lines[0] || '';
+        const parts = line0.split('|');
+        branding = parts[0]?.replace(/\*\*Gestión Digital por:\*\*/g, '').replace(/\*\*/g, '').replace(':', '').trim();
+        updated = parts[1]?.replace(/\*\*Última actualización:\*\*/g, '').replace(/\*\*/g, '').replace(':', '').trim();
+        
+        regId = (lines[1] || '').replace(/\*\*ID Registro Digital:\*\*/g, '').replace(/\*\*/g, '').replace(':', '').trim();
+        
+        return { branding, updated, regId };
+    };
+
+    const updateFooterContent = (index: number, parts: { branding?: string, updated?: string, regId?: string }) => {
+        const current = getFooterParts(termsSections[index].content);
+        const next = { ...current, ...parts };
+        const newContent = `**Gestión Digital por:** ${next.branding} | **Última actualización:** ${next.updated}\n**ID Registro Digital:** ${next.regId}`;
+        updateTermsSection(index, 'content', newContent);
+    };
+
     const ActionCard = ({ icon: Icon, title, description, onClick, color = "indigo" }: any) => (
         <button onClick={onClick}
             className={`w-full ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'} rounded-[24px] p-5 shadow-xl border flex items-center gap-4 active:scale-[0.98] transition-all ${isDark ? 'hover:bg-zinc-800' : 'hover:bg-zinc-50'} group shadow-zinc-950/5`}>
@@ -666,8 +744,8 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                             </div>
 
                             <div className="space-y-4 max-h-[50vh] overflow-y-auto px-1 hide-scrollbar">
-                                <div className="flex items-center justify-between sticky top-0 bg-white dark:bg-zinc-900 py-2 z-10">
-                                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{isTermsPreview ? 'Vista Previa' : 'Editor Estructurado'}</p>
+                                <div className={`flex items-center justify-between sticky top-0 ${isDark ? 'bg-zinc-900' : 'bg-white'} py-2 z-10`}>
+                                    <p className={`text-[10px] font-black ${isDark ? 'text-zinc-500' : 'text-zinc-500'} uppercase tracking-widest`}>{isTermsPreview ? 'Vista Previa' : 'Editor para Administración'}</p>
                                     <div className="flex items-center gap-3">
                                         {termsLoading && <Loader2 className="animate-spin text-blue-500" size={10} />}
                                         {!isTermsPreview && (
@@ -698,12 +776,19 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                     <div className={`w-full ${isDark ? 'bg-zinc-950 border-zinc-800 text-zinc-300' : 'bg-zinc-50 border-zinc-100 text-zinc-800'} border rounded-[28px] px-8 py-8 min-h-[300px] prose prose-sm max-w-none shadow-inner`}>
                                         {/* Dynamic content from JSON */}
 
-                                        {termsSections.length > 0 ? termsSections.map((sec, i) => (
-                                            <div key={i} className="mb-8 last:mb-0">
-                                                <h3 className="text-lg font-black mb-3 text-indigo-500 uppercase tracking-tight">{sec.title}</h3>
-                                                <p className="text-[13px] leading-relaxed font-medium whitespace-pre-wrap">{sec.content}</p>
-                                            </div>
-                                        )) : (
+                                        {termsSections.length > 0 ? termsSections.map((sec, i) => {
+                                            const isHeaderOrFooter = (i === 0 && sec.title.includes('ENCABEZADO')) || (i === termsSections.length - 1 && sec.title.includes('FIRMA'));
+                                            return (
+                                                <div key={i} className="mb-8 last:mb-0">
+                                                    {!isHeaderOrFooter && sec.title && (
+                                                        <h3 className="text-lg font-black mb-3 text-indigo-500 uppercase tracking-tight">{sec.title}</h3>
+                                                    )}
+                                                    <div className="text-[13px] leading-relaxed font-medium whitespace-pre-wrap">
+                                                        {renderMarkdown(sec.content)}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }) : (
                                             <div className="flex flex-col items-center justify-center h-full opacity-20 py-20">
                                                 <FileText size={48} className="mb-4" />
                                                 <p className="text-[10px] uppercase font-black tracking-widest">Sin contenido</p>
@@ -716,34 +801,114 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                     <div className="space-y-6 pb-4">
                                         {/* Editable list start */}
 
-                                        {termsSections.map((sec, i) => (
-                                            <div key={i} className={`relative group p-6 rounded-[32px] border ${isDark ? 'bg-zinc-950 border-zinc-800 focus-within:border-blue-500/50' : 'bg-zinc-50 border-zinc-200 focus-within:border-blue-500/50'} transition-all shadow-sm`}>
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <div className="flex items-center gap-3 flex-1">
-                                                        <span className={`w-6 h-6 rounded-full ${isDark ? 'bg-zinc-900 text-zinc-500' : 'bg-white text-zinc-300'} border flex items-center justify-center text-[10px] font-black`}>
-                                                            {i + 1}
-                                                        </span>
-                                                        <input 
-                                                            type="text"
-                                                            placeholder="Título de la Sección (Ej: 1. Riesgos)"
-                                                            className={`bg-transparent text-[13px] font-black ${isDark ? 'text-white' : 'text-zinc-950'} uppercase tracking-tight outline-none w-full`}
-                                                            value={sec.title}
-                                                            onChange={(e) => updateTermsSection(i, 'title', e.target.value)}
-                                                        />
+                                        {termsSections.map((sec, i) => {
+                                            const isHeader = i === 0 && sec.title.includes('ENCABEZADO');
+                                            const isFooter = i === termsSections.length - 1 && sec.title.includes('FIRMA');
+                                            
+                                            return (
+                                                <div key={i} className={`relative group p-6 rounded-[32px] border ${isDark ? 'bg-zinc-950 border-zinc-800 focus-within:border-blue-500/50' : 'bg-zinc-50 border-zinc-200 focus-within:border-blue-500/50'} transition-all shadow-sm`}>
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <div className="flex items-center gap-3 flex-1">
+                                                            <span className={`w-6 h-6 rounded-full ${isDark ? 'bg-zinc-900 text-zinc-500' : 'bg-white text-zinc-300'} border flex items-center justify-center text-[10px] font-black`}>
+                                                                {i + 1}
+                                                            </span>
+                                                            <input 
+                                                                type="text"
+                                                                placeholder={isHeader ? "Título del Documento" : isFooter ? "Firma y Registro" : "Título de la Sección"}
+                                                                className={`bg-transparent text-[13px] font-black ${isDark ? 'text-white' : 'text-zinc-950'} uppercase tracking-tight outline-none w-full`}
+                                                                value={sec.title}
+                                                                onChange={(e) => updateTermsSection(i, 'title', e.target.value)}
+                                                                readOnly={isHeader || isFooter}
+                                                            />
+                                                        </div>
+                                                        {(!isHeader && !isFooter) && (
+                                                            <button onClick={() => removeTermsSection(i)}
+                                                                className="p-2 text-zinc-600 hover:text-rose-500 transition-colors">
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        )}
                                                     </div>
-                                                    <button onClick={() => removeTermsSection(i)}
-                                                        className="p-2 text-zinc-600 hover:text-rose-500 transition-colors">
-                                                        <Trash2 size={16} />
-                                                    </button>
+                                                    
+                                                    {isHeader ? (() => {
+                                                        const { title: hTitle, version: hVersion, intro: hIntro } = getHeaderParts(sec.content);
+                                                        return (
+                                                            <div className="space-y-4 pl-9">
+                                                                <div className="grid grid-cols-2 gap-4">
+                                                                    <div className="space-y-1">
+                                                                        <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest pl-1">Título Oficial</p>
+                                                                        <input 
+                                                                            type="text"
+                                                                            className={`w-full px-3 py-2 rounded-xl border ${isDark ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-white border-zinc-100 text-zinc-900'} text-xs font-bold outline-none focus:border-blue-500/50`}
+                                                                            value={hTitle}
+                                                                            onChange={(e) => updateHeaderContent(i, { title: e.target.value })}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="space-y-1">
+                                                                        <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest pl-1">Versión / Vigencia</p>
+                                                                        <input 
+                                                                            type="text"
+                                                                            className={`w-full px-3 py-2 rounded-xl border ${isDark ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-white border-zinc-100 text-zinc-900'} text-xs font-bold outline-none focus:border-blue-500/50`}
+                                                                            value={hVersion}
+                                                                            onChange={(e) => updateHeaderContent(i, { version: e.target.value })}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest pl-1">Introducción / Declaración</p>
+                                                                    <textarea 
+                                                                        className={`w-full px-3 py-2 rounded-xl border ${isDark ? 'bg-zinc-900 border-zinc-800 text-zinc-400' : 'bg-white border-zinc-100 text-zinc-600'} text-xs font-medium outline-none focus:border-blue-500/50 min-h-[80px] leading-relaxed resize-none`}
+                                                                        value={hIntro}
+                                                                        onChange={(e) => updateHeaderContent(i, { intro: e.target.value })}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })() : isFooter ? (() => {
+                                                        const { branding: fBrand, updated: fUpdate, regId: fId } = getFooterParts(sec.content);
+                                                        return (
+                                                            <div className="space-y-4 pl-9">
+                                                                <div className="grid grid-cols-3 gap-3">
+                                                                    <div className="space-y-1">
+                                                                        <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest pl-1">Gestión por</p>
+                                                                        <input 
+                                                                            type="text"
+                                                                            className={`w-full px-3 py-2 rounded-xl border ${isDark ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-white border-zinc-100 text-zinc-900'} text-[11px] font-bold outline-none`}
+                                                                            value={fBrand}
+                                                                            onChange={(e) => updateFooterContent(i, { branding: e.target.value })}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="space-y-1">
+                                                                        <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest pl-1">Actualizado el</p>
+                                                                        <input 
+                                                                            type="text"
+                                                                            className={`w-full px-3 py-2 rounded-xl border ${isDark ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-white border-zinc-100 text-zinc-900'} text-[11px] font-bold outline-none`}
+                                                                            value={fUpdate}
+                                                                            onChange={(e) => updateFooterContent(i, { updated: e.target.value })}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="space-y-1">
+                                                                        <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest pl-1">ID Registro</p>
+                                                                        <input 
+                                                                            type="text"
+                                                                            className={`w-full px-3 py-2 rounded-xl border ${isDark ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-white border-zinc-100 text-zinc-900'} text-[11px] font-bold outline-none`}
+                                                                            value={fId}
+                                                                            onChange={(e) => updateFooterContent(i, { regId: e.target.value })}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })() : (
+                                                        <textarea 
+                                                            className={`w-full bg-transparent text-[13px] font-medium ${isDark ? 'text-zinc-400' : 'text-zinc-600'} outline-none min-h-[120px] leading-relaxed resize-none pl-9`}
+                                                            placeholder="Escribe el contenido aquí..."
+                                                            value={sec.content}
+                                                            onChange={(e) => updateTermsSection(i, 'content', e.target.value)}
+                                                        />
+                                                    )}
                                                 </div>
-                                                <textarea 
-                                                    className={`w-full bg-transparent text-[13px] font-medium ${isDark ? 'text-zinc-400' : 'text-zinc-600'} outline-none min-h-[120px] leading-relaxed resize-none pl-9`}
-                                                    placeholder="Contenido de esta sección..."
-                                                    value={sec.content}
-                                                    onChange={(e) => updateTermsSection(i, 'content', e.target.value)}
-                                                />
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
 
                                         {/* Editable list end */}
                                     </div>
