@@ -107,16 +107,42 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
     const [scheduleForm, setScheduleForm] = useState({ name: '', day_of_week: '1', start_time: '18:00', end_time: '19:30', category: 'GI' });
 
     // Terms editor state
-    const [termsContent, setTermsContent] = useState('');
+    const [termsSections, setTermsSections] = useState<any[]>([]);
     const [savingTerms, setSavingTerms] = useState(false);
     const [isTermsPreview, setIsTermsPreview] = useState(false);
 
     useEffect(() => {
-        // Only set terms if we actually have them AND we aren't currently editing (to avoid overwriting unsaved work if terms re-fetch)
-        if (tenantTerms?.content !== undefined) {
-            setTermsContent(tenantTerms?.content || '');
+        if (tenantTerms?.content) {
+            try {
+                // Try to parse as JSON (new format)
+                const parsed = JSON.parse(tenantTerms.content);
+                if (Array.isArray(parsed)) {
+                    setTermsSections(parsed);
+                    return;
+                }
+            } catch (e) {
+                // Fallback: Parse Markdown to JSON (legacy format)
+                const sections: any[] = [];
+                const lines = tenantTerms.content.split('\n');
+                let currentSection: any = null;
+
+                lines.forEach((line: string) => {
+                    if (line.startsWith('## ') || line.startsWith('# ')) {
+                        if (currentSection) sections.push(currentSection);
+                        currentSection = { title: line.replace(/^#+ /, '').trim(), content: '' };
+                    } else if (currentSection) {
+                        currentSection.content += (currentSection.content ? '\n' : '') + line;
+                    } else if (line.trim()) {
+                        currentSection = { title: 'General', content: line };
+                    }
+                });
+                if (currentSection) sections.push(currentSection);
+                setTermsSections(sections.length > 0 ? sections : [{ title: 'Nuevo Contrato', content: '' }]);
+            }
+        } else if (!termsLoading) {
+            setTermsSections([{ title: '1. Objeto del Contrato', content: '' }]);
         }
-    }, [tenantTerms]);
+    }, [tenantTerms, termsLoading]);
 
     const handleCopyClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
@@ -194,9 +220,25 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
 
     const handleSaveTerms = async () => {
         setSavingTerms(true);
-        await handleUpdateTenantTerms(termsContent);
+        // Serialize to JSON for storage
+        await handleUpdateTenantTerms(JSON.stringify(termsSections));
         setSavingTerms(false);
         setShowTermsModal(false);
+    };
+
+    const addTermsSection = () => {
+        setTermsSections([...termsSections, { title: '', content: '' }]);
+    };
+
+    const updateTermsSection = (index: number, field: string, value: string) => {
+        const next = [...termsSections];
+        next[index] = { ...next[index], [field]: value };
+        setTermsSections(next);
+    };
+
+    const removeTermsSection = (index: number) => {
+        if (termsSections.length <= 1) return;
+        setTermsSections(termsSections.filter((_, i) => i !== index));
     };
 
     const ActionCard = ({ icon: Icon, title, description, onClick, color = "indigo" }: any) => (
@@ -623,53 +665,75 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                 </button>
                             </div>
 
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between px-1">
-                                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{isTermsPreview ? 'Vista Previa' : 'Editor de Contenido'}</p>
+                            <div className="space-y-4 max-h-[50vh] overflow-y-auto px-1 hide-scrollbar">
+                                <div className="flex items-center justify-between sticky top-0 bg-white dark:bg-zinc-900 py-2 z-10">
+                                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{isTermsPreview ? 'Vista Previa' : 'Editor Estructurado'}</p>
                                     <div className="flex items-center gap-3">
                                         {termsLoading && <Loader2 className="animate-spin text-blue-500" size={10} />}
+                                        {!isTermsPreview && (
+                                            <button onClick={addTermsSection}
+                                                className="text-[9px] font-black uppercase text-indigo-500 hover:text-indigo-600 flex items-center gap-1 bg-indigo-500/5 px-3 py-1.5 rounded-xl border border-indigo-500/10 transition-all active:scale-95">
+                                                + Sección
+                                            </button>
+                                        )}
                                         <button 
                                             onClick={() => setIsTermsPreview(!isTermsPreview)}
-                                            className={`text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border transition-all flex items-center gap-1.5 ${
+                                            className={`text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1.5 ${
                                                 isTermsPreview 
                                                     ? 'bg-emerald-500 text-white border-emerald-400' 
-                                                    : 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20 hover:bg-indigo-500/20'
+                                                    : 'bg-zinc-500/10 text-zinc-500 border-zinc-500/20'
                                             }`}
                                         >
-                                            <Edit2 size={10} />
+                                            {isTermsPreview ? <Edit2 size={10} /> : <FileText size={10} />}
                                             {isTermsPreview ? 'Editar' : 'Previsualizar'}
                                         </button>
                                     </div>
                                 </div>
                                 
                                 {termsLoading ? (
-                                    <div className={`w-full ${isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-zinc-50 border-zinc-100'} border rounded-[28px] h-[400px] flex items-center justify-center`}>
+                                    <div className={`w-full ${isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-zinc-50 border-zinc-100'} border rounded-[28px] h-[300px] flex items-center justify-center`}>
                                         <Loader2 className="animate-spin text-blue-500/30" size={32} />
                                     </div>
                                 ) : isTermsPreview ? (
-                                    <div className={`w-full ${isDark ? 'bg-zinc-950 border-zinc-800 text-zinc-300' : 'bg-zinc-50 border-zinc-100 text-zinc-800'} border rounded-[28px] px-8 py-8 h-[400px] overflow-y-auto hide-scrollbar prose prose-sm max-w-none`}>
-                                        {termsContent ? termsContent.split('\n').map((line, i) => {
-                                            if (line.startsWith('# ')) return <h1 key={i} className="text-xl font-black mb-4 mt-2 border-b border-zinc-800 pb-2">{line.replace('# ', '')}</h1>;
-                                            if (line.startsWith('## ')) return <h2 key={i} className="text-lg font-black mb-3 mt-6 text-indigo-500">{line.replace('## ', '')}</h2>;
-                                            if (line.startsWith('### ')) return <h3 key={i} className="text-md font-black mb-2 mt-4 text-emerald-500">{line.replace('### ', '')}</h3>;
-                                            if (line.startsWith('- ') || line.startsWith('* ')) return <li key={i} className="ml-4 mb-2 text-[13px] leading-relaxed list-disc">{line.replace(/^[-*] /, '')}</li>;
-                                            if (line.trim() === '---') return <hr key={i} className="my-6 border-zinc-800" />;
-                                            if (line.trim() === '') return <div key={i} className="h-4" />;
-                                            return <p key={i} className="mb-4 text-[13px] leading-relaxed font-medium">{line}</p>;
-                                        }) : (
-                                            <div className="flex flex-col items-center justify-center h-full opacity-20">
+                                    <div className={`w-full ${isDark ? 'bg-zinc-950 border-zinc-800 text-zinc-300' : 'bg-zinc-50 border-zinc-100 text-zinc-800'} border rounded-[28px] px-8 py-8 min-h-[300px] prose prose-sm max-w-none`}>
+                                        {termsSections.length > 0 ? termsSections.map((sec, i) => (
+                                            <div key={i} className="mb-8 last:mb-0">
+                                                <h3 className="text-lg font-black mb-3 text-indigo-500 uppercase tracking-tight">{sec.title}</h3>
+                                                <p className="text-[13px] leading-relaxed font-medium whitespace-pre-wrap">{sec.content}</p>
+                                            </div>
+                                        )) : (
+                                            <div className="flex flex-col items-center justify-center h-full opacity-20 py-20">
                                                 <FileText size={48} className="mb-4" />
-                                                <p className="text-[10px] uppercase font-black tracking-widest">Sin contenido para previsualizar</p>
+                                                <p className="text-[10px] uppercase font-black tracking-widest">Sin contenido</p>
                                             </div>
                                         )}
                                     </div>
                                 ) : (
-                                    <textarea 
-                                        className={`w-full ${isDark ? 'bg-zinc-950 border-zinc-800 text-zinc-200 shadow-inner' : 'bg-zinc-50 border-zinc-100 text-zinc-700 shadow-sm'} border rounded-[28px] px-8 py-7 text-[14px] font-medium outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder-zinc-800 h-[400px] leading-relaxed resize-none`}
-                                        placeholder="# Título del Contrato\n\n## 1. Reglas\n- Cláusula importante\n\n## 2. Pagos\nDetalle aquí..."
-                                        value={termsContent}
-                                        onChange={(e) => setTermsContent(e.target.value)}
-                                    />
+                                    <div className="space-y-6 pb-4">
+                                        {termsSections.map((sec, i) => (
+                                            <div key={i} className={`relative group p-6 rounded-[32px] border ${isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-zinc-50 border-zinc-200'} transition-all`}>
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <input 
+                                                        type="text"
+                                                        placeholder="Título de la Sección (Ej: 1. Riesgos)"
+                                                        className={`bg-transparent text-[13px] font-black ${isDark ? 'text-white' : 'text-zinc-950'} uppercase tracking-tight outline-none w-full mr-10`}
+                                                        value={sec.title}
+                                                        onChange={(e) => updateTermsSection(i, 'title', e.target.value)}
+                                                    />
+                                                    <button onClick={() => removeTermsSection(i)}
+                                                        className="absolute top-6 right-6 p-2 text-zinc-600 hover:text-rose-500 transition-colors">
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                                <textarea 
+                                                    className={`w-full bg-transparent text-[13px] font-medium ${isDark ? 'text-zinc-400 shadow-inner' : 'text-zinc-600'} outline-none min-h-[120px] leading-relaxed resize-none`}
+                                                    placeholder="Contenido de esta sección..."
+                                                    value={sec.content}
+                                                    onChange={(e) => updateTermsSection(i, 'content', e.target.value)}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
                                 )}
                             </div>
 
