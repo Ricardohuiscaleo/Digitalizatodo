@@ -149,7 +149,6 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
                     Route::post('settings/terms', [\App\Http\Controllers\Api\TenantTermController::class, 'store']);
 
                     // Gestión de Horarios
-                    Route::get('schedules', [\App\Http\Controllers\Api\ScheduleController::class, 'index']);
                     Route::post('schedules', [\App\Http\Controllers\Api\ScheduleController::class, 'store']);
                     Route::put('schedules/{id}', [\App\Http\Controllers\Api\ScheduleController::class, 'update']);
                     Route::delete('schedules/{id}', [\App\Http\Controllers\Api\ScheduleController::class, 'destroy']);
