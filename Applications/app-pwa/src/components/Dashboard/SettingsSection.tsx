@@ -117,6 +117,14 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
     const [savingPlans, setSavingPlans] = useState(false);
     const [pricingCategory, setPricingCategory] = useState<'dojo' | 'vip'>('dojo');
     const [dojoType, setDojoType] = useState<'adulto' | 'kids'>('adulto');
+
+    const billingCycleLabels: Record<string, string> = {
+        'monthly_from_enrollment': 'MENSUAL',
+        'monthly_fixed': 'MENSUAL',
+        'quarterly': 'TRIMESTRAL',
+        'semi_annual': 'SEMESTRAL',
+        'annual': 'ANUAL'
+    };
     const [vipPacks, setVipPacks] = useState([
         { id: 'v1', name: 'CLASE SUELTA', description: 'Ideal para probar la metodología. Sin compromiso previo.', price: 18000, duration: '1 HORA', badge: 'CLASE INDIVIDUAL' },
         { id: 'v2', name: 'PACK 4 CLASES', description: 'Ahorra $7.000 vs. precio unitario. Progresión real en 4 sesiones.', price: 65000, duration: '$16.250 C/U', badge: 'MEJOR VALOR', highlight: 'AHORRO REAL' },
@@ -136,9 +144,9 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
         setLocalPlans(prev => prev.map(p => p.id === planId ? { ...p, price: numericValue } : p));
     };
 
-    const handlePlanDiscountInput = (planId: string, field: string, value: string) => {
-        const cleanValue = value.replace(/\D/g, '');
-        const numericValue = cleanValue === '' ? 0 : parseInt(cleanValue);
+    const handlePlanDiscountInput = (planId: string, field: string, value: string, isDecimal = false) => {
+        const cleanValue = value.replace(/[^0-9.]/g, '');
+        const numericValue = cleanValue === '' ? 0 : isDecimal ? parseFloat(cleanValue) : parseInt(cleanValue);
         setLocalPlans(prev => prev.map(p => p.id === planId ? { ...p, [field]: numericValue } : p));
     };
 
@@ -560,27 +568,30 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                 {/* Secondary Dojo Switch (Only shown if Dojo is active) */}
                                 {pricingCategory === 'dojo' && (
                                     <div className="flex items-center justify-between px-1 animate-in fade-in slide-in-from-top-2 duration-300">
-                                        <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Vista de Planes</p>
-                                        <div className={`p-1 rounded-xl ${isDark ? 'bg-zinc-950 border-zinc-900' : 'bg-zinc-100 border-zinc-200'} border flex items-center gap-1`}>
+                                        <div className="flex flex-col">
+                                            <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Vista de Planes</p>
+                                            <p className="text-[7px] font-medium text-zinc-400 uppercase tracking-tighter">Filtro Inteligente</p>
+                                        </div>
+                                        <div className={`p-1 rounded-2xl ${isDark ? 'bg-zinc-950 border-zinc-900' : 'bg-zinc-100 border-zinc-200'} border flex items-center gap-1`}>
                                             <button 
                                                 onClick={() => setDojoType('adulto')}
-                                                className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase flex items-center gap-1.5 transition-all ${
+                                                className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase flex items-center gap-1.5 transition-all duration-300 ${
                                                     dojoType === 'adulto' 
-                                                    ? 'bg-white shadow-sm text-indigo-600 dark:bg-zinc-900 dark:text-indigo-400' 
+                                                    ? 'bg-white shadow-lg text-indigo-600 scale-105 dark:bg-zinc-900 dark:text-indigo-400' 
                                                     : 'text-zinc-500 hover:text-zinc-400'
                                                 }`}
                                             >
-                                                <Users size={12} /> Adulto
+                                                <Users size={12} className={dojoType === 'adulto' ? 'animate-pulse' : ''} /> Adulto
                                             </button>
                                             <button 
                                                 onClick={() => setDojoType('kids')}
-                                                className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase flex items-center gap-1.5 transition-all ${
+                                                className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase flex items-center gap-1.5 transition-all duration-300 ${
                                                     dojoType === 'kids' 
-                                                    ? 'bg-white shadow-sm text-emerald-600 dark:bg-zinc-900 dark:text-emerald-400' 
+                                                    ? 'bg-white shadow-lg text-emerald-600 scale-105 dark:bg-zinc-900 dark:text-emerald-400' 
                                                     : 'text-zinc-500 hover:text-zinc-400'
                                                 }`}
                                             >
-                                                <Baby size={12} /> Kids
+                                                <Baby size={12} className={dojoType === 'kids' ? 'animate-bounce' : ''} /> Kids
                                             </button>
                                         </div>
                                     </div>
@@ -591,14 +602,43 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                         <div className="flex-1 overflow-y-auto px-5 pb-6 space-y-6 hide-scrollbar">
                             {pricingCategory === 'dojo' ? (
                                 <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
-                                    {localPlans
+                                    {localPlans.filter(p => {
+                                        const category = p.category || 'dojo';
+                                        if (category !== 'dojo') return false;
+                                        const name = (p.name || '').toLowerCase();
+                                        const isKids = name.includes('kids') || name.includes('niños') || name.includes('infantil') || name.includes('menores');
+                                        return dojoType === 'kids' ? isKids : !isKids;
+                                    }).length === 0 ? (
+                                        <div className={`p-8 rounded-[32px] border-2 border-dashed ${isDark ? 'border-zinc-800 bg-zinc-900/50' : 'border-zinc-200 bg-zinc-50/50'} text-center space-y-3 animate-in fade-in zoom-in-95 duration-500`}>
+                                            <div className="w-12 h-12 rounded-2xl bg-zinc-500/10 flex items-center justify-center mx-auto mb-2">
+                                                <Info size={24} className="text-zinc-400" />
+                                            </div>
+                                            <p className={`text-[13px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-300' : 'text-zinc-600'}`}>No se encontraron planes {dojoType}</p>
+                                            <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest leading-relaxed">
+                                                {dojoType === 'kids' 
+                                                    ? "Asegúrate de que tus planes de Niños incluyan 'Kids', 'Niños' o 'Infantil' en su nombre." 
+                                                    : "Mostrando solo planes que no están marcados como Kids."}
+                                            </p>
+                                        </div>
+                                    ) : localPlans
                                         .filter(p => {
+                                            const category = p.category || 'dojo';
+                                            if (category !== 'dojo') return false;
+
                                             const name = (p.name || '').toLowerCase();
-                                            const isKids = name.includes('kids') || name.includes('niños') || name.includes('infantil');
+                                            const isKids = name.includes('kids') || name.includes('niños') || name.includes('infantil') || name.includes('menores');
                                             return dojoType === 'kids' ? isKids : !isKids;
                                         })
                                         .map((plan) => (
-                                            <div key={plan.id} className={`p-5 rounded-[28px] border ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-50 border-zinc-200 shadow-sm'} space-y-4`}>
+                                            <div key={plan.id} className={`p-5 rounded-[28px] border ${isDark ? 'bg-zinc-900 border-zinc-800 shadow-[0_8px_32px_rgba(0,0,0,0.5)]' : 'bg-zinc-50 border-zinc-200 shadow-sm'} space-y-4 relative overflow-hidden`}>
+                                                {dojoType === 'kids' && (
+                                                    <div className="absolute top-0 right-0 p-2">
+                                                        <span className="bg-emerald-500/10 text-emerald-500 text-[7px] font-black px-2 py-0.5 rounded-bl-xl uppercase tracking-tighter border-l border-b border-emerald-500/10 animate-pulse">
+                                                            Modo Hermanos
+                                                        </span>
+                                                    </div>
+                                                )}
+
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-2">
                                                         <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-widest ${
@@ -607,14 +647,94 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                                             plan.billing_cycle === 'annual' ? 'bg-purple-500/10 text-purple-500 border border-purple-500/20' :
                                                             isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-zinc-200 text-zinc-600'
                                                         }`}>
-                                                            {plan.billing_cycle?.replace('_', ' ') || 'PLAN'}
+                                                            {billingCycleLabels[plan.billing_cycle] || plan.billing_cycle?.replace('_', ' ') || 'PLAN'}
+                                                        </span>
+                                                        <p className={`text-[11px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>{plan.category === 'dojo' ? `SER PARTE DEL DOJO - ${billingCycleLabels[plan.billing_cycle] || 'MENSUAL'}` : plan.name}</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 gap-4">
+                                                    <div className="space-y-1.5">
+                                                        <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ml-1">VALOR BASE (CLP)</p>
+                                                        <div className={`flex items-center px-4 py-3 rounded-2xl ${isDark ? 'bg-zinc-950' : 'bg-white'} border ${isDark ? 'border-zinc-800' : 'border-zinc-200 shadow-sm'}`}>
+                                                            <span className="text-zinc-500 font-bold mr-2 text-[13px]">$</span>
+                                                            <input type="text" inputMode="numeric" className={`w-full bg-transparent text-[15px] font-black ${isDark ? 'text-zinc-100' : 'text-zinc-950'} outline-none`}
+                                                                value={plan.price === 0 ? '' : new Intl.NumberFormat('es-CL').format(plan.price)} 
+                                                                onChange={e => handlePlanPriceInput(plan.id, e.target.value)} 
+                                                                placeholder="0" />
+                                                        </div>
+                                                    </div>
+
+                                                    {dojoType === 'kids' && (
+                                                        <div className="grid grid-cols-2 gap-3 animate-in zoom-in-95 duration-300">
+                                                            <div className="space-y-1.5">
+                                                                <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest ml-1">Mín. Alumnos</p>
+                                                                <div className={`flex items-center px-4 py-2.5 rounded-2xl ${isDark ? 'bg-zinc-950' : 'bg-white'} border ${isDark ? 'border-emerald-500/20' : 'border-emerald-200 shadow-sm'}`}>
+                                                                    <input type="text" inputMode="numeric" className={`w-full bg-transparent text-[13px] font-black ${isDark ? 'text-zinc-100' : 'text-zinc-950'} outline-none text-center`}
+                                                                        value={plan.family_discount_min_students || 0} 
+                                                                        onChange={e => handlePlanDiscountInput(plan.id, 'family_discount_min_students', e.target.value)} 
+                                                                        placeholder="2" />
+                                                                </div>
+                                                            </div>
+                                                            <div className="space-y-1.5">
+                                                                <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest ml-1">% Descuento</p>
+                                                                <div className={`flex items-center px-4 py-2.5 rounded-2xl ${isDark ? 'bg-zinc-950' : 'bg-white'} border ${isDark ? 'border-emerald-500/20' : 'border-emerald-200 shadow-sm'}`}>
+                                                                    <input type="text" inputMode="decimal" className={`w-full bg-transparent text-[13px] font-black ${isDark ? 'text-zinc-100' : 'text-zinc-950'} outline-none text-center`}
+                                                                        value={plan.family_discount_percent || 0} 
+                                                                        onChange={e => handlePlanDiscountInput(plan.id, 'family_discount_percent', e.target.value, true)} 
+                                                                        placeholder="21.43" />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {dojoType === 'kids' && plan.family_discount_percent > 0 && (
+                                                    <div className={`mt-2 p-3 rounded-2xl border ${isDark ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-emerald-50 border-emerald-100'} flex items-center justify-between`}>
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-6 h-6 rounded-lg bg-emerald-500 flex items-center justify-center text-white">
+                                                                <Users size={12} />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[7px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest leading-none mb-0.5">Precio Familiar ({plan.family_discount_min_students} hermanos)</p>
+                                                                <p className={`text-[11px] font-black ${isDark ? 'text-zinc-100' : 'text-emerald-950'}`}>
+                                                                    ${new Intl.NumberFormat('es-CL').format(Math.round(plan.price * plan.family_discount_min_students * (1 - (plan.family_discount_percent / 100))))}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <span className="text-[9px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-500/10">
+                                                            ¡Ahorra -{plan.family_discount_percent}%!
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))
+                                    }
+                                    {localPlans.filter(p => (p.category || 'dojo') === 'dojo').length === 0 && (
+                                        <div className="py-12 text-center opacity-40">
+                                            <Loader2 className="animate-spin text-indigo-400 mx-auto mb-3" size={32} />
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em]">Cargando planes del dojo...</p>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-500">
+                                    {/* DB VIP Packs */}
+                                    {localPlans
+                                        .filter(p => p.category === 'vip')
+                                        .map((plan) => (
+                                            <div key={plan.id} className={`p-5 rounded-[28px] border ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-50 border-zinc-200 shadow-sm'} space-y-4`}>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-widest bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                                                            SESIÓN VIP
                                                         </span>
                                                         <p className={`text-[11px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>{plan.name}</p>
                                                     </div>
                                                 </div>
 
                                                 <div className="space-y-1.5">
-                                                    <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ml-1">Valor Base (CLP)</p>
+                                                    <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ml-1">Valor Unitario (CLP)</p>
                                                     <div className={`flex items-center px-4 py-3 rounded-2xl ${isDark ? 'bg-zinc-950' : 'bg-white'} border ${isDark ? 'border-zinc-800' : 'border-zinc-200 shadow-sm'}`}>
                                                         <span className="text-zinc-500 font-bold mr-2 text-[13px]">$</span>
                                                         <input type="text" inputMode="numeric" className={`w-full bg-transparent text-[15px] font-black ${isDark ? 'text-zinc-100' : 'text-zinc-950'} outline-none`}
@@ -626,54 +746,51 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                             </div>
                                         ))
                                     }
-                                    {localPlans.length === 0 && (
-                                        <div className="py-12 text-center opacity-40">
-                                            <Loader2 className="animate-spin text-indigo-400 mx-auto mb-3" size={32} />
-                                            <p className="text-[10px] font-black uppercase tracking-[0.2em]">Cargando planes del dojo...</p>
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-500">
-                                    <div className="text-center space-y-1 mb-6">
-                                        <p className="text-[9px] font-black text-amber-500 uppercase tracking-[0.3em]">Paso Final: Selecciona tu Pack VIP</p>
-                                        <h3 className={`text-[14px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>Sesiones VIP 1-A-1</h3>
-                                        <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest">Elige el pack de sesiones para comenzar hoy</p>
-                                    </div>
 
-                                    {vipPacks.map((pack) => (
-                                        <div key={pack.id} className={`p-5 rounded-[32px] border relative overflow-hidden group transition-all duration-300 ${
-                                            isDark ? 'bg-zinc-900 border-zinc-800 hover:border-amber-500/30' : 'bg-white border-zinc-200 shadow-sm hover:border-amber-500/30'
-                                        }`}>
-                                            {pack.highlight && (
-                                                <div className="absolute top-0 right-0 px-4 py-1.5 bg-amber-500 rounded-bl-2xl">
-                                                    <p className="text-[8px] font-black text-white uppercase tracking-widest">{pack.highlight}</p>
-                                                </div>
-                                            )}
-
-                                            <div className="space-y-4">
-                                                <div className="space-y-1">
-                                                    <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest">{pack.badge}</p>
-                                                    <h4 className={`text-[15px] font-black uppercase tracking-tighter ${isDark ? 'text-zinc-100' : 'text-zinc-950'}`}>{pack.name}</h4>
-                                                    <p className="text-[11px] font-medium text-zinc-500 leading-tight pr-12">{pack.description}</p>
-                                                </div>
-
-                                                <div className="flex items-end justify-between pt-2">
-                                                    <div className="flex flex-col">
-                                                        <span className={`text-[24px] font-black tracking-tighter ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>
-                                                            ${new Intl.NumberFormat('es-CL').format(pack.price)}
-                                                        </span>
-                                                        <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em]">{isDark ? 'CLP ·' : 'CLP ·'} {pack.duration}</p>
-                                                    </div>
-                                                    <button className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                                                        isDark ? 'bg-zinc-950 border-zinc-800 text-amber-500 hover:bg-amber-500 hover:text-white' : 'bg-zinc-50 border-zinc-100 text-amber-600 hover:bg-amber-500 hover:text-white'
-                                                    } border`}>
-                                                        <ChevronRight size={20} />
-                                                    </button>
-                                                </div>
+                                    {/* Template Packs (If no DB VIP packs yet) */}
+                                    {localPlans.filter(p => p.category === 'vip').length === 0 && (
+                                        <>
+                                            <div className="text-center space-y-1 mb-6">
+                                                <p className="text-[9px] font-black text-amber-500 uppercase tracking-[0.3em]">Paso Final: Selecciona tu Pack VIP</p>
+                                                <h3 className={`text-[14px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>Sesiones VIP 1-A-1</h3>
+                                                <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest">Elige el pack de sesiones para comenzar hoy</p>
                                             </div>
-                                        </div>
-                                    ))}
+
+                                            {vipPacks.map((pack) => (
+                                                <div key={pack.id} className={`p-5 rounded-[32px] border relative overflow-hidden group transition-all duration-300 ${
+                                                    isDark ? 'bg-zinc-900 border-zinc-800 hover:border-amber-500/30' : 'bg-white border-zinc-200 shadow-sm hover:border-amber-500/30'
+                                                }`}>
+                                                    {pack.highlight && (
+                                                        <div className="absolute top-0 right-0 px-4 py-1.5 bg-amber-500 rounded-bl-2xl">
+                                                            <p className="text-[8px] font-black text-white uppercase tracking-widest">{pack.highlight}</p>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="space-y-4">
+                                                        <div className="space-y-1">
+                                                            <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest">{pack.badge}</p>
+                                                            <h4 className={`text-[15px] font-black uppercase tracking-tighter ${isDark ? 'text-zinc-100' : 'text-zinc-950'}`}>{pack.name}</h4>
+                                                            <p className="text-[11px] font-medium text-zinc-500 leading-tight pr-12">{pack.description}</p>
+                                                        </div>
+
+                                                        <div className="flex items-end justify-between pt-2">
+                                                            <div className="flex flex-col">
+                                                                <span className={`text-[24px] font-black tracking-tighter ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>
+                                                                    ${new Intl.NumberFormat('es-CL').format(pack.price)}
+                                                                </span>
+                                                                <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em]">{isDark ? 'CLP ·' : 'CLP ·'} {pack.duration}</p>
+                                                            </div>
+                                                            <button className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                                                                isDark ? 'bg-zinc-950 border-zinc-800 text-amber-500 hover:bg-amber-500 hover:text-white' : 'bg-zinc-50 border-zinc-100 text-amber-600 hover:bg-amber-500 hover:text-white'
+                                                            } border`}>
+                                                                <ChevronRight size={20} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
                                 </div>
                             )}
 
