@@ -16,6 +16,7 @@ interface AttendanceSectionProps {
     setShowQRModal: (s: boolean) => void;
     branding: any;
     vocab: any;
+    activeSchedule: any;
 }
 
 const AttendanceSection: React.FC<AttendanceSectionProps> = ({
@@ -29,12 +30,31 @@ const AttendanceSection: React.FC<AttendanceSectionProps> = ({
     setSelectedHistoryDate,
     setShowQRModal,
     branding,
-    vocab
+    vocab,
+    activeSchedule
 }) => {
-    // Lógica de filtrado idéntica al original
-    const filteredStudents = allStudents.filter(s => 
-        s.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const [isSmartFilterEnabled, setIsSmartFilterEnabled] = React.useState(true);
+
+    // Lógica de filtrado con Smart Filter
+    const filteredStudents = allStudents.filter(s => {
+        const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase());
+        if (!matchesSearch) return false;
+
+        if (activeSchedule && isSmartFilterEnabled) {
+            // El horario tiene category (Adulto/Kids)
+            // El alumno tiene category (adult/kids o similar)
+            const scheduleCat = activeSchedule.category?.toLowerCase();
+            const studentCat = s.category?.toLowerCase();
+            
+            // Mapeo simple de categorías
+            if (scheduleCat === 'adulto' && studentCat === 'adulto') return true;
+            if (scheduleCat === 'kids' && studentCat === 'kids') return true;
+            
+            return false;
+        }
+
+        return true;
+    });
 
     const getBeltStyle = (label: string) => {
         const lower = label.toLowerCase();
@@ -68,6 +88,25 @@ const AttendanceSection: React.FC<AttendanceSectionProps> = ({
                 <QrCode size={20} className="text-white" />
                 <span className="text-[11px] font-black uppercase tracking-widest text-white">ACTIVAR ASISTENCIA DINÁMICA QR</span>
             </button>
+
+            {/* Banner de Clase Activa */}
+            {activeSchedule && (
+                <div className="bg-[#0f0f10] border border-zinc-800/50 rounded-2xl p-4 flex items-center justify-between shadow-xl">
+                    <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Clase en curso</p>
+                            <p className="text-sm font-black text-white uppercase">{activeSchedule.name}</p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={() => setIsSmartFilterEnabled(!isSmartFilterEnabled)}
+                        className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${isSmartFilterEnabled ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-zinc-800 text-zinc-400'}`}
+                    >
+                        {isSmartFilterEnabled ? 'Filtro ON' : 'Filtro OFF'}
+                    </button>
+                </div>
+            )}
 
             {/* VISTA DESKTOP: TABLA */}
             <div className="hidden md:block bg-white rounded-3xl shadow-sm border border-zinc-100 overflow-hidden">

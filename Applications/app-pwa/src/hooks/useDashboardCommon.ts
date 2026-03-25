@@ -20,7 +20,9 @@ import {
     getNotifications, 
     markAllNotificationsRead,
     markNotificationRead,
-    getAppUpdates 
+    getAppUpdates,
+    getTenantTerms,
+    updateTenantTerms
 } from "@/lib/api";
 import { todayCL, nowCL } from "@/lib/utils";
 
@@ -37,6 +39,8 @@ export function useDashboardCommon(slug: string | undefined, token: string | nul
     const [schedulesLoading, setSchedulesLoading] = useState(false);
     const [plansList, setPlansList] = useState<any[]>([]);
     const [plansLoading, setPlansLoading] = useState(false);
+    const [tenantTerms, setTenantTerms] = useState<any>(null);
+    const [termsLoading, setTermsLoading] = useState(false);
 
     const [expandedPayerId, setExpandedPayerId] = useState<string | null>(null);
     const [historyPage, setHistoryPage] = useState(0);
@@ -45,7 +49,6 @@ export function useDashboardCommon(slug: string | undefined, token: string | nul
     const [longPressPayerId, setLongPressPayerId] = useState<string | null>(null);
     const [bubbleModalPayer, setBubbleModalPayer] = useState<any>(null);
     const [generatingPage, setGeneratingPage] = useState(false);
-    const [showInactivePayers, setShowInactivePayers] = useState(false);
     const [showPushBanner, setShowPushBanner] = useState(false);
     const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
 
@@ -142,6 +145,21 @@ export function useDashboardCommon(slug: string | undefined, token: string | nul
         return res;
     };
 
+    const loadTenantTerms = useCallback(async () => {
+        if (!slug || !token) return;
+        setTermsLoading(true);
+        const data = await getTenantTerms(slug, token);
+        setTenantTerms(data?.terms ?? null);
+        setTermsLoading(false);
+    }, [slug, token]);
+
+    const handleUpdateTenantTerms = async (content: string) => {
+        if (!slug || !token) return;
+        const res = await updateTenantTerms(slug, token, content);
+        if (res?.terms) setTenantTerms(res.terms);
+        return res;
+    };
+
     const longPressTimer = useRef<NodeJS.Timeout | undefined>(undefined);
 
     const handleLongPressStart = (payerId: string) => {
@@ -228,6 +246,21 @@ export function useDashboardCommon(slug: string | undefined, token: string | nul
         setNotifications(prev => prev.map(n => n.id === realId ? { ...n, read: true } : n));
     };
 
+    const activeSchedule = useMemo(() => {
+        if (!schedulesList.length) return null;
+        const now = nowCL();
+        const dow = now.getDay();
+        const currentTime = now.toLocaleTimeString('en-GB', { hour12: false });
+        
+        return schedulesList.find(s => {
+            if (s.day_of_week !== dow) return false;
+            // Pad times if needed (HH:mm)
+            const start = s.start_time.length === 5 ? `${s.start_time}:00` : s.start_time;
+            const end = s.end_time.length === 5 ? `${s.end_time}:00` : s.end_time;
+            return currentTime >= start && currentTime <= end;
+        });
+    }, [schedulesList]);
+
     const formatCLP = (value: number) => {
         if (!value || value === 0) return '';
         return `$ ${new Intl.NumberFormat('es-CL').format(value)}`;
@@ -249,30 +282,33 @@ export function useDashboardCommon(slug: string | undefined, token: string | nul
         expandedPayerId, setExpandedPayerId, historyPage, setHistoryPage,
         copied, setCopied, paymentDropdownOpen, setPaymentDropdownOpen,
         longPressPayerId, setLongPressPayerId, bubbleModalPayer, setBubbleModalPayer,
-        generatingPage, setGeneratingPage, showInactivePayers, setShowInactivePayers,
+        generatingPage, setGeneratingPage,
         showPushBanner, setShowPushBanner, pushPermission, setPushPermission,
+        tenantTerms, setTenantTerms, termsLoading, setTermsLoading,
         expenseForm, setExpenseForm, expenseReceiptPhoto, setExpenseReceiptPhoto,
         expenseProductPhoto, setExpenseProductPhoto, expenseSubmitting, setExpenseSubmitting,
         expenseFormError, setExpenseFormError, expenseDeletingId, setExpenseDeletingId,
         expenseLightbox, setExpenseLightbox,
-        refreshPayers, loadExpenses, loadSchedules, loadPlans, toggleAttendance,
+        activeSchedule,
+        refreshPayers, loadExpenses, loadSchedules, loadPlans, loadTenantTerms, toggleAttendance,
         handleCreateExpense, handleDeleteExpense, handleLongPressStart, handleLongPressEnd,
         handleCreatePlan, handleUpdatePlan, handleDeletePlan,
         handleCreateSchedule, handleUpdateSchedule, handleDeleteSchedule,
+        handleUpdateTenantTerms,
         markAllNotificationsRead: markAllNotificationsReadHandler,
         markNotificationRead: markNotificationReadHandler,
         formatCLP, parseCLP
     }), [
         payers, notifications, unreadCount, appUpdates, schedulesList, 
         expensesList, expensesTotal, expensesSummary, expensesLoading, schedulesLoading,
-        expandedPayerId, historyPage, copied, paymentDropdownOpen, 
-        longPressPayerId, bubbleModalPayer, generatingPage, showInactivePayers, 
-        showPushBanner, pushPermission, expenseForm, expenseReceiptPhoto, 
+        longPressPayerId, bubbleModalPayer, generatingPage, 
+        showPushBanner, pushPermission, tenantTerms, termsLoading, expenseForm, expenseReceiptPhoto, 
         expenseProductPhoto, expenseSubmitting, expenseFormError, expenseDeletingId, 
-        expenseLightbox, refreshPayers, loadExpenses, loadSchedules, loadPlans, toggleAttendance,
+        expenseLightbox, activeSchedule, refreshPayers, loadExpenses, loadSchedules, loadPlans, loadTenantTerms, toggleAttendance,
         handleCreateExpense, handleDeleteExpense, handleLongPressStart, handleLongPressEnd,
         handleCreatePlan, handleUpdatePlan, handleDeletePlan,
         handleCreateSchedule, handleUpdateSchedule, handleDeleteSchedule,
+        handleUpdateTenantTerms,
         markAllNotificationsReadHandler, markNotificationReadHandler
     ]);
 }

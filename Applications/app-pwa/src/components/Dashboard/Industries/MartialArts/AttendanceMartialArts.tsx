@@ -30,16 +30,39 @@ interface AttendanceMartialArtsProps {
     token: string | null;
     onStudentUpdated?: () => void;
     isDark?: boolean;
+    activeSchedule: any;
 }
 
 const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
     allStudents, attendance, searchTerm, setSearchTerm,
     toggleAttendance, setShowQRModal, branding, vocab,
-    token, onStudentUpdated, isDark = false
+    token, onStudentUpdated, isDark = false, activeSchedule
 }) => {
-    const filteredStudents = allStudents.filter(s =>
-        s.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const [isSmartFilterEnabled, setIsSmartFilterEnabled] = React.useState(true);
+
+    const filteredStudents = allStudents.filter(s => {
+        const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase());
+        if (!matchesSearch) return false;
+
+        if (activeSchedule && isSmartFilterEnabled) {
+            const scheduleCat = activeSchedule.category?.toLowerCase(); // "adulto" o "kids"
+            const studentCat = s.category?.toLowerCase(); // "adults" o "kids"
+            
+            // Mapeo flexible
+            const isAdultSchedule = scheduleCat === 'adulto' || scheduleCat === 'adults';
+            const isKidsSchedule = scheduleCat === 'kids';
+            
+            const isAdultStudent = studentCat === 'adults' || studentCat === 'adulto' || !studentCat; // adult default if nix
+            const isKidsStudent = studentCat === 'kids';
+
+            if (isAdultSchedule && isAdultStudent) return true;
+            if (isKidsSchedule && isKidsStudent) return true;
+            
+            return false;
+        }
+
+        return true;
+    });
 
     const [editingStudent, setEditingStudent] = useState<any | null>(null);
     const [bjjForm, setBjjForm] = useState<any>({});
@@ -216,6 +239,31 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                     </div>
                 </button>
             </div>
+
+            {/* Banner de Clase Activa */}
+            {activeSchedule && (
+                <div className={`mx-1 p-4 rounded-2xl flex items-center justify-between shadow-xl border animate-in slide-in-from-top-2 duration-300 ${
+                    isDark ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white border-zinc-100'
+                }`}>
+                    <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                        <div>
+                            <p className={`text-[8px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Clase actual</p>
+                            <p className={`text-[11px] font-black uppercase tracking-widest ${isDark ? 'text-white' : 'text-zinc-950'}`}>{activeSchedule.name}</p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={() => setIsSmartFilterEnabled(!isSmartFilterEnabled)}
+                        className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                            isSmartFilterEnabled 
+                                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' 
+                                : isDark ? 'bg-zinc-800 text-zinc-500' : 'bg-zinc-100 text-zinc-400'
+                        }`}
+                    >
+                        {isSmartFilterEnabled ? 'Smart Switch ON' : 'Smart Switch OFF'}
+                    </button>
+                </div>
+            )}
 
             {/* Buscador + Opciones */}
             <div className="relative" ref={optionsRef}>

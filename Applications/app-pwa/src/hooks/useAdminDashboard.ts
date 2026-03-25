@@ -85,8 +85,6 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
     const [showTermsModal, setShowTermsModal] = useState(false);
     const [lastCheckedInStudent, setLastCheckedInStudent] = useState<any>(null);
 
-    const [loadingSync, setLoadingSync] = useState(false);
-
     useEffect(() => {
         const t = setInterval(() => setNow(nowCL()), 60000);
         return () => clearInterval(t);
@@ -109,18 +107,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         window.location.href = "/";
     };
 
-    const forceSync = async () => {
-        if (!token || !branding?.slug) return;
-        setLoadingSync(true);
-        try {
-            await common.refreshPayers(selectedMonth, selectedYear, paymentFilter);
-            alert("✓ Sincronización completada");
-        } catch (e) {
-            alert("Error al sincronizar");
-        } finally {
-            setLoadingSync(false);
-        }
-    };
+
 
     const changeTab = (newTab: string) => {
         const tabs = ['dashboard', 'attendance', 'payments', 'settings', 'profile', 'fees', 'expenses', 'schedule'];
@@ -134,6 +121,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
             }
             common.loadPlans();
             common.loadSchedules();
+            common.loadTenantTerms();
         }
         if (newTab === 'expenses') common.loadExpenses();
         if (newTab === 'schedule') common.loadSchedules();
@@ -461,8 +449,6 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         showTermsModal, setShowTermsModal,
         lastCheckedInStudent, setLastCheckedInStudent,
 
-        loadingSync, setLoadingSync,
-
         // Spread specialized hooks (Common, Treasury, Martial Arts)
         ...common,
         ...treasury,
@@ -471,7 +457,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         // Overrides and computed values
         filteredFees: treasury.filteredFees(treasury.feesSearch),
         vocab: industryConfig[branding?.industry || 'default'] || industryConfig.default,
-        handleLogout, forceSync, 
+        handleLogout, 
         allStudents, toggleAttendance,
         handlePriceInput, handleSavePrices, handleSaveBankInfo, handleLogoUpload,
         handlePaymentApprove, handleActivatePush, handleLoadDemo, handleConfirmPayment,
@@ -487,7 +473,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         now, regPageCode, showQRModal, proofModalUrl, paymentActionPayer, 
         selectedHistoryDate, showNotifications, toastNotification, 
         showCreateExpense, showCreateFee, showPushModal, showTermsModal,
-        lastCheckedInStudent, loadingSync,
+        lastCheckedInStudent,
 
         common, treasury, martialArts,
         allStudents, toggleAttendance, branding?.industry

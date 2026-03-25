@@ -924,3 +924,23 @@ export async function deleteGuardian(tenantId: string, token: string, guardianId
     }
 }
 
+export async function getTenantTerms(tenantSlug: string, token: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantSlug}/settings/terms`, {
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+        });
+        return await safeJson(response);
+    } catch { return { terms: null }; }
+}
+
+export async function updateTenantTerms(tenantSlug: string, token: string, content: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantSlug}/settings/terms`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ content }),
+        });
+        return await safeJson(response);
+    } catch { return { message: 'Error de conexión' }; }
+}
+

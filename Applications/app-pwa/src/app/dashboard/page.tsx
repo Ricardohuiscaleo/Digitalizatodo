@@ -150,11 +150,13 @@ export default function App() {
         feesGuardianFilter, setFeesGuardianFilter, 
         feesGuardianDropdown, setFeesGuardianDropdown, feesBubbleModal, setFeesBubbleModal,
         feesSearch, setFeesSearch, filteredFees, feesView, setFeesView,
-        showInactivePayers, setShowInactivePayers, loadingSync, setLoadingSync,
         lastCheckedInStudent, setLastCheckedInStudent, showPushBanner, setShowPushBanner,
         pushPermission, setPushPermission, showPushModal, setShowPushModal,
         showTermsModal, handleAcceptTerms,
-        vocab, handleLogout, forceSync, refreshPayers,
+        vocab, handleLogout, refreshPayers,
+
+        tenantTerms, termsLoading,
+        loadTenantTerms, handleUpdateTenantTerms,
 
         toggleAttendance, handleConfirmPayment, handleCreateExpense, handleDeleteExpense,
         handleCreateFee, handleApproveFeePayment, handlePriceInput, handleSavePrices,
@@ -165,7 +167,8 @@ export default function App() {
         handleCreatePlan, handleUpdatePlan, handleDeletePlan,
         handleCreateSchedule, handleUpdateSchedule, handleDeleteSchedule,
         allStudents, STATUS_LABEL,
-        plansList, plansLoading
+        plansList, plansLoading,
+        activeSchedule
     } = useAdminDashboard(branding, setBranding);
 
     if (loading) return (
@@ -435,8 +438,9 @@ export default function App() {
                                         branding={branding}
                                         vocab={vocab}
                                         token={token}
-                                        onStudentUpdated={forceSync}
+                                        onStudentUpdated={() => refreshPayers()}
                                         isDark={isDark}
+                                        activeSchedule={activeSchedule}
                                     />
                                 ) : (
                                 <AttendanceSection 
@@ -451,6 +455,7 @@ export default function App() {
                                     setShowQRModal={setShowQRModal}
                                     branding={branding}
                                     vocab={vocab}
+                                    activeSchedule={activeSchedule}
                                 />
                                 )
                             )}
@@ -512,6 +517,7 @@ export default function App() {
                             {activeTab === 'settings' && (
                                 <SettingsSection 
                                     branding={branding}
+                                    isDark={isDark}
                                     user={user}
                                     token={token}
                                     vocab={vocab}
@@ -528,15 +534,12 @@ export default function App() {
                                     handleSavePrices={handleSavePrices}
                                     bankData={bankData}
                                     setBankData={setBankData}
-                                    handleSaveBankData={handleSaveBankInfo}
+                                    handleSaveBankInfo={handleSaveBankInfo}
                                     formatCLP={formatCLP}
                                     parseCLP={parseCLP}
-                                    showInactivePayers={showInactivePayers}
-                                    setShowInactivePayers={setShowInactivePayers}
-                                    loadingSync={loadingSync}
-                                    forceSync={forceSync}
                                     handleLogout={handleLogout}
-                                    // New Props
+                                    changeTab={changeTab}
+                                    // Management Props
                                     plansList={plansList}
                                     plansLoading={plansLoading}
                                     loadPlans={loadPlans}
@@ -549,6 +552,11 @@ export default function App() {
                                     handleCreateSchedule={handleCreateSchedule}
                                     handleUpdateSchedule={handleUpdateSchedule}
                                     handleDeleteSchedule={handleDeleteSchedule}
+                                    // Terms Props
+                                    tenantTerms={tenantTerms}
+                                    termsLoading={termsLoading}
+                                    loadTenantTerms={loadTenantTerms}
+                                    handleUpdateTenantTerms={handleUpdateTenantTerms}
                                 />
                             )}
                             {activeTab === 'profile' && (
