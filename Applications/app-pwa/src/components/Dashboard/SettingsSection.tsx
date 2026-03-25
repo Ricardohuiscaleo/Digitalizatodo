@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { 
     Camera, Save, ClipboardPaste, CreditCard, Edit2, Loader2, Sparkles, 
     Trash2, LogOut, RefreshCw, Users, X, FileText, ChevronRight, 
-    Banknote, Settings as SettingsIcon, ShieldCheck, Calendar, Wallet, Plus, Fingerprint, ClipboardCheck
+    Banknote, Settings as SettingsIcon, ShieldCheck, Calendar, Wallet, Plus, 
+    Fingerprint, ClipboardCheck, Home, Star, Baby, AlertCircle, Copy, Check, User, Info, Smartphone
 } from 'lucide-react';
 import { deleteRegistrationPage, generateRegistrationPage } from "@/lib/api";
 
@@ -114,6 +115,13 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
     const [isTermsPreview, setIsTermsPreview] = useState(false);
     const [localPlans, setLocalPlans] = useState<any[]>([]);
     const [savingPlans, setSavingPlans] = useState(false);
+    const [pricingCategory, setPricingCategory] = useState<'dojo' | 'vip'>('dojo');
+    const [dojoType, setDojoType] = useState<'adulto' | 'kids'>('adulto');
+    const [vipPacks, setVipPacks] = useState([
+        { id: 'v1', name: 'CLASE SUELTA', description: 'Ideal para probar la metodología. Sin compromiso previo.', price: 18000, duration: '1 HORA', badge: 'CLASE INDIVIDUAL' },
+        { id: 'v2', name: 'PACK 4 CLASES', description: 'Ahorra $7.000 vs. precio unitario. Progresión real en 4 sesiones.', price: 65000, duration: '$16.250 C/U', badge: 'MEJOR VALOR', highlight: 'AHORRO REAL' },
+        { id: 'v3', name: 'CLASE REFERIDO', description: 'Beneficio exclusivo para quienes ya entrenan en la academia.', price: 15000, duration: '1 HORA', badge: 'PARA ALUMNOS DEL GRUPO', highlight: 'BENEFICIO ESPECIAL' },
+    ]);
 
     // Sync localPlans when modal opens or plansList changes
     useEffect(() => {
@@ -510,91 +518,171 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                     <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'} w-full sm:max-w-lg rounded-t-[36px] sm:rounded-[40px] border shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom duration-400`}>
                         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-80" />
                         
-                        {/* Header */}
-                        <div className="px-[5px] pt-8 pb-4 space-y-4">
-                            <div className="flex items-start justify-between px-4">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-[20px] bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-inner">
-                                        <Wallet className="text-indigo-500" size={24} />
+                        {/* Header & Category Switch */}
+                        <div className="px-5 pt-8 pb-4 space-y-6">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-inner">
+                                        <Wallet className="text-indigo-500" size={20} />
                                     </div>
-                                    <div>
-                                        <h4 className={`text-[16px] font-black uppercase tracking-tighter ${isDark ? 'text-zinc-100' : 'text-zinc-950'} leading-none`}>Planes y Precios</h4>
-                                        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-1">Configuración de mensualidades</p>
-                                    </div>
+                                    <h4 className={`text-[15px] font-black uppercase tracking-tighter ${isDark ? 'text-zinc-100' : 'text-zinc-950'} leading-none`}>Configuración de Mensualidades</h4>
                                 </div>
                                 <button onClick={() => setShowPricingModal(false)} className={`p-2 ${isDark ? 'text-zinc-600 hover:text-zinc-400 bg-zinc-950' : 'text-zinc-400 hover:text-zinc-600 bg-zinc-50'} active:scale-90 transition-all rounded-full`}>
-                                    <X size={20} />
+                                    <X size={18} />
                                 </button>
                             </div>
-                        </div>
 
-                        {/* List Area */}
-                        <div className="flex-1 overflow-y-auto px-[5px] pb-6 space-y-4 hide-scrollbar">
-                            <div className="px-4 space-y-4">
-                                {localPlans.length > 0 ? localPlans.map((plan) => (
-                                    <div key={plan.id} className={`p-5 rounded-[28px] border ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-50 border-zinc-200 shadow-sm'} space-y-4`}>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-widest ${
-                                                    plan.billing_cycle === 'monthly_from_enrollment' ? 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20' :
-                                                    plan.billing_cycle === 'quarterly' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' :
-                                                    plan.billing_cycle === 'annual' ? 'bg-purple-500/10 text-purple-500 border border-purple-500/20' :
-                                                    isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-zinc-200 text-zinc-600'
-                                                }`}>
-                                                    {plan.billing_cycle?.replace('_', ' ') || 'PLAN'}
-                                                </span>
-                                                <p className={`text-[11px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>{plan.name}</p>
-                                            </div>
-                                        </div>
+                            <div className="space-y-4">
+                                {/* Primary Category Switch */}
+                                <div className={`p-1.5 rounded-[22px] ${isDark ? 'bg-black border-zinc-800' : 'bg-zinc-100 border-zinc-200'} border flex items-center shadow-inner`}>
+                                    <button 
+                                        onClick={() => setPricingCategory('dojo')}
+                                        className={`flex-1 h-11 rounded-[18px] text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 ${
+                                            pricingCategory === 'dojo' 
+                                            ? 'bg-white shadow-lg text-indigo-600 dark:bg-zinc-900 dark:text-indigo-400' 
+                                            : 'text-zinc-500 hover:text-zinc-400'
+                                        }`}
+                                    >
+                                        <Home size={14} /> Ser parte del Dojo
+                                    </button>
+                                    <button 
+                                        onClick={() => setPricingCategory('vip')}
+                                        className={`flex-1 h-11 rounded-[18px] text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 ${
+                                            pricingCategory === 'vip' 
+                                            ? 'bg-white shadow-lg text-amber-600 dark:bg-zinc-900 dark:text-amber-400' 
+                                            : 'text-zinc-500 hover:text-zinc-400'
+                                        }`}
+                                    >
+                                        <Star size={14} /> VIP 1A1
+                                    </button>
+                                </div>
 
-                                        {/* Price Input */}
-                                        <div className="space-y-1.5">
-                                            <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ml-1">Valor Base (CLP)</p>
-                                            <div className={`flex items-center px-4 py-3 rounded-2xl ${isDark ? 'bg-zinc-950' : 'bg-white'} border ${isDark ? 'border-zinc-800' : 'border-zinc-200 shadow-sm transition-all hover:border-indigo-500/30'}`}>
-                                                <span className="text-zinc-500 font-bold mr-2 text-[13px]">$</span>
-                                                <input type="text" inputMode="numeric" className={`w-full bg-transparent text-[15px] font-black ${isDark ? 'text-zinc-100' : 'text-zinc-950'} outline-none`}
-                                                    value={plan.price === 0 ? '' : new Intl.NumberFormat('es-CL').format(plan.price)} 
-                                                    onChange={e => handlePlanPriceInput(plan.id, e.target.value)} 
-                                                    placeholder="0" />
-                                            </div>
+                                {/* Secondary Dojo Switch (Only shown if Dojo is active) */}
+                                {pricingCategory === 'dojo' && (
+                                    <div className="flex items-center justify-between px-1 animate-in fade-in slide-in-from-top-2 duration-300">
+                                        <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Vista de Planes</p>
+                                        <div className={`p-1 rounded-xl ${isDark ? 'bg-zinc-950 border-zinc-900' : 'bg-zinc-100 border-zinc-200'} border flex items-center gap-1`}>
+                                            <button 
+                                                onClick={() => setDojoType('adulto')}
+                                                className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase flex items-center gap-1.5 transition-all ${
+                                                    dojoType === 'adulto' 
+                                                    ? 'bg-white shadow-sm text-indigo-600 dark:bg-zinc-900 dark:text-indigo-400' 
+                                                    : 'text-zinc-500 hover:text-zinc-400'
+                                                }`}
+                                            >
+                                                <Users size={12} /> Adulto
+                                            </button>
+                                            <button 
+                                                onClick={() => setDojoType('kids')}
+                                                className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase flex items-center gap-1.5 transition-all ${
+                                                    dojoType === 'kids' 
+                                                    ? 'bg-white shadow-sm text-emerald-600 dark:bg-zinc-900 dark:text-emerald-400' 
+                                                    : 'text-zinc-500 hover:text-zinc-400'
+                                                }`}
+                                            >
+                                                <Baby size={12} /> Kids
+                                            </button>
                                         </div>
-
-                                        {/* Discount Rules */}
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="space-y-1">
-                                                <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ml-1">Dscto. Familiar desde</p>
-                                                <div className={`flex items-center px-3 py-2 rounded-xl ${isDark ? 'bg-zinc-950' : 'bg-white'} border ${isDark ? 'border-zinc-800' : 'border-zinc-200 shadow-sm'}`}>
-                                                    <input type="text" inputMode="numeric" className={`w-full bg-transparent text-[11px] font-bold ${isDark ? 'text-zinc-300' : 'text-zinc-700'} outline-none`}
-                                                        value={plan.family_discount_min_students === 0 ? '' : plan.family_discount_min_students} 
-                                                        onChange={e => handlePlanDiscountInput(plan.id, 'family_discount_min_students', e.target.value)} 
-                                                        placeholder="2 alumnos" />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ml-1">% Descuento</p>
-                                                <div className={`flex items-center px-3 py-2 rounded-xl ${isDark ? 'bg-zinc-950' : 'bg-white'} border ${isDark ? 'border-zinc-800' : 'border-zinc-200 shadow-sm'}`}>
-                                                    <input type="text" inputMode="numeric" className={`w-full bg-transparent text-[11px] font-bold ${isDark ? 'text-zinc-300' : 'text-zinc-700'} outline-none`}
-                                                        value={plan.family_discount_percent === 0 ? '' : `${plan.family_discount_percent}%`} 
-                                                        onChange={e => handlePlanDiscountInput(plan.id, 'family_discount_percent', e.target.value)} 
-                                                        placeholder="15%" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )) : (
-                                    <div className="py-12 text-center">
-                                        <Loader2 className="animate-spin text-indigo-400 mx-auto mb-3" size={32} />
-                                        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Cargando planes...</p>
                                     </div>
                                 )}
                             </div>
+                        </div>
+                                 {/* Content Area */}
+                        <div className="flex-1 overflow-y-auto px-5 pb-6 space-y-6 hide-scrollbar">
+                            {pricingCategory === 'dojo' ? (
+                                <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
+                                    {localPlans
+                                        .filter(p => {
+                                            const name = (p.name || '').toLowerCase();
+                                            const isKids = name.includes('kids') || name.includes('niños') || name.includes('infantil');
+                                            return dojoType === 'kids' ? isKids : !isKids;
+                                        })
+                                        .map((plan) => (
+                                            <div key={plan.id} className={`p-5 rounded-[28px] border ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-50 border-zinc-200 shadow-sm'} space-y-4`}>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-widest ${
+                                                            plan.billing_cycle === 'monthly_from_enrollment' ? 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20' :
+                                                            plan.billing_cycle === 'quarterly' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' :
+                                                            plan.billing_cycle === 'annual' ? 'bg-purple-500/10 text-purple-500 border border-purple-500/20' :
+                                                            isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-zinc-200 text-zinc-600'
+                                                        }`}>
+                                                            {plan.billing_cycle?.replace('_', ' ') || 'PLAN'}
+                                                        </span>
+                                                        <p className={`text-[11px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>{plan.name}</p>
+                                                    </div>
+                                                </div>
 
-                            <div className="px-4 pt-2">
+                                                <div className="space-y-1.5">
+                                                    <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ml-1">Valor Base (CLP)</p>
+                                                    <div className={`flex items-center px-4 py-3 rounded-2xl ${isDark ? 'bg-zinc-950' : 'bg-white'} border ${isDark ? 'border-zinc-800' : 'border-zinc-200 shadow-sm'}`}>
+                                                        <span className="text-zinc-500 font-bold mr-2 text-[13px]">$</span>
+                                                        <input type="text" inputMode="numeric" className={`w-full bg-transparent text-[15px] font-black ${isDark ? 'text-zinc-100' : 'text-zinc-950'} outline-none`}
+                                                            value={plan.price === 0 ? '' : new Intl.NumberFormat('es-CL').format(plan.price)} 
+                                                            onChange={e => handlePlanPriceInput(plan.id, e.target.value)} 
+                                                            placeholder="0" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    }
+                                    {localPlans.length === 0 && (
+                                        <div className="py-12 text-center opacity-40">
+                                            <Loader2 className="animate-spin text-indigo-400 mx-auto mb-3" size={32} />
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em]">Cargando planes del dojo...</p>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-500">
+                                    <div className="text-center space-y-1 mb-6">
+                                        <p className="text-[9px] font-black text-amber-500 uppercase tracking-[0.3em]">Paso Final: Selecciona tu Pack VIP</p>
+                                        <h3 className={`text-[14px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>Sesiones VIP 1-A-1</h3>
+                                        <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest">Elige el pack de sesiones para comenzar hoy</p>
+                                    </div>
+
+                                    {vipPacks.map((pack) => (
+                                        <div key={pack.id} className={`p-5 rounded-[32px] border relative overflow-hidden group transition-all duration-300 ${
+                                            isDark ? 'bg-zinc-900 border-zinc-800 hover:border-amber-500/30' : 'bg-white border-zinc-200 shadow-sm hover:border-amber-500/30'
+                                        }`}>
+                                            {pack.highlight && (
+                                                <div className="absolute top-0 right-0 px-4 py-1.5 bg-amber-500 rounded-bl-2xl">
+                                                    <p className="text-[8px] font-black text-white uppercase tracking-widest">{pack.highlight}</p>
+                                                </div>
+                                            )}
+
+                                            <div className="space-y-4">
+                                                <div className="space-y-1">
+                                                    <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest">{pack.badge}</p>
+                                                    <h4 className={`text-[15px] font-black uppercase tracking-tighter ${isDark ? 'text-zinc-100' : 'text-zinc-950'}`}>{pack.name}</h4>
+                                                    <p className="text-[11px] font-medium text-zinc-500 leading-tight pr-12">{pack.description}</p>
+                                                </div>
+
+                                                <div className="flex items-end justify-between pt-2">
+                                                    <div className="flex flex-col">
+                                                        <span className={`text-[24px] font-black tracking-tighter ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>
+                                                            ${new Intl.NumberFormat('es-CL').format(pack.price)}
+                                                        </span>
+                                                        <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em]">{isDark ? 'CLP ·' : 'CLP ·'} {pack.duration}</p>
+                                                    </div>
+                                                    <button className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                                                        isDark ? 'bg-zinc-950 border-zinc-800 text-amber-500 hover:bg-amber-500 hover:text-white' : 'bg-zinc-50 border-zinc-100 text-amber-600 hover:bg-amber-500 hover:text-white'
+                                                    } border`}>
+                                                        <ChevronRight size={20} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="pt-2">
                                 <button onClick={handleSaveAllPlans}
                                     disabled={savingPlans}
                                     style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
-                                    className="w-full h-16 text-white font-black rounded-[24px] active:scale-95 transition-all text-[12px] uppercase tracking-[0.25em] shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2 disabled:opacity-50">
-                                    {savingPlans ? <Loader2 className="animate-spin" size={20} /> : <><Save size={20} /> Guardar Planes</>}
+                                    className="w-full h-16 text-white font-black rounded-[24px] active:scale-95 transition-all text-[12px] uppercase tracking-[0.25em] shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2">
+                                    {savingPlans ? <Loader2 className="animate-spin" size={20} /> : <><Save size={20} /> Guardar Configuración</>}
                                 </button>
                             </div>
                         </div>
