@@ -695,7 +695,17 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                         <Loader2 className="animate-spin text-blue-500/30" size={32} />
                                     </div>
                                 ) : isTermsPreview ? (
-                                    <div className={`w-full ${isDark ? 'bg-zinc-950 border-zinc-800 text-zinc-300' : 'bg-zinc-50 border-zinc-100 text-zinc-800'} border rounded-[28px] px-8 py-8 min-h-[300px] prose prose-sm max-w-none`}>
+                                    <div className={`w-full ${isDark ? 'bg-zinc-950 border-zinc-800 text-zinc-300' : 'bg-zinc-50 border-zinc-100 text-zinc-800'} border rounded-[28px] px-8 py-8 min-h-[300px] prose prose-sm max-w-none shadow-inner`}>
+                                        {/* TERMS HEADER */}
+                                        <div className={`mb-8 p-6 rounded-3xl border-2 border-dashed ${isDark ? 'border-zinc-800 bg-zinc-900/50' : 'border-zinc-100 bg-zinc-50/50'} text-center`}>
+                                            <h2 className={`text-lg font-black uppercase tracking-tighter ${isDark ? 'text-white' : 'text-zinc-950'} mb-1`}>
+                                                REGLAMENTO Y CONDICIONES - INTEGRAÇÃO JIU-JITSU
+                                            </h2>
+                                            <p className={`text-[10px] font-bold ${isDark ? 'text-zinc-500' : 'text-zinc-400'} uppercase tracking-[0.2em]`}>
+                                                Versión: 1.0 (Marzo 2026) | Válido para: Integração Arica
+                                            </p>
+                                        </div>
+
                                         {termsSections.length > 0 ? termsSections.map((sec, i) => (
                                             <div key={i} className="mb-8 last:mb-0">
                                                 <h3 className="text-lg font-black mb-3 text-indigo-500 uppercase tracking-tight">{sec.title}</h3>
@@ -707,32 +717,65 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                                 <p className="text-[10px] uppercase font-black tracking-widest">Sin contenido</p>
                                             </div>
                                         )}
+
+                                        {/* TERMS FOOTER */}
+                                        <div className={`mt-10 pt-8 border-t ${isDark ? 'border-zinc-800' : 'border-zinc-100'} space-y-4`}>
+                                            <div className="flex flex-col items-center text-center gap-1">
+                                                <p className={`text-[10px] font-black ${isDark ? 'text-zinc-400' : 'text-zinc-600'} uppercase tracking-widest`}>
+                                                    Gestión Digital por: <span className="text-blue-500">Integração Jiu-Jitsu</span>
+                                                </p>
+                                                <p className={`text-[9px] font-medium ${isDark ? 'text-zinc-600' : 'text-zinc-400'} uppercase tracking-widest`}>
+                                                    Última actualización: {tenantTerms?.updated_at ? new Date(tenantTerms.updated_at).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                                                </p>
+                                            </div>
+                                            <div className={`mx-auto w-fit px-4 py-1.5 rounded-full ${isDark ? 'bg-zinc-950 border-zinc-900' : 'bg-zinc-50 border-zinc-200'} border shadow-sm`}>
+                                                <p className={`text-[8px] font-black ${isDark ? 'text-zinc-700' : 'text-zinc-400'} uppercase tracking-[0.3em]`}>
+                                                    ID Registro Digital: {tenantTerms?.tenant_id || '1'}-{tenantTerms?.id || '3'}
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
                                 ) : (
                                     <div className="space-y-6 pb-4">
+                                        {/* EDITOR HEADER PREVIEW */}
+                                        <div className={`p-5 rounded-[24px] border ${isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-zinc-50 border-zinc-100'} opacity-50`}>
+                                            <p className={`text-[9px] font-black ${isDark ? 'text-zinc-500' : 'text-zinc-400'} uppercase tracking-widest mb-1`}>Encabezado Automático</p>
+                                            <p className={`text-[11px] font-bold ${isDark ? 'text-zinc-300' : 'text-zinc-600'}`}>REGLAMENTO Y CONDICIONES - INTEGRAÇÃO JIU-JITSU</p>
+                                        </div>
+
                                         {termsSections.map((sec, i) => (
-                                            <div key={i} className={`relative group p-6 rounded-[32px] border ${isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-zinc-50 border-zinc-200'} transition-all`}>
+                                            <div key={i} className={`relative group p-6 rounded-[32px] border ${isDark ? 'bg-zinc-950 border-zinc-800 focus-within:border-blue-500/50' : 'bg-zinc-50 border-zinc-200 focus-within:border-blue-500/50'} transition-all shadow-sm`}>
                                                 <div className="flex items-center justify-between mb-4">
-                                                    <input 
-                                                        type="text"
-                                                        placeholder="Título de la Sección (Ej: 1. Riesgos)"
-                                                        className={`bg-transparent text-[13px] font-black ${isDark ? 'text-white' : 'text-zinc-950'} uppercase tracking-tight outline-none w-full mr-10`}
-                                                        value={sec.title}
-                                                        onChange={(e) => updateTermsSection(i, 'title', e.target.value)}
-                                                    />
+                                                    <div className="flex items-center gap-3 flex-1">
+                                                        <span className={`w-6 h-6 rounded-full ${isDark ? 'bg-zinc-900 text-zinc-500' : 'bg-white text-zinc-300'} border flex items-center justify-center text-[10px] font-black`}>
+                                                            {i + 1}
+                                                        </span>
+                                                        <input 
+                                                            type="text"
+                                                            placeholder="Título de la Sección (Ej: 1. Riesgos)"
+                                                            className={`bg-transparent text-[13px] font-black ${isDark ? 'text-white' : 'text-zinc-950'} uppercase tracking-tight outline-none w-full`}
+                                                            value={sec.title}
+                                                            onChange={(e) => updateTermsSection(i, 'title', e.target.value)}
+                                                        />
+                                                    </div>
                                                     <button onClick={() => removeTermsSection(i)}
-                                                        className="absolute top-6 right-6 p-2 text-zinc-600 hover:text-rose-500 transition-colors">
+                                                        className="p-2 text-zinc-600 hover:text-rose-500 transition-colors">
                                                         <Trash2 size={16} />
                                                     </button>
                                                 </div>
                                                 <textarea 
-                                                    className={`w-full bg-transparent text-[13px] font-medium ${isDark ? 'text-zinc-400 shadow-inner' : 'text-zinc-600'} outline-none min-h-[120px] leading-relaxed resize-none`}
+                                                    className={`w-full bg-transparent text-[13px] font-medium ${isDark ? 'text-zinc-400' : 'text-zinc-600'} outline-none min-h-[120px] leading-relaxed resize-none pl-9`}
                                                     placeholder="Contenido de esta sección..."
                                                     value={sec.content}
                                                     onChange={(e) => updateTermsSection(i, 'content', e.target.value)}
                                                 />
                                             </div>
                                         ))}
+
+                                        {/* EDITOR FOOTER PREVIEW */}
+                                        <div className={`p-5 rounded-[24px] border ${isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-zinc-50 border-zinc-100'} opacity-50 text-center`}>
+                                            <p className={`text-[9px] font-black ${isDark ? 'text-zinc-500' : 'text-zinc-400'} uppercase tracking-widest`}>Pie de Página de Seguridad</p>
+                                        </div>
                                     </div>
                                 )}
                             </div>

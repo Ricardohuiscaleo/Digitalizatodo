@@ -22,7 +22,6 @@ class TenantTermController extends Controller
             ->first();
 
         return response()->json([
-            'tenant_id' => $tenant->id,
             'terms' => $terms
         ]);
     }
