@@ -649,7 +649,9 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                                         }`}>
                                                             {billingCycleLabels[plan.billing_cycle] || plan.billing_cycle?.replace('_', ' ') || 'PLAN'}
                                                         </span>
-                                                        <p className={`text-[11px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>{plan.category === 'dojo' ? `SER PARTE DEL DOJO - ${billingCycleLabels[plan.billing_cycle] || 'MENSUAL'}` : plan.name}</p>
+                                                        <p className={`text-[11px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>
+                                                            {dojoType === 'kids' ? 'SER PARTE DEL DOJO KIDS' : 'SER PARTE DEL DOJO'} - {billingCycleLabels[plan.billing_cycle] || 'MENSUAL'}
+                                                        </p>
                                                     </div>
                                                 </div>
 
@@ -729,7 +731,9 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                                         <span className="text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-widest bg-amber-500/10 text-amber-500 border border-amber-500/20">
                                                             VIP · {billingCycleLabels[plan.billing_cycle] || 'SESIÓN'}
                                                         </span>
-                                                        <p className={`text-[11px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>{plan.name}</p>
+                                                        <p className={`text-[11px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>
+                                                            VIP 1-A-1 - {billingCycleLabels[plan.billing_cycle] || 'MENSUAL'}
+                                                        </p>
                                                     </div>
                                                 </div>
 
