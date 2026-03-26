@@ -509,6 +509,21 @@ export default function RegisterPage() {
   };
 
   const pricing = tenant?.data?.pricing || tenant?.data?.prices || { kids: 0, adult: 0, discountThreshold: 2, discountPercentage: 0 };
+  
+  // Auto-detect base monthly prices for savings calculation
+  const findMonthly = (target: 'adults' | 'kids') => {
+    const p = (tenant?.plans || []).find((pl: any) => {
+      const name = (pl.name || '').toLowerCase();
+      const cycle = (pl.billing_cycle || '').toLowerCase();
+      const isMensual = cycle.includes('monthly') || name.includes('mensual');
+      const matchesTarget = target === 'adults' ? (!name.includes('kids')) : (name.includes('kids'));
+      return isMensual && matchesTarget;
+    });
+    return p ? parseFloat(p.price) : 0;
+  };
+
+  const adultMonthlyBase = parseFloat(pricing.adult || 0) || findMonthly('adults');
+  const kidsMonthlyBase = parseFloat(pricing.kids || 0) || findMonthly('kids');
 
 
   const calculateTotal = () => {
@@ -1543,6 +1558,7 @@ export default function RegisterPage() {
                         <PlanCard 
                           key={plan.id} 
                           plan={plan} 
+                          monthlyBase={adultMonthlyBase || 0}
                           isSelected={form.plan_id === plan.id}
                           onSelect={() => { 
                             setForm({ ...form, plan_id: plan.id });
@@ -1576,7 +1592,7 @@ export default function RegisterPage() {
                               <PlanCard 
                                 key={plan.id} 
                                 plan={plan} 
-                                monthlyBase={pricing.adult || 0}
+                                monthlyBase={adultMonthlyBase || 0}
                                 isSelected={form.adult_plan_id === plan.id}
                                 onSelect={() => { 
                                   setForm({ ...form, adult_plan_id: plan.id });
@@ -1610,7 +1626,7 @@ export default function RegisterPage() {
                               <PlanCard 
                                 key={plan.id} 
                                 plan={plan} 
-                                monthlyBase={pricing.kids || 0}
+                                monthlyBase={kidsMonthlyBase || 0}
                                 isSelected={form.kid_plan_id === plan.id}
                                 onSelect={() => { 
                                   setForm({ ...form, kid_plan_id: plan.id });
