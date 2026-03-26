@@ -712,13 +712,17 @@ export default function RegisterPage() {
                     if (daySchedules.length === 0) return null;
 
                     const activeModality = s.modality || 'gi';
-                    const colors = 
-                      activeModality === 'gi' ? { text: 'text-[#c9a84c]', border: 'border-[#c9a84c]/20', bg: 'bg-[#c9a84c]/5' } :
-                      activeModality === 'nogi' ? { text: 'text-cyan-400', border: 'border-cyan-400/20', bg: 'bg-cyan-400/5' } :
-                      { text: 'text-emerald-400', border: 'border-emerald-400/20', bg: 'bg-emerald-400/5' };
+                    
+                    const getScheduleColor = (timeStr: string, mod: string) => {
+                      if (mod === 'kids') return { text: 'text-emerald-400', border: 'border-emerald-400/20', bg: 'bg-emerald-400/5', dot: 'bg-emerald-500' };
+                      const hour = parseInt(timeStr.split(':')[0]);
+                      if (hour < 12) return { text: 'text-yellow-400', border: 'border-yellow-400/20', bg: 'bg-yellow-400/5', dot: 'bg-yellow-500' };
+                      if (hour < 18) return { text: 'text-teal-400', border: 'border-teal-400/20', bg: 'bg-teal-400/5', dot: 'bg-teal-500' };
+                      return { text: 'text-cyan-400', border: 'border-cyan-400/20', bg: 'bg-cyan-400/5', dot: 'bg-cyan-500' };
+                    };
 
                     return (
-                      <div key={day} className="flex-none w-28 snap-start flex flex-col">
+                      <div key={day} className="flex-none w-28 snap-start flex flex-col transition-all duration-500">
                         <span className={`text-[8px] font-black uppercase tracking-[0.3em] mb-4 pb-1 border-b ${
                           isDarkMode ? 'text-zinc-600 border-zinc-800' : 'text-zinc-400 border-zinc-200'
                         }`}>
@@ -727,25 +731,27 @@ export default function RegisterPage() {
                         <div className="space-y-3">
                           {daySchedules
                             .sort((a: any, b: any) => a.start_time.localeCompare(b.start_time))
-                            .map((sch: any) => (
-                              <div 
-                                key={sch.id} 
-                                className={`group relative p-3 rounded-2xl border transition-all duration-500 hover:scale-[1.02] ${
-                                  isDarkMode 
-                                    ? `bg-zinc-950/60 ${colors.border} ${colors.bg}` 
-                                    : 'bg-white border-zinc-100 shadow-sm'
-                                }`}
-                              >
-                                <div className={`text-xl font-black tracking-tighter leading-none mb-1.5 ${isDarkMode ? colors.text : 'text-black'}`}>
-                                  {sch.start_time.slice(0, 5)}
+                            .map((sch: any) => {
+                              const colors = getScheduleColor(sch.start_time, sch.category?.toLowerCase().includes('kid') ? 'kids' : activeModality);
+                              return (
+                                <div 
+                                  key={sch.id} 
+                                  className={`group relative p-3 rounded-2xl border transition-all duration-500 hover:scale-[1.02] ${
+                                    isDarkMode 
+                                      ? `bg-zinc-950/60 ${colors.border} ${colors.bg}` 
+                                      : 'bg-white border-zinc-100 shadow-sm'
+                                  }`}
+                                >
+                                  <div className={`text-xl font-black tracking-tighter leading-none mb-1.5 ${isDarkMode ? colors.text : 'text-black'}`}>
+                                    {sch.start_time.slice(0, 5)}
+                                  </div>
+                                  <div className={`text-[7px] font-black uppercase tracking-widest opacity-40 truncate ${isDarkMode ? 'text-white' : 'text-zinc-500'}`}>
+                                    {sch.name || sch.subject}
+                                  </div>
+                                  <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-current ${colors.text}`} />
                                 </div>
-                                <div className={`text-[7px] font-black uppercase tracking-widest opacity-40 truncate ${isDarkMode ? 'text-white' : 'text-zinc-500'}`}>
-                                  {sch.name || sch.subject}
-                                </div>
-                                {/* Glow Effect on Hover */}
-                                <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-current ${colors.text}`} />
-                              </div>
-                            ))}
+                              );
+                            })}
                         </div>
                       </div>
                     );
@@ -1645,36 +1651,43 @@ export default function RegisterPage() {
 
           {/* SECCIÓN: RESUMEN SEMANAL — Vista Global */}
           {tenant?.schedules && tenant.schedules.length > 0 && (
-            <div className={`p-6 rounded-[2.5rem] border animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200 ${isDarkMode ? 'bg-zinc-950/40 border-zinc-800' : 'bg-zinc-50 border-zinc-100'}`}>
-              <div className="flex items-center justify-between mb-6">
-                <label className={`text-[9px] uppercase tracking-[0.3em] font-black ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>Resumen Semanal</label>
-                <div className="h-px flex-1 mx-4 bg-zinc-500/10" />
+            <div className={`p-4 sm:p-6 rounded-[2.5rem] border animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200 transition-all ${isDarkMode ? 'bg-zinc-950/40 border-zinc-800' : 'bg-zinc-50 border-zinc-100'}`}>
+              <div className="flex items-center justify-between mb-4">
+                <label className={`text-[8px] sm:text-[9px] uppercase tracking-[0.3em] font-black ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>Resumen Semanal (LUN-VIE)</label>
+                <div className="h-px flex-1 mx-2 sm:mx-4 bg-zinc-500/10" />
               </div>
               
-              <div className="grid grid-cols-5 gap-3">
+              <div className="grid grid-cols-5 gap-1 sm:gap-3 transition-all">
                 {[1, 2, 3, 4, 5].map(day => {
                   const dayMapping: any = { 1: 'LUN', 2: 'MAR', 3: 'MIE', 4: 'JUE', 5: 'VIE' };
                   const daySchedules = (tenant.schedules || []).filter((sch: any) => sch.day_of_week === day);
                   
                   return (
-                    <div key={day} className="space-y-3">
-                      <div className={`text-[8px] font-black text-center uppercase tracking-widest ${isDarkMode ? 'text-[#c9a84c]/50' : 'text-amber-700/50'}`}>
+                    <div key={day} className="space-y-3 transition-all transform duration-500">
+                      <div className={`text-[7px] sm:text-[8px] font-black text-center uppercase tracking-widest ${isDarkMode ? 'text-[#c9a84c]/50' : 'text-amber-700/50'}`}>
                         {dayMapping[day]}
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="space-y-2">
                         {daySchedules
                           .sort((a: any, b: any) => a.start_time.localeCompare(b.start_time))
                           .map((sch: any) => {
                             const mod = (sch.modality || 'gi').toLowerCase();
-                            const color = mod === 'gi' ? 'bg-[#c9a84c]' : mod === 'nogi' ? 'bg-cyan-500' : 'bg-emerald-500';
+                            const isKid = (sch.category || '').toLowerCase().includes('kid');
+                            const hour = parseInt(sch.start_time.split(':')[0]);
+                            
+                            let color = 'bg-cyan-500';
+                            if (isKid) color = 'bg-emerald-500';
+                            else if (hour < 12) color = 'bg-yellow-400';
+                            else if (hour < 18) color = 'bg-teal-400';
+
                             return (
-                              <div key={sch.id} className="flex flex-col items-center gap-0.5">
-                                <span className={`text-[9px] font-black tracking-tighter ${isDarkMode ? 'text-zinc-300' : 'text-zinc-900'}`}>
+                              <div key={sch.id} className="flex flex-col items-center gap-0.5 group">
+                                <span className={`text-[8px] sm:text-[9px] font-black tracking-tighter transition-all group-hover:scale-110 ${isDarkMode ? 'text-zinc-300' : 'text-zinc-900'}`}>
                                   {sch.start_time.slice(0, 5)}
                                 </span>
-                                <div className={`h-1 w-3 rounded-full ${color} opacity-40`} />
-                                <span className="text-[5px] font-black opacity-30 uppercase truncate w-full text-center">
-                                  {mod === 'both' ? 'AMBAS' : mod.toUpperCase()}
+                                <div className={`h-1 w-2 sm:w-3 rounded-full ${color} opacity-40 transition-all group-hover:opacity-100 shadow-[0_0_8px_rgba(0,0,0,0.1)]`} />
+                                <span className="text-[4px] sm:text-[5px] font-black opacity-20 uppercase truncate w-full text-center group-hover:opacity-40">
+                                  {isKid ? 'KIDS' : (sch.modality || 'GI').toUpperCase()}
                                 </span>
                               </div>
                             );
