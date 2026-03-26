@@ -26,7 +26,8 @@ import {
   Phone,
   Mail,
   Lock,
-  AlertCircle
+  AlertCircle,
+  Award
 } from "lucide-react";
 
 type IndustryConfig = {
@@ -705,36 +706,44 @@ export default function RegisterPage() {
               schedules.forEach((sch: any) => grouped[sch.day_of_week].push(sch));
 
               return (
-                <div className="flex overflow-x-auto pb-2 gap-4 snap-x no-scrollbar">
+                <div className="flex overflow-x-auto pb-4 gap-4 snap-x no-scrollbar">
                   {[1, 2, 3, 4, 5, 6, 0].map(day => {
                     const daySchedules = grouped[day];
                     if (daySchedules.length === 0) return null;
 
+                    const activeModality = s.modality || 'gi';
+                    const colors = 
+                      activeModality === 'gi' ? { text: 'text-[#c9a84c]', border: 'border-[#c9a84c]/20', bg: 'bg-[#c9a84c]/5' } :
+                      activeModality === 'nogi' ? { text: 'text-cyan-400', border: 'border-cyan-400/20', bg: 'bg-cyan-400/5' } :
+                      { text: 'text-emerald-400', border: 'border-emerald-400/20', bg: 'bg-emerald-400/5' };
+
                     return (
-                      <div key={day} className="flex-none w-24 snap-start flex flex-col items-center">
-                        <span className={`text-[9px] font-black uppercase tracking-[0.2em] mb-2.5 pb-1 border-b-2 w-full text-center ${
-                          isDarkMode ? 'text-[#c9a84c] border-[#c9a84c]/30' : 'text-amber-700 border-amber-200'
+                      <div key={day} className="flex-none w-28 snap-start flex flex-col">
+                        <span className={`text-[8px] font-black uppercase tracking-[0.3em] mb-4 pb-1 border-b ${
+                          isDarkMode ? 'text-zinc-600 border-zinc-800' : 'text-zinc-400 border-zinc-200'
                         }`}>
-                          {daysMapping[day]?.slice(0, 3)}
+                          {daysMapping[day]}
                         </span>
-                        <div className="space-y-1.5 w-full">
+                        <div className="space-y-3">
                           {daySchedules
                             .sort((a: any, b: any) => a.start_time.localeCompare(b.start_time))
                             .map((sch: any) => (
                               <div 
                                 key={sch.id} 
-                                className={`py-1.5 px-2 rounded-xl border text-center transition-all duration-300 hover:scale-105 ${
+                                className={`group relative p-3 rounded-2xl border transition-all duration-500 hover:scale-[1.02] ${
                                   isDarkMode 
-                                    ? 'bg-zinc-900/50 border-zinc-800 text-zinc-400' 
-                                    : 'bg-white border-zinc-100 text-zinc-500 shadow-sm'
+                                    ? `bg-zinc-950/60 ${colors.border} ${colors.bg}` 
+                                    : 'bg-white border-zinc-100 shadow-sm'
                                 }`}
                               >
-                                <div className="text-[10px] font-black tracking-tighter leading-none mb-0.5">
+                                <div className={`text-xl font-black tracking-tighter leading-none mb-1.5 ${isDarkMode ? colors.text : 'text-black'}`}>
                                   {sch.start_time.slice(0, 5)}
                                 </div>
-                                <div className="text-[7px] font-black uppercase opacity-40 truncate px-1">
+                                <div className={`text-[7px] font-black uppercase tracking-widest opacity-40 truncate ${isDarkMode ? 'text-white' : 'text-zinc-500'}`}>
                                   {sch.name || sch.subject}
                                 </div>
+                                {/* Glow Effect on Hover */}
+                                <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-current ${colors.text}`} />
                               </div>
                             ))}
                         </div>
@@ -1633,6 +1642,50 @@ export default function RegisterPage() {
               ))}
             </div>
           </div>
+
+          {/* SECCIÓN: RESUMEN SEMANAL — Vista Global */}
+          {tenant?.schedules && tenant.schedules.length > 0 && (
+            <div className={`p-6 rounded-[2.5rem] border animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200 ${isDarkMode ? 'bg-zinc-950/40 border-zinc-800' : 'bg-zinc-50 border-zinc-100'}`}>
+              <div className="flex items-center justify-between mb-6">
+                <label className={`text-[9px] uppercase tracking-[0.3em] font-black ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>Resumen Semanal</label>
+                <div className="h-px flex-1 mx-4 bg-zinc-500/10" />
+              </div>
+              
+              <div className="grid grid-cols-5 gap-3">
+                {[1, 2, 3, 4, 5].map(day => {
+                  const dayMapping: any = { 1: 'LUN', 2: 'MAR', 3: 'MIE', 4: 'JUE', 5: 'VIE' };
+                  const daySchedules = (tenant.schedules || []).filter((sch: any) => sch.day_of_week === day);
+                  
+                  return (
+                    <div key={day} className="space-y-3">
+                      <div className={`text-[8px] font-black text-center uppercase tracking-widest ${isDarkMode ? 'text-[#c9a84c]/50' : 'text-amber-700/50'}`}>
+                        {dayMapping[day]}
+                      </div>
+                      <div className="space-y-1.5">
+                        {daySchedules
+                          .sort((a: any, b: any) => a.start_time.localeCompare(b.start_time))
+                          .map((sch: any) => {
+                            const mod = (sch.modality || 'gi').toLowerCase();
+                            const color = mod === 'gi' ? 'bg-[#c9a84c]' : mod === 'nogi' ? 'bg-cyan-500' : 'bg-emerald-500';
+                            return (
+                              <div key={sch.id} className="flex flex-col items-center gap-0.5">
+                                <span className={`text-[9px] font-black tracking-tighter ${isDarkMode ? 'text-zinc-300' : 'text-zinc-900'}`}>
+                                  {sch.start_time.slice(0, 5)}
+                                </span>
+                                <div className={`h-1 w-3 rounded-full ${color} opacity-40`} />
+                                <span className="text-[5px] font-black opacity-30 uppercase truncate w-full text-center">
+                                  {mod === 'both' ? 'AMBAS' : mod.toUpperCase()}
+                                </span>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-4 pt-6">
             <button type="submit" disabled={submitting}
