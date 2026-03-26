@@ -1558,7 +1558,7 @@ export default function RegisterPage() {
                         <PlanCard 
                           key={plan.id} 
                           plan={plan} 
-                          monthlyBase={adultMonthlyBase || 0}
+                          monthlyBase={0}
                           isSelected={form.plan_id === plan.id}
                           onSelect={() => { 
                             setForm({ ...form, plan_id: plan.id });
@@ -1586,7 +1586,7 @@ export default function RegisterPage() {
                           {(tenant?.plans || [])
                             .filter((p: any) => p.category === 'dojo' && (
                               p.target_audience === 'adults' || 
-                              (p.target_audience === 'all' && !p.name.toLowerCase().includes('kids'))
+                                (p.target_audience === 'all' && !p.name.toLowerCase().includes('kids'))
                             ))
                             .map((plan: any) => (
                               <PlanCard 
