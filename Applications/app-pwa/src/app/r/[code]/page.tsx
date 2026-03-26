@@ -768,23 +768,23 @@ export default function RegisterPage() {
                           {daySchedules
                             .sort((a: any, b: any) => a.start_time.localeCompare(b.start_time))
                             .map((sch: any) => {
-                              const colors = getScheduleColor(sch.start_time, sch.category?.toLowerCase().includes('kid') ? 'kids' : activeModality);
+                              const scheduleColors = getScheduleColor(sch.start_time, sch.category?.toLowerCase().includes('kid') ? 'kids' : activeModality);
+                              const cardStyle = isDarkMode 
+                                ? `${scheduleColors.bg} ${scheduleColors.border} bg-zinc-950/60` 
+                                : 'bg-white border-zinc-100 shadow-sm';
+                                
                               return (
                                 <div 
                                   key={sch.id} 
-                                  className={`group relative p-3 rounded-2xl border transition-all duration-500 hover:scale-[1.02] ${
-                                    isDarkMode 
-                                      ? `bg-zinc-950/60 ${colors.border} ${colors.bg}` 
-                                      : 'bg-white border-zinc-100 shadow-sm'
-                                  }`}
+                                  className={`group relative p-3 rounded-2xl border transition-all duration-500 hover:scale-[1.02] ${cardStyle}`}
                                 >
-                                  <div className={`text-xl font-black tracking-tighter leading-none mb-1.5 ${isDarkMode ? colors.text : 'text-black'}`}>
+                                  <div className={`text-xl font-black tracking-tighter leading-none mb-1.5 ${isDarkMode ? scheduleColors.text : 'text-black'}`}>
                                     {sch.start_time.slice(0, 5)}
                                   </div>
                                   <div className={`text-[7px] font-black uppercase tracking-widest opacity-40 truncate ${isDarkMode ? 'text-white' : 'text-zinc-500'}`}>
                                     {sch.name || sch.subject}
                                   </div>
-                                  <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-current ${colors.text}`} />
+                                  <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-current ${scheduleColors.text}`} />
                                 </div>
                               );
                             })}
@@ -795,8 +795,9 @@ export default function RegisterPage() {
                 </div>
               );
             })()}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     );
   };
