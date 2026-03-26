@@ -842,13 +842,13 @@ export default function RegisterPage() {
   const canShowPlans = isSelfComplete && areStudentsComplete && (form.is_self_register || form.students.length > 0);
 
   return (
-    <div className={`min-h-screen flex flex-col items-center px-2 py-6 sm:p-6 pb-2 selection:bg-[#c9a84c] selection:text-black transition-colors duration-700 ${isDarkMode ? 'bg-[#0c0c0e] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/25 via-[#0c0c0e] to-[#0c0c0e]' : 'bg-zinc-100'}`}>
+    <div className={`min-h-screen flex flex-col items-center px-2 py-6 sm:p-6 pb-2 selection:bg-[#c9a84c] selection:text-black transition-colors duration-700 ${isDarkMode ? 'bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950' : 'bg-zinc-100'}`}>
       <RegistrationProgress form={form} canShowPlans={canShowPlans} isDarkMode={isDarkMode} />
       {isDarkMode && (
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-          <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-indigo-600/15 rounded-full blur-[100px]" />
-          <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#c9a84c]/10 rounded-full blur-[100px]" />
-          <div className="absolute top-[20%] left-[-5%] w-[30%] h-[30%] bg-blue-500/10 rounded-full blur-[80px]" />
+          <div className="absolute top-[-5%] right-[-5%] w-[80%] h-[80%] bg-blue-600/20 rounded-full blur-[120px]" />
+          <div className="absolute bottom-[0%] left-[-10%] w-[60%] h-[60%] bg-slate-500/15 rounded-full blur-[100px]" />
+          <div className="absolute top-[30%] left-[10%] w-[40%] h-[40%] bg-sky-500/15 rounded-full blur-[80px]" />
         </div>
       )}
       <div className="w-full max-w-sm pt-20 space-y-10 animate-in fade-in duration-1000">
@@ -888,7 +888,7 @@ export default function RegisterPage() {
           {error && <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</p>}
 
           {/* DATOS DEL APODERADO/TITULAR */}
-          <div className={`space-y-5 p-6 rounded-[2.5rem] border backdrop-blur-sm transition-all duration-700 ${isDarkMode ? "bg-zinc-900/30 border-zinc-800/50" : "bg-white border-zinc-200 shadow-sm"}`}>
+          <div className={`space-y-5 p-6 rounded-[2.5rem] border backdrop-blur-xl transition-all duration-700 ${isDarkMode ? "bg-slate-900/40 border-slate-800/50" : "bg-white border-zinc-200 shadow-sm"}`}>
             <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500 flex items-center gap-2">
               <div className="w-1 h-1 rounded-full bg-[#c9a84c]" />
               Datos del {config.guardianLabel}
@@ -1497,7 +1497,7 @@ export default function RegisterPage() {
 
             {/* PLAN SELECTION (DOJO or VIP) */}
             {form.registration_mode && (
-              <div className={`space-y-8 p-6 sm:p-8 rounded-[2.5rem] border backdrop-blur-md shadow-2xl relative overflow-hidden transition-all duration-700 ${isDarkMode ? 'bg-zinc-900/30 border-zinc-800/50' : 'bg-white border-zinc-200'} ${(form.registration_mode === 'vip_only' || form.registration_mode === 'dojo') && !form.plan_id && !form.adult_plan_id && !form.kid_plan_id ? 'border-[#c9a84c]/50' : ''}`}>
+              <div className={`space-y-8 p-6 sm:p-8 rounded-[2.5rem] border backdrop-blur-xl shadow-2xl relative overflow-hidden transition-all duration-700 ${isDarkMode ? 'bg-slate-900/40 border-slate-800/50' : 'bg-white border-zinc-200'} ${(form.registration_mode === 'vip_only' || form.registration_mode === 'dojo') && !form.plan_id && !form.adult_plan_id && !form.kid_plan_id ? 'border-[#c9a84c]/50' : ''}`}>
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#c9a84c]/5 rounded-full blur-3xl" />
 
                 {form.registration_mode === 'vip_only' ? (
