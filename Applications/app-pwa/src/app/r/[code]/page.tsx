@@ -289,6 +289,7 @@ const RegistrationProgress = ({ form, canShowPlans, isDarkMode }: any) => {
 
 const PlanCard = ({ plan, isSelected, onSelect, isDarkMode, monthlyBase = 0 }: any) => {
   const price = parseFloat(plan.price);
+  const isVip = plan.category === 'vip';
   
   const durMonths = (function() {
     switch(plan.billing_cycle) {
@@ -299,11 +300,28 @@ const PlanCard = ({ plan, isSelected, onSelect, isDarkMode, monthlyBase = 0 }: a
     }
   })();
 
+  // Logic for duration label (Poster alignment)
+  const durLabel = (function() {
+    if (isVip) {
+      if (plan.name.toLowerCase().includes('pack 4')) return '4 CLASES';
+      if (plan.name.toLowerCase().includes('clase')) return '1 CLASE';
+      return 'SESIÓN';
+    }
+    return `${durMonths} ${durMonths === 1 ? 'MES' : 'MESES'}`;
+  })();
+
   const monthlyVal = price / durMonths;
   const totalSavings = (monthlyBase > 0 && monthlyBase * durMonths > price) ? (monthlyBase * durMonths - price) : 0;
-  const isElite = plan.billing_cycle === 'annual';
+  
+  // Elite/Featured status
+  const isElite = plan.billing_cycle === 'annual' || (isVip && plan.name.toLowerCase().includes('pack 4'));
 
   const getCycleLabel = (cycle: string) => {
+    if (isVip) {
+      if (plan.name.toLowerCase().includes('pack')) return 'PACK ESPECIAL';
+      if (plan.name.toLowerCase().includes('referido')) return 'BENEFICIO ALUMNO';
+      return 'CLASE INDIVIDUAL';
+    }
     switch(cycle) {
       case 'monthly_fixed': return 'MENSUAL';
       case 'monthly_from_enrollment': return 'MENSUAL';
@@ -326,7 +344,7 @@ const PlanCard = ({ plan, isSelected, onSelect, isDarkMode, monthlyBase = 0 }: a
     >
       {isElite && (
         <div className="absolute top-0 right-0 bg-[#c9a84c] text-black px-3 py-1 text-[8px] font-black rounded-bl-xl flex items-center gap-1.5 shadow-lg z-20 animate-in slide-in-from-top duration-500">
-          <span className="text-[10px]">★</span> MEJOR VALOR
+          <span className="text-[10px]">★</span> {isVip ? 'RECOMENDADO' : 'MEJOR VALOR'}
         </div>
       )}
 
@@ -341,7 +359,7 @@ const PlanCard = ({ plan, isSelected, onSelect, isDarkMode, monthlyBase = 0 }: a
           {getCycleLabel(plan.billing_cycle)}
         </span>
         <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>
-          {durMonths} {durMonths === 1 ? 'mes' : 'meses'}
+          {durLabel}
         </span>
       </div>
 
@@ -349,9 +367,16 @@ const PlanCard = ({ plan, isSelected, onSelect, isDarkMode, monthlyBase = 0 }: a
         <span className={`text-3xl font-black tracking-tighter ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
           ${price.toLocaleString('es-CL')}
         </span>
-        <span className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>
-          ${Math.round(monthlyVal).toLocaleString('es-CL')}/mes
-        </span>
+        {!isVip && (
+          <span className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>
+            ${Math.round(monthlyVal).toLocaleString('es-CL')}/mes
+          </span>
+        )}
+        {isVip && plan.name.toLowerCase().includes('pack') && (
+          <span className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${isDarkMode ? 'text-[#c9a84c]/60' : 'text-amber-700/60'}`}>
+            ${Math.round(price/4).toLocaleString('es-CL')} c/u
+          </span>
+        )}
       </div>
 
       {totalSavings > 0 && (
