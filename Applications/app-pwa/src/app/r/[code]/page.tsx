@@ -1186,6 +1186,21 @@ export default function RegisterPage() {
             {errors.students && <p className="text-[10px] text-red-400 font-bold uppercase animate-pulse px-2">{errors.students}</p>}
 
             <div className="space-y-5">
+              {form.students.length === 0 && (
+                <div className={`p-10 rounded-[3rem] border-2 border-dashed flex flex-col items-center justify-center gap-4 transition-all animate-in fade-in zoom-in duration-500 ${isDarkMode ? 'border-zinc-800 bg-zinc-900/10' : 'border-zinc-200 bg-zinc-50/50'}`}>
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center border-2 border-dashed ${isDarkMode ? 'border-zinc-800 text-zinc-700' : 'border-zinc-200 text-zinc-300'}`}>
+                    <Plus size={32} />
+                  </div>
+                  <div className="flex flex-col items-center gap-1.5 text-center px-4">
+                    <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                      AGREGA AL MENOS UN ALUMNO
+                    </span>
+                    <p className="text-[8px] font-bold text-zinc-600 uppercase tracking-tighter leading-relaxed">
+                      Presiona el botón + para comenzar
+                    </p>
+                  </div>
+                </div>
+              )}
               {form.students.map((s: any, i) => (
                 <div key={i} className={`space-y-6 p-6 rounded-[2.5rem] border animate-in slide-in-from-bottom-4 duration-700 relative overflow-hidden group transition-all ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'}`}>
 
