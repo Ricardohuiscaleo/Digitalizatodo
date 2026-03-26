@@ -286,7 +286,21 @@ const RegistrationProgress = ({ form, canShowPlans, isDarkMode }: any) => {
   );
 };
 
-const PlanCard = ({ plan, isSelected, onSelect, isDarkMode }: any) => {
+const PlanCard = ({ plan, isSelected, onSelect, isDarkMode, monthlyBase = 0 }: any) => {
+  const price = parseFloat(plan.price);
+  
+  const durMonths = (function() {
+    switch(plan.billing_cycle) {
+      case 'quarterly': return 3;
+      case 'semi_annual': return 6;
+      case 'annual': return 12;
+      default: return 1;
+    }
+  })();
+
+  const monthlyVal = price / durMonths;
+  const savingsPerMonth = (monthlyBase > 0 && monthlyBase > monthlyVal) ? (monthlyBase - monthlyVal) : 0;
+
   const getCycleLabel = (cycle: string) => {
     switch(cycle) {
       case 'monthly_fixed': return 'MENSUAL';
@@ -328,6 +342,12 @@ const PlanCard = ({ plan, isSelected, onSelect, isDarkMode }: any) => {
           <span className="text-[10px] font-black uppercase text-[#c9a84c] tracking-widest">{getCycleLabel(plan.billing_cycle)}</span>
           <span className={`w-1 h-1 rounded-full ${isDarkMode ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
           <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? 'text-zinc-600' : 'text-zinc-500'}`}>{deco.b}</span>
+          {savingsPerMonth > 0 && (
+            <>
+              <span className={`w-1 h-1 rounded-full ${isDarkMode ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500 animate-pulse">AHORRO</span>
+            </>
+          )}
         </div>
         
         <div className="flex flex-col">
@@ -336,12 +356,28 @@ const PlanCard = ({ plan, isSelected, onSelect, isDarkMode }: any) => {
         </div>
         
         <div className={`pt-2 border-t mt-1 flex items-end justify-between ${isDarkMode ? 'border-zinc-800/50' : 'border-zinc-200/50'}`}>
-           <div>
-              <span className={`text-[8px] font-black uppercase tracking-widest block mb-0.5 ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>VALOR BASE (CLP)</span>
-              <div className="flex items-baseline gap-1">
-                <span className={`font-bold text-[10px] ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>$</span>
-                <span className={`text-lg font-black tracking-tighter ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{parseFloat(plan.price).toLocaleString('es-CL')}</span>
+           <div className="flex items-end gap-4">
+              <div>
+                <span className={`text-[8px] font-black uppercase tracking-widest block mb-0.5 ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>VALOR BASE (CLP)</span>
+                <div className="flex items-baseline gap-1">
+                  <span className={`font-bold text-[10px] ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>$</span>
+                  <span className={`text-lg font-black tracking-tighter ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{price.toLocaleString('es-CL')}</span>
+                </div>
               </div>
+              {durMonths > 1 && (
+                <div className={`border-l pl-4 ${isDarkMode ? 'border-zinc-800' : 'border-zinc-200'}`}>
+                  <span className={`text-[8px] font-black uppercase tracking-widest block mb-0.5 ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>Pagarás por mes</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className={`font-bold text-[10px] ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>$</span>
+                    <span className={`text-base font-black tracking-tighter ${isDarkMode ? 'text-white/80' : 'text-zinc-700'}`}>{Math.round(monthlyVal).toLocaleString('es-CL')}</span>
+                  </div>
+                  {savingsPerMonth > 0 && (
+                    <div className="text-[7px] font-black uppercase tracking-widest text-emerald-500 mt-0.5">
+                      Ahorras ${Math.round(savingsPerMonth).toLocaleString('es-CL')} / Mes
+                    </div>
+                  )}
+                </div>
+              )}
            </div>
            <div className={`text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border transition-colors ${isSelected ? 'border-[#c9a84c] text-[#c9a84c] bg-[#c9a84c]/10' : (isDarkMode ? 'border-zinc-800 text-zinc-600 group-hover:text-zinc-400 group-hover:border-zinc-700' : 'border-zinc-200 text-zinc-400 group-hover:text-zinc-600 group-hover:border-zinc-300')}`}>
               {isSelected ? 'SELECCIONADO' : 'SELECCIONAR'}
@@ -1557,6 +1593,7 @@ export default function RegisterPage() {
                               <PlanCard 
                                 key={plan.id} 
                                 plan={plan} 
+                                monthlyBase={pricing.adult || 0}
                                 isSelected={form.adult_plan_id === plan.id}
                                 onSelect={() => { 
                                   setForm({ ...form, adult_plan_id: plan.id });
@@ -1590,6 +1627,7 @@ export default function RegisterPage() {
                               <PlanCard 
                                 key={plan.id} 
                                 plan={plan} 
+                                monthlyBase={pricing.kids || 0}
                                 isSelected={form.kid_plan_id === plan.id}
                                 onSelect={() => { 
                                   setForm({ ...form, kid_plan_id: plan.id });
