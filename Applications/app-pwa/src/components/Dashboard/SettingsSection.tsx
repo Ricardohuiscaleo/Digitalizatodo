@@ -571,7 +571,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                             </button>
                         </div>
                         <div className="flex gap-2">
-                            <button onClick={async () => { setGeneratingPage(true); await generateRegistrationPage(user.tenant_slug || user.tenant_id, token ?? ''); setGeneratingPage(false); loadPlans(); }}
+                            <button onClick={async () => { setGeneratingPage(true); const r = await generateRegistrationPage(user.tenant_slug || user.tenant_id, token ?? ''); setGeneratingPage(false); if (r?.code) setRegPageCode(r.code); loadPlans(); }}
                                 disabled={generatingPage}
                                 className={`flex-1 h-12 ${isDark ? 'bg-zinc-950 border-zinc-800/50 text-zinc-500' : 'bg-zinc-50 border-zinc-100 text-zinc-400'} border rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-all text-[10px] font-black uppercase tracking-widest`}>
                                 {generatingPage ? <Loader2 className="animate-spin" size={12} /> : <><RefreshCw size={14} /> Regenerar Link</>}
