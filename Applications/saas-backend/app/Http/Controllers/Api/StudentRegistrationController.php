@@ -140,9 +140,7 @@ class StudentRegistrationController extends Controller
                 foreach ($studentsToCreate as $studentData) {
                     $category = $studentData['category'];
                     // Obtener el plan: si es Dojo usa el automático por categoría, si es VIP usa el plan_id solicitado
-                    $plan = ($request->registration_mode === 'dojo') 
-                        ? $getPlan($category) 
-                        : $getPlan($category, $request->plan_id);
+                    $plan = $getPlan($category, $request->plan_id);
 
                     $courseId = $studentData['course_id'] ?? null;
 

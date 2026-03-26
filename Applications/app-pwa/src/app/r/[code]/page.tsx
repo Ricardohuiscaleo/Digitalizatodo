@@ -402,8 +402,12 @@ export default function RegisterPage() {
     if (isVipOnly && form.plan_id) {
       const selectedPlan = activePlans.find((p: any) => p.id === form.plan_id);
       selectedVipPrice = selectedPlan ? parseFloat(selectedPlan.price) : 0;
+    } else if (!isVipOnly && form.plan_id) {
+      const selectedPlan = activePlans.find((p: any) => p.id === form.plan_id);
+      const basePrice = selectedPlan ? parseFloat(selectedPlan.price) : 0;
+      subtotal = (kidsCount + adultsCount) * basePrice;
     } else if (!isVipOnly) {
-      // Dojo logic: uses standard pricing from tenant.data OR specific plan if I want to be even more precise
+      // Fallback if no specific plan_id is selected in dojo mode (initially)
       subtotal = (kidsCount * (pricing.kids || 0)) + (adultsCount * (pricing.adult || 0));
     }
 
@@ -1104,7 +1108,7 @@ export default function RegisterPage() {
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => setForm({ ...form, registration_mode: 'dojo' })}
+                onClick={() => setForm({ ...form, registration_mode: 'dojo', plan_id: null })}
                 className={`p-4 rounded-[2.5rem] border transition-all flex flex-col items-center gap-2 text-center group ${form.registration_mode === 'dojo'
                   ? 'border-[#c9a84c] bg-[#c9a84c]/5 shadow-[0_0_20px_rgba(201,168,76,0.1)]'
                   : (isDarkMode ? 'border-zinc-800/50 bg-zinc-900/10 hover:border-zinc-700' : 'border-zinc-200 bg-white hover:border-zinc-300 shadow-sm')}`}
@@ -1122,7 +1126,7 @@ export default function RegisterPage() {
 
               <button
                 type="button"
-                onClick={() => setForm({ ...form, registration_mode: 'vip_only' })}
+                onClick={() => setForm({ ...form, registration_mode: 'vip_only', plan_id: null })}
                 className={`p-4 rounded-[2.5rem] border transition-all flex flex-col items-center gap-2 text-center group ${form.registration_mode === 'vip_only'
                   ? 'border-[#c9a84c] bg-[#c9a84c]/5 shadow-[0_0_20px_rgba(201,136,76,0.15)]'
                   : (isDarkMode ? 'border-zinc-800/50 bg-zinc-900/10 hover:border-zinc-700' : 'border-zinc-200 bg-white hover:border-zinc-300 shadow-sm')}`}
@@ -1140,30 +1144,47 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* CLASES PERSONALIZADAS (VIP) */}
-          {form.registration_mode === 'vip_only' && (
-            <div className={`space-y-6 p-6 sm:p-8 rounded-[2.5rem] border backdrop-blur-md shadow-2xl relative overflow-hidden transition-all duration-700 ${isDarkMode ? 'bg-zinc-900/30 border-zinc-800/50' : 'bg-white border-zinc-200'} ${form.registration_mode === 'vip_only' && !form.plan_id ? 'border-[#c9a84c]/50' : ''}`}>
+          {/* PLAN SELECTION (DOJO or VIP) */}
+          {form.registration_mode && (
+            <div className={`space-y-6 p-6 sm:p-8 rounded-[2.5rem] border backdrop-blur-md shadow-2xl relative overflow-hidden transition-all duration-700 ${isDarkMode ? 'bg-zinc-900/30 border-zinc-800/50' : 'bg-white border-zinc-200'} ${(form.registration_mode === 'vip_only' || form.registration_mode === 'dojo') && !form.plan_id ? 'border-[#c9a84c]/50' : ''}`}>
               <div className="absolute top-0 right-0 w-32 h-32 bg-[#c9a84c]/5 rounded-full blur-3xl" />
 
               <div className="space-y-1 relative z-10">
                 <h3 className="text-[10px] uppercase font-black tracking-[0.2em] text-[#c9a84c]">
-                  Paso Final: Selecciona tu Pack VIP
+                  {form.registration_mode === 'vip_only' ? 'Paso Final: Selecciona tu Pack VIP' : 'Paso Final: Selecciona tu Ciclo de Pago'}
                 </h3>
                 {errors.plan_id && <p className="text-[10px] text-red-500 font-black uppercase animate-pulse">{errors.plan_id}</p>}
                 <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">
-                  Elige el pack de sesiones para comenzar hoy
+                  {form.registration_mode === 'vip_only' ? 'Elige el pack de sesiones para comenzar hoy' : 'Elige cómo quieres pagar tu mensualidad'}
                 </p>
               </div>
 
               <div className="grid grid-cols-1 gap-3 relative z-10">
-                {(tenant?.plans || []).filter((p: any) => p.category === 'vip').map((plan: any) => {
+                {(tenant?.plans || []).filter((p: any) => p.category === (form.registration_mode === 'vip_only' ? 'vip' : 'dojo')).map((plan: any) => {
                   const deco = (function() {
                         const n = (plan.name || '').toUpperCase();
                         if (n.includes('SUELTA') || n.includes('INDIVIDUAL')) return { b: 'DETALLES', d: 'Ideal para probar la metodología.' };
                         if (n.includes('PACK')) return { b: 'MEJOR VALOR', d: 'Progresión real en sesiones.' };
                         if (n.includes('REFERIDO')) return { b: 'PARA ALUMNOS', d: 'Beneficio exclusivo academia.' };
-                        return { b: 'VIP', d: plan.description };
+                        
+                        // Dojo-specific decos
+                        if (n.includes('TRIMESTRAL')) return { b: 'AHORRO', d: 'Pago único por 3 meses de clases.' };
+                        if (n.includes('SEMESTRAL')) return { b: 'PREMIUM', d: 'Pago único por 6 meses de clases.' };
+                        if (n.includes('ANUAL')) return { b: 'ELITE', d: 'Año completo de entrenamiento.' };
+                        
+                        return { b: form.registration_mode === 'vip_only' ? 'VIP' : 'DOJO', d: plan.description || 'Acceso completo según el ciclo elegido.' };
                   })();
+
+                  const getCycleLabel = (cycle: string) => {
+                    switch(cycle) {
+                      case 'monthly_fixed': return 'MENSUAL';
+                      case 'monthly_from_enrollment': return 'MENSUAL';
+                      case 'quarterly': return 'TRIMESTRAL';
+                      case 'semi_annual': return 'SEMESTRAL';
+                      case 'annual': return 'ANUAL';
+                      default: return plan.is_recurring ? 'MENSUAL' : 'PAGO ÚNICO';
+                    }
+                  };
 
                   return (
                     <button
@@ -1181,23 +1202,26 @@ export default function RegisterPage() {
                             {deco.b}
                           </span>
                           <span className={`text-[8px] font-black uppercase tracking-widest ${form.plan_id === plan.id ? 'text-black/60' : 'text-zinc-500'}`}>
-                            {plan.is_recurring ? 'Mensualidad' : 'Sesión única'}
+                            {getCycleLabel(plan.billing_cycle)}
                           </span>
                         </div>
                         <span className={`text-[13px] font-black uppercase tracking-tight mb-1 ${form.plan_id === plan.id ? 'text-black' : (isDarkMode ? 'text-white' : 'text-zinc-900')}`}>
                           {plan.name}
                         </span>
                         <p className={`text-[9px] font-bold leading-tight max-w-55 ${form.plan_id === plan.id ? 'text-black/80' : 'text-zinc-500'}`}>
-                          {plan.description || deco.d}
+                          {deco.d}
                         </p>
                       </div>
 
                       <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span className={`text-[9px] font-black uppercase tracking-widest ${form.plan_id === plan.id ? 'text-black' : 'text-zinc-500'}`}>
+                          VALOR BASE
+                        </span>
                         <span className={`text-xl font-black tracking-tighter ${form.plan_id === plan.id ? 'text-white' : (isDarkMode ? 'text-white' : 'text-zinc-900')}`}>
                           ${parseFloat(plan.price).toLocaleString("es-CL")}
                         </span>
                         <span className={`text-[8px] font-black uppercase tracking-widest ${form.plan_id === plan.id ? 'text-black' : 'text-[#c9a84c]'}`}>
-                          CLP · {plan.is_recurring ? 'MENSUAL' : '1 SESIÓN'}
+                          CLP · {getCycleLabel(plan.billing_cycle)}
                         </span>
                       </div>
                     </button>
@@ -1215,29 +1239,40 @@ export default function RegisterPage() {
               <div className="space-y-3 text-sm">
                 {totals.isVipOnly ? (
                   <div className={`flex justify-between items-center transition-colors ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>
-                    <span className="font-bold uppercase tracking-tighter italic">Plan VIP (Solo sesiones)</span>
+                    <span className="font-bold uppercase tracking-tighter italic">REGISTRO VIP (PAGO ÚNICO)</span>
                     <span className="font-black">$0</span>
                   </div>
                 ) : (
                   <>
-                    {totals.adultsCount > 0 && (
-                      <div className={`flex justify-between items-center transition-colors ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                        <span className="font-bold uppercase tracking-tighter">{totals.adultsCount}x ADULTO</span>
-                        <span className={`font-black ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>${(totals.adultsCount * (pricing.adult || 0)).toLocaleString("es-CL")}</span>
+                    {form.plan_id ? (
+                      <div className={`flex justify-between items-center transition-colors ${isDarkMode ? 'text-white' : 'text-zinc-900'} animate-in slide-in-from-left duration-300`}>
+                        <span className="font-bold uppercase tracking-tighter">
+                          {totals.totalInscriptions}x {tenant?.plans?.find((p: any) => p.id === form.plan_id)?.name || 'PLAN DOJO'}
+                        </span>
+                        <span className="font-black">${totals.subtotal.toLocaleString("es-CL")}</span>
                       </div>
-                    )}
-                    {totals.kidsCount > 0 && (
-                      <div className={`flex justify-between items-center transition-colors ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                        <span className="font-bold uppercase tracking-tighter">{totals.kidsCount}x KIDS</span>
-                        <span className={`font-black ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>${(totals.kidsCount * (pricing.kids || 0)).toLocaleString("es-CL")}</span>
-                      </div>
+                    ) : (
+                      <>
+                        {totals.adultsCount > 0 && (
+                          <div className={`flex justify-between items-center transition-colors ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                            <span className="font-bold uppercase tracking-tighter">{totals.adultsCount}x ADULTO (BASE)</span>
+                            <span className={`font-black ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>${(totals.adultsCount * (pricing.adult || 0)).toLocaleString("es-CL")}</span>
+                          </div>
+                        )}
+                        {totals.kidsCount > 0 && (
+                          <div className={`flex justify-between items-center transition-colors ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                            <span className="font-bold uppercase tracking-tighter">{totals.kidsCount}x KIDS (BASE)</span>
+                            <span className={`font-black ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>${(totals.kidsCount * (pricing.kids || 0)).toLocaleString("es-CL")}</span>
+                          </div>
+                        )}
+                      </>
                     )}
                   </>
                 )}
-                {form.plan_id && (
+                {totals.isVipOnly && form.plan_id && (
                   <div className="flex justify-between items-center text-[#c9a84c] animate-in zoom-in duration-300">
                     <span className="font-bold uppercase tracking-tighter">
-                      1x {tenant?.plans?.find((p: any) => p.id === form.plan_id)?.name || 'Pack VIP'}
+                      1x {tenant?.plans?.find((p: any) => p.id === form.plan_id)?.name || 'PACK VIP'}
                     </span>
                     <span className="font-black">${totals.packPrice.toLocaleString("es-CL")}</span>
                   </div>
