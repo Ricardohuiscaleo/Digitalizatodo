@@ -29,7 +29,8 @@ import {
   AlertCircle,
   Award,
   Zap,
-  Plus
+  Plus,
+  Sparkles
 } from "lucide-react";
 
 type IndustryConfig = {
@@ -363,12 +364,20 @@ const PlanCard = ({ plan, isSelected, onSelect, isDarkMode, monthlyBase = 0 }: a
         
         <div className="flex flex-col">
           <span className={`text-base font-black uppercase tracking-tight leading-none mb-1.5 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{plan.name}</span>
-          <span className={`text-[9px] font-bold uppercase tracking-widest leading-relaxed mb-3 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>{deco.d}</span>
+          <div className="flex items-center gap-3 mb-3">
+            <span className={`text-[9px] font-bold uppercase tracking-widest leading-relaxed ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>{deco.d}</span>
+            {plan.billing_cycle === 'annual' && (
+              <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#c9a84c]/10 border border-[#c9a84c]/20 animate-in fade-in zoom-in duration-700">
+                <Sparkles size={10} className="text-[#c9a84c]" />
+                <span className="text-[8px] font-black uppercase tracking-widest text-[#c9a84c]">RECOMENDADO</span>
+              </div>
+            )}
+          </div>
           
           {savingsPercentage > 0 && (
             <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left duration-700">
                <div className="h-1 w-1 rounded-full bg-emerald-500" />
-               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">{savingsPercentage}% DE AHORRO REAL</span>
+               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">{savingsPercentage}% DE AHORRO VS PLAN MENSUAL</span>
             </div>
           )}
         </div>
