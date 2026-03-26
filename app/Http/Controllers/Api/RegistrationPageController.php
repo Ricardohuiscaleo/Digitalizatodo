@@ -81,6 +81,10 @@ class RegistrationPageController extends Controller
             return response()->json(['message' => 'Página no encontrada.'], 404);
         }
 
+        $plans = \App\Models\Plan::where('tenant_id', $page->tenant_id)
+            ->where('active', true)
+            ->get();
+
         return response()->json([
             'id' => $page->tenant_id,
             'slug' => $page->tenant_slug,
@@ -89,6 +93,7 @@ class RegistrationPageController extends Controller
             'primary_color' => $page->tenant_primary_color,
             'industry' => $page->tenant_industry,
             'data' => is_string($page->tenant_data) ? json_decode($page->tenant_data, true) : $page->tenant_data,
+            'plans' => $plans,
         ]);
     }
 }
