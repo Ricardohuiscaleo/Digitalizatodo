@@ -934,7 +934,19 @@ export default function RegisterPage() {
                     <ModernDateInput value={form.self_student.birth_date} placeholder={todayPlaceholder} isDarkMode={isDarkMode}
                       onChange={(v: string) => {
                         const cat = calculateCategory(v);
-                        setForm({ ...form, self_student: { ...form.self_student, birth_date: v, category: cat } });
+                        // Reset cascading fields if date is invalid or cleared
+                        const isInvalid = !v || v.length < 10;
+                        setForm({ 
+                          ...form, 
+                          self_student: { 
+                            ...form.self_student, 
+                            birth_date: v, 
+                            category: cat,
+                            belt: isInvalid ? "" : form.self_student.belt,
+                            degrees: isInvalid ? null : form.self_student.degrees,
+                            modality: isInvalid ? "" : form.self_student.modality
+                          } 
+                        });
                       }}
                       error={errors.self_birth}
                     />
@@ -1178,8 +1190,15 @@ export default function RegisterPage() {
                       onChange={(v: string) => {
                         const cat = calculateCategory(v);
                         const st = [...form.students];
+                        // Reset cascading fields if date is invalid or cleared
+                        const isInvalid = !v || v.length < 10;
                         st[i].birth_date = v;
                         st[i].category = cat;
+                        if (isInvalid) {
+                          st[i].belt = "";
+                          st[i].degrees = null;
+                          st[i].modality = "";
+                        }
                         setForm({ ...form, students: st });
                       }}
                       error={errors.students_birth}
