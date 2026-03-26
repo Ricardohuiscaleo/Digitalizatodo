@@ -300,6 +300,7 @@ const PlanCard = ({ plan, isSelected, onSelect, isDarkMode, monthlyBase = 0 }: a
 
   const monthlyVal = price / durMonths;
   const savingsPerMonth = (monthlyBase > 0 && monthlyBase > monthlyVal) ? (monthlyBase - monthlyVal) : 0;
+  const savingsPercentage = monthlyBase > 0 ? Math.round((savingsPerMonth / monthlyBase) * 100) : 0;
 
   const getCycleLabel = (cycle: string) => {
     switch(cycle) {
@@ -328,59 +329,68 @@ const PlanCard = ({ plan, isSelected, onSelect, isDarkMode, monthlyBase = 0 }: a
       type="button"
       onClick={onSelect}
       className={`p-5 rounded-[2.2rem] border transition-all text-left group relative overflow-hidden ${isSelected
-        ? 'border-[#c9a84c] bg-[#c9a84c]/5 shadow-[0_0_20px_rgba(201,168,76,0.1)] scale-[1.02]'
+        ? 'border-[#c9a84c] bg-[#c9a84c]/5 shadow-[0_0_20px_rgba(201,168,76,0.1)] scale-[1.01]'
         : (isDarkMode ? 'border-zinc-800/80 bg-zinc-950/40 hover:border-zinc-700' : 'border-zinc-200 bg-zinc-50/50 hover:border-zinc-300 shadow-sm')}`}
     >
       {isSelected && (
-        <div className="absolute top-3 right-3 animate-in zoom-in duration-300">
-          <CheckCircle2 size={16} className="text-[#c9a84c]" />
+        <div className="absolute top-2 right-2 animate-in zoom-in duration-300">
+          <div className="w-5 h-5 rounded-full bg-[#c9a84c] flex items-center justify-center border-2 border-zinc-950">
+            <Check size={12} className="text-black fill-black" strokeWidth={4} />
+          </div>
         </div>
       )}
       
       <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-black uppercase text-[#c9a84c] tracking-widest">{getCycleLabel(plan.billing_cycle)}</span>
-          <span className={`w-1 h-1 rounded-full ${isDarkMode ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
-          <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? 'text-zinc-600' : 'text-zinc-500'}`}>{deco.b}</span>
-          {savingsPerMonth > 0 && (
-            <>
-              <span className={`w-1 h-1 rounded-full ${isDarkMode ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
-              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500 animate-pulse">AHORRO</span>
-            </>
+        {/* HEADER ROW: CYCLE | TIER | ACTION */}
+        <div className={`flex items-center justify-between border-b pb-3 mb-1 ${isDarkMode ? 'border-white/5' : 'border-zinc-100'}`}>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black uppercase text-[#c9a84c] tracking-widest">{getCycleLabel(plan.billing_cycle)}</span>
+            <span className={`w-1 h-1 rounded-full ${isDarkMode ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
+            <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? 'text-zinc-600' : 'text-zinc-500'}`}>{deco.b}</span>
+          </div>
+
+          {!isSelected && (
+            <div className={`text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border transition-all ${isDarkMode ? 'border-zinc-800 text-zinc-600 group-hover:text-zinc-400 group-hover:border-zinc-700' : 'border-zinc-200 text-zinc-400 group-hover:text-zinc-600 group-hover:border-zinc-300'}`}>
+              SELECCIONAR
+            </div>
+          )}
+          {isSelected && (
+            <div className="text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full bg-[#c9a84c] text-black border border-[#c9a84c] animate-in slide-in-from-right-2 duration-300">
+              SELECCIONADO
+            </div>
           )}
         </div>
         
         <div className="flex flex-col">
-          <span className={`text-base font-black uppercase tracking-tight leading-none mb-1 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{plan.name}</span>
-          <span className={`text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>{deco.d}</span>
+          <span className={`text-base font-black uppercase tracking-tight leading-none mb-1.5 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{plan.name}</span>
+          <span className={`text-[9px] font-bold uppercase tracking-widest leading-relaxed mb-3 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>{deco.d}</span>
+          
+          {savingsPercentage > 0 && (
+            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left duration-700">
+               <div className="h-1 w-1 rounded-full bg-emerald-500" />
+               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">{savingsPercentage}% DE AHORRO REAL</span>
+            </div>
+          )}
         </div>
         
         <div className={`pt-2 border-t mt-1 flex items-end justify-between ${isDarkMode ? 'border-zinc-800/50' : 'border-zinc-200/50'}`}>
-           <div className="flex items-end gap-4">
+           <div className="flex items-end gap-5">
               <div>
-                <span className={`text-[8px] font-black uppercase tracking-widest block mb-0.5 ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>VALOR BASE (CLP)</span>
+                <span className={`text-[8px] font-black uppercase tracking-widest block mb-1 ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>VALOR BASE (CLP)</span>
                 <div className="flex items-baseline gap-1">
                   <span className={`font-bold text-[10px] ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>$</span>
-                  <span className={`text-lg font-black tracking-tighter ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{price.toLocaleString('es-CL')}</span>
+                  <span className={`text-xl font-black tracking-tighter ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{price.toLocaleString('es-CL')}</span>
                 </div>
               </div>
               {durMonths > 1 && (
-                <div className={`border-l pl-4 ${isDarkMode ? 'border-zinc-800' : 'border-zinc-200'}`}>
-                  <span className={`text-[8px] font-black uppercase tracking-widest block mb-0.5 ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>Pagarás por mes</span>
+                <div className={`border-l pl-5 ${isDarkMode ? 'border-zinc-800' : 'border-zinc-200'}`}>
+                  <span className={`text-[8px] font-black uppercase tracking-widest block mb-1 ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>Pagarás por mes</span>
                   <div className="flex items-baseline gap-1">
                     <span className={`font-bold text-[10px] ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>$</span>
-                    <span className={`text-base font-black tracking-tighter ${isDarkMode ? 'text-white/80' : 'text-zinc-700'}`}>{Math.round(monthlyVal).toLocaleString('es-CL')}</span>
+                    <span className={`text-lg font-black tracking-tighter ${isDarkMode ? 'text-[#c9a84c]' : 'text-zinc-900'}`}>{Math.round(monthlyVal).toLocaleString('es-CL')}</span>
                   </div>
-                  {savingsPerMonth > 0 && (
-                    <div className="text-[7px] font-black uppercase tracking-widest text-emerald-500 mt-0.5">
-                      Ahorras ${Math.round(savingsPerMonth).toLocaleString('es-CL')} / Mes
-                    </div>
-                  )}
                 </div>
               )}
-           </div>
-           <div className={`text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border transition-colors ${isSelected ? 'border-[#c9a84c] text-[#c9a84c] bg-[#c9a84c]/10' : (isDarkMode ? 'border-zinc-800 text-zinc-600 group-hover:text-zinc-400 group-hover:border-zinc-700' : 'border-zinc-200 text-zinc-400 group-hover:text-zinc-600 group-hover:border-zinc-300')}`}>
-              {isSelected ? 'SELECCIONADO' : 'SELECCIONAR'}
            </div>
         </div>
       </div>
