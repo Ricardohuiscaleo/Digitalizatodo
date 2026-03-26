@@ -291,24 +291,24 @@ const PlanCard = ({ plan, isSelected, onSelect, isDarkMode }: any) => {
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-black uppercase text-[#c9a84c] tracking-widest">{getCycleLabel(plan.billing_cycle)}</span>
-          <span className="w-1 h-1 rounded-full bg-zinc-800" />
-          <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>{deco.b}</span>
+          <span className={`w-1 h-1 rounded-full ${isDarkMode ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
+          <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? 'text-zinc-600' : 'text-zinc-500'}`}>{deco.b}</span>
         </div>
         
         <div className="flex flex-col">
           <span className={`text-base font-black uppercase tracking-tight leading-none mb-1 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{plan.name}</span>
-          <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">{deco.d}</span>
+          <span className={`text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>{deco.d}</span>
         </div>
         
-        <div className="pt-2 border-t border-zinc-800/50 mt-1 flex items-end justify-between">
+        <div className={`pt-2 border-t mt-1 flex items-end justify-between ${isDarkMode ? 'border-zinc-800/50' : 'border-zinc-200/50'}`}>
            <div>
-              <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest block mb-0.5">VALOR BASE (CLP)</span>
+              <span className={`text-[8px] font-black uppercase tracking-widest block mb-0.5 ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>VALOR BASE (CLP)</span>
               <div className="flex items-baseline gap-1">
-                <span className="text-zinc-500 font-bold text-[10px]">$</span>
-                <span className={`text-lg font-black tracking-tighter ${isSelected ? 'text-white' : (isDarkMode ? 'text-white' : 'text-zinc-900')}`}>{parseFloat(plan.price).toLocaleString('es-CL')}</span>
+                <span className={`font-bold text-[10px] ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>$</span>
+                <span className={`text-lg font-black tracking-tighter ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{parseFloat(plan.price).toLocaleString('es-CL')}</span>
               </div>
            </div>
-           <div className={`text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border transition-colors ${isSelected ? 'border-[#c9a84c] text-[#c9a84c] bg-[#c9a84c]/10' : 'border-zinc-800 text-zinc-600 group-hover:text-zinc-400 group-hover:border-zinc-700'}`}>
+           <div className={`text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border transition-colors ${isSelected ? 'border-[#c9a84c] text-[#c9a84c] bg-[#c9a84c]/10' : (isDarkMode ? 'border-zinc-800 text-zinc-600 group-hover:text-zinc-400 group-hover:border-zinc-700' : 'border-zinc-200 text-zinc-400 group-hover:text-zinc-600 group-hover:border-zinc-300')}`}>
               {isSelected ? 'SELECCIONADO' : 'SELECCIONAR'}
            </div>
         </div>
@@ -1619,7 +1619,7 @@ export default function RegisterPage() {
                       checked={form.accept_dojo_terms}
                       onChange={(e) => setForm({ ...form, accept_dojo_terms: e.target.checked })}
                     />
-                    <div className={`w-6 h-6 rounded-xl border-2 transition-all flex items-center justify-center ${form.accept_dojo_terms ? 'bg-[#c9a84c] border-[#c9a84c] shadow-[0_0_15px_rgba(201,168,76,0.3)]' : 'bg-transparent border-zinc-800 group-hover:border-zinc-700'}`}>
+                    <div className={`w-6 h-6 rounded-xl border-2 transition-all flex items-center justify-center ${form.accept_dojo_terms ? 'bg-[#c9a84c] border-[#c9a84c] shadow-[0_0_15px_rgba(201,168,76,0.3)]' : `bg-transparent ${isDarkMode ? 'border-zinc-800' : 'border-zinc-300'} group-hover:border-zinc-700`}`}>
                       <Check size={14} className={`text-black transition-opacity ${form.accept_dojo_terms ? 'opacity-100' : 'opacity-0'}`} />
                     </div>
                   </div>
@@ -1641,7 +1641,7 @@ export default function RegisterPage() {
                       checked={form.accept_digitaliza_terms}
                       onChange={(e) => setForm({ ...form, accept_digitaliza_terms: e.target.checked })}
                     />
-                    <div className={`w-6 h-6 rounded-xl border-2 transition-all flex items-center justify-center ${form.accept_digitaliza_terms ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.3)]' : 'bg-transparent border-zinc-800 group-hover:border-zinc-700'}`}>
+                    <div className={`w-6 h-6 rounded-xl border-2 transition-all flex items-center justify-center ${form.accept_digitaliza_terms ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.3)]' : `bg-transparent ${isDarkMode ? 'border-zinc-800' : 'border-zinc-300'} group-hover:border-zinc-700`}`}>
                       <Check size={14} className={`text-white transition-opacity ${form.accept_digitaliza_terms ? 'opacity-100' : 'opacity-0'}`} />
                     </div>
                   </div>
