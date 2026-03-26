@@ -653,12 +653,18 @@ export default function RegisterPage() {
 
                 if (s.modality === 'both') {
                   matchesModality = true;
-                } else if (s.modality === 'gi') {
-                  // Assume GI by default if not explicit NO-GI
-                  const isExplicitNoGi = subject.includes('NO-GI') || subject.includes('NOGI');
-                  matchesModality = !isExplicitNoGi;
-                } else if (s.modality === 'nogi') {
-                  matchesModality = subject.includes('NO-GI') || subject.includes('NOGI');
+                } else if (sch.modality) {
+                  // Direct match with the new database field (gi, nogi, both)
+                  matchesModality = (sch.modality === s.modality) || (sch.modality === 'both');
+                } else {
+                  // Fallback: Text parsing (for backward compatibility or non-migrated data)
+                  if (s.modality === 'gi') {
+                    // Assume GI by default if not explicit NO-GI
+                    const isExplicitNoGi = subject.includes('NO-GI') || subject.includes('NOGI');
+                    matchesModality = !isExplicitNoGi;
+                  } else if (s.modality === 'nogi') {
+                    matchesModality = subject.includes('NO-GI') || subject.includes('NOGI');
+                  }
                 }
 
                 return matchesCategory && matchesModality;
