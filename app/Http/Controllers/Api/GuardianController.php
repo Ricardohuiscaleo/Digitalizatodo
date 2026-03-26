@@ -168,7 +168,12 @@ class GuardianController extends Controller
         $tenantId = $tenant->id;
 
         $data = $tenant->data ?? [];
-        $data['pricing'] = $request->except('industry');
+        $pricing = $request->except('industry');
+        
+        // Purge obsolete hardcoded pricing fields
+        unset($pricing['adult'], $pricing['kids']);
+        
+        $data['pricing'] = $pricing;
 
         $updatePayload = ['data' => $data];
         if ($request->has('industry')) {
