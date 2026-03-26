@@ -643,25 +643,6 @@ export default function RegisterPage() {
       );
     }
 
-    if (!s.modality) {
-      return (
-        <div className={`mt-6 p-8 rounded-[2.5rem] border border-dashed flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in zoom-in duration-700 ${isDarkMode ? 'bg-zinc-900/20 border-zinc-800/50' : 'bg-white/50 border-zinc-200'
-          }`}>
-          <div className={`w-14 h-14 rounded-[1.5rem] flex items-center justify-center ${isDarkMode ? 'bg-zinc-800 text-zinc-500' : 'bg-white text-zinc-300 shadow-sm'}`}>
-            <Zap size={24} className="opacity-40" />
-          </div>
-          <div className="space-y-1.5">
-            <p className={`text-[11px] font-black uppercase tracking-[0.2em] ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
-              ELIGE UNA MODALIDAD
-            </p>
-            <p className={`text-[9px] font-bold leading-relaxed max-w-[200px] mx-auto ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>
-              Selecciona tu estilo de entrenamiento favorito para desbloquear los horarios y planes. ⚡
-            </p>
-          </div>
-        </div>
-      );
-    }
-
     return (
       <div className="space-y-4 pt-4 border-t border-zinc-500/10 mt-4 animate-in fade-in slide-in-from-top-4 duration-1000">
         <div className="flex flex-col gap-2">
@@ -690,14 +671,30 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        {/* SCHEDULES VIEWER */}
-        <div className={`p-3 rounded-3xl border animate-in fade-in slide-in-from-top-2 duration-500 ${isDarkMode ? 'bg-zinc-950/40 border-zinc-800' : 'bg-zinc-50 border-zinc-100'}`}>
-          <label className={`text-[8px] uppercase tracking-[0.2em] font-black mb-2 block ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>Horarios Disponibles ({s.category?.toUpperCase() || 'ADULTOS'})</label>
-          <div className="mt-0">
-            {(() => {
-              const daysMapping: any = { 0: 'DOMINGO', 1: 'LUNES', 2: 'MARTES', 3: 'MIÉRCOLES', 4: 'JUEVES', 5: 'VIERNES', 6: 'SÁBADO' };
-              const schedules = (tenant?.schedules || []).filter((sch: any) => {
-                const schCat = (sch.category || '').toLowerCase();
+        {/* SCHEDULES VIEWER OR PLACEHOLDER */}
+        {!s.modality ? (
+          <div className={`mt-2 p-8 rounded-[2.5rem] border border-dashed flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in zoom-in duration-700 ${isDarkMode ? 'bg-zinc-900/20 border-zinc-800/50' : 'bg-white/50 border-zinc-200'
+            }`}>
+            <div className={`w-12 h-12 rounded-[1.2rem] flex items-center justify-center ${isDarkMode ? 'bg-zinc-800 text-zinc-500' : 'bg-white text-zinc-300 shadow-sm'}`}>
+              <Zap size={20} className="opacity-40" />
+            </div>
+            <div className="space-y-1">
+              <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                ELIGE UNA MODALIDAD
+              </p>
+              <p className={`text-[8px] font-bold leading-relaxed max-w-[180px] mx-auto ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>
+                Selecciona tu estilo de entrenamiento favorito para desbloquear los horarios y planes. ⚡
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className={`p-3 rounded-3xl border animate-in fade-in slide-in-from-top-2 duration-500 ${isDarkMode ? 'bg-zinc-950/40 border-zinc-800' : 'bg-zinc-50 border-zinc-100'}`}>
+            <label className={`text-[8px] uppercase tracking-[0.2em] font-black mb-2 block ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>Horarios Disponibles ({s.category?.toUpperCase() || 'ADULTOS'})</label>
+            <div className="mt-0">
+              {(() => {
+                const daysMapping: any = { 0: 'DOMINGO', 1: 'LUNES', 2: 'MARTES', 3: 'MIÉRCOLES', 4: 'JUEVES', 5: 'VIERNES', 6: 'SÁBADO' };
+                const schedules = (tenant?.schedules || []).filter((sch: any) => {
+                  const schCat = (sch.category || '').toLowerCase();
                 const sCat = (s.category || '').toLowerCase();
                 
                 const matchesCategory = 
