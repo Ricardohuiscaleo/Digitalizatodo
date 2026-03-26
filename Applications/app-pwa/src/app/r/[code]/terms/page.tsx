@@ -43,6 +43,12 @@ export default function TermsPage() {
     }
   }
 
+  const formatMarkdown = (text: string) => {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em class="text-white opacity-80 italic">$1</em>');
+  };
+
   return (
     <div className="min-h-screen bg-black text-white selection:bg-[#c9a84c]/30 font-sans">
       {/* HEADER PREMIUM */}
@@ -91,11 +97,16 @@ export default function TermsPage() {
                    </h2>
                 )}
                 <div className={`text-[13px] leading-relaxed text-zinc-400 font-medium whitespace-pre-wrap ${section.title === "ENCABEZADO / VERSIÓN" ? 'text-zinc-200 text-sm font-bold bg-zinc-900/30 p-8 rounded-[2rem] border border-white/5' : ''}`}>
-                  {section.content.split('\n').map((line: string, li: number) => (
-                    <p key={li} className={line.startsWith('#') ? 'text-xl font-black text-white mb-2' : 'mb-3'}>
-                      {line.replace(/^#\s*/, '')}
-                    </p>
-                  ))}
+                  {section.content.split('\n').map((line: string, li: number) => {
+                    if (line.trim() === '') return <div key={li} className="h-4" />;
+                    return (
+                      <p 
+                        key={li} 
+                        className={line.startsWith('#') ? 'text-xl font-black text-white mb-2' : 'mb-3'}
+                        dangerouslySetInnerHTML={{ __html: formatMarkdown(line.replace(/^#\s*/, '')) }}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             ))
