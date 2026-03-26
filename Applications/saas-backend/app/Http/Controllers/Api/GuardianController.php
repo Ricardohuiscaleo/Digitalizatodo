@@ -284,8 +284,18 @@ class GuardianController extends Controller
         ]);
 
         $data = $tenant->data ?? [];
-        $data['bank_info'] = $validated;
-        $tenant->update(['data' => $data]);
+        if (isset($data['bank_info'])) {
+            unset($data['bank_info']);
+        }
+
+        $tenant->update([
+            'bank_name' => $validated['bank_name'],
+            'bank_account_type' => $validated['account_type'],
+            'bank_account_number' => $validated['account_number'],
+            'bank_account_holder' => $validated['holder_name'],
+            'bank_rut' => $validated['holder_rut'],
+            'data' => $data
+        ]);
 
         return response()->json(['message' => 'Datos bancarios guardados correctamente.', 'bank_info' => $validated]);
     }
