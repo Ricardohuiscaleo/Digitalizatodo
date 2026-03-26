@@ -947,23 +947,27 @@ export default function RegisterPage() {
             <div className={`rounded-[2.5rem] border transition-all duration-700 relative animate-in zoom-in fade-in overflow-hidden ${form.is_self_register
               ? (isDarkMode ? "bg-blue-900/10 border-blue-500/50 p-6 shadow-[0_0_50px_rgba(37,99,235,0.1)] scale-[1.02]" : "bg-blue-50 border-blue-300 p-6 shadow-xl scale-[1.02]")
               : (isDarkMode ? "bg-blue-900/5 border-blue-900/30 p-4" : "bg-blue-50/50 border-blue-100 p-4")}`}>
-              {form.is_self_register && (
-                <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl"></div>
+              {isGuardianComplete && (
+                <>
+                  {form.is_self_register && (
+                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl"></div>
+                  )}
+                  <label className="flex items-center gap-4 cursor-pointer relative z-10 animate-in fade-in slide-in-from-top-2 duration-700">
+                    <div className="relative flex items-center justify-center">
+                      <input type="checkbox" checked={form.is_self_register}
+                        onChange={e => setForm({ ...form, is_self_register: e.target.checked })}
+                        className="sr-only" />
+                      <div className={`w-12 h-7 rounded-full transition-colors border ${form.is_self_register ? "bg-blue-600 border-blue-500 shadow-[0_0_15px_rgba(37,99,235,0.3)]" : (isDarkMode ? "bg-zinc-800 border-zinc-700" : "bg-zinc-200 border-zinc-300")}`}></div>
+                      <div className={`absolute left-1 w-5 h-5 bg-white rounded-full shadow-lg transition-transform duration-300 ${form.is_self_register ? "translate-x-5" : "translate-x-0"}`}></div>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className={`text-[11px] font-black uppercase tracking-wider ${isDarkMode ? 'text-white' : 'text-blue-900'}`}>
+                        YO, {guardianNameParts[0]} TAMBIÉN ENTRENARÉ
+                      </span>
+                    </div>
+                  </label>
+                </>
               )}
-              <label className="flex items-center gap-4 cursor-pointer relative z-10">
-                <div className="relative flex items-center justify-center">
-                  <input type="checkbox" checked={form.is_self_register}
-                    onChange={e => setForm({ ...form, is_self_register: e.target.checked })}
-                    className="sr-only" />
-                  <div className={`w-12 h-7 rounded-full transition-colors border ${form.is_self_register ? "bg-blue-600 border-blue-500 shadow-[0_0_15px_rgba(37,99,235,0.3)]" : (isDarkMode ? "bg-zinc-800 border-zinc-700" : "bg-zinc-200 border-zinc-300")}`}></div>
-                  <div className={`absolute left-1 w-5 h-5 bg-white rounded-full shadow-lg transition-transform duration-300 ${form.is_self_register ? "translate-x-5" : "translate-x-0"}`}></div>
-                </div>
-                <div className="flex flex-col">
-                  <span className={`text-[11px] font-black uppercase tracking-wider ${isDarkMode ? 'text-white' : 'text-blue-900'}`}>
-                    YO, {guardianNameParts[0]} TAMBIÉN ENTRENARÉ
-                  </span>
-                </div>
-              </label>
 
               {form.is_self_register && (
                 <div className="mt-8 space-y-6 pt-8 border-t border-zinc-800 animate-in fade-in zoom-in duration-500">
