@@ -28,7 +28,8 @@ import {
   Lock,
   AlertCircle,
   Award,
-  Zap
+  Zap,
+  Plus
 } from "lucide-react";
 
 type IndustryConfig = {
