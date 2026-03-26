@@ -300,8 +300,8 @@ const PlanCard = ({ plan, isSelected, onSelect, isDarkMode, monthlyBase = 0 }: a
   })();
 
   const monthlyVal = price / durMonths;
-  const savingsPerMonth = (monthlyBase > 0 && monthlyBase > monthlyVal) ? (monthlyBase - monthlyVal) : 0;
-  const savingsPercentage = monthlyBase > 0 ? Math.round((savingsPerMonth / monthlyBase) * 100) : 0;
+  const totalSavings = (monthlyBase > 0 && monthlyBase * durMonths > price) ? (monthlyBase * durMonths - price) : 0;
+  const isElite = plan.billing_cycle === 'annual';
 
   const getCycleLabel = (cycle: string) => {
     switch(cycle) {
@@ -314,96 +314,62 @@ const PlanCard = ({ plan, isSelected, onSelect, isDarkMode, monthlyBase = 0 }: a
     }
   };
 
-  const deco = (function() {
-    const n = (plan.name || '').toUpperCase();
-    if (n.includes('SUELTA') || n.includes('INDIVIDUAL')) return { b: 'DETALLES', d: 'Ideal para probar la metodología.' };
-    if (n.includes('PACK')) return { b: 'MEJOR VALOR', d: 'Progresión real en sesiones.' };
-    if (n.includes('REFERIDO')) return { b: 'PARA ALUMNOS', d: 'Beneficio exclusivo academia.' };
-    if (n.includes('TRIMESTRAL')) return { b: 'AHORRO', d: 'Pago único por 3 meses de clases.' };
-    if (n.includes('SEMESTRAL')) return { b: 'PREMIUM', d: 'Pago único por 6 meses de clases.' };
-    if (n.includes('ANUAL')) return { b: 'ELITE', d: 'Año completo de entrenamiento.' };
-    return { b: plan.category.toUpperCase(), d: plan.description || 'Acceso completo según el ciclo elegido.' };
-  })();
-
   return (
     <button
       type="button"
       onClick={onSelect}
-      className={`p-5 rounded-[2.2rem] border transition-all text-left group relative overflow-hidden ${isSelected
-        ? 'border-[#c9a84c] bg-[#c9a84c]/5 shadow-[0_0_20px_rgba(201,168,76,0.1)] scale-[1.01]'
-        : (isDarkMode ? 'border-zinc-800/80 bg-zinc-950/40 hover:border-zinc-700' : 'border-zinc-200 bg-zinc-50/50 hover:border-zinc-300 shadow-sm')}`}
+      className={`p-6 rounded-[1.5rem] border transition-all text-center group relative overflow-hidden flex flex-col items-center gap-4 ${isSelected
+        ? 'border-[#c9a84c] bg-[#c9a84c]/5 shadow-[0_0_30px_rgba(201,168,76,0.15)] scale-[1.02]'
+        : (isElite 
+           ? 'border-[#c9a84c]/40 bg-zinc-950/40 hover:border-[#c9a84c]' 
+           : (isDarkMode ? 'border-zinc-800/80 bg-zinc-950/40 hover:border-zinc-700' : 'border-zinc-200 bg-zinc-50/50 hover:border-zinc-300 shadow-sm'))}`}
     >
+      {isElite && (
+        <div className="absolute top-0 right-0 bg-[#c9a84c] text-black px-3 py-1 text-[8px] font-black rounded-bl-xl flex items-center gap-1.5 shadow-lg z-20 animate-in slide-in-from-top duration-500">
+          <span className="text-[10px]">★</span> MEJOR VALOR
+        </div>
+      )}
+
       {isSelected && (
-        <div className="absolute top-2 right-2 animate-in zoom-in duration-300">
-          <div className="w-5 h-5 rounded-full bg-[#c9a84c] flex items-center justify-center border-2 border-zinc-950">
-            <Check size={12} className="text-black fill-black" strokeWidth={4} />
+        <div className="absolute top-3 left-3 animate-in zoom-in duration-300">
+          <Check size={14} className="text-[#c9a84c]" strokeWidth={4} />
+        </div>
+      )}
+      
+      <div className="flex flex-col gap-1 mt-2">
+        <span className={`text-sm font-black uppercase tracking-[0.2em] ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
+          {getCycleLabel(plan.billing_cycle)}
+        </span>
+        <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>
+          {durMonths} {durMonths === 1 ? 'mes' : 'meses'}
+        </span>
+      </div>
+
+      <div className="flex flex-col items-center">
+        <span className={`text-3xl font-black tracking-tighter ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>
+          ${price.toLocaleString('es-CL')}
+        </span>
+        <span className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>
+          ${Math.round(monthlyVal).toLocaleString('es-CL')}/mes
+        </span>
+      </div>
+
+      {totalSavings > 0 && (
+        <div className="mt-2 w-full flex justify-center animate-in slide-in-from-bottom duration-700">
+          <div className="bg-emerald-600 px-4 py-2 rounded-lg shadow-lg shadow-emerald-900/20 group-hover:scale-105 transition-transform">
+            <span className="text-[10px] font-black text-white uppercase tracking-widest leading-none block">
+              AHORRA ${totalSavings.toLocaleString('es-CL')}
+            </span>
           </div>
         </div>
       )}
       
-      <div className="flex flex-col gap-3">
-        {/* HEADER ROW: CYCLE | TIER | ACTION */}
-        <div className={`flex items-center justify-between border-b pb-3 mb-1 ${isDarkMode ? 'border-white/5' : 'border-zinc-100'}`}>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase text-[#c9a84c] tracking-widest">{getCycleLabel(plan.billing_cycle)}</span>
-            <span className={`w-1 h-1 rounded-full ${isDarkMode ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
-            <span className={`text-[9px] font-black uppercase tracking-widest ${isDarkMode ? 'text-zinc-600' : 'text-zinc-500'}`}>{deco.b}</span>
-          </div>
-
-          {!isSelected && (
-            <div className={`text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border transition-all ${isDarkMode ? 'border-zinc-800 text-zinc-600 group-hover:text-zinc-400 group-hover:border-zinc-700' : 'border-zinc-200 text-zinc-400 group-hover:text-zinc-600 group-hover:border-zinc-300'}`}>
-              SELECCIONAR
-            </div>
-          )}
-          {isSelected && (
-            <div className="text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full bg-[#c9a84c] text-black border border-[#c9a84c] animate-in slide-in-from-right-2 duration-300">
-              SELECCIONADO
-            </div>
-          )}
-        </div>
-        
-        <div className="flex flex-col">
-          <span className={`text-base font-black uppercase tracking-tight leading-none mb-1.5 ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{plan.name}</span>
-          <div className="flex items-center gap-3 mb-3">
-            <span className={`text-[9px] font-bold uppercase tracking-widest leading-relaxed ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>{deco.d}</span>
-            {plan.billing_cycle === 'annual' && (
-              <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#c9a84c]/10 border border-[#c9a84c]/20 animate-in fade-in zoom-in duration-700">
-                <Sparkles size={10} className="text-[#c9a84c]" />
-                <span className="text-[8px] font-black uppercase tracking-widest text-[#c9a84c]">RECOMENDADO</span>
-              </div>
-            )}
-          </div>
-          
-          {savingsPercentage > 0 && (
-            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left duration-700">
-               <div className="h-1 w-1 rounded-full bg-emerald-500" />
-               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">{savingsPercentage}% DE AHORRO VS PLAN MENSUAL</span>
-            </div>
-          )}
-        </div>
-        
-        <div className={`pt-2 border-t mt-1 flex items-end justify-between ${isDarkMode ? 'border-zinc-800/50' : 'border-zinc-200/50'}`}>
-           <div className="flex items-end gap-5">
-              <div>
-                <span className={`text-[8px] font-black uppercase tracking-widest block mb-1 ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>VALOR BASE (CLP)</span>
-                <div className="flex items-baseline gap-1">
-                  <span className={`font-bold text-[10px] ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>$</span>
-                  <span className={`text-xl font-black tracking-tighter ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{price.toLocaleString('es-CL')}</span>
-                </div>
-              </div>
-              {durMonths > 1 && (
-                <div className={`border-l pl-5 ${isDarkMode ? 'border-zinc-800' : 'border-zinc-200'}`}>
-                  <span className={`text-[8px] font-black uppercase tracking-widest block mb-1 ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>Pagarás por mes</span>
-                  <div className="flex items-baseline gap-1">
-                    <span className={`font-bold text-[10px] ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>$</span>
-                    <span className={`text-lg font-black tracking-tighter ${isDarkMode ? 'text-[#c9a84c]' : 'text-zinc-900'}`}>{Math.round(monthlyVal).toLocaleString('es-CL')}</span>
-                  </div>
-                </div>
-              )}
-           </div>
-        </div>
+      <div className={`mt-2 text-[8px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-full border transition-all ${isSelected ? 'bg-white text-black border-white' : (isDarkMode ? 'border-zinc-800 text-zinc-600' : 'border-zinc-200 text-zinc-400')}`}>
+        {isSelected ? 'SELECCIONADO' : 'SELECCIONAR'}
       </div>
     </button>
+  );
+};
   );
 };
 
