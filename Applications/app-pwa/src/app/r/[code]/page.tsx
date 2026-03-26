@@ -837,6 +837,10 @@ export default function RegisterPage() {
     );
   };
 
+  const isGuardianComplete = isGuardianNameComplete && 
+                            validateEmail(form.guardian_email) && 
+                            form.guardian_phone.replace(/\D/g, '').length >= 11;
+
   const isSelfComplete = !form.is_self_register || form.self_student.modality !== "";
   const areStudentsComplete = form.students.length === 0 || form.students.every((s: any) => s.modality !== "");
   const canShowPlans = isSelfComplete && areStudentsComplete && (form.is_self_register || form.students.length > 0);
@@ -1151,8 +1155,8 @@ export default function RegisterPage() {
             </div>
           )}
 
-          {/* LISTA DE ALUMNOS/ESTUDIANTES - GATED */}
-          {(form.guardian_name && form.guardian_email) && (!form.is_self_register || form.self_student.modality !== "") && (
+          {/* LISTA DE ALUMNOS/ESTUDIANTES - GATED TEMPRANO */}
+          {isGuardianComplete && (
             <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <style jsx>{`
           @keyframes spin360 {
