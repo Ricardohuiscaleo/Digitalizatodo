@@ -846,8 +846,8 @@ export default function RegisterPage() {
       <RegistrationProgress form={form} canShowPlans={canShowPlans} isDarkMode={isDarkMode} />
       {isDarkMode && (
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-          <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-indigo-600/15 rounded-full blur-[100px] animate-pulse duration-[10s]" />
-          <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#c9a84c]/10 rounded-full blur-[100px] animate-pulse duration-[8s]" />
+          <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-indigo-600/15 rounded-full blur-[100px]" />
+          <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#c9a84c]/10 rounded-full blur-[100px]" />
           <div className="absolute top-[20%] left-[-5%] w-[30%] h-[30%] bg-blue-500/10 rounded-full blur-[80px]" />
         </div>
       )}
