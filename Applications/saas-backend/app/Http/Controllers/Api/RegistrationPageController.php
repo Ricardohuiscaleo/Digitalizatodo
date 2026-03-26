@@ -85,6 +85,14 @@ class RegistrationPageController extends Controller
             ->where('active', true)
             ->get();
 
+        $schedules = \App\Models\Schedule::where('tenant_id', $page->tenant_id)
+            ->get();
+
+        $terms = \App\Models\TenantTerm::where('tenant_id', $page->tenant_id)
+            ->where('active', true)
+            ->orderBy('version', 'desc')
+            ->first();
+
         return response()->json([
             'id' => $page->tenant_id,
             'slug' => $page->tenant_slug,
@@ -94,6 +102,8 @@ class RegistrationPageController extends Controller
             'industry' => $page->tenant_industry,
             'data' => is_string($page->tenant_data) ? json_decode($page->tenant_data, true) : $page->tenant_data,
             'plans' => $plans,
+            'schedules' => $schedules,
+            'terms' => $terms ? $terms->content : null,
         ]);
     }
 }

@@ -39,6 +39,10 @@ class StudentRegistrationController extends Controller
             'students.*.height' => 'nullable|numeric',
             'students.*.course_id' => 'nullable|exists:courses,id',
             'plan_id' => 'nullable|exists:plans,id',
+            'adult_plan_id' => 'nullable|exists:plans,id',
+            'kid_plan_id' => 'nullable|exists:plans,id',
+            'accept_dojo_terms' => 'required|accepted',
+            'accept_digitaliza_terms' => 'required|accepted',
         ]);
 
         if ($validator->fails()) {
@@ -139,8 +143,13 @@ class StudentRegistrationController extends Controller
                 // 2. Crear Alumnos e Inscripciones
                 foreach ($studentsToCreate as $studentData) {
                     $category = $studentData['category'];
-                    // Obtener el plan: si es Dojo usa el automático por categoría, si es VIP usa el plan_id solicitado
-                    $plan = $getPlan($category, $request->plan_id);
+                    // Determinamos qué plan usar según la categoría
+                    $requestedPlanId = ($category === 'kids') ? $request->kid_plan_id : $request->adult_plan_id;
+                    if (!$requestedPlanId) {
+                        $requestedPlanId = $request->plan_id; // Fallback al plano único
+                    }
+
+                    $plan = $getPlan($category, $requestedPlanId);
 
                     $courseId = $studentData['course_id'] ?? null;
 
