@@ -638,23 +638,30 @@ export default function RegisterPage() {
             {(() => {
               const daysMapping: any = { 0: 'DOM', 1: 'LUN', 2: 'MAR', 3: 'MIE', 4: 'JUE', 5: 'VIE', 6: 'SAB' };
               const schedules = (tenant?.schedules || []).filter((sch: any) => {
-                // Fix: Case-insensitive category matching (API uses capital "Adulto")
-                const matchesCategory = (sch.category || '').toLowerCase().includes((s.category || '').toLowerCase());
-                // Fix: API uses "name" instead of "subject" in this tenant
+                const schCat = (sch.category || '').toLowerCase();
+                const sCat = (s.category || '').toLowerCase();
+                
+                // Robust matching: Check if both contains "adult" or both contains "kid"
+                // This handles "Adulto" vs "adults", and "Kids" vs "kids"
+                const matchesCategory = 
+                  (schCat.includes('adult') && sCat.includes('adult')) || 
+                  (schCat.includes('kid') && sCat.includes('kid'));
+
+                // Fallback to name if subject is null (common in some tenants)
                 const subject = (sch.subject || sch.name || '').toUpperCase();
                 let matchesModality = false;
 
                 if (s.modality === 'both') {
                   matchesModality = true;
                 } else if (s.modality === 'gi') {
-                  // Kids schedules are often unique, we show them if no explicit NO-GI
+                  // Assume GI by default if not explicit NO-GI
                   const isExplicitNoGi = subject.includes('NO-GI') || subject.includes('NOGI');
                   matchesModality = !isExplicitNoGi;
                 } else if (s.modality === 'nogi') {
                   matchesModality = subject.includes('NO-GI') || subject.includes('NOGI');
                 }
 
-                return (s.category ? matchesCategory : true) && matchesModality;
+                return matchesCategory && matchesModality;
               });
 
               if (schedules.length === 0) {
