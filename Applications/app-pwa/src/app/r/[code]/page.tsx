@@ -1352,173 +1352,157 @@ export default function RegisterPage() {
             )}
           </div>
 
-          {totals.totalInscriptions > 0 ? (
-            <div className="space-y-8 animate-in fade-in duration-1000">
-              {/* REGISTRATION MODE SELECTOR (MOVED) */}
-              <div className="space-y-4">
-                <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500 px-2 flex items-center gap-2">
-                  <div className="w-1 h-1 rounded-full bg-[#c9a84c]" />
-                  {totals.adultsCount > 0 && totals.kidsCount > 0 ? "ELIGE TUS PLANES" :
-                   totals.kidsCount > 0 ? "ELIGE TU PLAN KID" : "ELIGE TU PLAN ADULTO"}
-                  {errors.registration_mode && <span className="text-red-500 animate-pulse ml-2 text-[8px] tracking-normal">{errors.registration_mode}</span>}
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setForm({ ...form, registration_mode: 'dojo', plan_id: null })}
-                    className={`p-4 rounded-[2.5rem] border transition-all flex flex-col items-center gap-2 text-center group ${form.registration_mode === 'dojo'
-                      ? 'border-[#c9a84c] bg-[#c9a84c]/5 shadow-[0_0_20px_rgba(201,168,76,0.1)]'
-                      : (isDarkMode ? 'border-zinc-800/50 bg-zinc-900/10 hover:border-zinc-700' : 'border-zinc-200 bg-white hover:border-zinc-300 shadow-sm')}`}
-                  >
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-colors ${form.registration_mode === 'dojo' ? 'bg-[#c9a84c] text-black shadow-lg' : (isDarkMode ? 'bg-zinc-800/50 text-zinc-600' : 'bg-zinc-100 text-zinc-400')}`}>
-                      <Users size={18} />
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${form.registration_mode === 'dojo' ? (isDarkMode ? 'text-white' : 'text-zinc-900') : 'text-zinc-500'}`}>
-                        SER PARTE DEL DOJO
-                      </span>
-                      <span className="text-[7px] font-bold text-zinc-600 uppercase tracking-tighter text-center">INSCRIPCIÓN REGULAR</span>
-                    </div>
-                  </button>
+          <div className="space-y-8 animate-in fade-in duration-1000">
+            {/* REGISTRATION MODE SELECTOR (MOVED) */}
+            <div className="space-y-4">
+              <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500 px-2 flex items-center gap-2">
+                <div className="w-1 h-1 rounded-full bg-[#c9a84c]" />
+                {totals.adultsCount > 0 && totals.kidsCount > 0 ? "ELIGE TUS PLANES" :
+                 totals.kidsCount > 0 ? "ELIGE TU PLAN KID" : "ELIGE TU PLAN ADULTO"}
+                {errors.registration_mode && <span className="text-red-500 animate-pulse ml-2 text-[8px] tracking-normal">{errors.registration_mode}</span>}
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, registration_mode: 'dojo', plan_id: null })}
+                  className={`p-4 rounded-[2.5rem] border transition-all flex flex-col items-center gap-2 text-center group ${form.registration_mode === 'dojo'
+                    ? 'border-[#c9a84c] bg-[#c9a84c]/5 shadow-[0_0_20px_rgba(201,168,76,0.1)]'
+                    : (isDarkMode ? 'border-zinc-800/50 bg-zinc-900/10 hover:border-zinc-700' : 'border-zinc-200 bg-white hover:border-zinc-300 shadow-sm')}`}
+                >
+                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-colors ${form.registration_mode === 'dojo' ? 'bg-[#c9a84c] text-black shadow-lg' : (isDarkMode ? 'bg-zinc-800/50 text-zinc-600' : 'bg-zinc-100 text-zinc-400')}`}>
+                    <Users size={18} />
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${form.registration_mode === 'dojo' ? (isDarkMode ? 'text-white' : 'text-zinc-900') : 'text-zinc-500'}`}>
+                      SER PARTE DEL DOJO
+                    </span>
+                    <span className="text-[7px] font-bold text-zinc-600 uppercase tracking-tighter text-center">INSCRIPCIÓN REGULAR</span>
+                  </div>
+                </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setForm({ ...form, registration_mode: 'vip_only', plan_id: null })}
-                    className={`p-4 rounded-[2.5rem] border transition-all flex flex-col items-center gap-2 text-center group ${form.registration_mode === 'vip_only'
-                      ? 'border-[#c9a84c] bg-[#c9a84c]/5 shadow-[0_0_20px_rgba(201,136,76,0.15)]'
-                      : (isDarkMode ? 'border-zinc-800/50 bg-zinc-900/10 hover:border-zinc-700' : 'border-zinc-200 bg-white hover:border-zinc-300 shadow-sm')}`}
-                  >
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${form.registration_mode === 'vip_only' ? 'bg-[#c9a84c] text-black shadow-[0_0_15px_rgba(201,136,76,0.5)]' : (isDarkMode ? 'bg-zinc-800/50 text-zinc-600' : 'bg-zinc-100 text-zinc-400')}`}>
-                      <Star size={18} />
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${form.registration_mode === 'vip_only' ? (isDarkMode ? 'text-white' : 'text-zinc-900') : 'text-zinc-500'}`}>
-                        SESIONES VIP 1-A-1
-                      </span>
-                      <span className="text-[7px] font-bold text-zinc-600 uppercase tracking-tighter text-center">SIN MENSUALIDAD</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              {/* PLAN SELECTION (DOJO or VIP) */}
-              {form.registration_mode && (
-                <div className={`space-y-8 p-6 sm:p-8 rounded-[2.5rem] border backdrop-blur-md shadow-2xl relative overflow-hidden transition-all duration-700 ${isDarkMode ? 'bg-zinc-900/30 border-zinc-800/50' : 'bg-white border-zinc-200'} ${(form.registration_mode === 'vip_only' || form.registration_mode === 'dojo') && !form.plan_id && !form.adult_plan_id && !form.kid_plan_id ? 'border-[#c9a84c]/50' : ''}`}>
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-[#c9a84c]/5 rounded-full blur-3xl" />
-
-                  {form.registration_mode === 'vip_only' ? (
-                    <div className="space-y-6">
-                      <div className="space-y-1 relative z-10">
-                        <h3 className="text-[10px] uppercase font-black tracking-[0.2em] text-[#c9a84c]">
-                          Paso Final: Selecciona tu Pack VIP
-                        </h3>
-                        {errors.plan_id && <p className="text-[10px] text-red-500 font-black uppercase animate-pulse">{errors.plan_id}</p>}
-                        <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">
-                          Elige el pack de sesiones para comenzar hoy
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-1 gap-3 relative z-10">
-                        {(tenant?.plans || []).filter((p: any) => p.category === 'vip').map((plan: any) => (
-                          <PlanCard 
-                            key={plan.id} 
-                            plan={plan} 
-                            isSelected={form.plan_id === plan.id}
-                            onSelect={() => { 
-                              setForm({ ...form, plan_id: plan.id });
-                              if (errors.plan_id) setErrors({ ...errors, plan_id: "" });
-                            }}
-                            isDarkMode={isDarkMode}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-10 relative z-10">
-                      {totals.adultsCount > 0 && (
-                        <div className="space-y-6">
-                          <div className="space-y-1">
-                            <h3 className="text-[10px] uppercase font-black tracking-[0.2em] text-[#c9a84c]">
-                              ELIGE TU PLAN ADULTO {totals.adultsCount > 1 ? `(X${totals.adultsCount})` : ""}
-                            </h3>
-                            {errors.adult_plan_id && <p className="text-[10px] text-red-500 font-black uppercase animate-pulse">{errors.adult_plan_id}</p>}
-                            <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">
-                              Inscripción para los participantes adultos
-                            </p>
-                          </div>
-                          <div className="grid grid-cols-1 gap-3">
-                            {(tenant?.plans || [])
-                              .filter((p: any) => p.category === 'dojo' && (
-                                p.target_audience === 'adults' || 
-                                (p.target_audience === 'all' && !p.name.toLowerCase().includes('kids'))
-                              ))
-                              .map((plan: any) => (
-                                <PlanCard 
-                                  key={plan.id} 
-                                  plan={plan} 
-                                  isSelected={form.adult_plan_id === plan.id}
-                                  onSelect={() => { 
-                                    setForm({ ...form, adult_plan_id: plan.id });
-                                    if (errors.adult_plan_id) setErrors({ ...errors, adult_plan_id: "" });
-                                  }}
-                                  isDarkMode={isDarkMode}
-                                />
-                              ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {totals.kidsCount > 0 && (
-                        <div className="space-y-6">
-                          <div className="space-y-1">
-                            <h3 className="text-[10px] uppercase font-black tracking-[0.2em] text-[#c9a84c]">
-                              ELIGE TU PLAN KID {totals.kidsCount > 1 ? `(X${totals.kidsCount})` : ""}
-                            </h3>
-                            {errors.kid_plan_id && <p className="text-[10px] text-red-500 font-black uppercase animate-pulse">{errors.kid_plan_id}</p>}
-                            <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">
-                              Inscripción para los participantes menores de edad
-                            </p>
-                          </div>
-                          <div className="grid grid-cols-1 gap-3">
-                            {(tenant?.plans || [])
-                              .filter((p: any) => p.category === 'dojo' && (
-                                p.target_audience === 'kids' || 
-                                (p.target_audience === 'all' && p.name.toLowerCase().includes('kids'))
-                              ))
-                              .map((plan: any) => (
-                                <PlanCard 
-                                  key={plan.id} 
-                                  plan={plan} 
-                                  isSelected={form.kid_plan_id === plan.id}
-                                  onSelect={() => { 
-                                    setForm({ ...form, kid_plan_id: plan.id });
-                                    if (errors.kid_plan_id) setErrors({ ...errors, kid_plan_id: "" });
-                                  }}
-                                  isDarkMode={isDarkMode}
-                                />
-                              ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className={`p-12 rounded-[2.5rem] border border-dashed text-center space-y-4 animate-in fade-in zoom-in-95 duration-700 ${isDarkMode ? 'bg-zinc-900/10 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'}`}>
-              <div className="w-16 h-16 rounded-3xl bg-zinc-900/50 flex items-center justify-center mx-auto border border-zinc-800">
-                <Users size={32} className="text-zinc-700" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-zinc-500">
-                  AGREGA AL MENOS UN ALUMNO
-                </h3>
-                <p className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest max-w-[200px] mx-auto leading-relaxed">
-                  Para desbloquear los planes disponibles del Dojo
-                </p>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, registration_mode: 'vip_only', plan_id: null })}
+                  className={`p-4 rounded-[2.5rem] border transition-all flex flex-col items-center gap-2 text-center group ${form.registration_mode === 'vip_only'
+                    ? 'border-[#c9a84c] bg-[#c9a84c]/5 shadow-[0_0_20px_rgba(201,136,76,0.15)]'
+                    : (isDarkMode ? 'border-zinc-800/50 bg-zinc-900/10 hover:border-zinc-700' : 'border-zinc-200 bg-white hover:border-zinc-300 shadow-sm')}`}
+                >
+                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${form.registration_mode === 'vip_only' ? 'bg-[#c9a84c] text-black shadow-[0_0_15px_rgba(201,136,76,0.5)]' : (isDarkMode ? 'bg-zinc-800/50 text-zinc-600' : 'bg-zinc-100 text-zinc-400')}`}>
+                    <Star size={18} />
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${form.registration_mode === 'vip_only' ? (isDarkMode ? 'text-white' : 'text-zinc-900') : 'text-zinc-500'}`}>
+                      SESIONES VIP 1-A-1
+                    </span>
+                    <span className="text-[7px] font-bold text-zinc-600 uppercase tracking-tighter text-center">SIN MENSUALIDAD</span>
+                  </div>
+                </button>
               </div>
             </div>
-          )}
+
+            {/* PLAN SELECTION (DOJO or VIP) */}
+            {form.registration_mode && (
+              <div className={`space-y-8 p-6 sm:p-8 rounded-[2.5rem] border backdrop-blur-md shadow-2xl relative overflow-hidden transition-all duration-700 ${isDarkMode ? 'bg-zinc-900/30 border-zinc-800/50' : 'bg-white border-zinc-200'} ${(form.registration_mode === 'vip_only' || form.registration_mode === 'dojo') && !form.plan_id && !form.adult_plan_id && !form.kid_plan_id ? 'border-[#c9a84c]/50' : ''}`}>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#c9a84c]/5 rounded-full blur-3xl" />
+
+                {form.registration_mode === 'vip_only' ? (
+                  <div className="space-y-6">
+                    <div className="space-y-1 relative z-10">
+                      <h3 className="text-[10px] uppercase font-black tracking-[0.2em] text-[#c9a84c]">
+                        Paso Final: Selecciona tu Pack VIP
+                      </h3>
+                      {errors.plan_id && <p className="text-[10px] text-red-500 font-black uppercase animate-pulse">{errors.plan_id}</p>}
+                      <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">
+                        Elige el pack de sesiones para comenzar hoy
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 relative z-10">
+                      {(tenant?.plans || []).filter((p: any) => p.category === 'vip').map((plan: any) => (
+                        <PlanCard 
+                          key={plan.id} 
+                          plan={plan} 
+                          isSelected={form.plan_id === plan.id}
+                          onSelect={() => { 
+                            setForm({ ...form, plan_id: plan.id });
+                            if (errors.plan_id) setErrors({ ...errors, plan_id: "" });
+                          }}
+                          isDarkMode={isDarkMode}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-10 relative z-10">
+                    {totals.adultsCount > 0 && (
+                      <div className="space-y-6">
+                        <div className="space-y-1">
+                          <h3 className="text-[10px] uppercase font-black tracking-[0.2em] text-[#c9a84c]">
+                            ELIGE TU PLAN ADULTO {totals.adultsCount > 1 ? `(X${totals.adultsCount})` : ""}
+                          </h3>
+                          {errors.adult_plan_id && <p className="text-[10px] text-red-500 font-black uppercase animate-pulse">{errors.adult_plan_id}</p>}
+                          <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">
+                            Inscripción para los participantes adultos
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3">
+                          {(tenant?.plans || [])
+                            .filter((p: any) => p.category === 'dojo' && (
+                              p.target_audience === 'adults' || 
+                              (p.target_audience === 'all' && !p.name.toLowerCase().includes('kids'))
+                            ))
+                            .map((plan: any) => (
+                              <PlanCard 
+                                key={plan.id} 
+                                plan={plan} 
+                                isSelected={form.adult_plan_id === plan.id}
+                                onSelect={() => { 
+                                  setForm({ ...form, adult_plan_id: plan.id });
+                                  if (errors.adult_plan_id) setErrors({ ...errors, adult_plan_id: "" });
+                                }}
+                                isDarkMode={isDarkMode}
+                              />
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {totals.kidsCount > 0 && (
+                      <div className="space-y-6">
+                        <div className="space-y-1">
+                          <h3 className="text-[10px] uppercase font-black tracking-[0.2em] text-[#c9a84c]">
+                            ELIGE TU PLAN KID {totals.kidsCount > 1 ? `(X${totals.kidsCount})` : ""}
+                          </h3>
+                          {errors.kid_plan_id && <p className="text-[10px] text-red-500 font-black uppercase animate-pulse">{errors.kid_plan_id}</p>}
+                          <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">
+                            Inscripción para los participantes menores de edad
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3">
+                          {(tenant?.plans || [])
+                            .filter((p: any) => p.category === 'dojo' && (
+                              p.target_audience === 'kids' || 
+                              (p.target_audience === 'all' && p.name.toLowerCase().includes('kids'))
+                            ))
+                            .map((plan: any) => (
+                              <PlanCard 
+                                key={plan.id} 
+                                plan={plan} 
+                                isSelected={form.kid_plan_id === plan.id}
+                                onSelect={() => { 
+                                  setForm({ ...form, kid_plan_id: plan.id });
+                                  if (errors.kid_plan_id) setErrors({ ...errors, kid_plan_id: "" });
+                                }}
+                                isDarkMode={isDarkMode}
+                              />
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* RESUMEN DE PRECIOS — solo industrias con pricing */}
           {config.showPricing && totals.totalInscriptions > 0 && form.registration_mode !== null && (
