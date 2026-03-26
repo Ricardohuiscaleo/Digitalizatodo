@@ -27,7 +27,8 @@ import {
   Mail,
   Lock,
   AlertCircle,
-  Award
+  Award,
+  Zap
 } from "lucide-react";
 
 type IndustryConfig = {
@@ -331,7 +332,7 @@ export default function RegisterPage() {
     password: "", password_confirmation: "",
     is_self_register: false,
     registration_mode: null as 'dojo' | 'vip_only' | null,
-    self_student: { category: "", belt: "", degrees: null as number | null, modality: "gi", birth_date: "", is_new_to_jiujitsu: false, gender: 'male', weight: '', height: '' },
+    self_student: { category: "", belt: "", degrees: null as number | null, modality: "", birth_date: "", is_new_to_jiujitsu: false, gender: 'male', weight: '', height: '' },
     students: [] as any[],
     plan_id: null as number | null, // Para VIP o planes únicos
     adult_plan_id: null as number | null,
@@ -636,6 +637,25 @@ export default function RegisterPage() {
             </p>
             <p className={`text-[9px] font-bold leading-relaxed max-w-[200px] mx-auto ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>
               Selecciona cuántas rayas tienes en tu cinturón para ver los horarios correspondientes. ⭐
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!s.modality) {
+      return (
+        <div className={`mt-6 p-8 rounded-[2.5rem] border border-dashed flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in zoom-in duration-700 ${isDarkMode ? 'bg-zinc-900/20 border-zinc-800/50' : 'bg-white/50 border-zinc-200'
+          }`}>
+          <div className={`w-14 h-14 rounded-[1.5rem] flex items-center justify-center ${isDarkMode ? 'bg-zinc-800 text-zinc-500' : 'bg-white text-zinc-300 shadow-sm'}`}>
+            <Zap size={24} className="opacity-40" />
+          </div>
+          <div className="space-y-1.5">
+            <p className={`text-[11px] font-black uppercase tracking-[0.2em] ${isDarkMode ? 'text-zinc-400' : 'text-zinc-500'}`}>
+              ELIGE UNA MODALIDAD
+            </p>
+            <p className={`text-[9px] font-bold leading-relaxed max-w-[200px] mx-auto ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>
+              Selecciona tu estilo de entrenamiento favorito para desbloquear los horarios y planes. ⚡
             </p>
           </div>
         </div>
@@ -1097,7 +1117,7 @@ export default function RegisterPage() {
                 {config.showSelfRegister ? `Otros ${config.membersLabel.toLowerCase()}` : `${config.membersLabel} a inscribir`}
               </label>
               <button type="button"
-                onClick={() => setForm({ ...form, students: [...form.students, { name: "", category: "", belt: "", degrees: null as number | null, modality: "gi", birth_date: "", is_new_to_jiujitsu: false, gender: 'male', weight: '', height: '' }] })}
+                onClick={() => setForm({ ...form, students: [...form.students, { name: "", category: "", belt: "", degrees: null as number | null, modality: "", birth_date: "", is_new_to_jiujitsu: false, gender: 'male', weight: '', height: '' }] })}
                 className="group flex items-center gap-2.5 transition-all active:scale-95">
                 <div className="relative">
                   <div key={form.students.length} className={`w-6 h-6 rounded-full flex items-center justify-center border animate-spin-360 ${isDarkMode ? 'bg-[#c9a84c]/10 border-[#c9a84c]/20' : 'bg-[#c9a84c]/5 border-amber-200'}`}>
@@ -1352,7 +1372,10 @@ export default function RegisterPage() {
             )}
           </div>
 
-          <div className="space-y-8 animate-in fade-in duration-1000">
+        {/* REGISTRATION & PLANS — SOLO SI HAY MODALIDAD SELECCIONADA */}
+        {form.self_student.modality !== "" && (
+          <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+            <div className="space-y-8 animate-in fade-in duration-1000">
             {/* REGISTRATION MODE SELECTOR (MOVED) */}
             <div className="space-y-4">
               <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500 px-2 flex items-center gap-2">
@@ -1704,19 +1727,21 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <div className="space-y-4 pt-6">
-            <button type="submit" disabled={submitting}
-              className={`w-full h-14 text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-2xl disabled:opacity-30 group relative overflow-hidden ${isDarkMode ? 'bg-white hover:bg-zinc-200 text-black' : 'bg-black hover:bg-zinc-800 text-white shadow-xl shadow-black/10'}`}>
-              <div className="absolute inset-0 bg-linear-to-r from-amber-500/0 via-amber-500/10 to-amber-500/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-              {submitting ? <Loader2 className={`animate-spin ${isDarkMode ? 'text-zinc-900' : 'text-zinc-200'}`} size={20} /> : (
-                <><span>Completar Inscripción</span><CheckCircle2 size={20} className={isDarkMode ? 'text-zinc-400' : 'text-zinc-500'} /></>
-              )}
-            </button>
-            <p className="text-center text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">
-              ¿Ya tienes cuenta?{" "}
-              <a href="/login" className={`transition-colors underline-offset-4 hover:underline ${isDarkMode ? 'text-white hover:text-amber-500' : 'text-black hover:text-amber-600'}`}>Iniciar sesión</a>
-            </p>
+            <div className="space-y-4 pt-6">
+              <button type="submit" disabled={submitting}
+                className={`w-full h-14 text-[11px] font-black uppercase tracking-[0.3em] rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-2xl disabled:opacity-30 group relative overflow-hidden ${isDarkMode ? 'bg-white hover:bg-zinc-200 text-black' : 'bg-black hover:bg-zinc-800 text-white shadow-xl shadow-black/10'}`}>
+                <div className="absolute inset-0 bg-linear-to-r from-amber-500/0 via-amber-500/10 to-amber-500/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                {submitting ? <Loader2 className={`animate-spin ${isDarkMode ? 'text-zinc-900' : 'text-zinc-200'}`} size={20} /> : (
+                  <><span>Completar Inscripción</span><CheckCircle2 size={20} className={isDarkMode ? 'text-zinc-400' : 'text-zinc-500'} /></>
+                )}
+              </button>
+              <p className="text-center text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">
+                ¿Ya tienes cuenta?{" "}
+                <a href="/login" className={`transition-colors underline-offset-4 hover:underline ${isDarkMode ? 'text-white hover:text-amber-500' : 'text-black hover:text-amber-600'}`}>Iniciar sesión</a>
+              </p>
+            </div>
           </div>
+        )}
 
     </form>
 
