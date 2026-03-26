@@ -1418,14 +1418,6 @@ export default function RegisterPage() {
               ))}
             </div>
 
-            {form.students.length === 0 && !form.is_self_register && (
-              <div className="bg-zinc-900/20 rounded-[2.5rem] p-12 border border-dashed border-zinc-800 text-center space-y-3">
-                <Users size={32} className="mx-auto text-zinc-800" />
-                <p className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.3em]">
-                  Agrega al menos un {config.memberLabel.toLowerCase()}
-                </p>
-              </div>
-            )}
           </div>
 
         {/* REGISTRATION & PLANS — SOLO SI HAY MODALIDAD SELECCIONADA EN TODOS */}
