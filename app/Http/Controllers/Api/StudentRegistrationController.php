@@ -61,42 +61,21 @@ class StudentRegistrationController extends Controller
             ]
             );
 
-            // Recuperar configuración de precios del JSON
-            $pricing = $tenant->data['pricing'] ?? ($tenant->data['prices'] ?? [
-                'kids' => 0, 'adult' => 0, 'discountThreshold' => 2, 'discountPercentage' => 0
-            ]);
+            // (Eliminado el rastro del JSON de precios legacy)
 
-            // Helper para obtener plan por ID o crear provisional por categoría
-            $getPlan = function ($category, $requestedPlanId = null) use ($tenant, $pricing) {
+            // Helper para obtener plan por ID o buscar existente por nombre
+            $getPlan = function ($category, $requestedPlanId = null) use ($tenant) {
                     if ($requestedPlanId) {
                         $plan = Plan::where('tenant_id', $tenant->id)->find($requestedPlanId);
                         if ($plan) return $plan;
                     }
 
-                    $planName = $category === 'kids' ? 'Mensualidad Kids' : 'Mensualidad Adulto';
-                    $price = $category === 'kids' ? ($pricing['kids'] ?? 0) : ($pricing['adult'] ?? 0);
+                    $planName = $category === 'kids' ? 'Ser parte del dojo Kids - Mensual' : 'Ser parte del dojo - Mensual';
 
-                    $plan = Plan::where('tenant_id', $tenant->id)
-                        ->where('name', $planName)
+                    return Plan::where('tenant_id', $tenant->id)
+                        ->where('name', 'LIKE', '%' . $planName . '%')
                         ->first();
-
-                    if (!$plan) {
-                        $plan = Plan::create([
-                            'tenant_id' => $tenant->id,
-                            'name' => $planName,
-                            'description' => "Plan mensual para $category",
-                            'price' => $price,
-                            'currency' => 'CLP',
-                            'billing_interval' => 'monthly',
-                            'is_recurring' => true,
-                            'category' => 'dojo',
-                            'active' => true,
-                            'family_discount_percent' => $pricing['discountPercentage'] ?? 0
-                        ]);
-                    }
-                    return $plan;
-                }
-                    ;
+                };
 
                 $studentsToCreate = [];
 
@@ -197,6 +176,11 @@ class StudentRegistrationController extends Controller
                     // 3. Crear primer pago pendiente (Aplicando descuento dinámico si es Dojo)
                     $isVipOnly = $request->registration_mode === 'vip_only';
                     $amount = $plan->price;
+
+                    // Descuento Familar (Usando columnas del Plan)
+                    $threshold = (int)($plan->family_discount_min_students ?? 2);
+                    $discountPct = (float)($plan->family_discount_percent ?? 0);
+                    $appliesDiscount = ($studentCount >= $threshold && $discountPct > 0);
 
                     if (!$isVipOnly && $appliesDiscount) {
                         $amount = round($amount * (1 - ($discountPct / 100)));

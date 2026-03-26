@@ -163,7 +163,13 @@ class AuthController extends Controller
         if ($user instanceof Guardian) {
             // Perfil de Guardian
             $tenant = app('currentTenant');
-            $bankInfo = $tenant->data['bank_info'] ?? null;
+            $bankInfo = [
+                'bank_name'      => $tenant->bank_name,
+                'account_type'   => $tenant->bank_account_type,
+                'account_number' => $tenant->bank_account_number,
+                'holder_name'    => $tenant->bank_account_holder,
+                'holder_rut'     => $tenant->bank_rut,
+            ];
 
             $guardian = $user->load([
                 'students.enrollments.plan',

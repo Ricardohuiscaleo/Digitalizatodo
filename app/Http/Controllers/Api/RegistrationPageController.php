@@ -69,7 +69,16 @@ class RegistrationPageController extends Controller
             ->select(
             'registration_pages.*',
             'tenants.slug as tenant_slug',
-            'tenants.data as tenant_data'
+            'tenants.data as tenant_data',
+            'tenants.name as tenant_name',
+            'tenants.logo as tenant_logo',
+            'tenants.primary_color as tenant_primary_color',
+            'tenants.industry as tenant_industry',
+            'tenants.bank_name',
+            'tenants.bank_account_type',
+            'tenants.bank_account_number',
+            'tenants.bank_account_holder',
+            'tenants.bank_rut'
         )
             ->first();
 
@@ -97,6 +106,13 @@ class RegistrationPageController extends Controller
             'primary_color' => $page->tenant_primary_color,
             'industry' => $page->tenant_industry,
             'data' => is_string($page->tenant_data) ? json_decode($page->tenant_data, true) : $page->tenant_data,
+            'bank_info' => [
+                'bank_name' => $page->bank_name,
+                'holder_rut' => $page->bank_rut,
+                'holder_name' => $page->bank_account_holder,
+                'account_type' => $page->bank_account_type,
+                'account_number' => $page->bank_account_number,
+            ],
             'plans' => $plans,
             'schedules' => $schedules,
             'terms' => $terms ? [
