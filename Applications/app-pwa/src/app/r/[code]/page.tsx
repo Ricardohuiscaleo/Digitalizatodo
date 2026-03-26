@@ -842,12 +842,13 @@ export default function RegisterPage() {
   const canShowPlans = isSelfComplete && areStudentsComplete && (form.is_self_register || form.students.length > 0);
 
   return (
-    <div className={`min-h-screen flex flex-col items-center px-2 py-6 sm:p-6 pb-2 selection:bg-[#c9a84c] selection:text-black transition-colors duration-700 ${isDarkMode ? 'bg-zinc-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/10 via-zinc-950 to-zinc-950' : 'bg-zinc-100'}`}>
+    <div className={`min-h-screen flex flex-col items-center px-2 py-6 sm:p-6 pb-2 selection:bg-[#c9a84c] selection:text-black transition-colors duration-700 ${isDarkMode ? 'bg-[#0c0c0e] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/25 via-[#0c0c0e] to-[#0c0c0e]' : 'bg-zinc-100'}`}>
       <RegistrationProgress form={form} canShowPlans={canShowPlans} isDarkMode={isDarkMode} />
       {isDarkMode && (
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-          <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px]" />
-          <div className="absolute bottom-[-10%] left-[-10%] w-[30%] h-[30%] bg-[#c9a84c]/5 rounded-full blur-[100px]" />
+          <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-indigo-600/15 rounded-full blur-[100px] animate-pulse duration-[10s]" />
+          <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#c9a84c]/10 rounded-full blur-[100px] animate-pulse duration-[8s]" />
+          <div className="absolute top-[20%] left-[-5%] w-[30%] h-[30%] bg-blue-500/10 rounded-full blur-[80px]" />
         </div>
       )}
       <div className="w-full max-w-sm pt-20 space-y-10 animate-in fade-in duration-1000">
