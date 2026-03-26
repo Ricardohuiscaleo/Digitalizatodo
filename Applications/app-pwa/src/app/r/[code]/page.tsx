@@ -547,8 +547,8 @@ export default function RegisterPage() {
     return p ? parseFloat(p.price) : 0;
   };
 
-  const adultMonthlyBase = findMonthly('adults') || parseFloat(pricing.adult || 0);
-  const kidsMonthlyBase = findMonthly('kids') || parseFloat(pricing.kids || 0);
+  const adultMonthlyBase = findMonthly('adults') || 0;
+  const kidsMonthlyBase = findMonthly('kids') || 0;
 
 
   const calculateTotal = () => {
@@ -578,8 +578,8 @@ export default function RegisterPage() {
       const adultPlan = activePlans.find((p: any) => p.id === form.adult_plan_id);
       const kidPlan = activePlans.find((p: any) => p.id === form.kid_plan_id);
 
-      const adultPrice = adultPlan ? parseFloat(adultPlan.price) : (pricing.adult || 0);
-      const kidPrice = kidPlan ? parseFloat(kidPlan.price) : (pricing.kids || 0);
+      const adultPrice = adultPlan ? parseFloat(adultPlan.price) : 0;
+      const kidPrice = kidPlan ? parseFloat(kidPlan.price) : 0;
 
       subtotal = (adultsCount * adultPrice) + (kidsCount * kidPrice);
     }
@@ -597,6 +597,9 @@ export default function RegisterPage() {
   const totals = calculateTotal();
   const guardianNameParts = form.guardian_name.trim().split(/\s+/).filter(p => p.length > 0);
   const isGuardianNameComplete = guardianNameParts.length >= 2;
+
+  const hasSpecificAdultPlans = (tenant?.plans || []).some((p: any) => p.category === 'dojo' && p.target_audience === 'adults');
+  const hasSpecificKidPlans = (tenant?.plans || []).some((p: any) => p.category === 'dojo' && p.target_audience === 'kids');
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
@@ -1611,7 +1614,7 @@ export default function RegisterPage() {
                           {(tenant?.plans || [])
                             .filter((p: any) => p.category === 'dojo' && (
                               p.target_audience === 'adults' || 
-                                (p.target_audience === 'all' && !p.name.toLowerCase().includes('kids'))
+                                (p.target_audience === 'all' && !p.name.toLowerCase().includes('kids') && !hasSpecificAdultPlans)
                             ))
                             .map((plan: any) => (
                               <PlanCard 
@@ -1645,7 +1648,7 @@ export default function RegisterPage() {
                           {(tenant?.plans || [])
                             .filter((p: any) => p.category === 'dojo' && (
                               p.target_audience === 'kids' || 
-                              (p.target_audience === 'all' && p.name.toLowerCase().includes('kids'))
+                              (p.target_audience === 'all' && p.name.toLowerCase().includes('kids') && !hasSpecificKidPlans)
                             ))
                             .map((plan: any) => (
                               <PlanCard 
@@ -1682,23 +1685,22 @@ export default function RegisterPage() {
                   </div>
                 ) : (
                   <>
-                    {/* PLAN ADULTOS */}
-                    {totals.adultsCount > 0 && (
+                    {(totals.adultsCount > 0 && form.adult_plan_id) && (
                       <div className={`flex justify-between items-center transition-colors ${isDarkMode ? 'text-white' : 'text-zinc-900'} animate-in slide-in-from-left duration-300`}>
                         <span className="font-bold uppercase tracking-tighter">
                           {totals.adultsCount}x {tenant?.plans?.find((p: any) => p.id === form.adult_plan_id)?.name || 'PLAN ADULTO'}
                         </span>
-                        <span className="font-black">${((tenant?.plans?.find((p: any) => p.id === form.adult_plan_id)?.price || pricing.adult || 0) * totals.adultsCount).toLocaleString("es-CL")}</span>
+                        <span className="font-black">${((tenant?.plans?.find((p: any) => p.id === form.adult_plan_id)?.price || 0) * totals.adultsCount).toLocaleString("es-CL")}</span>
                       </div>
                     )}
                     
                     {/* PLAN KIDS */}
-                    {totals.kidsCount > 0 && (
+                    {(totals.kidsCount > 0 && form.kid_plan_id) && (
                       <div className={`flex justify-between items-center transition-colors ${isDarkMode ? 'text-white' : 'text-zinc-900'} animate-in slide-in-from-left duration-300 delay-75`}>
                         <span className="font-bold uppercase tracking-tighter">
                           {totals.kidsCount}x {tenant?.plans?.find((p: any) => p.id === form.kid_plan_id)?.name || 'PLAN KID'}
                         </span>
-                        <span className="font-black">${((tenant?.plans?.find((p: any) => p.id === form.kid_plan_id)?.price || pricing.kids || 0) * totals.kidsCount).toLocaleString("es-CL")}</span>
+                        <span className="font-black">${((tenant?.plans?.find((p: any) => p.id === form.kid_plan_id)?.price || 0) * totals.kidsCount).toLocaleString("es-CL")}</span>
                       </div>
                     )}
                   </>
