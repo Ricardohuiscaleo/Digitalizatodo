@@ -1679,9 +1679,10 @@ export default function RegisterPage() {
                             const hour = parseInt(sch.start_time.split(':')[0]);
                             
                             let color = 'bg-cyan-500';
-                            if (isKid) color = 'bg-emerald-500';
-                            else if (hour < 12) color = 'bg-yellow-400';
-                            else if (hour < 18) color = 'bg-teal-400';
+                            let textColor = 'text-cyan-400';
+                            if (isKid) { color = 'bg-emerald-500'; textColor = 'text-emerald-400'; }
+                            else if (hour < 12) { color = 'bg-yellow-400'; textColor = 'text-yellow-400'; }
+                            else if (hour < 18) { color = 'bg-teal-400'; textColor = 'text-teal-400'; }
 
                             return (
                               <div key={sch.id} className="flex flex-col items-center gap-0.5 group">
@@ -1689,8 +1690,8 @@ export default function RegisterPage() {
                                   {sch.start_time.slice(0, 5)}
                                 </span>
                                 <div className={`h-1 w-2 sm:w-3 rounded-full ${color} opacity-40 transition-all group-hover:opacity-100 shadow-[0_0_8px_rgba(0,0,0,0.1)]`} />
-                                <span className="text-[4px] sm:text-[5px] font-black opacity-20 uppercase truncate w-full text-center group-hover:opacity-40">
-                                  {isKid ? 'KIDS' : (sch.modality || 'GI').toUpperCase()}
+                                <span className={`text-[4px] sm:text-[5px] font-black uppercase truncate w-full text-center transition-all ${isDarkMode ? `opacity-40 group-hover:opacity-100 ${textColor}` : `opacity-60 group-hover:opacity-100 ${textColor.replace('-400', '-600')}`}`}>
+                                  {isKid ? 'KIDS' : (sch.modality === 'both' ? 'AMBOS' : (sch.modality || 'GI').toUpperCase())}
                                 </span>
                               </div>
                             );
