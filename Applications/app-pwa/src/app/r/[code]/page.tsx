@@ -682,26 +682,48 @@ export default function RegisterPage() {
 
               // Group by day of week
               const grouped: any = {};
-              schedules.forEach((sch: any) => {
-                const day = sch.day_of_week;
-                if (!grouped[day]) grouped[day] = [];
-                grouped[day].push(sch);
-              });
+              [1, 2, 3, 4, 5, 6, 0].forEach(d => grouped[d] = []);
+              schedules.forEach((sch: any) => grouped[sch.day_of_week].push(sch));
 
-              return Object.keys(grouped).sort().map(day => (
-                <div key={day} className="flex gap-3 items-start">
-                  <span className={`text-[9px] font-black w-8 py-1 rounded-lg text-center shrink-0 ${isDarkMode ? 'bg-zinc-800 text-[#c9a84c]' : 'bg-white text-amber-700 shadow-xs'}`}>
-                    {daysMapping[day]}
-                  </span>
-                  <div className="flex flex-wrap gap-1.5 flex-1">
-                    {grouped[day].map((sch: any, idx: number) => (
-                      <div key={idx} className={`px-2 py-1 rounded-lg border text-[8px] font-black uppercase tracking-tighter ${isDarkMode ? 'bg-zinc-900 border-zinc-800 text-zinc-300' : 'bg-white border-zinc-200 text-zinc-600'}`}>
-                        {sch.start_time?.slice(0, 5)} - {sch.subject}
+              return (
+                <div className="flex overflow-x-auto pb-4 gap-5 snap-x no-scrollbar">
+                  {[1, 2, 3, 4, 5, 6, 0].map(day => {
+                    const daySchedules = grouped[day];
+                    if (daySchedules.length === 0) return null;
+
+                    return (
+                      <div key={day} className="flex-none w-24 snap-start flex flex-col items-center">
+                        <span className={`text-[9px] font-black uppercase tracking-[0.2em] mb-4 pb-1.5 border-b-2 w-full text-center ${
+                          isDarkMode ? 'text-[#c9a84c] border-[#c9a84c]/30' : 'text-amber-700 border-amber-200'
+                        }`}>
+                          {daysMapping[day]?.slice(0, 3)}
+                        </span>
+                        <div className="space-y-2 w-full">
+                          {daySchedules
+                            .sort((a: any, b: any) => a.start_time.localeCompare(b.start_time))
+                            .map((sch: any) => (
+                              <div 
+                                key={sch.id} 
+                                className={`p-2 rounded-xl border text-center transition-all duration-300 hover:scale-105 ${
+                                  isDarkMode 
+                                    ? 'bg-zinc-900/50 border-zinc-800 text-zinc-400' 
+                                    : 'bg-white border-zinc-100 text-zinc-500 shadow-sm'
+                                }`}
+                              >
+                                <div className="text-[10px] font-black tracking-tighter leading-none mb-1">
+                                  {sch.start_time.slice(0, 5)}
+                                </div>
+                                <div className="text-[7px] font-black uppercase opacity-40 truncate px-1">
+                                  {sch.name || sch.subject}
+                                </div>
+                              </div>
+                            ))}
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
-              ));
+              );
             })()}
           </div>
         </div>
