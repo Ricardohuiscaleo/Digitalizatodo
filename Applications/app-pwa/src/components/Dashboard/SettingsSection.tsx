@@ -5,7 +5,7 @@ import {
     Camera, Save, ClipboardPaste, CreditCard, Edit2, Loader2, Sparkles, 
     Trash2, LogOut, RefreshCw, Users, X, FileText, ChevronRight, 
     Banknote, Settings as SettingsIcon, ShieldCheck, Calendar, Wallet, Plus, 
-    Fingerprint, ClipboardCheck, Home, Star, Baby, AlertCircle, Copy, Check, User, Info, Smartphone
+    Home, Star, Baby, AlertCircle, Copy, Check, User, Info, Smartphone, Lock, CheckCircle2
 } from 'lucide-react';
 import { deleteRegistrationPage, generateRegistrationPage } from "@/lib/api";
 
@@ -129,18 +129,17 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
     const getVipPlanDecorations = (name: string, price: number) => {
         const n = (name || '').toUpperCase();
         if (n.includes('SUELTA') || n.includes('INDIVIDUAL')) {
-            return { badge: 'CLASE INDIVIDUAL', duration: '1 HORA', highlight: null };
+            return { badge: 'CLASE INDIVIDUAL', duration: '1 SESIÓN', highlight: null };
         }
-        if (n.includes('PACK 4') || n.includes('4 CLASES')) {
-            const unitPrice = Math.round(price / 4);
+        if (n.includes('PACK')) {
             return { 
                 badge: 'MEJOR VALOR', 
-                duration: `$${new Intl.NumberFormat('es-CL').format(unitPrice)} C/U`, 
+                duration: `${new Intl.NumberFormat('es-CL').format(Math.round(price / 4))} C/U`, 
                 highlight: 'AHORRO REAL' 
             };
         }
         if (n.includes('REFERIDO')) {
-            return { badge: 'PARA ALUMNOS DEL GRUPO', duration: '1 HORA', highlight: 'BENEFICIO ESPECIAL' };
+            return { badge: 'PARA ALUMNOS DEL GRUPO', duration: '1 SESIÓN', highlight: 'BENEFICIO ESPECIAL' };
         }
         return { badge: 'SESIÓN VIP', duration: 'SESIÓN', highlight: null };
     };
@@ -152,7 +151,8 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
         name: '',
         price: '',
         description: '',
-        billing_cycle: 'monthly_from_enrollment'
+        billing_cycle: 'monthly_from_enrollment',
+        is_recurring: 1
     });
 
     const onVipDelete = async (id: number) => {
@@ -170,11 +170,13 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
         setIsSavingVip(true);
         try {
             const data = {
-                ...newVipForm,
+                name: newVipForm.name,
+                description: newVipForm.description,
+                billing_cycle: newVipForm.billing_cycle,
                 price: parseFloat(newVipForm.price.replace(/\./g, '')),
                 category: 'vip',
                 active: 1,
-                is_recurring: 1
+                is_recurring: newVipForm.is_recurring
             };
 
             await handleCreatePlan(data);
@@ -183,7 +185,8 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                 name: '',
                 price: '',
                 description: '',
-                billing_cycle: 'monthly_from_enrollment'
+                billing_cycle: 'monthly_from_enrollment',
+                is_recurring: 1
             });
         } catch (error) {
             console.error('Error al crear el plan:', error);
@@ -192,9 +195,9 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
         }
     };
     const [vipPacks, setVipPacks] = useState([
-        { id: 'v1', name: 'CLASE SUELTA', description: 'Ideal para probar la metodología. Sin compromiso previo.', price: 18000, duration: '1 HORA', badge: 'CLASE INDIVIDUAL' },
+        { id: 'v1', name: 'CLASE SUELTA', description: 'Ideal para probar la metodología. Sin compromiso previo.', price: 18000, duration: '1 SESIÓN', badge: 'CLASE INDIVIDUAL' },
         { id: 'v2', name: 'PACK 4 CLASES', description: 'Ahorra $7.000 vs. precio unitario. Progresión real en 4 sesiones.', price: 65000, duration: '$16.250 C/U', badge: 'MEJOR VALOR', highlight: 'AHORRO REAL' },
-        { id: 'v3', name: 'CLASE REFERIDO', description: 'Beneficio exclusivo para quienes ya entrenan en la academia.', price: 15000, duration: '1 HORA', badge: 'PARA ALUMNOS DEL GRUPO', highlight: 'BENEFICIO ESPECIAL' },
+        { id: 'v3', name: 'CLASE REFERIDO', description: 'Beneficio exclusivo para quienes ya entrenan en la academia.', price: 15000, duration: '1 SESIÓN', badge: 'PARA ALUMNOS DEL GRUPO', highlight: 'BENEFICIO ESPECIAL' },
     ]);
 
     // Sync localPlans when modal opens or plansList changes
@@ -716,7 +719,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                                             {billingCycleLabels[plan.billing_cycle] || plan.billing_cycle?.replace('_', ' ') || 'PLAN'}
                                                         </span>
                                                         <p className={`text-[11px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>
-                                                            {billingCycleLabels[plan.billing_cycle] || 'MENSUAL'} {dojoType === 'kids' ? 'SER PARTE DEL DOJO KIDS' : 'SER PARTE DEL DOJO'}
+                                                            {dojoType === 'kids' ? 'SER PARTE DEL DOJO KIDS' : 'SER PARTE DEL DOJO'}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -842,16 +845,21 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                                             />
                                                         </div>
                                                         <div className="space-y-1.5">
-                                                            <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ml-1">CICLO</p>
-                                                            <select 
-                                                                className={`w-full px-4 py-3 rounded-2xl ${isDark ? 'bg-zinc-900' : 'bg-zinc-100'} border ${isDark ? 'border-zinc-800' : 'border-zinc-200'} text-[10px] font-black uppercase outline-none focus:border-amber-500 transition-all appearance-none`}
-                                                                value={newVipForm.billing_cycle}
-                                                                onChange={e => setNewVipForm({...newVipForm, billing_cycle: e.target.value})}
-                                                            >
-                                                                {Object.entries(billingCycleLabels).map(([val, label]) => (
-                                                                    <option key={val} value={val}>{label}</option>
-                                                                ))}
-                                                            </select>
+                                                            <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest ml-1">TIPO DE PLAN</p>
+                                                            <div className={`flex rounded-2xl p-1 ${isDark ? 'bg-zinc-900' : 'bg-zinc-100'} border ${isDark ? 'border-zinc-800' : 'border-zinc-200'}`}>
+                                                                <button 
+                                                                    onClick={() => setNewVipForm({...newVipForm, is_recurring: 1})}
+                                                                    className={`flex-1 py-1.5 rounded-xl text-[9px] font-black transition-all ${newVipForm.is_recurring === 1 ? (isDark ? 'bg-zinc-800 text-white shadow-sm' : 'bg-white text-zinc-900 shadow-sm') : 'text-zinc-500'}`}
+                                                                >
+                                                                    RECURRENTE
+                                                                </button>
+                                                                <button 
+                                                                    onClick={() => setNewVipForm({...newVipForm, is_recurring: 0})}
+                                                                    className={`flex-1 py-1.5 rounded-xl text-[9px] font-black transition-all ${newVipForm.is_recurring === 0 ? (isDark ? 'bg-zinc-800 text-white shadow-sm' : 'bg-white text-zinc-900 shadow-sm') : 'text-zinc-500'}`}
+                                                                >
+                                                                    ÚNICO
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
 
@@ -910,7 +918,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                                             <div className="flex items-center gap-2">
                                                                 <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest">{deco.badge}</p>
                                                                 <span className="text-[7px] font-black bg-zinc-500/10 text-zinc-500 px-1.5 py-0.5 rounded-md uppercase tracking-widest">
-                                                                    {billingCycleLabels[plan.billing_cycle] || 'SESIÓN'}
+                                                                    {plan.is_recurring === 0 ? 'PAGO ÚNICO' : (billingCycleLabels[plan.billing_cycle] || 'MENSUAL')}
                                                                 </span>
                                                             </div>
                                                             <h4 className={`text-[15px] font-black uppercase tracking-tighter ${isDark ? 'text-zinc-100' : 'text-zinc-950'}`}>{plan.name}</h4>
@@ -1450,7 +1458,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                             className="mt-12 pt-8 border-t border-zinc-200/50 dark:border-zinc-800/50 flex flex-col items-center gap-4 text-center cursor-pointer group"
                                         >
                                             <div className={`p-3 rounded-2xl ${fingerprintCopied ? 'bg-green-500/10 border-green-500/30' : 'bg-zinc-100/50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800'} border transition-all active:scale-95`}>
-                                                {fingerprintCopied ? <ClipboardCheck className="text-green-500" size={24} /> : <Fingerprint className="text-zinc-400 group-hover:text-blue-500 transition-colors" size={24} />}
+                                                {fingerprintCopied ? <CheckCircle2 className="text-green-500" size={24} /> : <Lock className="text-zinc-400 group-hover:text-blue-500 transition-colors" size={24} />}
                                             </div>
                                             <div className="space-y-1">
                                                 <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2 justify-center">
@@ -1543,7 +1551,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                                                     className={`p-6 rounded-[32px] ${isDark ? 'bg-zinc-950' : 'bg-white'} border border-dashed ${isDark ? 'border-zinc-700' : 'border-zinc-200'} flex flex-col items-center justify-center gap-4 cursor-pointer group active:scale-[0.98] transition-all`}
                                                                 >
                                                                     <div className={`w-12 h-12 rounded-2xl ${fingerprintCopied ? 'bg-green-500/10 border-green-500/30' : (isDark ? 'bg-blue-500/10' : 'bg-blue-50')} flex items-center justify-center border ${fingerprintCopied ? '' : 'border-blue-500/20'} transition-colors`}>
-                                                                        {fingerprintCopied ? <ClipboardCheck className="text-green-500" size={24} /> : <Fingerprint className="text-blue-500 group-hover:scale-110 transition-transform" size={24} />}
+                                                                        {fingerprintCopied ? <CheckCircle2 className="text-green-500" size={24} /> : <Lock className="text-blue-500 group-hover:scale-110 transition-transform" size={24} />}
                                                                     </div>
                                                                     <div className="text-center space-y-1">
                                                                         <p className="text-[10px] font-black tracking-widest leading-none uppercase">

@@ -266,8 +266,8 @@ export default function RegisterPage() {
     registration_mode: null as 'dojo' | 'vip_only' | null,
     self_student: { category: "", belt: "", degrees: null as number | null, modality: "gi", birth_date: "", is_new_to_jiujitsu: false, gender: 'male', weight: '', height: '' },
     students: [] as any[],
-    plan_id: null,
-    pack_type: null as "single" | "pack_4" | "referral" | null,
+    plan_id: null as number | null,
+    pack_type: null as string | null, // Mantener para compatibilidad visual si es necesario
   });
 
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
@@ -335,6 +335,12 @@ export default function RegisterPage() {
     if (!form.is_self_register && form.students.some(s => !s.name))
       e.students = "El nombre del alumno es obligatorio";
 
+    if (!form.registration_mode)
+      e.registration_mode = "Debes elegir un plan (Dojo o VIP)";
+    
+    if (form.registration_mode === 'vip_only' && !form.plan_id)
+      e.plan_id = "Debes seleccionar un Pack VIP";
+
     if (config.showBJJGraduation) {
       if (form.is_self_register && !form.self_student.belt)
         e.self_belt = "Selecciona tu cinturón";
@@ -386,14 +392,24 @@ export default function RegisterPage() {
 
     const totalInscriptions = kidsCount + adultsCount;
 
-    // Monthly subtotal is 0 in VIP ONLY mode
+    // Monthly subtotal calculation
     const isVipOnly = form.registration_mode === 'vip_only';
-    const subtotal = isVipOnly ? 0 : (kidsCount * (pricing.kids || 0)) + (adultsCount * (pricing.adult || 0));
+    const activePlans = tenant?.plans || [];
 
-    // Add Pack Price
-    const packPrice = form.pack_type === 'pack_4' ? 65000 : (form.pack_type === 'single' ? 18000 : (form.pack_type === 'referral' ? 15000 : 0));
+    let subtotal = 0;
+    let selectedVipPrice = 0;
 
+    if (isVipOnly && form.plan_id) {
+      const selectedPlan = activePlans.find((p: any) => p.id === form.plan_id);
+      selectedVipPrice = selectedPlan ? parseFloat(selectedPlan.price) : 0;
+    } else if (!isVipOnly) {
+      // Dojo logic: uses standard pricing from tenant.data OR specific plan if I want to be even more precise
+      subtotal = (kidsCount * (pricing.kids || 0)) + (adultsCount * (pricing.adult || 0));
+    }
+
+    const packPrice = selectedVipPrice;
     let total = subtotal + packPrice, hasDiscount = false;
+    
     if (!isVipOnly && pricing.discountThreshold > 0 && totalInscriptions >= pricing.discountThreshold && pricing.discountPercentage > 0) {
       total = (subtotal * (1 - pricing.discountPercentage / 100)) + packPrice;
       hasDiscount = true;
@@ -1083,6 +1099,7 @@ export default function RegisterPage() {
             <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500 px-2 flex items-center gap-2">
               <div className="w-1 h-1 rounded-full bg-[#c9a84c]" />
               Elige tu plan
+              {errors.registration_mode && <span className="text-red-500 animate-pulse ml-2 text-[8px] tracking-normal">{errors.registration_mode}</span>}
             </label>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -1097,9 +1114,9 @@ export default function RegisterPage() {
                 </div>
                 <div className="flex flex-col gap-0.5">
                   <span className={`text-[10px] font-black uppercase tracking-widest ${form.registration_mode === 'dojo' ? (isDarkMode ? 'text-white' : 'text-zinc-900') : 'text-zinc-500'}`}>
-                    Ser parte del Dojo
+                    SER PARTE DEL DOJO
                   </span>
-                  <span className="text-[7px] font-bold text-zinc-600 uppercase tracking-tighter">Inscripción Regular</span>
+                  <span className="text-[7px] font-bold text-zinc-600 uppercase tracking-tighter text-center">INSCRIPCIÓN REGULAR</span>
                 </div>
               </button>
 
@@ -1115,72 +1132,77 @@ export default function RegisterPage() {
                 </div>
                 <div className="flex flex-col gap-0.5">
                   <span className={`text-[10px] font-black uppercase tracking-widest ${form.registration_mode === 'vip_only' ? (isDarkMode ? 'text-white' : 'text-zinc-900') : 'text-zinc-500'}`}>
-                    Sesiones VIP 1-a-1
+                    SESIONES VIP 1-A-1
                   </span>
-                  <span className="text-[7px] font-bold text-zinc-600 uppercase tracking-tighter">Sin mensualidad</span>
+                  <span className="text-[7px] font-bold text-zinc-600 uppercase tracking-tighter text-center">SIN MENSUALIDAD</span>
                 </div>
               </button>
             </div>
           </div>
 
-          {/* CLASES PERSONALIZADAS */}
+          {/* CLASES PERSONALIZADAS (VIP) */}
           {form.registration_mode === 'vip_only' && (
-            <div className={`space-y-6 p-6 sm:p-8 rounded-[2.5rem] border backdrop-blur-md shadow-2xl relative overflow-hidden transition-all duration-700 ${isDarkMode ? 'bg-zinc-900/30 border-zinc-800/50' : 'bg-white border-zinc-200'} ${form.registration_mode === 'vip_only' && !form.pack_type ? 'border-[#c9a84c]/50' : ''}`}>
+            <div className={`space-y-6 p-6 sm:p-8 rounded-[2.5rem] border backdrop-blur-md shadow-2xl relative overflow-hidden transition-all duration-700 ${isDarkMode ? 'bg-zinc-900/30 border-zinc-800/50' : 'bg-white border-zinc-200'} ${form.registration_mode === 'vip_only' && !form.plan_id ? 'border-[#c9a84c]/50' : ''}`}>
               <div className="absolute top-0 right-0 w-32 h-32 bg-[#c9a84c]/5 rounded-full blur-3xl" />
 
               <div className="space-y-1 relative z-10">
                 <h3 className="text-[10px] uppercase font-black tracking-[0.2em] text-[#c9a84c]">
                   Paso Final: Selecciona tu Pack VIP
                 </h3>
+                {errors.plan_id && <p className="text-[10px] text-red-500 font-black uppercase animate-pulse">{errors.plan_id}</p>}
                 <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">
                   Elige el pack de sesiones para comenzar hoy
                 </p>
               </div>
 
               <div className="grid grid-cols-1 gap-3 relative z-10">
-                {[
-                  { id: 'single', badge: 'DETALLES', name: 'CLASE INDIVIDUAL', sub: 'Clase Suelta', price: 18000, unit: 'CLP · 1 hora', desc: 'Ideal para probar la metodología. Sin compromiso previo.' },
-                  { id: 'pack_4', badge: 'MEJOR VALOR', name: 'Pack 4 Clases', sub: 'Ahorro Real', price: 65000, unit: 'CLP · $16.250 c/u', desc: 'Ahorra $7.000 vs. precio unitario. Progresión real en 4 sesiones.' },
-                  { id: 'referral', badge: 'PARA ALUMNOS DEL GRUPO', name: 'Clase Referido', sub: 'Beneficio Especial', price: 15000, unit: 'CLP · 1 hora', desc: 'Beneficio exclusivo para quienes ya entrenan en la academia.' }
-                ].map((pack) => (
-                  <button
-                    key={pack.id}
-                    type="button"
-                    onClick={() => setForm({ ...form, pack_type: form.pack_type === pack.id ? null : pack.id as any })}
-                    className={`group relative p-5 rounded-[2.5rem] border text-left transition-all duration-500 active:scale-[0.98] flex items-center justify-between gap-4 ${form.pack_type === pack.id
-                      ? 'bg-[#c9a84c] border-[#c9a84c] shadow-[0_0_30px_rgba(201,168,76,0.3)]'
-                      : (isDarkMode ? 'bg-zinc-950/40 border-zinc-800 hover:border-[#c9a84c]/50' : 'bg-zinc-50 border-zinc-100 hover:border-[#c9a84c]')
-                      }`}
-                  >
-                    <div className="flex flex-col flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        {pack.badge && (
-                          <span className={`text-[7px] font-black uppercase px-2 py-0.5 rounded-full tracking-widest border ${form.pack_type === pack.id ? 'bg-black text-[#c9a84c] border-black/10' : 'bg-[#c9a84c] text-black border-[#c9a84c]'}`}>
-                            {pack.badge}
+                {(tenant?.plans || []).filter((p: any) => p.category === 'vip').map((plan: any) => {
+                  const deco = (function() {
+                        const n = (plan.name || '').toUpperCase();
+                        if (n.includes('SUELTA') || n.includes('INDIVIDUAL')) return { b: 'DETALLES', d: 'Ideal para probar la metodología.' };
+                        if (n.includes('PACK')) return { b: 'MEJOR VALOR', d: 'Progresión real en sesiones.' };
+                        if (n.includes('REFERIDO')) return { b: 'PARA ALUMNOS', d: 'Beneficio exclusivo academia.' };
+                        return { b: 'VIP', d: plan.description };
+                  })();
+
+                  return (
+                    <button
+                      key={plan.id}
+                      type="button"
+                      onClick={() => setForm({ ...form, plan_id: form.plan_id === plan.id ? null : plan.id })}
+                      className={`group relative p-5 rounded-[2.5rem] border text-left transition-all duration-500 active:scale-[0.98] flex items-center justify-between gap-4 ${form.plan_id === plan.id
+                        ? 'bg-[#c9a84c] border-[#c9a84c] shadow-[0_0_30px_rgba(201,136,76,0.3)]'
+                        : (isDarkMode ? 'bg-zinc-950/40 border-zinc-800 hover:border-[#c9a84c]/50' : 'bg-zinc-50 border-zinc-100 hover:border-[#c9a84c]')
+                        }`}
+                    >
+                      <div className="flex flex-col flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-[7px] font-black uppercase px-2 py-0.5 rounded-full tracking-widest border ${form.plan_id === plan.id ? 'bg-black text-[#c9a84c] border-black/10' : 'bg-[#c9a84c] text-black border-[#c9a84c]'}`}>
+                            {deco.b}
                           </span>
-                        )}
-                        <span className={`text-[8px] font-black uppercase tracking-widest ${form.pack_type === pack.id ? 'text-black/60' : 'text-zinc-500'}`}>
-                          {pack.sub}
+                          <span className={`text-[8px] font-black uppercase tracking-widest ${form.plan_id === plan.id ? 'text-black/60' : 'text-zinc-500'}`}>
+                            {plan.is_recurring ? 'Mensualidad' : 'Sesión única'}
+                          </span>
+                        </div>
+                        <span className={`text-[13px] font-black uppercase tracking-tight mb-1 ${form.plan_id === plan.id ? 'text-black' : (isDarkMode ? 'text-white' : 'text-zinc-900')}`}>
+                          {plan.name}
+                        </span>
+                        <p className={`text-[9px] font-bold leading-tight max-w-55 ${form.plan_id === plan.id ? 'text-black/80' : 'text-zinc-500'}`}>
+                          {plan.description || deco.d}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span className={`text-xl font-black tracking-tighter ${form.plan_id === plan.id ? 'text-white' : (isDarkMode ? 'text-white' : 'text-zinc-900')}`}>
+                          ${parseFloat(plan.price).toLocaleString("es-CL")}
+                        </span>
+                        <span className={`text-[8px] font-black uppercase tracking-widest ${form.plan_id === plan.id ? 'text-black' : 'text-[#c9a84c]'}`}>
+                          CLP · {plan.is_recurring ? 'MENSUAL' : '1 SESIÓN'}
                         </span>
                       </div>
-                      <span className={`text-[13px] font-black uppercase tracking-tight mb-1 ${form.pack_type === pack.id ? 'text-black' : (isDarkMode ? 'text-white' : 'text-zinc-900')}`}>
-                        {pack.name}
-                      </span>
-                      <p className={`text-[9px] font-bold leading-tight max-w-55 ${form.pack_type === pack.id ? 'text-black/80' : 'text-zinc-500'}`}>
-                        {pack.desc}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-1 shrink-0">
-                      <span className={`text-xl font-black tracking-tighter ${form.pack_type === pack.id ? 'text-white' : (isDarkMode ? 'text-white' : 'text-zinc-900')}`}>
-                        ${pack.price.toLocaleString("es-CL")}
-                      </span>
-                      <span className={`text-[8px] font-black uppercase tracking-widest ${form.pack_type === pack.id ? 'text-black' : 'text-[#c9a84c]'}`}>
-                        {pack.unit}
-                      </span>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -1212,9 +1234,11 @@ export default function RegisterPage() {
                     )}
                   </>
                 )}
-                {form.pack_type && (
+                {form.plan_id && (
                   <div className="flex justify-between items-center text-[#c9a84c] animate-in zoom-in duration-300">
-                    <span className="font-bold uppercase tracking-tighter">1x {form.pack_type === 'pack_4' ? 'Pack 4 Clases' : (form.pack_type === 'single' ? 'Clase Suelta' : 'Referido VIP')}</span>
+                    <span className="font-bold uppercase tracking-tighter">
+                      1x {tenant?.plans?.find((p: any) => p.id === form.plan_id)?.name || 'Pack VIP'}
+                    </span>
                     <span className="font-black">${totals.packPrice.toLocaleString("es-CL")}</span>
                   </div>
                 )}

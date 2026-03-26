@@ -62,12 +62,16 @@ class StudentRegistrationController extends Controller
                 'kids' => 0, 'adult' => 0, 'discountThreshold' => 2, 'discountPercentage' => 0
             ]);
 
-            // Helper para obtener o crear plan por categoría
-            $getOrCreatePlan = function ($category) use ($tenant, $pricing) {
+            // Helper para obtener plan por ID o crear provisional por categoría
+            $getPlan = function ($category, $requestedPlanId = null) use ($tenant, $pricing) {
+                    if ($requestedPlanId) {
+                        $plan = Plan::where('tenant_id', $tenant->id)->find($requestedPlanId);
+                        if ($plan) return $plan;
+                    }
+
                     $planName = $category === 'kids' ? 'Mensualidad Kids' : 'Mensualidad Adulto';
                     $price = $category === 'kids' ? ($pricing['kids'] ?? 0) : ($pricing['adult'] ?? 0);
 
-                    // Buscar un plan activo que coincida en nombre para este tenant
                     $plan = Plan::where('tenant_id', $tenant->id)
                         ->where('name', $planName)
                         ->first();
@@ -80,9 +84,9 @@ class StudentRegistrationController extends Controller
                             'price' => $price,
                             'currency' => 'CLP',
                             'billing_interval' => 'monthly',
+                            'is_recurring' => true,
+                            'category' => 'dojo',
                             'active' => true,
-                            // Guardamos el porcentaje de descuento familiar en el plan provisionalmente, 
-                            // aunque lo aplicaremos basado en la lógica general
                             'family_discount_percent' => $pricing['discountPercentage'] ?? 0
                         ]);
                     }
@@ -135,8 +139,10 @@ class StudentRegistrationController extends Controller
                 // 2. Crear Alumnos e Inscripciones
                 foreach ($studentsToCreate as $studentData) {
                     $category = $studentData['category'];
-                    // Obtener el plan específico para la categoría de este alumno
-                    $plan = $getOrCreatePlan($category);
+                    // Obtener el plan: si es Dojo usa el automático por categoría, si es VIP usa el plan_id solicitado
+                    $plan = ($request->registration_mode === 'dojo') 
+                        ? $getPlan($category) 
+                        : $getPlan($category, $request->plan_id);
 
                     $courseId = $studentData['course_id'] ?? null;
 
@@ -181,44 +187,28 @@ class StudentRegistrationController extends Controller
                         'status' => 'active',
                     ]);
 
-                    // 3. Crear primer pago pendiente (Aplicando descuento dinámico)
-                    // SOLO si no es modo "VIP Only"
-                    if ($request->registration_mode !== 'vip_only') {
-                        $amount = $plan->price;
-                        if ($appliesDiscount) {
-                            $amount = round($amount * (1 - ($discountPct / 100)));
-                        }
+                    // 3. Crear primer pago pendiente (Aplicando descuento dinámico si es Dojo)
+                    $isVipOnly = $request->registration_mode === 'vip_only';
+                    $amount = $plan->price;
 
-                        Payment::create([
-                            'tenant_id' => $tenant->id,
-                            'enrollment_id' => $enrollment->id,
-                            'amount' => $amount,
-                            'due_date' => now(), // Vence hoy para el primer cobro
-                            'status' => 'pending',
-                            'type' => 'monthly_fee',
-                        ]);
+                    if (!$isVipOnly && $appliesDiscount) {
+                        $amount = round($amount * (1 - ($discountPct / 100)));
                     }
 
-                    // Add Personalized Pack if requested
-                    if ($request->has('pack_type')) {
-                        $packType = $request->pack_type;
-                        $packAmount = $packType === 'pack_4' ? 65000 : ($packType === 'single' ? 18000 : ($packType === 'referral' ? 15000 : 0));
-                        
-                        if ($packAmount > 0) {
-                            Payment::create([
-                                'tenant_id' => $tenant->id,
-                                'enrollment_id' => $enrollment->id,
-                                'amount' => $packAmount,
-                                'due_date' => now(),
-                                'status' => 'pending',
-                                'type' => $packType,
-                            ]);
-                        }
-                    }
+                    Payment::create([
+                        'tenant_id' => $tenant->id,
+                        'enrollment_id' => $enrollment->id,
+                        'amount' => $amount,
+                        'due_date' => now(),
+                        'status' => 'pending',
+                        'type' => $plan->is_recurring ? 'monthly_fee' : 'single_session',
+                    ]);
                 }
 
-                // Para el email, usamos el plan del primer alumno como referencia
-                $referencePlan = $getOrCreatePlan($studentsToCreate[0]['category'] ?? 'adults');
+                // Para el email, usamos el primer plan como referencia
+                $referencePlan = ($request->registration_mode === 'dojo') 
+                    ? $getPlan($studentsToCreate[0]['category'] ?? 'adults')
+                    : $getPlan('adults', $request->plan_id);
 
                 // 4. Notificaciones por Email
                 try {
