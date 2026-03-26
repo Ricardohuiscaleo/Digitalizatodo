@@ -15,15 +15,11 @@ class RegistrationPageController extends Controller
         $tenant = app('currentTenant');
         $tenantId = $tenant->id;
 
-        // Reusar si ya existe una activa
-        $existing = DB::table('registration_pages')
+        // Desactivar cualquier link previo para que 'Regenerar' realmente cree uno nuevo
+        DB::table('registration_pages')
             ->where('tenant_id', $tenantId)
             ->where('is_active', true)
-            ->first();
-
-        if ($existing) {
-            return response()->json(['code' => $existing->code]);
-        }
+            ->update(['is_active' => false, 'updated_at' => now()]);
 
         $code = strtolower(Str::random(8));
 
