@@ -99,7 +99,7 @@ function getIndustryConfig(industry: string): IndustryConfig {
 }
 
 const validateName = (name: string) => name.trim().split(/\s+/).filter(part => part.length > 0).length >= 3;
-const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const validateEmail = (email: string) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email) && !email.includes('..');
 const validatePhone = (phone: string) => phone.replace(/\D/g, '').length === 11;
 
 const ValidationIcon = ({ isValid, value }: { isValid: boolean, value: string }) => {
