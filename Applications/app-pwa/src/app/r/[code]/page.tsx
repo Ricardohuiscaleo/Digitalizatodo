@@ -370,8 +370,6 @@ const PlanCard = ({ plan, isSelected, onSelect, isDarkMode, monthlyBase = 0 }: a
     </button>
   );
 };
-  );
-};
 
 export default function RegisterPage() {
   const { code } = useParams();
