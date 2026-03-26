@@ -1143,8 +1143,9 @@ export default function RegisterPage() {
             </div>
           )}
 
-          {/* LISTA DE ALUMNOS/ESTUDIANTES */}
-          <div className="space-y-5">
+          {/* LISTA DE ALUMNOS/ESTUDIANTES - GATED */}
+          {(form.guardian_name && form.guardian_email) && (!form.is_self_register || form.self_student.modality !== "") && (
+            <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <style jsx>{`
           @keyframes spin360 {
             0% { transform: rotate(0deg); }
@@ -1417,8 +1418,8 @@ export default function RegisterPage() {
                 </div>
               ))}
             </div>
-
           </div>
+        )}
 
         {/* REGISTRATION & PLANS — SOLO SI HAY MODALIDAD SELECCIONADA EN TODOS */}
         {canShowPlans && (
