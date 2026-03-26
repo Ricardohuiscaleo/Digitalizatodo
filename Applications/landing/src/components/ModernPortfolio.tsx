@@ -59,8 +59,8 @@ const ModernPortfolio = () => {
     ];
 
     return (
-        <section id="proyectos" className="py-24 px-[5px] sm:px-6 bg-slate-50/50 relative overflow-hidden">
-            <div className="absolute inset-x-0 top-0 h-px bg-slate-200"></div>
+        <section id="proyectos" className="py-24 px-[5px] sm:px-6 bg-white relative overflow-hidden">
+            <div className="absolute inset-x-0 top-0 h-px bg-slate-100"></div>
             <div className="max-w-7xl mx-auto">
                 <div ref={titleRef} style={revealStyle(0)} className={`${revealClass(titleVisible)} flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8 text-center md:text-left`}>
                     <div className="space-y-4">
