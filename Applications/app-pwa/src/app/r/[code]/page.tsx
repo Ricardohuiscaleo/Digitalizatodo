@@ -848,10 +848,10 @@ export default function RegisterPage() {
 
         {/* Branding */}
         <div className="flex flex-col items-center gap-5">
-          <div className="h-20 w-20 rounded-4xl bg-zinc-900 overflow-hidden flex items-center justify-center shadow-2xl border border-zinc-800 p-1 relative group">
+          <div className="h-20 w-20 rounded-full bg-zinc-900 overflow-hidden flex items-center justify-center shadow-2xl border border-zinc-800 p-1 relative group">
             <div className="absolute inset-0 bg-[#c9a84c]/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
             {tenant.logo
-              ? <img src={tenant.logo} className="h-full w-full object-contain relative z-10" />
+              ? <img src={tenant.logo} className="h-full w-full object-contain rounded-full relative z-10" />
               : <span className="text-2xl font-black text-zinc-700 relative z-10">{tenant.name?.[0]}</span>
             }
           </div>
