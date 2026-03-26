@@ -1037,7 +1037,7 @@ export default function RegisterPage() {
                             className="w-3.5 h-3.5 rounded-lg border-zinc-700 bg-zinc-900 accent-[#c9a84c] transition-all"
                           />
                           <span className={`text-[9px] font-black uppercase tracking-[0.15em] leading-none transition-colors ${form.self_student.is_new_to_jiujitsu ? 'text-[#c9a84c]' : 'text-zinc-500'}`}>
-                            {form.self_student.gender === 'male' ? 'Soy Nuevo en Jiu-Jitsu' : 'Soy Nueva en Jiu-Jitsu'}
+                            {form.self_student.gender === 'male' ? 'Es Nuevo en Jiu-Jitsu' : 'Es Nueva en Jiu-Jitsu'}
                           </span>
                         </label>
                         <div className="relative">
@@ -1293,7 +1293,7 @@ export default function RegisterPage() {
                             className="w-3.5 h-3.5 rounded-lg border-zinc-700 bg-zinc-900 accent-[#c9a84c] transition-all"
                           />
                           <span className={`text-[9px] font-black uppercase tracking-[0.15em] leading-none transition-colors ${s.is_new_to_jiujitsu ? 'text-[#c9a84c]' : 'text-zinc-500'}`}>
-                            {s.gender === 'male' ? 'Soy Nuevo en Jiu-Jitsu' : 'Soy Nueva en Jiu-Jitsu'}
+                            {s.gender === 'male' ? 'Es Nuevo en Jiu-Jitsu' : 'Es Nueva en Jiu-Jitsu'}
                           </span>
                         </label>
                         <div className="relative">
