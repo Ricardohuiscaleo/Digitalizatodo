@@ -253,8 +253,8 @@ const ALLIANCE_BJJ_GRADUATION = [
 
 const RegistrationProgress = ({ form, canShowPlans, isDarkMode }: any) => {
   const steps = [
-    { id: 1, label: 'Identidad', done: !!(form.guardian_name && form.guardian_email) },
-    { id: 2, label: 'Alumnos', done: form.is_self_register || form.students.length > 0 },
+    { id: 1, label: 'Identidad', done: true },
+    { id: 2, label: 'Participantes', done: !!(form.guardian_name && form.guardian_email) },
     { id: 3, label: 'Horarios', done: canShowPlans },
     { id: 4, label: 'Pago', done: !!(form.plan_id || form.adult_plan_id || form.kid_plan_id) }
   ];
@@ -263,7 +263,7 @@ const RegistrationProgress = ({ form, canShowPlans, isDarkMode }: any) => {
   const progress = (currentStep / steps.length) * 100;
 
   return (
-    <div className={`fixed top-0 left-0 right-0 z-[200] transition-all duration-700 ${currentStep > 0 ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
+    <div className="fixed top-0 left-0 right-0 z-[300] transition-all duration-700 translate-y-0 opacity-100">
       <div className={`absolute inset-0 backdrop-blur-xl border-b transition-colors duration-700 ${isDarkMode ? 'bg-black/60 border-zinc-800/50' : 'bg-white/80 border-zinc-200'}`} />
       <div className="max-w-md mx-auto px-6 py-3 relative">
         <div className="flex justify-between items-center mb-2">
@@ -843,7 +843,7 @@ export default function RegisterPage() {
   return (
     <div className={`min-h-screen flex flex-col items-center px-2 py-6 sm:p-6 pb-2 selection:bg-[#c9a84c] selection:text-black transition-colors duration-700 ${isDarkMode ? 'bg-[#09090b]' : 'bg-zinc-100'}`}>
       <RegistrationProgress form={form} canShowPlans={canShowPlans} isDarkMode={isDarkMode} />
-      <div className="w-full max-w-sm pt-10 space-y-10 animate-in fade-in duration-1000">
+      <div className="w-full max-w-sm pt-20 space-y-10 animate-in fade-in duration-1000">
 
         {/* Branding */}
         <div className="flex flex-col items-center gap-5">
