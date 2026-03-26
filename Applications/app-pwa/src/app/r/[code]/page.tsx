@@ -522,8 +522,8 @@ export default function RegisterPage() {
     return p ? parseFloat(p.price) : 0;
   };
 
-  const adultMonthlyBase = parseFloat(pricing.adult || 0) || findMonthly('adults');
-  const kidsMonthlyBase = parseFloat(pricing.kids || 0) || findMonthly('kids');
+  const adultMonthlyBase = findMonthly('adults') || parseFloat(pricing.adult || 0);
+  const kidsMonthlyBase = findMonthly('kids') || parseFloat(pricing.kids || 0);
 
 
   const calculateTotal = () => {
