@@ -634,32 +634,26 @@ export default function RegisterPage() {
         {/* SCHEDULES VIEWER */}
         <div className={`p-4 rounded-3xl border animate-in fade-in slide-in-from-top-2 duration-500 ${isDarkMode ? 'bg-zinc-950/40 border-zinc-800' : 'bg-zinc-50 border-zinc-100'}`}>
           <label className={`text-[8px] uppercase tracking-[0.2em] font-black mb-3 block ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>Horarios Disponibles ({s.category?.toUpperCase() || 'ADULTOS'})</label>
-          <div className="space-y-3">
+          <div className="mt-1">
             {(() => {
-              const daysMapping: any = { 0: 'DOM', 1: 'LUN', 2: 'MAR', 3: 'MIE', 4: 'JUE', 5: 'VIE', 6: 'SAB' };
+              const daysMapping: any = { 0: 'DOMINGO', 1: 'LUNES', 2: 'MARTES', 3: 'MIÉRCOLES', 4: 'JUEVES', 5: 'VIERNES', 6: 'SÁBADO' };
               const schedules = (tenant?.schedules || []).filter((sch: any) => {
                 const schCat = (sch.category || '').toLowerCase();
                 const sCat = (s.category || '').toLowerCase();
                 
-                // Robust matching: Check if both contains "adult" or both contains "kid"
-                // This handles "Adulto" vs "adults", and "Kids" vs "kids"
                 const matchesCategory = 
                   (schCat.includes('adult') && sCat.includes('adult')) || 
                   (schCat.includes('kid') && sCat.includes('kid'));
 
-                // Fallback to name if subject is null (common in some tenants)
                 const subject = (sch.subject || sch.name || '').toUpperCase();
                 let matchesModality = false;
 
                 if (s.modality === 'both') {
                   matchesModality = true;
                 } else if (sch.modality) {
-                  // Direct match with the new database field (gi, nogi, both)
                   matchesModality = (sch.modality === s.modality) || (sch.modality === 'both');
                 } else {
-                  // Fallback: Text parsing (for backward compatibility or non-migrated data)
                   if (s.modality === 'gi') {
-                    // Assume GI by default if not explicit NO-GI
                     const isExplicitNoGi = subject.includes('NO-GI') || subject.includes('NOGI');
                     matchesModality = !isExplicitNoGi;
                   } else if (s.modality === 'nogi') {
@@ -673,13 +667,13 @@ export default function RegisterPage() {
               if (schedules.length === 0) {
                 const anyInThisCategory = (tenant?.schedules || []).some((sch: any) => sch.category === s.category);
                 return (
-                  <div className="py-4 px-2 text-center space-y-2">
+                  <div className="py-8 px-2 text-center space-y-2 border-2 border-dashed border-zinc-200/50 rounded-2xl">
                     <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>
                       No hay horarios específicos para esta modalidad ({s.modality})
                     </p>
                     {anyInThisCategory && (
-                      <p className={`text-[8px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-[#c9a84c]/50' : 'text-amber-600/50'}`}>
-                        Prueba seleccionando otra modalidad o revisa con la academia.
+                      <p className={`text-[9px] font-medium leading-relaxed px-4 ${isDarkMode ? 'text-zinc-700' : 'text-zinc-300'}`}>
+                        Intenta seleccionando otra modalidad para ver las clases disponibles para {s.category?.toLowerCase().includes('kid') ? 'niños' : 'adultos'}.
                       </p>
                     )}
                   </div>
