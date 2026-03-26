@@ -251,6 +251,40 @@ const ALLIANCE_BJJ_GRADUATION = [
   },
 ];
 
+const RegistrationProgress = ({ form, canShowPlans, isDarkMode }: any) => {
+  const steps = [
+    { id: 1, label: 'Identidad', done: !!(form.guardian_name && form.guardian_email) },
+    { id: 2, label: 'Alumnos', done: form.is_self_register || form.students.length > 0 },
+    { id: 3, label: 'Horarios', done: canShowPlans },
+    { id: 4, label: 'Pago', done: !!(form.plan_id || form.adult_plan_id || form.kid_plan_id) }
+  ];
+
+  const currentStep = steps.reduce((acc, s) => s.done ? s.id : acc, 0);
+  const progress = (currentStep / steps.length) * 100;
+
+  return (
+    <div className={`fixed top-0 left-0 right-0 z-[200] transition-all duration-700 ${currentStep > 0 ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
+      <div className={`absolute inset-0 backdrop-blur-xl border-b transition-colors duration-700 ${isDarkMode ? 'bg-black/60 border-zinc-800/50' : 'bg-white/80 border-zinc-200'}`} />
+      <div className="max-w-md mx-auto px-6 py-3 relative">
+        <div className="flex justify-between items-center mb-2">
+          {steps.map((s) => (
+            <div key={s.id} className="flex flex-col items-center gap-1">
+              <div className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${s.done ? 'bg-[#c9a84c] shadow-[0_0_8px_rgba(201,168,76,0.5)]' : (isDarkMode ? 'bg-zinc-800' : 'bg-zinc-200')}`} />
+              <span className={`text-[7px] font-black uppercase tracking-widest transition-colors duration-500 ${s.done ? (isDarkMode ? 'text-white' : 'text-zinc-900') : 'text-zinc-600'}`}>{s.label}</span>
+            </div>
+          ))}
+        </div>
+        <div className={`h-1 w-full rounded-full overflow-hidden relative ${isDarkMode ? 'bg-zinc-800/50' : 'bg-zinc-100'}`}>
+          <div 
+            className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#c9a84c] to-[#f59e0b] shadow-[0_0_15px_rgba(201,168,76,0.4)] transition-all duration-1000 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const PlanCard = ({ plan, isSelected, onSelect, isDarkMode }: any) => {
   const getCycleLabel = (cycle: string) => {
     switch(cycle) {
@@ -802,8 +836,13 @@ export default function RegisterPage() {
     );
   };
 
+  const isSelfComplete = !form.is_self_register || form.self_student.modality !== "";
+  const areStudentsComplete = form.students.length === 0 || form.students.every((s: any) => s.modality !== "");
+  const canShowPlans = isSelfComplete && areStudentsComplete && (form.is_self_register || form.students.length > 0);
+
   return (
     <div className={`min-h-screen flex flex-col items-center px-2 py-6 sm:p-6 pb-2 selection:bg-[#c9a84c] selection:text-black transition-colors duration-700 ${isDarkMode ? 'bg-[#09090b]' : 'bg-zinc-100'}`}>
+      <RegistrationProgress form={form} canShowPlans={canShowPlans} isDarkMode={isDarkMode} />
       <div className="w-full max-w-sm pt-10 space-y-10 animate-in fade-in duration-1000">
 
         {/* Branding */}
@@ -1389,8 +1428,8 @@ export default function RegisterPage() {
             )}
           </div>
 
-        {/* REGISTRATION & PLANS — SOLO SI HAY MODALIDAD SELECCIONADA */}
-        {form.self_student.modality !== "" && (
+        {/* REGISTRATION & PLANS — SOLO SI HAY MODALIDAD SELECCIONADA EN TODOS */}
+        {canShowPlans && (
           <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
             <div className="space-y-8 animate-in fade-in duration-1000">
             {/* REGISTRATION MODE SELECTOR (MOVED) */}
