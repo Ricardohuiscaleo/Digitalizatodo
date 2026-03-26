@@ -632,9 +632,9 @@ export default function RegisterPage() {
         </div>
 
         {/* SCHEDULES VIEWER */}
-        <div className={`p-4 rounded-3xl border animate-in fade-in slide-in-from-top-2 duration-500 ${isDarkMode ? 'bg-zinc-950/40 border-zinc-800' : 'bg-zinc-50 border-zinc-100'}`}>
-          <label className={`text-[8px] uppercase tracking-[0.2em] font-black mb-3 block ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>Horarios Disponibles ({s.category?.toUpperCase() || 'ADULTOS'})</label>
-          <div className="mt-1">
+        <div className={`p-3 rounded-3xl border animate-in fade-in slide-in-from-top-2 duration-500 ${isDarkMode ? 'bg-zinc-950/40 border-zinc-800' : 'bg-zinc-50 border-zinc-100'}`}>
+          <label className={`text-[8px] uppercase tracking-[0.2em] font-black mb-2 block ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>Horarios Disponibles ({s.category?.toUpperCase() || 'ADULTOS'})</label>
+          <div className="mt-0">
             {(() => {
               const daysMapping: any = { 0: 'DOMINGO', 1: 'LUNES', 2: 'MARTES', 3: 'MIÉRCOLES', 4: 'JUEVES', 5: 'VIERNES', 6: 'SÁBADO' };
               const schedules = (tenant?.schedules || []).filter((sch: any) => {
@@ -667,7 +667,7 @@ export default function RegisterPage() {
               if (schedules.length === 0) {
                 const anyInThisCategory = (tenant?.schedules || []).some((sch: any) => sch.category === s.category);
                 return (
-                  <div className="py-8 px-2 text-center space-y-2 border-2 border-dashed border-zinc-200/50 rounded-2xl">
+                  <div className="py-6 px-2 text-center space-y-2 border-2 border-dashed border-zinc-200/50 rounded-2xl">
                     <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>
                       No hay horarios específicos para esta modalidad ({s.modality})
                     </p>
@@ -686,31 +686,31 @@ export default function RegisterPage() {
               schedules.forEach((sch: any) => grouped[sch.day_of_week].push(sch));
 
               return (
-                <div className="flex overflow-x-auto pb-4 gap-5 snap-x no-scrollbar">
+                <div className="flex overflow-x-auto pb-2 gap-4 snap-x no-scrollbar">
                   {[1, 2, 3, 4, 5, 6, 0].map(day => {
                     const daySchedules = grouped[day];
                     if (daySchedules.length === 0) return null;
 
                     return (
                       <div key={day} className="flex-none w-24 snap-start flex flex-col items-center">
-                        <span className={`text-[9px] font-black uppercase tracking-[0.2em] mb-4 pb-1.5 border-b-2 w-full text-center ${
+                        <span className={`text-[9px] font-black uppercase tracking-[0.2em] mb-2.5 pb-1 border-b-2 w-full text-center ${
                           isDarkMode ? 'text-[#c9a84c] border-[#c9a84c]/30' : 'text-amber-700 border-amber-200'
                         }`}>
                           {daysMapping[day]?.slice(0, 3)}
                         </span>
-                        <div className="space-y-2 w-full">
+                        <div className="space-y-1.5 w-full">
                           {daySchedules
                             .sort((a: any, b: any) => a.start_time.localeCompare(b.start_time))
                             .map((sch: any) => (
                               <div 
                                 key={sch.id} 
-                                className={`p-2 rounded-xl border text-center transition-all duration-300 hover:scale-105 ${
+                                className={`py-1.5 px-2 rounded-xl border text-center transition-all duration-300 hover:scale-105 ${
                                   isDarkMode 
                                     ? 'bg-zinc-900/50 border-zinc-800 text-zinc-400' 
                                     : 'bg-white border-zinc-100 text-zinc-500 shadow-sm'
                                 }`}
                               >
-                                <div className="text-[10px] font-black tracking-tighter leading-none mb-1">
+                                <div className="text-[10px] font-black tracking-tighter leading-none mb-0.5">
                                   {sch.start_time.slice(0, 5)}
                                 </div>
                                 <div className="text-[7px] font-black uppercase opacity-40 truncate px-1">
