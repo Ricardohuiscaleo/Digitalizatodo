@@ -103,7 +103,12 @@ class RegistrationPageController extends Controller
             'data' => is_string($page->tenant_data) ? json_decode($page->tenant_data, true) : $page->tenant_data,
             'plans' => $plans,
             'schedules' => $schedules,
-            'terms' => $terms ? $terms->content : null,
+            'terms' => $terms ? [
+                'content' => $terms->content,
+                'hash' => $terms->hash,
+                'version' => $terms->version,
+                'updated_at' => $terms->updated_at,
+            ] : null,
         ]);
     }
 }
