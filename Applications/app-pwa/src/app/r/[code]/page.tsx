@@ -622,13 +622,38 @@ export default function RegisterPage() {
                 const matchesCategory = sch.category === s.category;
                 const subject = (sch.subject || '').toUpperCase();
                 let matchesModality = false;
-                if (s.modality === 'both') matchesModality = true;
-                else if (s.modality === 'gi') matchesModality = subject.includes('GI') && !subject.includes('NO-GI') && !subject.includes('NOGI');
-                else if (s.modality === 'nogi') matchesModality = subject.includes('NO-GI') || subject.includes('NOGI');
+                
+                if (s.modality === 'both') {
+                  matchesModality = true;
+                } else if (s.modality === 'gi') {
+                  // Si seleccionamos GI, aceptamos clases que :
+                  // 1. Digan explícitamente GI
+                  // 2. NO digan explícitamente NO-GI (asumimos BJJ estándar/con kimono)
+                  const isExplicitNoGi = subject.includes('NO-GI') || subject.includes('NOGI');
+                  matchesModality = !isExplicitNoGi;
+                } else if (s.modality === 'nogi') {
+                  // Filtro estricto para NO-GI
+                  matchesModality = subject.includes('NO-GI') || subject.includes('NOGI');
+                }
+                
                 return matchesCategory && matchesModality;
               });
 
-              if (schedules.length === 0) return <p className="text-[9px] font-bold text-zinc-500 uppercase py-2">No hay horarios específicos para esta modalidad.</p>;
+              if (schedules.length === 0) {
+                const anyInThisCategory = (tenant?.schedules || []).some((sch: any) => sch.category === s.category);
+                return (
+                  <div className="py-4 px-2 text-center space-y-2">
+                    <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>
+                      No hay horarios específicos para esta modalidad ({s.modality})
+                    </p>
+                    {anyInThisCategory && (
+                      <p className={`text-[8px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-[#c9a84c]/50' : 'text-amber-600/50'}`}>
+                        Prueba seleccionando otra modalidad o revisa con la academia.
+                      </p>
+                    )}
+                  </div>
+                );
+              }
 
               // Group by day of week
               const grouped: any = {};
