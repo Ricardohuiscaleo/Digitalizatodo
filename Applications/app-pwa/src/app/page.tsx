@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useBranding } from "@/context/BrandingContext";
 import { identifyTenant, login, resumeSession } from "@/lib/api";
 import { Loader2, RefreshCw, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import "./landing.css";
 
 export default function LoginPage() {
   const { setBranding, isLoading } = useBranding();
@@ -116,7 +117,7 @@ export default function LoginPage() {
   );
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
+    <div className="landing-scope min-h-screen bg-white flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-[360px] space-y-8 animate-in fade-in duration-300">
 
         {/* Branding Optimizado con Efecto Marco Premium */}
