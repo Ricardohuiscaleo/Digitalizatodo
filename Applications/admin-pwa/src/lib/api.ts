@@ -130,8 +130,8 @@ export async function resetTenantPassword(token: string, id: string | number) {
 
 export async function getAllSaasPlans(token: string) {
     try {
-        console.log('Fetching SaaS plans from:', `${API_URL}/admin/saas-plans`);
-        const response = await fetch(`${API_URL}/admin/saas-plans`, {
+        console.log('Fetching SaaS plans from:', `${API_URL}/admin/plans`);
+        const response = await fetch(`${API_URL}/admin/plans`, {
             method: 'GET',
             headers: {
                 ...defaultHeaders,
