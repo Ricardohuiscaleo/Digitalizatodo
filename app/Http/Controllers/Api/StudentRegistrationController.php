@@ -114,11 +114,6 @@ class StudentRegistrationController extends Controller
 
                 $studentCount = count($studentsToCreate);
 
-                // Determinar si aplica descuento global según el JSON
-                $threshold = (int)($pricing['discountThreshold'] ?? 2);
-                $discountPct = (float)($pricing['discountPercentage'] ?? 0);
-                $appliesDiscount = ($studentCount >= $threshold && $discountPct > 0);
-
                 // 2. Crear Alumnos e Inscripciones
                 foreach ($studentsToCreate as $studentData) {
                     $category = $studentData['category'];
@@ -188,6 +183,7 @@ class StudentRegistrationController extends Controller
 
                     Payment::create([
                         'tenant_id' => $tenant->id,
+                        'student_id' => $student->id,
                         'enrollment_id' => $enrollment->id,
                         'amount' => $amount,
                         'due_date' => now(),

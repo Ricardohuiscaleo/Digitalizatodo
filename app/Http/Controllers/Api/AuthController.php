@@ -247,7 +247,10 @@ class AuthController extends Controller
                     'photo'             => $toUrl($s->photo),
                     'category'          => $s->category ?? 'Sin Categoría',
                     'belt_rank'         => $s->belt_rank,
+                    'degrees'           => (int)($s->degrees ?? 0),
+                    'modality'          => $s->modality,
                     'attendance_count'  => \App\Models\Attendance::where('student_id', $s->id)->where('status', 'present')->count(),
+                    'payerStatus'       => $s->enrollments->contains(fn($e) => $e->payments->contains(fn($p) => in_array($p->status, ['pending', 'overdue']) && $p->due_date && $p->due_date->isPast())) ? 'overdue' : ($s->enrollments->contains(fn($e) => $e->payments->contains(fn($p) => in_array($p->status, ['pending_review', 'proof_uploaded']))) ? 'pending' : 'paid'),
                     'pending_payments'  => $s->enrollments->flatMap->payments->count(),
                     'recent_attendance' => $s->attendances->map(fn($a) => [
                         'date'   => $a->date->format('Y-m-d'),
