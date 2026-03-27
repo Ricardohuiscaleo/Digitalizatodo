@@ -142,9 +142,14 @@ export default function DeepAdminDashboard() {
 
   const fetchSaasPlans = async (token: string) => {
     setIsLoading(true);
-    const { getAllSaasPlans } = await import('@/lib/api');
-    const data = await getAllSaasPlans(token);
-    if (data) setSaasPlans(data);
+    console.log('--- fetchSaasPlans triggered ---');
+    try {
+      const { getAllSaasPlans } = await import('@/lib/api');
+      const data = await getAllSaasPlans(token);
+      if (data) setSaasPlans(data);
+    } catch (err) {
+      console.error('Failed to import or fetch SaaS plans:', err);
+    }
     setIsLoading(false);
   };
 
