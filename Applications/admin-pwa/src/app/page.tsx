@@ -219,7 +219,8 @@ export default function DeepAdminDashboard() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newTenant, setNewTenant] = useState({
     id: '', name: '', industry: 'martial_arts', 
-    admin_name: '', admin_email: '', admin_password: ''
+    admin_name: '', admin_email: '', admin_password: '',
+    saas_plan_id: '', billing_interval: 'monthly'
   });
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
@@ -231,7 +232,11 @@ export default function DeepAdminDashboard() {
     if (result?.tenant) {
       setShowCreateModal(false);
       fetchTenants(token);
-      setNewTenant({ id: '', name: '', industry: 'martial_arts', admin_name: '', admin_email: '', admin_password: '' });
+      setNewTenant({ 
+        id: '', name: '', industry: 'martial_arts', 
+        admin_name: '', admin_email: '', admin_password: '',
+        saas_plan_id: '', billing_interval: 'monthly'
+      });
     } else {
       alert("Error al crear tenant: " + (result?.error || "Verifique los datos"));
     }
@@ -738,9 +743,6 @@ export default function DeepAdminDashboard() {
             )}
 
           </main>
-        </div>
-
-
 
       {showCreateModal && (
         <div className="fixed inset-0 z-[999] flex flex-col md:items-center md:justify-center">
@@ -791,21 +793,53 @@ export default function DeepAdminDashboard() {
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-black uppercase text-zinc-500 tracking-[0.2em] px-1">Sector Industrial</label>
-                      <select 
-                        className="w-full bg-zinc-900 border border-border rounded-2xl px-5 h-16 text-sm focus:border-primary outline-none transition-all appearance-none uppercase font-black text-white"
-                        value={newTenant.industry}
-                        onChange={e => setNewTenant({...newTenant, industry: e.target.value})}
-                      >
-                        <option value="martial_arts">Artes Marciales</option>
-                        <option value="school_treasury">Colegio / Instituto</option>
-                        <option value="medical">Salud / Estética</option>
-                      </select>
+                      <p className="text-[9px] font-black uppercase text-zinc-500 tracking-[0.2em] px-1">Planificación Comercial</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-black uppercase text-zinc-500 tracking-[0.2em] px-1 text-[8px]">Nivel de Plan</label>
+                        <select 
+                          className="w-full bg-zinc-900 border border-border rounded-2xl px-5 h-16 text-sm focus:border-primary outline-none transition-all appearance-none uppercase font-black text-white"
+                          value={newTenant.saas_plan_id || ''}
+                          onChange={e => setNewTenant({
+                            ...newTenant, 
+                            saas_plan_id: e.target.value, 
+                            saas_plan: saasPlans.find(p => p.id === e.target.value)?.slug || null
+                          })}
+                        >
+                          <option value="">Plan Gratuito / Base</option>
+                          {saasPlans.map(p => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-black uppercase text-zinc-500 tracking-[0.2em] px-1 text-[8px]">Frecuencia</label>
+                        <select 
+                          className="w-full bg-zinc-900 border border-border rounded-2xl px-5 h-16 text-sm focus:border-primary outline-none transition-all appearance-none uppercase font-black text-white"
+                          value={newTenant.billing_interval}
+                          onChange={e => setNewTenant({...newTenant, billing_interval: e.target.value})}
+                        >
+                          <option value="monthly">Mensual</option>
+                          <option value="yearly">Anual</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
-                </div>
 
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black uppercase text-zinc-500 tracking-[0.2em] px-1">Sector Industrial</label>
+                    <select 
+                      className="w-full bg-zinc-900 border border-border rounded-2xl px-5 h-16 text-sm focus:border-primary outline-none transition-all appearance-none uppercase font-black text-white"
+                      value={newTenant.industry}
+                      onChange={e => setNewTenant({...newTenant, industry: e.target.value})}
+                    >
+                      <option value="martial_arts">Artes Marciales</option>
+                      <option value="school_treasury">Colegio / Instituto</option>
+                      <option value="medical">Salud / Estética</option>
+                    </select>
+                  </div>
+                </div>
+              
                 {/* Sección 2: Identidad del Dueño */}
                 <div className="space-y-5 p-5 rounded-[2.5rem] bg-black shadow-inner border border-white/5">
                   <div className="flex items-center gap-2 mb-2 px-1">
@@ -914,10 +948,14 @@ export default function DeepAdminDashboard() {
                       <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-1">Plan SaaS</label>
                       <select 
                         value={editingTenant.saas_plan_id || ''}
-                        onChange={(e) => setEditingTenant({...editingTenant, saas_plan_id: e.target.value, saas_plan: saasPlans.find(p => p.id == e.target.value)?.slug})}
+                        onChange={(e) => setEditingTenant({
+                          ...editingTenant, 
+                          saas_plan_id: e.target.value, 
+                          saas_plan: saasPlans.find(p => p.id === e.target.value)?.slug || null
+                        })}
                         className="w-full bg-zinc-900 border border-border rounded-2xl px-4 py-4 text-sm appearance-none outline-none font-black text-white uppercase"
                       >
-                        <option value="">Seleccionar Plan</option>
+                        <option value="">Plan Gratuito / Base</option>
                         {saasPlans.map(p => (
                           <option key={p.id} value={p.id}>{p.name}</option>
                         ))}
