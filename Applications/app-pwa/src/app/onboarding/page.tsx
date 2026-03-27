@@ -64,9 +64,21 @@ export default function OnboardingPage() {
                     import('@/lib/api').then(m => m.getSaasPlans())
                 ]);
                 setIndustries(indData);
-                setSaasPlans(planData);
+                if (planData && planData.length > 0) {
+                    setSaasPlans(planData);
+                    // Auto-select the 'free' plan if available
+                    const freePlan = planData.find((p: any) => p.slug === 'free' || p.price_monthly === '0.00');
+                    if (freePlan) {
+                        setFormData(prev => ({ ...prev, saas_plan_id: String(freePlan.id) }));
+                    }
+                } else {
+                    // If plans fail to load, use plan id=1 (free) as fallback
+                    setFormData(prev => ({ ...prev, saas_plan_id: '1' }));
+                }
             } catch (err) {
                 console.error("Error loading data:", err);
+                // Fallback to free plan on error
+                setFormData(prev => ({ ...prev, saas_plan_id: '1' }));
             } finally {
                 setIsLoadingIndustries(false);
                 setIsLoadingPlans(false);
@@ -120,8 +132,8 @@ export default function OnboardingPage() {
 
         if (step === 3) {
             if (!formData.saas_plan_id) {
-                setError("Por favor, selecciona un plan para activar tu demo");
-                return;
+                // Fallback to free plan if nothing selected
+                setFormData(prev => ({ ...prev, saas_plan_id: '1' }));
             }
             
             setIsLoading(true);
