@@ -736,7 +736,7 @@ export default function DeepAdminDashboard() {
 
 
       {showCreateModal && (
-        <div className="fixed inset-0 z-[100] flex flex-col md:items-center md:justify-center">
+        <div className="fixed inset-0 z-[999] flex flex-col md:items-center md:justify-center">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowCreateModal(false)} />
           
           <div className="relative w-full max-w-lg bg-zinc-950 md:bg-card border-t md:border border-border p-6 md:p-8 space-y-6 shadow-2xl overflow-hidden rounded-t-[2.5rem] md:rounded-[2.5rem] mt-auto md:mt-0 animate-in slide-in-from-bottom-10 duration-500 max-h-[90vh] flex flex-col">
@@ -832,7 +832,7 @@ export default function DeepAdminDashboard() {
 
 
       {showEditModal && editingTenant && (
-        <div className="fixed inset-0 z-[100] flex flex-col md:items-center md:justify-center">
+        <div className="fixed inset-0 z-[999] flex flex-col md:items-center md:justify-center">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowEditModal(false)} />
           
           <div className="relative w-full max-w-lg bg-zinc-950 md:bg-card border-t md:border border-border p-6 md:p-8 space-y-6 shadow-2xl overflow-hidden rounded-t-[2.5rem] md:rounded-[2.5rem] mt-auto md:mt-0 animate-in slide-in-from-bottom-10 duration-500 max-h-[90vh] flex flex-col">
@@ -933,7 +933,7 @@ export default function DeepAdminDashboard() {
 
       {/* Bottom Navigation - Mobile Only */}
       <div 
-        className="fixed bottom-0 inset-x-0 z-[100] px-6 pointer-events-none md:hidden transition-all duration-500"
+        className={`fixed bottom-0 inset-x-0 z-[100] px-6 pointer-events-none md:hidden transition-all duration-500 ${showCreateModal || showEditModal ? 'opacity-0 translate-y-20' : 'opacity-100 translate-y-0'}`}
         style={{ paddingBottom: 'max(1.2rem, env(safe-area-inset-bottom, 1.2rem))' }}
       >
         <nav 
