@@ -60,7 +60,7 @@ Route::get('w/clear-cache', function() {
     return "Cache Cleared";
 });
 
-Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tenant}'], function () {
+Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tenant}', 'where' => ['tenant' => '^(?!admin|w|webhooks|r|debug|saas-plans)[a-zA-Z0-9_-]+']], function () {
     // Info del tenant
     Route::get('info', [TenantDiscoveryController::class , 'show']);
     Route::post('settings/accept-terms', [TenantDiscoveryController::class, 'acceptTerms']);
