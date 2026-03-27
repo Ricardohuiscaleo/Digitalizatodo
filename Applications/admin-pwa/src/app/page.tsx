@@ -564,19 +564,58 @@ export default function DeepAdminDashboard() {
             )}
 
             {view === 'users' && (
-              <div className="px-4 md:px-10 space-y-6 md:space-y-10 pb-20 pt-[var(--sat)] md:pt-10">
-                <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                  <div className="space-y-1">
-                    <h1 className="text-2xl md:text-3xl font-black tracking-tighter uppercase italic text-foreground leading-none">
-                      Administradores Globales
-                    </h1>
-                    <p className="text-[10px] md:text-xs text-zinc-500 font-bold uppercase tracking-[0.3em]">
-                      Control de Identidades SaaS
-                    </p>
-                  </div>
-                </header>
+              <div className="px-4 md:px-10 space-y-6 md:space-y-10">
+                <div className={`sticky top-0 z-50 -mx-4 md:-mx-10 transition-all duration-500 ease-in-out ${isScrolled ? 'mb-4' : 'mb-6'}`}>
+                  <Card className={`bg-blue-600 border-none shadow-2xl relative overflow-hidden group transition-all duration-700 ease-in-out rounded-t-none ${isScrolled ? 'rounded-b-2xl p-3 md:p-3' : 'rounded-b-[40px] p-4 md:p-8 space-y-4 md:space-y-6 mt-0'}`}>
+                    <div className={`relative z-10 flex items-center justify-between gap-4 transition-all duration-500 ${isScrolled ? 'pt-[calc(var(--sat)+0.5rem)]' : 'pt-[calc(var(--sat)+1.5rem)]'}`}>
+                      <div className={`transition-all duration-500 origin-left ${isScrolled ? 'scale-90 translate-y-0.5' : 'scale-100'}`}>
+                        <div className="space-y-0">
+                          <h1 className={`font-black tracking-tighter uppercase italic text-white leading-none transition-all duration-500 ${isScrolled ? 'text-base md:text-lg' : 'text-xl md:text-3xl'}`}>
+                            Administradores
+                          </h1>
+                          {!isScrolled && (
+                            <p className="text-blue-100 font-bold uppercase tracking-[0.4em] px-0.5 text-[8px] md:text-xs animate-in fade-in duration-500">
+                              Gestión Global de Identidades
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
 
-                <Card className="bg-card border-border overflow-hidden shadow-xl rounded-[40px]">
+                {/* Mobile Card List */}
+                <div className="grid grid-cols-1 gap-4 md:hidden">
+                  {globalUsers.map((user) => (
+                    <Card key={user.id} className="bg-card border-border p-4 rounded-3xl space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10 border border-border" />
+                          <div>
+                            <p className="text-sm font-bold text-foreground">{user.name}</p>
+                            <p className="text-[10px] text-muted-foreground font-medium">{user.email}</p>
+                          </div>
+                        </div>
+                        <Badge className={user.active ? 'bg-emerald-500/10 text-emerald-500 border-none px-2 py-0.5 text-[8px] font-black' : 'bg-muted text-muted-foreground border-none px-2 py-0.5 text-[8px] font-black'}>
+                          {user.active ? 'ACTIVO' : 'SUSPENDIDO'}
+                        </Badge>
+                      </div>
+                      <div className="pt-3 border-t border-border/50 flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Organización</p>
+                          <p className="text-[10px] font-black text-primary">{user.tenant?.name}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Slug</p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{user.tenant?.slug}</p>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Desktop Table */}
+                <Card className="bg-card border-border overflow-hidden shadow-xl rounded-[40px] hidden md:block">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left min-w-[600px]">
                       <thead className="bg-muted border-b border-border">
@@ -590,24 +629,10 @@ export default function DeepAdminDashboard() {
                       <tbody className="divide-y divide-border">
                         {globalUsers.map((user) => (
                           <tr key={user.id} className="hover:bg-muted/30 transition-colors group">
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-3">
-                                <Avatar className="h-8 w-8 border border-border" />
-                                <span className="text-sm font-bold text-foreground">{user.name}</span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex flex-col">
-                                <span className="text-xs font-bold text-primary">{user.tenant?.name}</span>
-                                <span className="text-[9px] text-muted-foreground font-black uppercase tracking-tighter">Slug: {user.tenant?.slug}</span>
-                              </div>
-                            </td>
+                            <td className="px-6 py-4"><div className="flex items-center gap-3"><Avatar className="h-8 w-8 border border-border" /><span className="text-sm font-bold text-foreground">{user.name}</span></div></td>
+                            <td className="px-6 py-4"><div className="flex flex-col"><span className="text-xs font-bold text-primary">{user.tenant?.name}</span><span className="text-[9px] text-muted-foreground font-black uppercase tracking-tighter">Slug: {user.tenant?.slug}</span></div></td>
                             <td className="px-6 py-4 text-xs text-muted-foreground font-medium">{user.email}</td>
-                            <td className="px-6 py-4">
-                              <Badge className={user.active ? 'bg-emerald-500/10 text-emerald-500 border-none px-2 py-0.5 text-[9px]' : 'bg-muted text-muted-foreground border-none px-2 py-0.5 text-[9px]'}>
-                                {user.active ? 'DISPONIBLE' : 'SUSPENDIDO'}
-                              </Badge>
-                            </td>
+                            <td className="px-6 py-4"><Badge className={user.active ? 'bg-emerald-500/10 text-emerald-500 border-none px-2 py-0.5 text-[9px]' : 'bg-muted text-muted-foreground border-none px-2 py-0.5 text-[9px]'}>{user.active ? 'ACTIVO' : 'SUSPENDIDO'}</Badge></td>
                           </tr>
                         ))}
                       </tbody>
@@ -618,17 +643,25 @@ export default function DeepAdminDashboard() {
             )}
 
             {view === 'plans' && (
-              <div className="px-4 md:px-10 space-y-6 md:space-y-10 pb-20 pt-[var(--sat)] md:pt-10">
-                <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                  <div className="space-y-1">
-                    <h1 className="text-2xl md:text-3xl font-black tracking-tighter uppercase italic text-foreground leading-none">
-                      Planes SaaS
-                    </h1>
-                    <p className="text-[10px] md:text-xs text-zinc-500 font-bold uppercase tracking-[0.3em]">
-                      Configuración de Suscripciones Mercado Pago
-                    </p>
-                  </div>
-                </header>
+              <div className="px-4 md:px-10 space-y-6 md:space-y-10">
+                <div className={`sticky top-0 z-50 -mx-4 md:-mx-10 transition-all duration-500 ease-in-out ${isScrolled ? 'mb-4' : 'mb-6'}`}>
+                  <Card className={`bg-blue-600 border-none shadow-2xl relative overflow-hidden group transition-all duration-700 ease-in-out rounded-t-none ${isScrolled ? 'rounded-b-2xl p-3 md:p-3' : 'rounded-b-[40px] p-4 md:p-8 space-y-4 md:space-y-6 mt-0'}`}>
+                    <div className={`relative z-10 flex items-center justify-between gap-4 transition-all duration-500 ${isScrolled ? 'pt-[calc(var(--sat)+0.5rem)]' : 'pt-[calc(var(--sat)+1.5rem)]'}`}>
+                      <div className={`transition-all duration-500 origin-left ${isScrolled ? 'scale-90 translate-y-0.5' : 'scale-100'}`}>
+                        <div className="space-y-0">
+                          <h1 className={`font-black tracking-tighter uppercase italic text-white leading-none transition-all duration-500 ${isScrolled ? 'text-base md:text-lg' : 'text-xl md:text-3xl'}`}>
+                            Planes SaaS
+                          </h1>
+                          {!isScrolled && (
+                            <p className="text-blue-100 font-bold uppercase tracking-[0.4em] px-0.5 text-[8px] md:text-xs animate-in fade-in duration-500">
+                              Configuración de Suscripciones
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {saasPlans.map((plan) => (
