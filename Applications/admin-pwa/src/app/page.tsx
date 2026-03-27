@@ -950,7 +950,10 @@ export default function DeepAdminDashboard() {
       )}
 
       {/* Bottom Navigation - Mobile Only */}
-      <div className="fixed bottom-0 inset-x-0 z-[100] pb-[env(safe-area-inset-bottom,0.5rem)] px-6 pointer-events-none md:hidden transition-all duration-500">
+      <div 
+        className="fixed bottom-0 inset-x-0 z-[100] px-6 pointer-events-none md:hidden transition-all duration-500"
+        style={{ paddingBottom: 'max(1.2rem, env(safe-area-inset-bottom, 1.2rem))' }}
+      >
         <nav 
           style={{ height: '3.5rem' }}
           className="mx-auto w-full max-w-[400px] bg-card/80 backdrop-blur-xl border border-border rounded-full shadow-2xl flex items-center justify-around px-2 pointer-events-auto"
