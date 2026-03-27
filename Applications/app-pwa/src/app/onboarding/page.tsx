@@ -305,14 +305,37 @@ export default function OnboardingPage() {
                                         <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Email Profesional</label>
                                         <input name="email" type="email" required value={formData.email} onChange={handleChange} className="w-full h-14 md:h-18 bg-zinc-50 border-2 border-transparent rounded-[1.5rem] px-8 font-bold text-base text-zinc-900 focus:bg-white focus:border-blue-600/20 focus:ring-4 ring-blue-50 outline-none transition-all" />
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-5">
                                         <div className="space-y-2">
-                                            <label className="text-[9px] font-black uppercase tracking-widest text-zinc-400 ml-1">Clave</label>
-                                            <input name="password" type="password" required value={formData.password} onChange={handleChange} className="w-full h-14 md:h-18 bg-zinc-50 border-2 border-transparent rounded-[1.5rem] px-8 font-bold text-base text-zinc-900 focus:bg-white focus:border-blue-600/20" />
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Clave de Acceso</label>
+                                            <input 
+                                                name="password" 
+                                                type="password" 
+                                                required 
+                                                value={formData.password} 
+                                                onChange={handleChange} 
+                                                placeholder="Mínimo 6 caracteres"
+                                                className="w-full h-14 md:h-18 bg-zinc-50 border-2 border-transparent rounded-[1.5rem] px-8 font-bold text-base text-zinc-900 focus:bg-white focus:border-blue-600/20 focus:ring-4 ring-blue-50 outline-none transition-all" 
+                                            />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[9px] font-black uppercase tracking-widest text-zinc-400 ml-1">Repetir</label>
-                                            <input name="password_confirmation" type="password" required value={formData.password_confirmation} onChange={handleChange} className="w-full h-14 md:h-18 bg-zinc-50 border-2 border-transparent rounded-[1.5rem] px-8 font-bold text-base text-zinc-900 focus:bg-white focus:border-blue-600/20" />
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Repetir Clave</label>
+                                            <div className="relative">
+                                                <input 
+                                                    name="password_confirmation" 
+                                                    type="password" 
+                                                    required 
+                                                    value={formData.password_confirmation} 
+                                                    onChange={handleChange} 
+                                                    placeholder="Confirma tu clave"
+                                                    className={`w-full h-14 md:h-18 bg-zinc-50 border-2 border-transparent rounded-[1.5rem] px-8 font-bold text-base text-zinc-900 focus:bg-white focus:ring-4 ring-blue-50 outline-none transition-all ${formData.password_confirmation && formData.password === formData.password_confirmation ? 'border-emerald-500/20' : ''}`} 
+                                                />
+                                                {formData.password_confirmation && formData.password === formData.password_confirmation && (
+                                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-emerald-500 animate-in zoom-in duration-300">
+                                                        <CheckCircle2 size={20} />
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
