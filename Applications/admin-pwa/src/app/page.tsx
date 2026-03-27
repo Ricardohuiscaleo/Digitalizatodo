@@ -379,7 +379,7 @@ export default function DeepAdminDashboard() {
 >
             {view === 'tenants' && (
               <div className="px-4 md:px-10 space-y-6 md:space-y-10">
-                <div className={`sticky top-0 z-50 -mx-4 md:-mx-10 transition-all duration-500 ease-in-out ${isScrolled ? 'mb-4' : 'mb-6'}`}>
+                <div className={`sticky top-0 z-50 -mx-4 md:-mx-10 transition-all duration-500 ease-in-out ${isScrolled ? 'mb-4 bg-background/95 backdrop-blur-md shadow-xl border-b border-border pb-2' : 'mb-6 bg-transparent'}`}>
                   <Card className={`bg-blue-600 border-none shadow-2xl relative overflow-hidden group transition-all duration-700 ease-in-out rounded-t-none ${isScrolled ? 'rounded-b-2xl p-3 md:p-3' : 'rounded-b-[40px] p-4 md:p-8 space-y-4 md:space-y-6 mt-0'}`}>
                     <div className={`absolute top-0 right-10 p-6 opacity-10 group-hover:scale-110 transition-all duration-700 ${isScrolled ? 'hidden' : 'block'}`}>
                       <ShieldCheck size={80} className="text-white" />
@@ -571,7 +571,7 @@ export default function DeepAdminDashboard() {
 
             {view === 'users' && (
               <div className="px-4 md:px-10 space-y-6 md:space-y-10">
-                <div className={`sticky top-0 z-50 -mx-4 md:-mx-10 transition-all duration-500 ease-in-out ${isScrolled ? 'mb-4' : 'mb-6'}`}>
+                <div className={`sticky top-0 z-50 -mx-4 md:-mx-10 transition-all duration-500 ease-in-out ${isScrolled ? 'mb-4 bg-background/95 backdrop-blur-md shadow-xl border-b border-border pb-2' : 'mb-6 bg-transparent'}`}>
                   <Card className={`bg-blue-600 border-none shadow-2xl relative overflow-hidden group transition-all duration-700 ease-in-out rounded-t-none ${isScrolled ? 'rounded-b-2xl p-3 md:p-3' : 'rounded-b-[40px] p-4 md:p-8 space-y-4 md:space-y-6 mt-0'}`}>
                     <div className={`absolute top-0 right-10 p-6 opacity-10 group-hover:scale-110 transition-all duration-700 ${isScrolled ? 'hidden' : 'block'}`}>
                       <ShieldCheck size={80} className="text-white" />
@@ -653,7 +653,7 @@ export default function DeepAdminDashboard() {
 
             {view === 'plans' && (
               <div className="px-4 md:px-10 space-y-6 md:space-y-10">
-                <div className={`sticky top-0 z-50 -mx-4 md:-mx-10 transition-all duration-500 ease-in-out ${isScrolled ? 'mb-4' : 'mb-6'}`}>
+                <div className={`sticky top-0 z-50 -mx-4 md:-mx-10 transition-all duration-500 ease-in-out ${isScrolled ? 'mb-4 bg-background/95 backdrop-blur-md shadow-xl border-b border-border pb-2' : 'mb-6 bg-transparent'}`}>
                   <Card className={`bg-blue-600 border-none shadow-2xl relative overflow-hidden group transition-all duration-700 ease-in-out rounded-t-none ${isScrolled ? 'rounded-b-2xl p-3 md:p-3' : 'rounded-b-[40px] p-4 md:p-8 space-y-4 md:space-y-6 mt-0'}`}>
                     <div className={`absolute top-0 right-10 p-6 opacity-10 group-hover:scale-110 transition-all duration-700 ${isScrolled ? 'hidden' : 'block'}`}>
                       <ShieldCheck size={80} className="text-white" />
