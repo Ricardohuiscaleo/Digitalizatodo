@@ -16,12 +16,13 @@ export const getEcho = (): Echo<any> | null => {
 
   window.Pusher = Pusher;
 
-  const key = process.env.NEXT_PUBLIC_REVERB_APP_KEY;
-  const host = process.env.NEXT_PUBLIC_REVERB_HOST || 'localhost';
-  const scheme = process.env.NEXT_PUBLIC_REVERB_SCHEME || 'http';
-  const port = process.env.NEXT_PUBLIC_REVERB_PORT || '8080';
+  // Usamos la clave del proyecto como fallback si no está en el env
+  const key = process.env.NEXT_PUBLIC_REVERB_APP_KEY || 'diedimtyjfxaurcuejrt';
+  const host = process.env.NEXT_PUBLIC_REVERB_HOST || 'admin.digitalizatodo.cl';
+  const scheme = process.env.NEXT_PUBLIC_REVERB_SCHEME || 'https';
+  const port = process.env.NEXT_PUBLIC_REVERB_PORT || '443';
 
-  if (!key) {
+  if (!key && !process.env.NEXT_PUBLIC_REVERB_APP_KEY) {
     console.warn('Realtime key missing');
     return null;
   }
