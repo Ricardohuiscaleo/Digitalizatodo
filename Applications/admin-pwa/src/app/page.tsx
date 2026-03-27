@@ -376,7 +376,7 @@ export default function DeepAdminDashboard() {
             className="flex-1 overflow-y-auto custom-scrollbar relative pb-32 md:pb-10"
 >
             {view === 'tenants' && (
-              <div className="px-4 md:px-10 space-y-6 md:space-y-10">
+              <div className="px-4 md:px-10 space-y-6 md:space-y-10 pt-[var(--sat)] md:pt-0">
                 <div className={`sticky top-0 z-50 -mx-4 md:-mx-10 transition-all duration-500 ease-in-out ${isScrolled ? 'mb-4' : 'mb-6'}`}>
                   <Card className={`bg-blue-600 border-none shadow-2xl relative overflow-hidden group transition-all duration-700 ease-in-out ${isScrolled ? 'rounded-b-2xl p-3 md:p-4' : 'rounded-b-[40px] p-4 md:p-8 space-y-4 md:space-y-6 mt-0'}`}>
                     <div className={`absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-all duration-700 ${isScrolled ? 'hidden' : 'block'}`}>
@@ -564,7 +564,7 @@ export default function DeepAdminDashboard() {
             )}
 
             {view === 'users' && (
-              <div className="px-4 md:px-10 space-y-6 md:space-y-10 pb-20">
+              <div className="px-4 md:px-10 space-y-6 md:space-y-10 pb-20 pt-[calc(var(--sat)+1.5rem)] md:pt-10">
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                   <div className="space-y-1">
                     <h1 className="text-2xl md:text-3xl font-black tracking-tighter uppercase italic text-foreground leading-none">
@@ -618,7 +618,7 @@ export default function DeepAdminDashboard() {
             )}
 
             {view === 'plans' && (
-              <div className="px-4 md:px-10 space-y-6 md:space-y-10 pb-20">
+              <div className="px-4 md:px-10 space-y-6 md:space-y-10 pb-20 pt-[calc(var(--sat)+1.5rem)] md:pt-10">
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                   <div className="space-y-1">
                     <h1 className="text-2xl md:text-3xl font-black tracking-tighter uppercase italic text-foreground leading-none">
