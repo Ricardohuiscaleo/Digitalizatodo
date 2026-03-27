@@ -384,26 +384,23 @@ export default function DeepAdminDashboard() {
                     </div>
                     
                     <div className={`relative z-10 flex items-center justify-between gap-4 transition-all duration-500 ${isScrolled ? 'pt-[calc(var(--sat)+0.5rem)]' : 'pt-[calc(var(--sat)+1.5rem)]'}`}>
-                      <div className={`transition-all duration-500 origin-left ${isScrolled ? 'scale-90 translate-y-0.5' : 'scale-100'}`}>
-                        <div className="space-y-0">
-                          <h1 className={`font-black tracking-tighter uppercase italic text-white leading-none transition-all duration-500 ${isScrolled ? 'text-base md:text-lg' : 'text-xl md:text-3xl'}`}>
+                      <div className={`transition-all duration-500 origin-left ${isScrolled ? 'scale-90 translate-y-1' : 'scale-100'}`}>
+                        <div className="space-y-0.5">
+                          <h1 className={`font-black tracking-tighter uppercase italic text-white leading-none transition-all duration-500 ${isScrolled ? 'text-sm md:text-lg' : 'text-xl md:text-[28px]'}`}>
                             Gestión de Tenants
                           </h1>
-                          {!isScrolled && (
-                            <p className="text-blue-100 font-bold uppercase tracking-[0.4em] px-0.5 text-[8px] md:text-xs animate-in fade-in duration-500">
-                              Operaciones de Infraestructura
-                            </p>
-                          )}
+                          <p className={`text-blue-100 font-bold uppercase transition-all duration-500 ${isScrolled ? 'text-[7px] md:text-[8px] tracking-[0.2em] opacity-80' : 'text-[8px] md:text-xs tracking-[0.4em] opacity-100'}`}>
+                            Operaciones de Infraestructura
+                          </p>
                         </div>
                       </div>
                       
                       <Button 
                         onClick={() => setShowCreateModal(true)}
                         className={`bg-white text-blue-600 hover:bg-white/90 shadow-xl group border-none transition-all duration-500 flex items-center justify-center shrink-0 
-                          ${isScrolled ? 'h-8 w-8 md:h-10 md:w-10 rounded-full p-0' : 'rounded-full md:rounded-xl h-10 w-10 md:h-auto md:w-auto p-0 md:px-4 md:py-6 md:font-black md:uppercase md:tracking-widest text-[9px] md:text-[11px]'}`}
+                          ${isScrolled ? 'h-10 w-10 rounded-2xl p-0' : 'rounded-full md:rounded-xl h-10 w-10 md:h-[52px] md:w-[52px] md:px-0 text-[11px]'}`}
                       >
-                        <Plus className={`transition-transform duration-500 group-hover:rotate-90 ${isScrolled ? 'w-5 h-5' : 'w-5 h-5 md:w-4 md:h-4 md:mr-2'}`} />
-                        {!isScrolled && <span className="hidden md:inline">Nueva Instancia</span>}
+                        <Plus className={`transition-transform duration-500 group-hover:rotate-90 ${isScrolled ? 'w-5 h-5' : 'w-6 h-6'}`} />
                       </Button>
                     </div>
 
