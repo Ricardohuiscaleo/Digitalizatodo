@@ -125,3 +125,57 @@ export async function resetTenantPassword(token: string, id: string | number) {
         return null;
     }
 }
+
+// ─── SaaS Plan Management ────────────────────────────────────────────────
+
+export async function getAllSaasPlans(token: string) {
+    try {
+        const response = await fetch(`${API_URL}/admin/plans`, {
+            method: 'GET',
+            headers: {
+                ...defaultHeaders,
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        if (!response.ok) return null;
+        const data = await safeJson(response);
+        return data?.plans || [];
+    } catch (error) {
+        console.error('Error fetching SaaS plans:', error);
+        return null;
+    }
+}
+
+export async function updateSaasPlan(token: string, id: number, data: any) {
+    try {
+        const response = await fetch(`${API_URL}/admin/plans/${id}`, {
+            method: 'PUT',
+            headers: {
+                ...defaultHeaders,
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(data),
+        });
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error updating SaaS plan:', error);
+        return null;
+    }
+}
+
+export async function syncSaasPlanWithMP(token: string, planId: number | string, interval: 'months' | 'years' = 'months') {
+    try {
+        const response = await fetch(`${API_URL}/admin/plans/${planId}/sync-mp`, {
+            method: 'POST',
+            headers: {
+                ...defaultHeaders,
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ interval }),
+        });
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error syncing plan with MP:', error);
+        return null;
+    }
+}

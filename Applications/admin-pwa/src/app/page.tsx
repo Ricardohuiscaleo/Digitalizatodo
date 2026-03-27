@@ -22,15 +22,16 @@ import {
   TrendingUp,
   Activity,
   Sun,
-  Moon
+  Moon,
+  CreditCard
 } from 'lucide-react';
 
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
-import { getAllTenants, updateTenant, createTenant, getAllUsers, resetTenantPassword } from '@/lib/api';
-
+import { getAllTenants, updateTenant, createTenant, getAllUsers, resetTenantPassword, getAllSaasPlans, updateSaasPlan, syncSaasPlanWithMP } from '@/lib/api';
+import { Toaster, toast } from "sonner";
 import { useRealtimeChannel } from '@/hooks/useRealtimeChannel';
 
 
@@ -57,9 +58,10 @@ export default function DeepAdminDashboard() {
   const router = useRouter();
   const [filter, setFilter] = useState('all');
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const [view, setView] = useState<'tenants' | 'users'>('tenants');
+  const [view, setView] = useState<'tenants' | 'users' | 'plans'>('tenants');
   const [tenants, setTenants] = useState<any[]>([]);
   const [globalUsers, setGlobalUsers] = useState<any[]>([]);
+  const [saasPlans, setSaasPlans] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingTenant, setEditingTenant] = useState<any>(null);
@@ -138,11 +140,20 @@ export default function DeepAdminDashboard() {
     setIsLoading(false);
   };
 
+  const fetchSaasPlans = async (token: string) => {
+    setIsLoading(true);
+    const { getAllSaasPlans } = await import('@/lib/api');
+    const data = await getAllSaasPlans(token);
+    if (data) setSaasPlans(data);
+    setIsLoading(false);
+  };
+
   React.useEffect(() => {
     const token = localStorage.getItem('super_admin_token');
     if (token) {
         if (view === 'tenants') fetchTenants(token);
         if (view === 'users') fetchGlobalUsers(token);
+        if (view === 'plans') fetchSaasPlans(token);
     }
   }, [view]);
 
@@ -243,16 +254,42 @@ export default function DeepAdminDashboard() {
   ];
 
 
+  const token = typeof window !== 'undefined' ? localStorage.getItem('super_admin_token') : null;
+
+  const handleSyncPlan = async (planId: number | string, interval: 'months' | 'years' = 'months') => {
+    if (!token) return;
+    const loadingToast = toast.loading(`Sincronizando plan ${interval}...`);
+    try {
+      const res = await syncSaasPlanWithMP(token, planId, interval);
+      toast.dismiss(loadingToast);
+      if (res?.mp_id) {
+        toast.success(`Plan sincronizado: ${res.mp_id}`, {
+          description: "ID de Mercado Pago actualizado exitosamente."
+        });
+        const updatedPlans = await getAllSaasPlans(token);
+        if (updatedPlans) setSaasPlans(updatedPlans);
+      } else {
+        toast.error("Error de sincronización", {
+          description: res?.error || "Verifica las credenciales de Mercado Pago."
+        });
+      }
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      toast.error("Fallo de red", { description: "No se pudo comunicar con el servidor." });
+    }
+  };
+
   const filteredTenants = tenants.filter(t => {
     if (filter === 'all') return true;
     if (filter === 'pending') return !t.active;
-    if (filter === 'pro') return t.saas_plan === 'pro';
-    if (filter === 'enterprise') return t.saas_plan === 'enterprise';
+    const matchingPlan = saasPlans.find(p => p.slug === filter);
+    if (matchingPlan) return t.saas_plan_id == matchingPlan.id;
     return true;
   });
 
   return (
     <>
+      <Toaster position="top-right" theme={isDarkMode ? 'dark' : 'light'} />
       <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 font-sans transition-colors duration-500">
 
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -288,6 +325,12 @@ export default function DeepAdminDashboard() {
                 label="Usuarios" 
                 active={view === 'users'} 
                 onClick={() => setView('users')} 
+              />
+              <SidebarItem 
+                icon={CreditCard} 
+                label="Planes SaaS" 
+                active={view === 'plans'} 
+                onClick={() => setView('plans')} 
               />
 
               <div className="pt-8 pb-4">
@@ -327,7 +370,7 @@ export default function DeepAdminDashboard() {
             ref={scrollContainerRef}
             className="flex-1 overflow-y-auto custom-scrollbar relative pb-32 md:pb-10"
           >
-            {view === 'tenants' ? (
+            {view === 'tenants' && (
               <div className="px-4 md:px-10 space-y-6 md:space-y-10">
                 <div className={`sticky top-0 z-50 -mx-[14px] md:-mx-10 transition-all duration-500 ease-in-out ${isScrolled ? 'pt-0 mb-4' : 'mb-6 pt-0'}`}>
                   <Card className={`bg-blue-600 border-none shadow-2xl relative overflow-hidden group transition-all duration-700 ease-in-out ${isScrolled ? 'rounded-t-none rounded-b-2xl p-3 md:p-4' : 'rounded-t-none rounded-b-[40px] p-4 md:p-8 space-y-4 md:space-y-6 mt-0'}`}>
@@ -400,20 +443,16 @@ export default function DeepAdminDashboard() {
                         Pendientes
                       </Button>
                       <div className="h-4 w-px bg-border mx-2" />
-                      <Button 
-                        variant={filter === 'pro' ? 'default' : 'ghost'} 
-                        onClick={() => setFilter('pro')}
-                        className={`rounded-full uppercase tracking-tighter text-[10px] font-black ${filter === 'pro' ? 'bg-indigo-500 text-white text-white' : 'text-muted-foreground'}`}
-                      >
-                        Pro
-                      </Button>
-                      <Button 
-                        variant={filter === 'enterprise' ? 'default' : 'ghost'} 
-                        onClick={() => setFilter('enterprise')}
-                        className={`rounded-full uppercase tracking-tighter text-[10px] font-black ${filter === 'enterprise' ? 'bg-emerald-500 text-white text-white' : 'text-muted-foreground'}`}
-                      >
-                        Enterprise
-                      </Button>
+                      {saasPlans.slice(0, 3).map(p => (
+                        <Button 
+                          key={p.id}
+                          variant={filter === p.slug ? 'default' : 'ghost'} 
+                          onClick={() => setFilter(p.slug)}
+                          className={`rounded-full uppercase tracking-tighter text-[10px] font-black ${filter === p.slug ? 'bg-indigo-500 text-white' : 'text-muted-foreground'}`}
+                        >
+                          {p.name}
+                        </Button>
+                      ))}
                     </div>
 
                   </div>
@@ -522,8 +561,10 @@ export default function DeepAdminDashboard() {
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-6">
+            )}
+
+            {view === 'users' && (
+              <div className="px-4 md:px-10 space-y-6 md:space-y-10 pb-20 mt-10">
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                   <div className="space-y-1">
                     <h1 className="text-2xl md:text-4xl font-black tracking-tighter uppercase italic text-foreground">
@@ -543,7 +584,7 @@ export default function DeepAdminDashboard() {
                   </Button>
                 </header>
 
-                <Card className="bg-card border-border overflow-hidden shadow-xl">
+                <Card className="bg-card border-border overflow-hidden shadow-xl rounded-[40px]">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left min-w-[600px]">
                       <thead className="bg-muted border-b border-border">
@@ -581,6 +622,74 @@ export default function DeepAdminDashboard() {
                     </table>
                   </div>
                 </Card>
+              </div>
+            )}
+
+            {view === 'plans' && (
+              <div className="px-4 md:px-10 space-y-6 md:space-y-10 pb-20 mt-10">
+                <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                  <div className="space-y-1">
+                    <h1 className="text-2xl md:text-4xl font-black tracking-tighter uppercase italic text-foreground">
+                      Planes SaaS
+                    </h1>
+                    <p className="text-[10px] md:text-xs text-zinc-500 font-bold uppercase tracking-[0.3em]">
+                      Configuración de Suscripciones Mercado Pago
+                    </p>
+                  </div>
+                </header>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {saasPlans.map((plan) => (
+                    <Card key={plan.id} className="bg-card border-border p-6 space-y-6 relative overflow-hidden group rounded-[40px]">
+                      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-all duration-700">
+                        <CreditCard size={64} className="text-primary" />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-xl font-black uppercase tracking-tight italic">{plan.name}</h3>
+                        <Badge variant="outline" className="text-[9px] font-black tracking-widest uppercase border-primary/30 text-primary">{plan.slug}</Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-0.5 p-3 rounded-2xl bg-muted/50 border border-border">
+                          <p className="text-[8px] font-black uppercase text-zinc-500">Mensual</p>
+                          <p className="text-xl font-black tracking-tighter">${parseInt(plan.price_monthly).toLocaleString()}</p>
+                        </div>
+                        <div className="space-y-0.5 p-3 rounded-2xl bg-muted/50 border border-border">
+                          <p className="text-[8px] font-black uppercase text-zinc-500">Anual</p>
+                          <p className="text-xl font-black tracking-tighter">${parseInt(plan.price_yearly).toLocaleString()}</p>
+                        </div>
+                      </div>
+
+                      <div className="pt-4 border-t border-border space-y-4">
+                        <div className="space-y-1.5">
+                          <p className="text-[8px] font-black uppercase text-primary px-1 tracking-widest">Plan ID Mercado Pago</p>
+                          <div className="text-[10px] font-mono font-bold truncate bg-background p-3 rounded-2xl border border-border text-zinc-400 group-hover:text-foreground transition-colors">
+                            {plan.mercadopago_plan_id || 'SIN VINCULAR'}
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                          <Button 
+                            onClick={() => handleSyncPlan(plan.id, 'months')}
+                            className="bg-transparent border border-blue-500/30 text-blue-500 hover:bg-blue-500 hover:text-white text-[8px] font-black uppercase tracking-widest rounded-2xl py-5 transition-all"
+                          >
+                             Sync Mensual
+                          </Button>
+                          <Button 
+                            onClick={() => handleSyncPlan(plan.id, 'years')}
+                            className="bg-transparent border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500 hover:text-white text-[8px] font-black uppercase tracking-widest rounded-2xl py-5 transition-all"
+                          >
+                             Sync Anual
+                          </Button>
+                        </div>
+                        
+                        <p className="text-[7px] font-bold text-center text-zinc-500 uppercase tracking-tighter">
+                          * Sincronizar creará el preapproval_plan en tu cuenta de Mercado Pago
+                        </p>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -726,15 +835,28 @@ export default function DeepAdminDashboard() {
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Plan SaaS</label>
                     <select 
-                      value={editingTenant.saas_plan}
-                      onChange={(e) => setEditingTenant({...editingTenant, saas_plan: e.target.value})}
+                      value={editingTenant.saas_plan_id || ''}
+                      onChange={(e) => setEditingTenant({...editingTenant, saas_plan_id: e.target.value, saas_plan: saasPlans.find(p => p.id == e.target.value)?.slug})}
                       className="w-full bg-muted/30 border border-border rounded-2xl px-4 py-3 text-sm appearance-none outline-none font-bold"
                     >
-                      <option value="starter" className="text-black">Starter</option>
-                      <option value="pro" className="text-black">Pro</option>
-                      <option value="enterprise" className="text-black">Enterprise</option>
+                      <option value="">Seleccionar Plan</option>
+                      {saasPlans.map(p => (
+                        <option key={p.id} value={p.id} className="text-black">{p.name}</option>
+                      ))}
                     </select>
                   </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Ciclo de Facturación</label>
+                  <select 
+                    value={editingTenant.billing_interval || 'monthly'}
+                    onChange={(e) => setEditingTenant({...editingTenant, billing_interval: e.target.value})}
+                    className="w-full bg-muted/30 border border-border rounded-2xl px-4 py-3 text-sm appearance-none outline-none font-bold"
+                  >
+                    <option value="monthly" className="text-black">Mensual</option>
+                    <option value="yearly" className="text-black">Anual</option>
+                  </select>
                 </div>
 
                 {/* Admin Owner Section */}

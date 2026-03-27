@@ -47,6 +47,22 @@ export async function getIndustries() {
     }
 }
 
+export async function getSaasPlans() {
+    try {
+        const response = await fetch(`${API_URL}/saas-plans`, {
+            method: 'GET',
+            cache: 'no-store' as RequestCache,
+            headers: defaultHeaders,
+        });
+
+        const data = await safeJson(response);
+        return data?.plans || [];
+    } catch (error) {
+        console.error('Error fetching plans:', error);
+        return [];
+    }
+}
+
 export async function getTenantInfo(slug: string) {
     try {
         const response = await fetch(`${API_URL}/${slug}/info`, {
