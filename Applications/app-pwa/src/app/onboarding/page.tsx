@@ -383,7 +383,7 @@ export default function OnboardingPage() {
                         </form>
                         
                         <div className="pt-10 flex flex-col gap-2 items-center text-center opacity-30">
-                             <p className="text-[7px] font-black uppercase tracking-[0.3em] text-zinc-900 leading-tight">
+                             <p suppressHydrationWarning className="text-[7px] font-black uppercase tracking-[0.3em] text-zinc-900 leading-tight">
                                 IP: 190.161.x.x · {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · SSL SECURE <br/>
                                 © 2026 SOLUCIONES EN INTELIGENCIA ARTIFICIAL SPA <br/>
                                 78109539-7 · CHILE
