@@ -115,42 +115,26 @@ class GuardianController extends Controller
                 'payments' => $activePayments,
                 'pricing' => $pricing,
                 'enrolledStudents' => $students->map(function ($s) use ($s3BaseUrl) {
-                    $todayAttendance = $s->attendances->first();
+                    $bp = $s->belt_progress;
                     return [
                         'id' => $s->id,
                         'name' => $s->name,
                         'category' => $s->category,
                         'photo' => $s->photo ? (str_starts_with($s->photo, 'http') ? $s->photo : $s3BaseUrl . $s->photo) : "https://i.pravatar.cc/150?img=" . $s->id,
                         'belt_rank' => $s->belt_rank,
-                        'degrees' => (int)($s->degrees ?? 0),
-                        'total_attendances' => $s->attendances()->count(),
-                        'previous_classes' => (int)($s->previous_classes ?? 0),
+                        'degrees' => $bp['degrees'],
+                        'total_attendances' => $bp['system_classes'],
+                        'previous_classes' => $bp['real_classes'] - $bp['system_classes'],
                         'belt_classes_at_promotion' => (int)($s->belt_classes_at_promotion ?? 0),
                         'modality' => $s->modality,
                         'gender' => $s->gender,
                         'weight' => $s->weight,
                         'height' => $s->height,
-                        'payment_status' => (function() use ($s) {
-                            $now = now();
-                            $hasOverdue = $s->enrollments->contains(function($e) use ($now) {
-                                return $e->payments->contains(function($p) use ($now) {
-                                    return in_array($p->status, ['pending', 'overdue']) && $p->due_date && $p->due_date->isPast();
-                                });
-                            });
-                            
-                            $hasPendingReview = $s->enrollments->contains(function($e) {
-                                return $e->payments->contains(function($p) {
-                                    return in_array($p->status, ['pending_review', 'proof_uploaded']);
-                                });
-                            });
-                            
-                            if ($hasOverdue) return 'overdue';
-                            if ($hasPendingReview) return 'pending';
-                            return 'paid';
-                        })(),
-                        'label' => $s->belt_rank ?? '', // Keep for retro-compatibility
-                        'today_status' => $todayAttendance ? $todayAttendance->status : 'absent',
-                        'method' => $todayAttendance ? $todayAttendance->registration_method : 'manual',
+                        'payment_status' => $s->is_updated ? 'paid' : 'overdue',
+                        'label' => $s->belt_rank ?? '', 
+                        'today_status' => $bp['today_status'],
+                        'method' => $bp['registration_method'],
+                        'belt_progress' => $bp,
                     ];
                 }),
             ];
