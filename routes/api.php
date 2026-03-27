@@ -60,6 +60,25 @@ Route::get('w/clear-cache', function() {
     return "Cache Cleared";
 });
 
+// ── Super Admin API (antes del grupo {tenant} para evitar colisiones) ──────────────────────────────────────────
+
+Route::post('admin/login', [AuthController::class, 'globalLogin']);
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('admin/tenants', [\App\Http\Controllers\Api\SuperAdminController::class, 'index']);
+    Route::get('admin/users', [\App\Http\Controllers\Api\SuperAdminController::class, 'users']);
+    Route::post('admin/tenants', [\App\Http\Controllers\Api\SuperAdminController::class, 'store']);
+
+    Route::patch('admin/tenants/{id}', [\App\Http\Controllers\Api\SuperAdminController::class, 'update']);
+    Route::post('admin/tenants/{id}/reset-password', [\App\Http\Controllers\Api\SuperAdminController::class, 'resetPassword']);
+
+    // SaaS Plan Management
+    Route::get('admin/plans', [\App\Http\Controllers\Api\SuperAdminController::class, 'plans']);
+    Route::put('admin/plans/{id}', [\App\Http\Controllers\Api\SuperAdminController::class, 'updatePlan']);
+    Route::post('admin/plans/{id}/sync-mp', [\App\Http\Controllers\Api\SuperAdminController::class, 'syncPlanWithMP']);
+});
+
+// ── Rutas por Tenant ────────────────────────────────────────────────────
 Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tenant}', 'where' => ['tenant' => '^(?!admin|w|webhooks|r|debug|saas-plans)[a-zA-Z0-9_-]+']], function () {
     // Info del tenant
     Route::get('info', [TenantDiscoveryController::class , 'show']);
@@ -159,8 +178,6 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
                     Route::post('plans', [PlanController::class, 'store']);
                     Route::put('plans/{id}', [PlanController::class, 'update']);
                     Route::delete('plans/{id}', [PlanController::class, 'destroy']);
-                    Route::put('schedules/{id}', [\App\Http\Controllers\Api\ScheduleController::class, 'update']);
-                    Route::delete('schedules/{id}', [\App\Http\Controllers\Api\ScheduleController::class, 'destroy']);
                     Route::post('schedules/{id}/students', [\App\Http\Controllers\Api\ScheduleController::class, 'assignStudents']);
 
                     // Gastos (Tesorero)
@@ -182,23 +199,4 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
                 );
             }
             );
-        });
-
-// ── Super Admin API (Global) ──────────────────────────────────────────
-
-Route::post('admin/login', [AuthController::class, 'globalLogin']);
-
-
-Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('admin/tenants', [\App\Http\Controllers\Api\SuperAdminController::class, 'index']);
-    Route::get('admin/users', [\App\Http\Controllers\Api\SuperAdminController::class, 'users']);
-    Route::post('admin/tenants', [\App\Http\Controllers\Api\SuperAdminController::class, 'store']);
-
-    Route::patch('admin/tenants/{id}', [\App\Http\Controllers\Api\SuperAdminController::class, 'update']);
-    Route::post('admin/tenants/{id}/reset-password', [\App\Http\Controllers\Api\SuperAdminController::class, 'resetPassword']);
-
-    // SaaS Plan Management
-    Route::get('admin/plans', [\App\Http\Controllers\Api\SuperAdminController::class, 'plans']);
-    Route::put('admin/plans/{id}', [\App\Http\Controllers\Api\SuperAdminController::class, 'updatePlan']);
-    Route::post('admin/plans/{id}/sync-mp', [\App\Http\Controllers\Api\SuperAdminController::class, 'syncPlanWithMP']);
-});
+    });
