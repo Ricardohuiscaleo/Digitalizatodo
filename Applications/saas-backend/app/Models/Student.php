@@ -91,7 +91,7 @@ class Student extends Model
         static $beltConfigs = null;
         if ($beltConfigs === null) {
             try {
-                $beltConfigs = \Illuminate\Support\Facades\DB::table('belt_configs')->get()->groupBy('category');
+                $beltConfigs = \App\Models\BeltConfig::all()->groupBy('category');
             } catch (\Exception $e) {
                 $beltConfigs = collect([]);
             }
