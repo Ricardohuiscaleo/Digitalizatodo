@@ -344,6 +344,16 @@ export default function OnboardingPage() {
                                                         <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">Valor Referencial</p>
                                                     </div>
                                                 </div>
+                                                {billingInterval === 'yearly' && (() => {
+                                                    const savings = parseInt(plan.price_monthly) * 12 - parseInt(plan.price_yearly);
+                                                    return savings > 0 ? (
+                                                        <div className="mt-3 relative z-10">
+                                                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white rounded-full text-[9px] font-black uppercase tracking-widest">
+                                                                🎉 Ahorras ${savings.toLocaleString()} al año
+                                                            </span>
+                                                        </div>
+                                                    ) : null;
+                                                })()}
                                                 {formData.saas_plan_id === plan.id.toString() && (
                                                     <div className="absolute top-2 right-2">
                                                         <CheckCircle2 size={18} className="text-blue-600 fill-white" />
