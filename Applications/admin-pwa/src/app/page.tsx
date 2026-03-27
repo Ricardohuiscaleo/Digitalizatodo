@@ -379,7 +379,7 @@ export default function DeepAdminDashboard() {
               <div className="px-4 md:px-10 space-y-6 md:space-y-10">
                 <div className={`sticky top-0 z-50 -mx-4 md:-mx-10 transition-all duration-500 ease-in-out ${isScrolled ? 'mb-4' : 'mb-6'}`}>
                   <Card className={`bg-blue-600 border-none shadow-2xl relative overflow-hidden group transition-all duration-700 ease-in-out rounded-t-none ${isScrolled ? 'rounded-b-2xl p-3 md:p-3' : 'rounded-b-[40px] p-4 md:p-8 space-y-4 md:space-y-6 mt-0'}`}>
-                    <div className={`absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-all duration-700 ${isScrolled ? 'hidden' : 'block'}`}>
+                    <div className={`absolute top-0 right-10 p-6 opacity-10 group-hover:scale-110 transition-all duration-700 ${isScrolled ? 'hidden' : 'block'}`}>
                       <ShieldCheck size={80} className="text-white" />
                     </div>
                     
@@ -425,36 +425,42 @@ export default function DeepAdminDashboard() {
                   </Card>
                 </div>
 
-                <div className="space-y-8">
-                  <div className="flex items-center justify-between gap-4 border-b border-border pb-4 px-1">
-                    <div className="flex items-center bg-muted rounded-full p-1 border border-border">
+                <div className="space-y-6">
+                  {/* Smart Filters Mobile */}
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4 hide-scrollbar">
                       <Button 
-                        variant={filter === 'all' ? 'default' : 'ghost'} 
+                        variant="ghost" 
                         onClick={() => setFilter('all')}
-                        className={`rounded-full uppercase tracking-tighter text-[10px] font-black ${filter === 'all' ? 'bg-white text-black shadow-sm' : 'text-zinc-500'}`}
+                        className={`rounded-2xl h-12 px-6 flex items-center gap-2 border transition-all shrink-0 ${filter === 'all' ? 'bg-primary/20 text-primary border-primary shadow-[0_0_20px_rgba(var(--primary),0.1)]' : 'bg-card border-border text-muted-foreground'}`}
                       >
-                        Todos
+                        <Globe size={16} />
+                        <span className="text-[10px] font-black uppercase tracking-widest leading-none">Todos</span>
                       </Button>
+                      
                       <Button 
-                        variant={filter === 'pending' ? 'default' : 'ghost'} 
+                        variant="ghost" 
                         onClick={() => setFilter('pending')}
-                        className={`rounded-full uppercase tracking-tighter text-[10px] font-black ${filter === 'pending' ? 'bg-amber-500 text-white' : 'text-zinc-500'}`}
+                        className={`rounded-2xl h-12 px-6 flex items-center gap-2 border transition-all shrink-0 ${filter === 'pending' ? 'bg-amber-500/20 text-amber-500 border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.1)]' : 'bg-card border-border text-muted-foreground'}`}
                       >
-                        Pendientes
+                        <Clock size={16} />
+                        <span className="text-[10px] font-black uppercase tracking-widest leading-none">Pendientes</span>
                       </Button>
-                      <div className="h-4 w-px bg-border mx-2" />
-                      {saasPlans.slice(0, 3).map(p => (
+
+                      <div className="w-px h-8 bg-border mx-2 shrink-0 self-center" />
+
+                      {saasPlans.map(p => (
                         <Button 
                           key={p.id}
-                          variant={filter === p.slug ? 'default' : 'ghost'} 
+                          variant="ghost" 
                           onClick={() => setFilter(p.slug)}
-                          className={`rounded-full uppercase tracking-tighter text-[10px] font-black ${filter === p.slug ? 'bg-indigo-500 text-white' : 'text-muted-foreground'}`}
+                          className={`rounded-2xl h-12 px-6 flex items-center gap-2 border transition-all shrink-0 ${filter === p.slug ? 'bg-indigo-500/20 text-indigo-500 border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.1)]' : 'bg-card border-border text-muted-foreground'}`}
                         >
-                          {p.name}
+                          <CreditCard size={14} />
+                          <span className="text-[10px] font-black uppercase tracking-widest leading-none">{p.name}</span>
                         </Button>
                       ))}
                     </div>
-
                   </div>
 
                   <div className="space-y-4">
@@ -567,6 +573,9 @@ export default function DeepAdminDashboard() {
               <div className="px-4 md:px-10 space-y-6 md:space-y-10">
                 <div className={`sticky top-0 z-50 -mx-4 md:-mx-10 transition-all duration-500 ease-in-out ${isScrolled ? 'mb-4' : 'mb-6'}`}>
                   <Card className={`bg-blue-600 border-none shadow-2xl relative overflow-hidden group transition-all duration-700 ease-in-out rounded-t-none ${isScrolled ? 'rounded-b-2xl p-3 md:p-3' : 'rounded-b-[40px] p-4 md:p-8 space-y-4 md:space-y-6 mt-0'}`}>
+                    <div className={`absolute top-0 right-10 p-6 opacity-10 group-hover:scale-110 transition-all duration-700 ${isScrolled ? 'hidden' : 'block'}`}>
+                      <ShieldCheck size={80} className="text-white" />
+                    </div>
                     <div className={`relative z-10 flex items-center justify-between gap-4 transition-all duration-500 ${isScrolled ? 'pt-[calc(var(--sat)+0.5rem)]' : 'pt-[calc(var(--sat)+1.5rem)]'}`}>
                       <div className={`transition-all duration-500 origin-left ${isScrolled ? 'scale-90 translate-y-0.5' : 'scale-100'}`}>
                         <div className="space-y-0">
@@ -646,6 +655,9 @@ export default function DeepAdminDashboard() {
               <div className="px-4 md:px-10 space-y-6 md:space-y-10">
                 <div className={`sticky top-0 z-50 -mx-4 md:-mx-10 transition-all duration-500 ease-in-out ${isScrolled ? 'mb-4' : 'mb-6'}`}>
                   <Card className={`bg-blue-600 border-none shadow-2xl relative overflow-hidden group transition-all duration-700 ease-in-out rounded-t-none ${isScrolled ? 'rounded-b-2xl p-3 md:p-3' : 'rounded-b-[40px] p-4 md:p-8 space-y-4 md:space-y-6 mt-0'}`}>
+                    <div className={`absolute top-0 right-10 p-6 opacity-10 group-hover:scale-110 transition-all duration-700 ${isScrolled ? 'hidden' : 'block'}`}>
+                      <ShieldCheck size={80} className="text-white" />
+                    </div>
                     <div className={`relative z-10 flex items-center justify-between gap-4 transition-all duration-500 ${isScrolled ? 'pt-[calc(var(--sat)+0.5rem)]' : 'pt-[calc(var(--sat)+1.5rem)]'}`}>
                       <div className={`transition-all duration-500 origin-left ${isScrolled ? 'scale-90 translate-y-0.5' : 'scale-100'}`}>
                         <div className="space-y-0">
