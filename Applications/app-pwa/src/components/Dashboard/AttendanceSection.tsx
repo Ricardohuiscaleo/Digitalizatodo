@@ -126,7 +126,14 @@ const AttendanceSection: React.FC<AttendanceSectionProps> = ({
                                 <tr key={student.id} className="hover:bg-zinc-50/50 transition-colors">
                                     <td className="px-6 py-4 text-sm font-black text-zinc-900 uppercase">
                                         <div className="flex items-center gap-3">
-                                            <img src={student.photo} className="w-10 h-10 rounded-full object-cover border border-zinc-100" />
+                                            <StudentAvatar
+                                                photo={student.photo}
+                                                name={student.name}
+                                                size={40}
+                                                modality={student.modality}
+                                                isDark={false}
+                                                ring={isPresent ? 'ring-emerald-400' : 'ring-zinc-100'}
+                                            />
                                             <span>{student.name}</span>
                                         </div>
                                     </td>
@@ -192,6 +199,7 @@ const AttendanceSection: React.FC<AttendanceSectionProps> = ({
                                         beltRank={student.belt_rank}
                                         degrees={student.degrees ?? 0}
                                         payerStatus={student.payerStatus}
+                                        modality={student.modality}
                                         showPayerDot={!isPresent}
                                         isDark={false}
                                     />

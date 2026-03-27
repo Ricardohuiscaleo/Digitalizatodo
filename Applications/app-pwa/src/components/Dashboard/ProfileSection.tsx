@@ -4,6 +4,7 @@ import React from 'react';
 import { Settings, DollarSign, LogOut, ChevronRight, User } from 'lucide-react';
 import AppUpdatesAccordion from "./AppUpdatesAccordion";
 import { BeltDisplay } from './Industries/MartialArts/BeltDisplay';
+import { StudentAvatar } from './Industries/MartialArts/StudentAvatar';
 
 interface ProfileSectionProps {
     user: any;
@@ -35,16 +36,16 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
             <div className={`rounded-[2.5rem] p-8 text-center shadow-lg border transition-all ${
                 isDark ? 'bg-[#09090b] border-zinc-800' : 'bg-white border-zinc-100'
             }`}>
-                <div className={`w-24 h-24 mx-auto mb-4 rounded-3xl overflow-hidden border-4 shadow-xl relative ${
-                    isDark ? 'border-zinc-800 bg-zinc-900' : 'border-zinc-50 bg-zinc-50'
-                }`}>
-                    {user?.photo ? (
-                        <img src={user.photo} className="w-full h-full object-cover" alt="" />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center text-zinc-300">
-                            <User size={40} />
-                        </div>
-                    )}
+                <div className="mb-4 flex justify-center">
+                    <StudentAvatar 
+                        photo={user?.photo}
+                        name={user?.name}
+                        size={96}
+                        beltRank={user?.belt_rank}
+                        degrees={user?.degrees}
+                        modality={user?.modality}
+                        isDark={isDark}
+                    />
                 </div>
                 
                 <p className="text-[9px] font-black uppercase tracking-[0.25em] text-orange-400 mb-1">

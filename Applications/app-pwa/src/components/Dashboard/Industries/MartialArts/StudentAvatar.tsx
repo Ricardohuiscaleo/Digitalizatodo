@@ -15,6 +15,7 @@ interface StudentAvatarProps {
     payerStatus?: string;   // 'paid' | 'review' | 'pending'
     showPayerDot?: boolean;
     isDark?: boolean;
+    modality?: string | null; // 'gi' | 'nogi' | 'both'
 }
 
 export function StudentAvatar({
@@ -28,6 +29,7 @@ export function StudentAvatar({
     payerStatus,
     showPayerDot = false,
     isDark = true,
+    modality,
 }: StudentAvatarProps) {
     const payerDot = payerStatus === 'paid'
         ? 'bg-emerald-500'
@@ -39,8 +41,6 @@ export function StudentAvatar({
     const ringClass = ring ?? defaultRing;
 
     // El globito (16px) centrado sobre el borde del círculo:
-    // su centro debe coincidir con el borde → offset = -(16/2) = -8px desde el div del círculo
-    // Como el contenedor wrappea el círculo sin padding, usamos posición relativa al círculo
     const DOT = 16;
     const half = DOT / 2;
     const ringPx = 4; // ring-4 se dibuja hacia afuera del div
@@ -64,17 +64,31 @@ export function StudentAvatar({
                 </div>
             </div>
 
-            {/* Globito verde — clases (arriba izquierda, centrado sobre el borde) */}
+            {/* Globito verde — clases (arriba izquierda) */}
             {classesCount != null && classesCount > 0 && (
                 <div
-                    className="absolute w-4 h-4 bg-zinc-900 border border-zinc-700 rounded-full flex items-center justify-center z-10"
+                    className="absolute w-4 h-4 bg-emerald-500 border border-zinc-950 rounded-full flex items-center justify-center z-20 shadow-lg"
                     style={{ top: -2, left: -2 }}
                 >
-                    <span className="text-[7px] font-black text-emerald-400 leading-none">{classesCount}</span>
+                    <span className="text-[7px] font-black text-black leading-none">{classesCount}</span>
                 </div>
             )}
 
-            {/* Globito dorado — grados (derecha centro, centrado sobre el borde) */}
+            {/* Modalidad Apple Watch Style — Curva Superior Derecha */}
+            {modality && (
+                <div 
+                    className="absolute z-30"
+                    style={{ top: -2, right: -2 }}
+                >
+                    <div className="px-1.5 py-0.5 bg-black border border-white/20 rounded-full shadow-lg scale-[0.9]">
+                        <p className="text-[6px] font-black text-white uppercase tracking-tighter leading-none">
+                            {modality === 'gi' ? 'GI' : modality === 'nogi' ? 'NOGI' : 'BOTH'}
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Globito dorado — grados (derecha centro) */}
             {degrees > 0 && (
                 <div
                     className="absolute w-4 h-4 rounded-full bg-[#c9a84c] border border-zinc-900 flex items-center justify-center z-10"
@@ -93,7 +107,7 @@ export function StudentAvatar({
 
             {/* Punto morosidad — abajo izquierda */}
             {showPayerDot && payerStatus && (
-                <div className={`absolute -bottom-0.5 -left-0.5 w-3 h-3 rounded-full border-2 border-zinc-900 z-10 ${payerDot}`} />
+                <div className={`absolute -bottom-0.5 -left-0.5 w-3 h-3 rounded-full border-2 border-zinc-900 z-20 ${payerDot}`} />
             )}
         </div>
     );

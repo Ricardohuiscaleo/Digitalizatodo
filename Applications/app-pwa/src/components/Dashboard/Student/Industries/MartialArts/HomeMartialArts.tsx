@@ -5,6 +5,7 @@ import { ChevronRight, CheckCircle2, RefreshCw, CreditCard, QrCode } from "lucid
 import { todayCL } from "@/lib/utils";
 import { NavSection } from "@/components/Navigation/BottomNav";
 import { BeltDisplay } from "@/components/Dashboard/Industries/MartialArts/BeltDisplay";
+import { StudentAvatar } from "@/components/Dashboard/Industries/MartialArts/StudentAvatar";
 import { calcBeltProgress, getBeltHex } from "@/lib/industryUtils";
 
 interface HomeMartialArtsProps {
@@ -137,11 +138,16 @@ export function HomeMartialArts({
                         }`}>
                             <div className="flex items-center gap-4">
                                 {/* Foto */}
-                                <div className={`w-16 h-16 rounded-2xl overflow-hidden shrink-0 border-2 ${isPresent ? 'border-emerald-400' : 'border-zinc-100'}`}>
-                                    {student.photo
-                                        ? <img src={student.photo} alt={student.name} className="w-full h-full object-cover" />
-                                        : <div className={`w-full h-full flex items-center justify-center text-2xl font-black ${isDark ? 'bg-zinc-800 text-zinc-600' : 'bg-zinc-100 text-zinc-300'}`}>{student.name[0]}</div>
-                                    }
+                                <div className="shrink-0">
+                                    <StudentAvatar
+                                        photo={student.photo}
+                                        name={student.name}
+                                        size={64}
+                                        beltRank={null}
+                                        modality={student.modality}
+                                        isDark={isDark}
+                                        ring={isPresent ? 'ring-emerald-400' : 'ring-zinc-100'}
+                                    />
                                 </div>
 
                                 {/* Info */}

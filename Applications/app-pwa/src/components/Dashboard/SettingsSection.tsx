@@ -5,7 +5,7 @@ import {
     Camera, Save, ClipboardPaste, CreditCard, Edit2, Loader2, Sparkles, 
     Trash2, LogOut, RefreshCw, Users, X, FileText, ChevronRight, 
     Banknote, Settings as SettingsIcon, ShieldCheck, Calendar, Wallet, Plus, 
-    Home, Star, Baby, AlertCircle, Copy, Check, User, Info, Smartphone, Lock, CheckCircle2
+    Home, Star, Baby, AlertCircle, Copy, Check, User, Info, Smartphone, Lock, CheckCircle2, QrCode
 } from 'lucide-react';
 import { deleteRegistrationPage, generateRegistrationPage } from "@/lib/api";
 
@@ -553,6 +553,14 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                         setShowTermsModal(true);
                     }}
                     color="blue"
+                />
+
+                <ActionCard 
+                    icon={QrCode} 
+                    title="Punto de Marcación" 
+                    description="Cámara / Escáner para el Dojo"
+                    onClick={() => window.location.href = '/dashboard/checkin'}
+                    color="rose"
                 />
             </div>
 

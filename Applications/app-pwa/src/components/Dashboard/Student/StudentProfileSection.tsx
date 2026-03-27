@@ -15,6 +15,7 @@ import { updateStudentName } from "@/lib/api";
 import AppUpdatesAccordion from "../AppUpdatesAccordion";
 import { getBeltColor, formatStudentCategory, calcBeltProgress, getBeltHex } from "@/lib/industryUtils";
 import { BeltDisplay } from "@/components/Dashboard/Industries/MartialArts/BeltDisplay";
+import { StudentAvatar } from "@/components/Dashboard/Industries/MartialArts/StudentAvatar";
 
 interface StudentProfileSectionProps {
     guardian: any;
@@ -139,21 +140,27 @@ export function StudentProfileSection({
                 <div className="relative shrink-0">
                     <button
                         onClick={() => { studentForPhotoRef.current = String(student.id); profileFileInputRef.current?.click(); }}
-                        className="w-14 h-14 rounded-2xl bg-zinc-50 flex items-center justify-center overflow-hidden border border-zinc-100 relative transition-transform active:scale-90"
+                        className="relative transition-transform active:scale-90"
                     >
-                        {studentPhotoLoadingId === String(student.id) ? (
-                            <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
+                        <StudentAvatar
+                            photo={student.photo}
+                            name={student.name}
+                            size={56}
+                            beltRank={null} // Opcional, ya se muestra abajo con BeltDisplay
+                            degrees={student.degrees ?? 0}
+                            modality={student.modality}
+                            isDark={isDark}
+                            ring={isDark ? 'ring-zinc-800 bg-zinc-900' : 'ring-zinc-100 bg-zinc-50'}
+                        />
+                        {studentPhotoLoadingId === String(student.id) && (
+                            <div className="absolute inset-0 bg-white/80 rounded-2xl flex items-center justify-center z-10">
                                 <Loader2 className="text-orange-500 animate-spin" size={16} />
                             </div>
-                        ) : student.photo ? (
-                            <img src={student.photo} className="w-full h-full object-cover" alt={student.name} />
-                        ) : (
-                            <User size={20} className="text-zinc-200" />
                         )}
+                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-orange-500 text-white rounded-lg flex items-center justify-center shadow-lg border-2 border-white pointer-events-none z-20">
+                            <Camera className="w-3 h-3" />
+                        </div>
                     </button>
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-orange-500 text-white rounded-lg flex items-center justify-center shadow-lg border-2 border-white pointer-events-none">
-                        <Camera className="w-3 h-3" />
-                    </div>
                 </div>
                 <div className="flex-1 min-w-0">
                     {editingStudentId === String(student.id) ? (
@@ -206,26 +213,30 @@ export function StudentProfileSection({
             } text-white`}>
                 <div className="relative z-10 flex items-center gap-3">
                     <div className="relative flex-shrink-0">
-                        <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center overflow-hidden border border-white/20">
-                            {(selfStudent?.photo || guardian.photo) ? (
-                                <img src={selfStudent?.photo || guardian.photo} className="w-full h-full object-cover" alt="Profile" />
-                            ) : (
-                                <User size={28} className="text-white/40" />
-                            )}
-                            {isUploadingPhoto && (
-                                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center">
-                                    <Loader2 className="text-white animate-spin" size={18} />
-                                </div>
-                            )}
-                        </div>
                         <button
                             onClick={() => {
                                 if (selfStudent) { studentForPhotoRef.current = String(selfStudent.id); profileFileInputRef.current?.click(); }
                                 else profileFileInputRef.current?.click();
                             }}
-                            className="absolute -bottom-1 -right-1 w-6 h-6 bg-orange-500 text-white rounded-lg flex items-center justify-center shadow-lg border-2 border-zinc-900 transition-transform active:scale-90"
+                            className="relative transition-transform active:scale-90"
                         >
-                            <Camera size={11} />
+                            <StudentAvatar
+                                photo={selfStudent?.photo || guardian.photo}
+                                name={selfStudent?.name || guardian.name}
+                                size={56}
+                                beltRank={null}
+                                modality={selfStudent?.modality}
+                                isDark={isDark}
+                                ring="ring-2 ring-white/20 bg-white/10"
+                            />
+                            {isUploadingPhoto && (
+                                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center rounded-2xl z-10">
+                                    <Loader2 className="text-white animate-spin" size={18} />
+                                </div>
+                            )}
+                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-orange-500 text-white rounded-lg flex items-center justify-center shadow-lg border-2 border-zinc-900 transition-transform active:scale-90 z-20">
+                                <Camera size={11} />
+                            </div>
                         </button>
                     </div>
                     <div className="flex-1 min-w-0">

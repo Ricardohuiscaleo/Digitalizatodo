@@ -38,6 +38,29 @@ export async function playNotificationSound() {
     } catch {}
 }
 
+export async function playDebtorSound() {
+    if (typeof window === 'undefined') return;
+    try {
+        const c = getCtx();
+        if (c.state === 'suspended') await c.resume();
+        // Generate a localized "negative" sound (low frequency buzz)
+        const oscillator = c.createOscillator();
+        const gainNode = c.createGain();
+        oscillator.type = 'sawtooth';
+        oscillator.frequency.setValueAtTime(120, c.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(40, c.currentTime + 0.4);
+        
+        gainNode.gain.setValueAtTime(0.3, c.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, c.currentTime + 0.4);
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(c.destination);
+        
+        oscillator.start();
+        oscillator.stop(c.currentTime + 0.4);
+    } catch {}
+}
+
 // App Badging API — muestra contador en el ícono de la PWA instalada
 // En iOS debe ir via Service Worker; en Android funciona directo desde la página
 export function setAppBadge(count: number) {

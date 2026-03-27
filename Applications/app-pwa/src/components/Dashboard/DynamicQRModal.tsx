@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Loader2, QrCode, RefreshCw, User, Check, XCircle } from 'lucide-react';
+import { StudentAvatar } from './Industries/MartialArts/StudentAvatar';
 
 interface DynamicQRModalProps {
     onClose: () => void;
@@ -131,16 +132,17 @@ export default function DynamicQRModal({
                 {detectedStudent ? (
                     <div className="p-8 text-center animate-in zoom-in-95 duration-300">
                         <div className="relative mx-auto w-32 h-32 mb-6">
-                            <div className="relative w-full h-full rounded-full border-4 border-emerald-500 overflow-hidden bg-zinc-100 shadow-xl">
-                                {detectedStudent.photo ? (
-                                    <img src={detectedStudent.photo} className="w-full h-full object-cover" alt={detectedStudent.name} />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-zinc-300">
-                                        <User size={48} />
-                                    </div>
-                                )}
-                            </div>
-                            <div className="absolute -right-2 -bottom-2 w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg border-4 border-white">
+                            <StudentAvatar
+                                photo={detectedStudent.photo}
+                                name={detectedStudent.name}
+                                size={128}
+                                beltRank={detectedStudent.belt_rank}
+                                degrees={detectedStudent.degrees ?? 0}
+                                modality={detectedStudent.modality}
+                                isDark={false}
+                                ring="ring-4 ring-emerald-500 bg-white"
+                            />
+                            <div className="absolute -right-2 -bottom-2 z-30 w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg border-4 border-white">
                                 <Check size={20} />
                             </div>
                         </div>

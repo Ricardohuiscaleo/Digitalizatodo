@@ -13,6 +13,7 @@ import {
 import { todayCL } from "@/lib/utils";
 import { TodaySchedule } from "./TodaySchedule";
 import { NavSection } from "@/components/Navigation/BottomNav";
+import { StudentAvatar } from "../Industries/MartialArts/StudentAvatar";
 
 interface StudentHomeSectionProps {
     guardian: any;
@@ -138,21 +139,20 @@ export function StudentHomeSection({
 
                 // 1. Amarillo: comprobante en revisión
                 const student = students[0];
-                const StudentAvatar = () => student ? (
-                    <div className="shrink-0">
-                        <div className="w-24 h-24 rounded-full overflow-hidden bg-white/20 border-2 border-white/30">
-                            {student.photo
-                                ? <img src={student.photo} className="w-full h-full object-cover" alt="" />
-                                : <div className="w-full h-full flex items-center justify-center text-white font-black text-2xl">{student.name[0]}</div>
-                            }
-                        </div>
-                    </div>
-                ) : null;
 
                 if (hasReview) return (
                     <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-[2rem] p-5 text-white shadow-xl shadow-orange-500/20">
                         <div className="flex items-center gap-4">
-                            <StudentAvatar />
+                            {student && (
+                                <StudentAvatar
+                                    photo={student.photo}
+                                    name={student.name}
+                                    size={80}
+                                    modality={student.modality}
+                                    isDark={false}
+                                    ring="ring-2 ring-white/30 bg-white/10"
+                                />
+                            )}
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 mb-1">
                                     <RefreshCw size={10} className="animate-[spin_3s_linear_infinite] opacity-80" />
@@ -171,7 +171,16 @@ export function StudentHomeSection({
                     <div className="bg-gradient-to-br from-red-500 to-orange-600 rounded-[2rem] p-5 text-white shadow-xl shadow-red-500/20 relative">
                         <button onClick={() => setActiveSection('payments')} className="absolute bottom-4 right-4 text-[10px] font-black opacity-80">Pagar 👉🏻</button>
                         <div className="flex items-center gap-4">
-                            <StudentAvatar />
+                            {student && (
+                                <StudentAvatar
+                                    photo={student.photo}
+                                    name={student.name}
+                                    size={80}
+                                    modality={student.modality}
+                                    isDark={false}
+                                    ring="ring-2 ring-white/30 bg-white/10"
+                                />
+                            )}
                             <div className="flex-1 min-w-0">
                                 {student && <>
                                     <p className="font-black opacity-90 leading-tight" style={{ fontSize: 'clamp(0.65rem, 3.5vw, 0.875rem)' }}>{student.name}</p>
@@ -187,7 +196,16 @@ export function StudentHomeSection({
                 return (
                     <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-[2rem] p-5 text-white shadow-xl shadow-emerald-500/20">
                         <div className="flex items-center gap-4">
-                            <StudentAvatar />
+                            {student && (
+                                <StudentAvatar
+                                    photo={student.photo}
+                                    name={student.name}
+                                    size={80}
+                                    modality={student.modality}
+                                    isDark={false}
+                                    ring="ring-2 ring-white/30 bg-white/10"
+                                />
+                            )}
                             <div className="flex-1 min-w-0">
                                 <CheckCircle2 className="w-6 h-6 mb-1.5" />
                                 <h2 className="text-lg font-black leading-tight">¡Estás al día!</h2>
@@ -229,26 +247,27 @@ export function StudentHomeSection({
                         <div className="flex items-center gap-4 relative z-10">
                             <button
                                 type="button"
-                                className={`w-16 h-16 rounded-full overflow-hidden bg-zinc-100 shadow-md shrink-0 relative cursor-pointer z-30 active:scale-95 transition-transform touch-none border-2 ${isPresentToday ? 'border-emerald-400' : 'border-zinc-50'}`}
+                                className={`relative flex items-center justify-center shrink-0 z-30 active:scale-95 transition-transform touch-none`}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     studentForPhotoRef.current = student.id;
                                     profileFileInputRef.current?.click();
                                 }}
                             >
+                                <StudentAvatar
+                                    photo={student.photo}
+                                    name={student.name}
+                                    size={64}
+                                    modality={student.modality}
+                                    isDark={false}
+                                    ring={isPresentToday ? 'ring-2 ring-emerald-400' : 'ring-2 ring-zinc-50'}
+                                />
                                 {(isUploadingPhoto && !studentPhotoLoadingId) || studentPhotoLoadingId === student.id ? (
-                                    <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] flex flex-col items-center justify-center z-20">
+                                    <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] flex flex-col items-center justify-center z-10 rounded-2xl">
                                         <Loader2 className="animate-spin text-orange-500" size={18} />
                                     </div>
                                 ) : null}
-                                {student.photo ? (
-                                    <img src={student.photo} alt={student.name} className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-2xl font-black text-zinc-200">
-                                        {student.name[0]}
-                                    </div>
-                                )}
-                                <div className="absolute bottom-0 right-0 w-6 h-6 bg-white rounded-full shadow-lg flex items-center justify-center text-zinc-400 border border-zinc-100 z-10">
+                                <div className="absolute bottom-0 right-0 w-6 h-6 bg-white rounded-full shadow-lg flex items-center justify-center text-zinc-400 border border-zinc-100 z-20">
                                     <Camera className="w-3.5 h-3.5" />
                                 </div>
                             </button>

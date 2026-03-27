@@ -74,6 +74,7 @@ class StudentController extends Controller
                     'course_name' => $student->course ? $student->course->name : null,
                     'has_debt' => $hasOverdue || $hasPendingReview,
                     'payment_status' => $paymentStatus,
+                    'payerStatus' => $paymentStatus, // Mapping for frontend consistency
                     'belt_rank' => $student->belt_rank,
                     'degrees' => (int)($student->degrees ?? 0),
                     'total_attendances' => $student->attendances()->count(),

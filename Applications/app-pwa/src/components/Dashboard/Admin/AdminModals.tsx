@@ -231,6 +231,8 @@ export function HistoryDetailModal({ date, records, allStudents = [], attendance
                                     beltRank={belt}
                                     degrees={degrees}
                                     classesCount={classesSinceStripe ?? undefined}
+                                    modality={full?.modality ?? r.student?.modality}
+                                    payerStatus={payerStatus}
                                     isDark
                                 />
 

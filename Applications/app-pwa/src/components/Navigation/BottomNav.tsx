@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Home, Calendar, CreditCard, ShoppingCart } from "lucide-react";
+import { StudentAvatar } from "../Dashboard/Industries/MartialArts/StudentAvatar";
 
 export type NavSection = "home" | "calendar" | "payments" | "profile" | "rendicion";
 
@@ -55,15 +56,12 @@ export default function BottomNav({ activeSection, setActiveSection, primaryColo
                     className="flex flex-col items-center gap-1 transition-all duration-200"
                 >
                     <div className={`p-2 transition-all duration-300 ${activeSection === "profile" ? 'rounded-2xl shadow-sm' : 'bg-transparent'}`} style={activeSection === "profile" ? { backgroundColor: `${primaryColor}15` } : {}}>
-                        <div className={`w-[22px] h-[22px] rounded-full overflow-hidden border-2 ${activeSection === "profile" ? '' : 'border-transparent'}`} style={activeSection === "profile" ? { borderColor: primaryColor } : {}}>
-                            {userPhoto ? (
-                                <img src={userPhoto} className="w-full h-full object-cover" alt="" />
-                            ) : (
-                                <div className="w-full h-full bg-zinc-200 flex items-center justify-center text-zinc-500 text-[9px] font-black">
-                                    {userName?.[0] || 'U'}
-                                </div>
-                            )}
-                        </div>
+                        <StudentAvatar 
+                            photo={userPhoto}
+                            name={userName}
+                            size={22}
+                            isDark={false}
+                        />
                     </div>
                     <span className={`text-[7px] font-black uppercase tracking-[0.2em] transition-all ${activeSection === "profile" ? 'opacity-100' : 'opacity-60'}`} style={{ color: activeSection === "profile" ? primaryColor : '#a1a1aa' }}>
                         Perfil

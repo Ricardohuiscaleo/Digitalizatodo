@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { ChevronLeft, ChevronRight, User, CircleCheck, CircleX } from "lucide-react";
+import { StudentAvatar } from "../Dashboard/Industries/MartialArts/StudentAvatar";
 
 interface AttendanceRecord {
     date: string; // YYYY-MM-DD
@@ -9,6 +10,9 @@ interface AttendanceRecord {
     studentName: string;
     studentPhoto?: string;
     studentCategory?: string;
+    studentModality?: string;
+    studentBeltRank?: string;
+    studentDegrees?: number;
 }
 
 interface StudentCalendarProps {
@@ -145,13 +149,16 @@ export default function StudentCalendar({ attendance, primaryColor = "#f97316" }
                         selectedDayDetails.map((rec, idx) => (
                             <div key={idx} className="flex items-center justify-between p-3 bg-zinc-50/50 rounded-[1.5rem] border border-zinc-100/30 group active:scale-[0.98] transition-all">
                                 <div className="flex items-center gap-2.5">
-                                    <div className="w-9 h-9 rounded-full border-2 border-white shadow-sm overflow-hidden bg-white shrink-0">
-                                        {rec.studentPhoto ? (
-                                            <img src={rec.studentPhoto} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center font-black text-xs text-zinc-200">{rec.studentName[0]}</div>
-                                        )}
-                                    </div>
+                                    <StudentAvatar
+                                        photo={rec.studentPhoto}
+                                        name={rec.studentName}
+                                        size={36}
+                                        beltRank={rec.studentBeltRank}
+                                        degrees={rec.studentDegrees ?? 0}
+                                        modality={rec.studentModality}
+                                        isDark={false}
+                                        ring="ring-2 ring-white shadow-sm"
+                                    />
                                     <div className="flex flex-col">
                                         <span className="text-[10px] font-black text-zinc-800 leading-none">{rec.studentName}</span>
                                         <span className="text-[7px] font-bold text-zinc-400 uppercase mt-0.5">

@@ -361,14 +361,14 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                 <tr key={student.id} className={`transition-colors ${isDark ? 'hover:bg-zinc-800/30' : 'hover:bg-zinc-50/80'}`}>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-full overflow-hidden ring-2 flex-shrink-0 ${
-                                                isPresent ? 'ring-emerald-400' : isDark ? 'ring-zinc-800' : 'ring-zinc-100'
-                                            }`}>
-                                                {student.photo
-                                                    ? <img src={student.photo} className="w-full h-full object-cover" />
-                                                    : <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-zinc-800 text-zinc-600' : 'bg-zinc-100 text-zinc-300'}`}><User size={16} /></div>
-                                                }
-                                            </div>
+                                            <StudentAvatar
+                                                photo={student.photo}
+                                                name={student.name}
+                                                size={40}
+                                                modality={student.modality}
+                                                isDark={isDark}
+                                                ring={isPresent ? 'ring-emerald-400' : isDark ? 'ring-zinc-800' : 'ring-zinc-100'}
+                                            />
                                             <div>
                                                 <div className="flex items-center gap-2">
                                                     <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
@@ -376,9 +376,11 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                                         student.payment_status === 'pending' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]' :
                                                         'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
                                                     }`} />
-                                                    <p className={`text-sm font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-zinc-900'}`}>
-                                                        {student.name}
-                                                    </p>
+                                                    <div className="flex flex-col">
+                                                        <p className={`text-sm font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+                                                            {student.name}
+                                                        </p>
+                                                    </div>
                                                 </div>
                                                 {student.consumable_credits > 0 && (
                                                     <p className="text-[8px] font-black tracking-widest text-[#c9a84c] flex items-center gap-1 mt-0.5">
@@ -458,6 +460,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                         beltRank={!editMode ? student.belt_rank : null}
                                         degrees={student.degrees ?? 0}
                                         classesCount={!editMode ? classesCount : undefined}
+                                        modality={student.modality}
                                         isDark={isDark}
                                         ring={editMode
                                             ? 'ring-amber-400/40 bg-zinc-800'
@@ -472,8 +475,8 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                         </div>
                                     )}
                                     {!editMode && isPresent && (
-                                        <div className="absolute -top-1 -right-1 bg-emerald-500 rounded-full p-0.5 border-2 border-white shadow z-20">
-                                            <CheckCircle2 className="text-white" size={12} />
+                                        <div className="absolute -top-1 -left-1 bg-emerald-500 rounded-full p-0.5 border-2 border-white shadow z-20">
+                                            <CheckCircle2 className="text-white" size={10} />
                                         </div>
                                     )}
                                 </div>
@@ -519,10 +522,14 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                         {/* Header */}
                         <div className={`flex items-center justify-between px-6 pt-3 pb-4 border-b ${isDark ? 'border-zinc-800' : 'border-zinc-100'}`}>
                             <div className="flex items-center gap-3">
-                                {editingStudent.photo
-                                    ? <img src={editingStudent.photo} className="w-10 h-10 rounded-full object-cover ring-2 ring-[#c9a84c]/40" />
-                                    : <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? 'bg-zinc-800' : 'bg-zinc-100'}`}><User size={16} className={isDark ? 'text-zinc-600' : 'text-zinc-400'} /></div>
-                                }
+                                <StudentAvatar
+                                    photo={editingStudent.photo}
+                                    beltRank={editingStudent.belt_rank}
+                                    degrees={editingStudent.degrees ?? 0}
+                                    modality={editingStudent.modality}
+                                    isDark={isDark}
+                                    size={48}
+                                />
                                 <div>
                                     <p className={`text-[9px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Editar perfil BJJ</p>
                                     <h3 className={`text-base font-black leading-tight ${isDark ? 'text-white' : 'text-zinc-900'}`}>{editingStudent.name}</h3>

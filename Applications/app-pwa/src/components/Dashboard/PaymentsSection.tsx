@@ -258,7 +258,7 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                             {/* Nivel 1 & 2: Alumnos (Avatar + Nombre Abajo) */}
                             <div className="flex items-center gap-4 overflow-x-auto hide-scrollbar pt-2 pl-2 pb-1.5 min-h-[72px]">
                                 {students.slice(0, 4).map((student: any) => {
-                                    const classesCount = (student.total_attendances || 0) + (student.previous_classes || 0) - (student.belt_classes_at_promotion || 0);
+                                    const classesCount = student.total_attendances || 0;
                                     
                                     return (
                                         <div key={student.id} className="flex flex-col items-center gap-1.5 flex-shrink-0">
@@ -269,11 +269,21 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                                                 beltRank={student.belt_rank}
                                                 degrees={student.degrees ?? 0}
                                                 classesCount={classesCount > 0 ? classesCount : undefined}
+                                                payerStatus={payer.status}
+                                                modality={student.modality}
+                                                showPayerDot={false}
                                                 isDark={isDark}
                                             />
-                                            <span className={`text-[8px] font-black uppercase tracking-tighter text-center max-w-[48px] truncate ${isDark ? 'text-zinc-500' : 'text-zinc-900/60'}`}>
-                                                {student.name.split(' ')[0]}
-                                            </span>
+                                            <div className="flex items-center justify-center gap-1.5 mt-0.5">
+                                                <div className={`w-1 h-1 rounded-full flex-shrink-0 ${
+                                                    isPaid ? 'bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.3)]' :
+                                                    isReview ? 'bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.3)]' :
+                                                    'bg-rose-500 shadow-[0_0_4px_rgba(244,63,94,0.3)]'
+                                                }`} />
+                                                <span className={`text-[8px] font-black uppercase tracking-tighter text-center max-w-[40px] truncate ${isDark ? 'text-zinc-500' : 'text-zinc-900/60'}`}>
+                                                    {student.name.split(' ')[0]}
+                                                </span>
+                                            </div>
                                         </div>
                                     );
                                 })}
@@ -291,7 +301,12 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
 
                             <div className={`space-y-2 pb-0.5 pt-2 border-t ${isDark ? 'border-white/5' : 'border-black/5'}`}>
                                 {/* Nivel 3: Titular */}
-                                <div className="text-left">
+                                <div className="text-left flex items-center gap-2">
+                                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                        isPaid ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' :
+                                        isReview ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.4)]' :
+                                        'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]'
+                                    }`} />
                                     <p className={`text-[15px] font-black uppercase tracking-tight leading-none ${isDark ? 'text-white' : 'text-zinc-900'}`}>
                                         {payer.name}
                                     </p>

@@ -94,41 +94,56 @@ export default function OverviewSection(props: OverviewSectionProps) {
     return (
         <div className={`space-y-6 transition-colors duration-500 ${ isDark ? 'text-zinc-100' : 'text-zinc-950' }`}>
             {/* Dashboard Summary Horizontal Grid — 4 Columns on Mobile */}
-            <div className="grid grid-cols-4 gap-1.5 sm:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                 {(feesSummary ? [
-                    { icon: <Users style={{ color: branding?.primaryColor || '#6366f1' }} size={18} className="sm:w-12 sm:h-12" strokeWidth={3} />, label: 'Total', value: feesSummary.total, colorClass: 'text-zinc-950', bgClass: 'bg-white' },
-                    { icon: <CheckCircle2 className="text-emerald-600 w-4.5 h-4.5 sm:w-12 sm:h-12" size={18} strokeWidth={3} />, label: 'Al Día', value: feesSummary.al_dia, colorClass: 'text-emerald-700', bgClass: 'bg-emerald-50/40 border-emerald-100/60' },
-                    { icon: <RefreshCw className="text-amber-600 animate-spin-slow w-4.5 h-4.5 sm:w-12 sm:h-12" size={18} strokeWidth={3} />, label: 'Revisión', value: feesSummary.en_revision, colorClass: 'text-amber-700', bgClass: 'bg-amber-50/40 border-amber-100/60' },
-                    { icon: <XCircle className="text-rose-600 w-4.5 h-4.5 sm:w-12 sm:h-12" size={18} strokeWidth={3} />, label: 'Morosos', value: feesSummary.morosos, colorClass: 'text-rose-700', bgClass: 'bg-rose-50/40 border-rose-100/60' }
+                    { icon: <Users size={24} />, label: 'Total Estudiantes', value: feesSummary.total, colorClass: 'text-indigo-500', bgClass: 'bg-indigo-500/5', borderClass: 'border-indigo-500/10' },
+                    { icon: <CheckCircle2 size={24} />, label: 'Pagos Al Día', value: feesSummary.al_dia, colorClass: 'text-emerald-500', bgClass: 'bg-emerald-500/5', borderClass: 'border-emerald-500/10' },
+                    { icon: <RefreshCw size={24} />, label: 'En Revisión', value: feesSummary.en_revision, colorClass: 'text-amber-500', bgClass: 'bg-amber-500/5', borderClass: 'border-amber-500/10', spin: true },
+                    { icon: <XCircle size={24} />, label: 'Pendientes', value: feesSummary.morosos, colorClass: 'text-rose-500', bgClass: 'bg-rose-500/5', borderClass: 'border-rose-500/10' }
                 ] : [
-                    { icon: <Users style={{ color: branding?.primaryColor || '#6366f1' }} size={18} className="sm:w-12 sm:h-12" strokeWidth={3} />, label: 'Total', value: totalStudents, colorClass: 'text-zinc-950', bgClass: 'bg-white' },
-                    { icon: <CheckCircle2 className="text-emerald-600 w-4.5 h-4.5 sm:w-12 sm:h-12" size={18} strokeWidth={3} />, label: 'Pagados', value: paidStudents, colorClass: 'text-emerald-700', bgClass: 'bg-emerald-50/40 border-emerald-100/60' },
-                    { icon: <RefreshCw className="text-amber-600 animate-spin-slow w-4.5 h-4.5 sm:w-12 sm:h-12" size={18} strokeWidth={3} />, label: 'Revisión', value: allStudents.filter(s => s.payerStatus === 'review').length, colorClass: 'text-amber-700', bgClass: 'bg-amber-50/40 border-amber-100/60' },
-                    { icon: <XCircle className="text-rose-600 w-4.5 h-4.5 sm:w-12 sm:h-12" size={18} strokeWidth={3} />, label: 'Deuda', value: allStudents.filter(s => s.payerStatus === 'pending').length, colorClass: 'text-rose-700', bgClass: 'bg-rose-50/40 border-rose-100/60' }
+                    { icon: <Users size={24} />, label: 'Inscritos', value: totalStudents, colorClass: 'text-indigo-500', bgClass: 'bg-indigo-500/5', borderClass: 'border-indigo-500/10' },
+                    { icon: <CheckCircle2 size={24} />, label: 'Mensualidad OK', value: paidStudents, colorClass: 'text-emerald-500', bgClass: 'bg-emerald-500/5', borderClass: 'border-emerald-500/10' },
+                    { icon: <RefreshCw size={24} />, label: 'Por Validar', value: allStudents.filter(s => s.payerStatus === 'review').length, colorClass: 'text-amber-500', bgClass: 'bg-amber-500/5', borderClass: 'border-amber-500/10', spin: true },
+                    { icon: <XCircle size={24} />, label: 'En Deuda', value: allStudents.filter(s => s.payerStatus === 'pending').length, colorClass: 'text-rose-500', bgClass: 'bg-rose-500/5', borderClass: 'border-rose-500/10' }
                 ]).map((card, i) => (
                     <div 
                         key={i} 
-                        className={`rounded-2xl sm:rounded-[3rem] px-2 sm:px-8 py-3.5 sm:py-10 border shadow-sm flex flex-col justify-between aspect-square ${
-                            isDark ? 'bg-zinc-900/50 border-zinc-800' : `${card.bgClass} border-zinc-100`
+                        className={`group relative rounded-[2.5rem] p-6 md:p-8 border shadow-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl overflow-hidden ${
+                            isDark ? `bg-zinc-900 ${card.borderClass}` : `bg-white ${card.borderClass}`
                         }`}
                     >
-                        {/* Top: Icon (30%) + Number (70%) */}
-                        <div className="flex items-center justify-between gap-1 sm:gap-2">
-                            <div className="w-[30%] shrink-0 flex justify-start items-center">
-                                {card.icon}
-                            </div>
-                            <div className="w-[70%] flex justify-end items-center">
-                                <p className={`text-xl sm:text-5xl font-black tracking-tighter leading-none truncate ${ isDark ? 'text-white' : card.colorClass }`}>
-                                    {card.value}
-                                </p>
-                            </div>
-                        </div>
+                        {/* Decorative Background Glow */}
+                        <div className={`absolute -right-8 -bottom-8 w-24 h-24 rounded-full blur-3xl opacity-20 transition-all duration-500 group-hover:scale-150 ${card.bgClass}`} />
                         
-                        {/* Bottom: Label */}
-                        <div className="mt-auto">
-                            <p className={`text-[9px] sm:text-[18px] font-black uppercase tracking-[0.15em] leading-none opacity-80 truncate ${ isDark ? 'text-zinc-500' : 'text-zinc-400' }`}>
-                                {card.label}
-                            </p>
+                        <div className="relative z-10 flex flex-col h-full justify-between">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform duration-500 group-hover:rotate-12 ${
+                                    isDark ? 'bg-white/5 border border-white/10' : 'bg-zinc-50 border border-zinc-100'
+                                }`}>
+                                    <div className={`${card.colorClass} ${card.spin ? 'animate-spin-slow' : ''}`}>
+                                        {card.icon}
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className={`text-3xl md:text-5xl font-black tracking-tighter leading-none ${ 
+                                        isDark ? 'text-white' : 'text-zinc-950' 
+                                    }`}>
+                                        {card.value}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <p className={`text-[10px] md:text-xs font-black uppercase tracking-[0.2em] opacity-60 mb-1 ${ 
+                                    isDark ? 'text-zinc-500' : 'text-zinc-400' 
+                                }`}>
+                                    {card.label}
+                                </p>
+                                <div className="flex items-center gap-1">
+                                    <div className={`w-1 h-1 rounded-full ${card.colorClass} animate-pulse`} />
+                                    <span className={`text-[8px] font-bold uppercase tracking-widest ${card.colorClass}`}>Actualizado ahora</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 ))}
@@ -352,6 +367,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                                             degrees={student.degrees ?? 0}
                                                             classesCount={classesSinceStripe ?? undefined}
                                                             payerStatus={student.payerStatus}
+                                                            modality={student.modality}
                                                             isDark={isDark}
                                                         />
                                                         <div className="flex items-center gap-1 mt-1">

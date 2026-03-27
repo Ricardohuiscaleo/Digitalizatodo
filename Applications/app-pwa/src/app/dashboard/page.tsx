@@ -95,6 +95,7 @@ import SettingsSection from "@/components/Dashboard/SettingsSection";
 import ProfileSection from "@/components/Dashboard/ProfileSection";
 import OverviewTreasury from "@/components/Dashboard/Industries/SchoolTreasury/OverviewTreasury";
 import AttendanceMartialArts from "@/components/Dashboard/Industries/MartialArts/AttendanceMartialArts";
+import TodaySchedule from "@/components/Dashboard/TodaySchedule";
 
 import {
     PaymentActionModal,
@@ -395,34 +396,79 @@ export default function App() {
                 <main className={`flex-1 overflow-y-auto pb-28 md:pb-8 hide-scrollbar relative transition-colors duration-500 ${
                     isMartialArts && isDark ? 'bg-[#09090b]' : 'bg-white'
                 }`}>
-                    <div className="max-w-6xl mx-auto py-2 md:py-8 px-2 md:px-8">
-                        <div key={activeTab} className="w-full animate-in fade-in duration-150">
+                    <div className="max-w-[1600px] mx-auto py-2 md:py-8 px-2 md:px-8">
+                        <div key={activeTab} className="w-full animate-in fade-in duration-300">
                             <div className="hidden md:flex justify-between items-center mb-8">
-                                <h2 className={`text-2xl font-black uppercase tracking-tighter ${ isDark ? 'text-white' : 'text-zinc-950' }`}>
+                                <h2 className={`text-3xl font-black uppercase tracking-tighter ${ isDark ? 'text-white' : 'text-zinc-950' }`}>
                                     {activeTab === 'dashboard' ? 'Resumen General' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? (branding?.industry === 'school_treasury' ? 'Cuotas' : 'Estado de Pagos') : activeTab === 'settings' ? 'Configuración' : 'Mi Perfil'}
                                 </h2>
-                                {isDemo && <span className="bg-emerald-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Modo Demo Activo</span>}
+                                <div className="flex items-center gap-4">
+                                    {isDemo && <span className="bg-emerald-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg shadow-emerald-500/20">Modo Demo Activo</span>}
+                                    <div className="hidden xl:flex items-center gap-2 px-4 py-2 bg-zinc-50 dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800">
+                                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Live Sync Engaged</span>
+                                    </div>
+                                </div>
                             </div>
                             {activeTab === 'dashboard' && (
-                                <OverviewSection 
-                                    allStudents={allStudents}
-                                    attendance={attendance}
-                                    attendanceHistory={attendanceHistory}
-                                    historyMonth={historyMonth}
-                                    setHistoryMonth={setHistoryMonth}
-                                    historyYear={historyYear}
-                                    setHistoryYear={setHistoryYear}
-                                    historyPage={historyPage}
-                                    setHistoryPage={setHistoryPage}
-                                    branding={branding}
-                                    now={now}
-                                    setSelectedHistoryDate={setSelectedHistoryDate}
-                                    schedulesList={schedulesList}
-                                    feesSummary={feesSummary}
-                                    vocab={vocab}
-                                    setActiveTab={setActiveTab}
-                                    isDark={isDark}
-                                />
+                                <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+                                    <div className="xl:col-span-8 space-y-8">
+                                        <OverviewSection 
+                                            allStudents={allStudents}
+                                            attendance={attendance}
+                                            attendanceHistory={attendanceHistory}
+                                            historyMonth={historyMonth}
+                                            setHistoryMonth={setHistoryMonth}
+                                            historyYear={historyYear}
+                                            setHistoryYear={setHistoryYear}
+                                            historyPage={historyPage}
+                                            setHistoryPage={setHistoryPage}
+                                            branding={branding}
+                                            now={now}
+                                            setSelectedHistoryDate={setSelectedHistoryDate}
+                                            schedulesList={schedulesList}
+                                            feesSummary={feesSummary}
+                                            vocab={vocab}
+                                            setActiveTab={setActiveTab}
+                                            isDark={isDark}
+                                        />
+                                    </div>
+                                    <div className="xl:col-span-4 space-y-8">
+                                        <div className="sticky top-0 space-y-8">
+                                            {/* Today's Schedule for PC */}
+                                            <TodaySchedule schedules={schedulesList} primaryColor={branding?.primaryColor} />
+                                            
+                                            {/* Quick Actions / Terminal Access */}
+                                            <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-950 border-zinc-800'} p-8 rounded-[3rem] shadow-2xl relative overflow-hidden group`}>
+                                                <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl group-hover:bg-indigo-500/20 transition-all duration-700" />
+                                                <div className="relative z-10">
+                                                    <div className="w-14 h-14 bg-indigo-500 rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-indigo-500/20">
+                                                        <QrCode size={28} className="text-white" />
+                                                    </div>
+                                                    <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-2">Punto de Marcación</h3>
+                                                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-relaxed mb-6">Inicia la terminal de entrada para escaneo de alumnos en tiempo real.</p>
+                                                    <button 
+                                                        onClick={() => window.location.href = '/dashboard/checkin'}
+                                                        className="w-full py-4 bg-white text-zinc-950 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-100 transition-all active:scale-95 flex items-center justify-center gap-2"
+                                                    >
+                                                        Abrir Terminal <LayoutDashboard size={14} />
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Support / Help Mini Card */}
+                                            <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'} p-6 rounded-[2.5rem] border shadow-sm flex items-center gap-4`}>
+                                                <div className="w-12 h-12 bg-zinc-50 dark:bg-zinc-800 rounded-2xl flex items-center justify-center text-zinc-400">
+                                                    <Users size={20} />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Digitalizatodo Support</p>
+                                                    <p className={`text-[12px] font-bold ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>¿Necesitas ayuda con el dojo?</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             )}
                             {activeTab === 'attendance' && (
                                 branding?.industry === 'martial_arts' ? (

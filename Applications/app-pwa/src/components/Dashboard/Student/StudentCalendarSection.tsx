@@ -42,7 +42,10 @@ export function StudentCalendarSection({
             ...a,
             studentName: s.name,
             studentPhoto: s.photo,
-            studentCategory: s.category
+            studentCategory: s.category,
+            studentModality: s.modality,
+            studentBeltRank: s.belt_rank,
+            studentDegrees: s.degrees
         }))
     );
     
