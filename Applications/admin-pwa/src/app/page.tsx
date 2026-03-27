@@ -950,41 +950,41 @@ export default function DeepAdminDashboard() {
       )}
 
       {/* Bottom Navigation - Mobile Only */}
-      <div className="fixed bottom-0 inset-x-0 z-[100] pb-[calc(1.5rem+var(--sab))] px-6 pointer-events-none md:hidden transition-all duration-500">
+      <div className="fixed bottom-0 inset-x-0 z-[100] pb-[calc(0.75rem+var(--sab))] px-6 pointer-events-none md:hidden transition-all duration-500">
         <nav 
-          style={{ height: 'calc(5rem + var(--sab))' }}
-          className="mx-auto w-full max-w-[400px] bg-card/80 backdrop-blur-xl border border-border rounded-[2.5rem] shadow-2xl flex items-center justify-around px-2 pointer-events-auto"
+          style={{ height: 'calc(4rem + var(--sab))' }}
+          className="mx-auto w-full max-w-[400px] bg-card/80 backdrop-blur-xl border border-border rounded-[2rem] shadow-2xl flex items-center justify-around px-2 pointer-events-auto"
         >
           <button 
             onClick={() => setView('tenants')}
-            className={`flex flex-col items-center justify-center gap-1.5 w-16 h-16 rounded-3xl transition-all ${view === 'tenants' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+            className={`flex flex-col items-center justify-center gap-1 w-14 h-14 rounded-2xl transition-all ${view === 'tenants' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
           >
-            <Globe size={20} />
-            <span className="text-[8px] font-black uppercase tracking-widest">Tenants</span>
+            <Globe size={18} />
+            <span className="text-[7px] font-black uppercase tracking-widest">Tenants</span>
           </button>
           
           <button 
             onClick={() => setView('users')}
-            className={`flex flex-col items-center justify-center gap-1.5 w-16 h-16 rounded-3xl transition-all ${view === 'users' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+            className={`flex flex-col items-center justify-center gap-1 w-14 h-14 rounded-2xl transition-all ${view === 'users' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
           >
-            <Users size={20} />
-            <span className="text-[8px] font-black uppercase tracking-widest">Usuarios</span>
+            <Users size={18} />
+            <span className="text-[7px] font-black uppercase tracking-widest">Usuarios</span>
           </button>
 
           <button 
             onClick={() => setView('plans')}
-            className={`flex flex-col items-center justify-center gap-1.5 w-16 h-16 rounded-3xl transition-all ${view === 'plans' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+            className={`flex flex-col items-center justify-center gap-1 w-14 h-14 rounded-2xl transition-all ${view === 'plans' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
           >
-            <CreditCard size={20} />
-            <span className="text-[8px] font-black uppercase tracking-widest">Planes</span>
+            <CreditCard size={18} />
+            <span className="text-[7px] font-black uppercase tracking-widest">Planes</span>
           </button>
 
           <button 
             onClick={toggleTheme}
-            className={`flex flex-col items-center justify-center gap-1.5 w-16 h-16 rounded-3xl transition-all text-muted-foreground hover:bg-muted`}
+            className={`flex flex-col items-center justify-center gap-1 w-14 h-14 rounded-2xl transition-all text-muted-foreground hover:bg-muted`}
           >
-            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-            <span className="text-[8px] font-black uppercase tracking-widest">{isDarkMode ? 'Día' : 'Noche'}</span>
+            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            <span className="text-[7px] font-black uppercase tracking-widest">{isDarkMode ? 'Día' : 'Noche'}</span>
           </button>
         </nav>
       </div>
