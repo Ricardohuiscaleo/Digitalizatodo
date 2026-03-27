@@ -9,6 +9,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\WelcomeTenantMail;
 use Illuminate\Support\Str;
 
 class SuperAdminController extends Controller
@@ -134,12 +136,25 @@ class SuperAdminController extends Controller
             'force_terms_acceptance' => 'sometimes|boolean',
         ]);
 
+        $oldActive = $tenant->active;
         $tenant->update($validated);
+
+        // Si se activa por primera vez (o se reactiva), enviamos el mail de bienvenida
+        if (!$oldActive && $tenant->active) {
+            $user = $tenant->users()->oldest()->first();
+            if ($user) {
+                try {
+                    Mail::to($user->email)->send(new WelcomeTenantMail($user, $tenant));
+                } catch (\Exception $e) {
+                    \Log::error("Error enviando mail de bienvenida a {$user->email}: " . $e->getMessage());
+                }
+            }
+        }
 
         event(new TenantUpdated($id, 'updated'));
 
         return response()->json([
-            'message' => 'Tenant updated successfully',
+            'message' => 'Tenant updated successfully' . (!$oldActive && $tenant->active ? ' and welcome email sent.' : ''),
             'tenant' => $tenant
         ]);
     }
