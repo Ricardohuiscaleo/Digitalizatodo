@@ -77,24 +77,38 @@ export function StudentAvatar({
             {/* Modalidad Apple Watch Style — Curva Superior Derecha */}
             {modality && (
                 <div 
-                    className="absolute z-30"
-                    style={{ top: -2, right: -2 }}
+                    className="absolute z-30 flex items-center justify-center bg-black border border-white/20 rounded-full shadow-lg overflow-hidden"
+                    style={{ 
+                        top: -size * 0.05, 
+                        right: -size * 0.05,
+                        padding: `${size * 0.04}px ${size * 0.08}px`,
+                        minWidth: size * 0.25
+                    }}
                 >
-                    <div className="px-1.5 py-0.5 bg-black border border-white/20 rounded-full shadow-lg scale-[0.9]">
-                        <p className="text-[6px] font-black text-white uppercase tracking-tighter leading-none">
-                            {modality === 'gi' ? 'GI' : modality === 'nogi' ? 'NOGI' : 'BOTH'}
-                        </p>
-                    </div>
+                    <p 
+                        className="font-black text-white uppercase tracking-widest leading-none text-center"
+                        style={{ fontSize: Math.max(6, size / 12) }}
+                    >
+                        {modality === 'gi' ? 'GI' : modality === 'nogi' ? 'NOGI' : 'BOTH'}
+                    </p>
                 </div>
             )}
 
             {/* Globito dorado — grados (derecha centro) */}
             {degrees > 0 && (
                 <div
-                    className="absolute w-4 h-4 rounded-full bg-[#c9a84c] border border-zinc-900 flex items-center justify-center z-10"
-                    style={{ top: size / 2 - half, right: offset }}
+                    className="absolute rounded-full bg-[#c9a84c] border border-zinc-900 flex items-center justify-center z-10 shadow-lg"
+                    style={{ 
+                        width: Math.max(14, size * 0.25),
+                        height: Math.max(14, size * 0.25),
+                        top: (size / 2) - (Math.max(14, size * 0.25) / 2),
+                        right: -(Math.max(14, size * 0.25) / 2.5) 
+                    }}
                 >
-                    <span className="text-[7px] font-black text-zinc-900 leading-none">{degrees}</span>
+                    <span 
+                        className="font-black text-zinc-900 leading-none"
+                        style={{ fontSize: Math.max(7, size / 10) }}
+                    >{degrees}</span>
                 </div>
             )}
 

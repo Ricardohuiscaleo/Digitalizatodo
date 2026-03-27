@@ -9,6 +9,13 @@
 - Reconexión automática en móviles (visibilitychange listener)
 - Documentación completa en `.amazonq/rules/memory-bank/realtime.md`
 
+### Estandarización de Badges de Modalidad (Apple Watch Style) ✅
+- Unificación total en `StudentAvatar` para mostrar Gi/No-Gi/Both.
+- Diseño minimalista tipo "Apple Watch" (píldora negra, texto blanco).
+- Cobertura 100% en PWA: Dashboard Admin, Perfil Alumno, Calendario y Terminal de Check-in.
+- API `me` y `index` actualizadas en Laravel para enviar `modality`, `degrees` y `payerStatus`.
+- Registro de alumnos actualizado para capturar modalidad desde el inicio.
+
 ### Mejoras UI Student Card ✅
 - Tag "Presente" condicional cuando alumno tiene asistencia hoy
 - Botón QR con icono más grande (28px), fondo negro, borde gris
