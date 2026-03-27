@@ -220,7 +220,7 @@ export default function DeepAdminDashboard() {
   const [newTenant, setNewTenant] = useState({
     id: '', name: '', industry: 'martial_arts', 
     admin_name: '', admin_email: '', admin_password: '',
-    saas_plan_id: '', billing_interval: 'monthly'
+    saas_plan_id: '', saas_plan: '', billing_interval: 'monthly'
   });
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
@@ -235,7 +235,7 @@ export default function DeepAdminDashboard() {
       setNewTenant({ 
         id: '', name: '', industry: 'martial_arts', 
         admin_name: '', admin_email: '', admin_password: '',
-        saas_plan_id: '', billing_interval: 'monthly'
+        saas_plan_id: '', saas_plan: '', billing_interval: 'monthly'
       });
     } else {
       alert("Error al crear tenant: " + (result?.error || "Verifique los datos"));
@@ -743,6 +743,8 @@ export default function DeepAdminDashboard() {
             )}
 
           </main>
+        </div>
+      </div>
 
       {showCreateModal && (
         <div className="fixed inset-0 z-[999] flex flex-col md:items-center md:justify-center">
@@ -1053,7 +1055,6 @@ export default function DeepAdminDashboard() {
         </nav>
       </div>
 
-      </div>
     </>
   );
 }
