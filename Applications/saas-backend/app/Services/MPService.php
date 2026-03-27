@@ -21,12 +21,14 @@ class MPService
     public function createPreapprovalPlan(SaasPlan $plan, $interval = 'months')
     {
         $amount = $interval === 'months' ? $plan->price_monthly : $plan->price_yearly;
+        $frequency = $interval === 'years' ? 12 : 1;
+        $frequencyType = 'months'; // MP preapproval_plan prefiere 'months' o 'days'
         
         $response = Http::withToken($this->accessToken)->post('https://api.mercadopago.com/preapproval_plan', [
             "reason" => "Plan " . $plan->name . " - DigitalizaTodo",
             "auto_recurring" => [
-                "frequency" => 1,
-                "frequency_type" => $interval,
+                "frequency" => $frequency,
+                "frequency_type" => $frequencyType,
                 "transaction_amount" => $amount,
                 "currency_id" => "CLP"
             ],
