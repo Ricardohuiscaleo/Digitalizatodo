@@ -378,7 +378,7 @@ export default function DeepAdminDashboard() {
             {view === 'tenants' && (
               <div className="px-4 md:px-10 space-y-6 md:space-y-10 pt-[var(--sat)] md:pt-0">
                 <div className={`sticky top-0 z-50 -mx-4 md:-mx-10 transition-all duration-500 ease-in-out ${isScrolled ? 'mb-4' : 'mb-6'}`}>
-                  <Card className={`bg-blue-600 border-none shadow-2xl relative overflow-hidden group transition-all duration-700 ease-in-out ${isScrolled ? 'rounded-b-2xl p-3 md:p-4' : 'rounded-b-[40px] p-4 md:p-8 space-y-4 md:space-y-6 mt-0'}`}>
+                  <Card className={`bg-blue-600 border-none shadow-2xl relative overflow-hidden group transition-all duration-700 ease-in-out rounded-t-none ${isScrolled ? 'rounded-b-2xl p-3 md:p-4' : 'rounded-b-[40px] p-4 md:p-8 space-y-4 md:space-y-6 mt-0'}`}>
                     <div className={`absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-all duration-700 ${isScrolled ? 'hidden' : 'block'}`}>
                       <ShieldCheck size={80} className="text-white" />
                     </div>
@@ -917,21 +917,29 @@ export default function DeepAdminDashboard() {
             <Globe size={20} />
             <span className="text-[8px] font-black uppercase tracking-widest">Tenants</span>
           </button>
+          
           <button 
             onClick={() => setView('users')}
             className={`flex flex-col items-center justify-center gap-1.5 w-16 h-16 rounded-3xl transition-all ${view === 'users' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
           >
             <Users size={20} />
-            <span className="text-[8px] font-black uppercase tracking-widest">Global</span>
+            <span className="text-[8px] font-black uppercase tracking-widest">Usuarios</span>
           </button>
-          <div className="w-16 h-16 flex items-center justify-center">
-            <div className="h-10 w-10 rounded-2xl bg-muted flex items-center justify-center text-primary animate-pulse border border-border">
-              <Activity size={18} />
-            </div>
-          </div>
-          <button className="flex flex-col items-center justify-center gap-1.5 w-16 h-16 rounded-3xl text-muted-foreground hover:bg-muted">
-            <Settings size={20} />
-            <span className="text-[8px] font-black uppercase tracking-widest">Panel</span>
+
+          <button 
+            onClick={() => setView('plans')}
+            className={`flex flex-col items-center justify-center gap-1.5 w-16 h-16 rounded-3xl transition-all ${view === 'plans' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+          >
+            <CreditCard size={20} />
+            <span className="text-[8px] font-black uppercase tracking-widest">Planes</span>
+          </button>
+
+          <button 
+            onClick={toggleTheme}
+            className={`flex flex-col items-center justify-center gap-1.5 w-16 h-16 rounded-3xl transition-all text-muted-foreground hover:bg-muted`}
+          >
+            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            <span className="text-[8px] font-black uppercase tracking-widest">{isDarkMode ? 'Día' : 'Noche'}</span>
           </button>
         </nav>
       </div>
