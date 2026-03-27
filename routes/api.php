@@ -198,8 +198,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('admin/tenants/{id}/reset-password', [\App\Http\Controllers\Api\SuperAdminController::class, 'resetPassword']);
 
     // SaaS Plan Management
-    Route::get('admin/plans', [\App\Http\Controllers\Api\SuperAdminController::class, 'plans']);
+    Route::get('admin/saas-plans', [\App\Http\Controllers\Api\SuperAdminController::class, 'plans']);
     Route::put('admin/plans/{id}', [\App\Http\Controllers\Api\SuperAdminController::class, 'updatePlan']);
     Route::post('admin/plans/{id}/sync-mp', [\App\Http\Controllers\Api\SuperAdminController::class, 'syncPlanWithMP']);
-    Route::put('admin/plans/{id}', [\App\Http\Controllers\Api\SuperAdminController::class, 'updatePlan']);
 });
