@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Linkedin, Mail } from 'lucide-react';
+import { Linkedin, Mail, ExternalLink } from 'lucide-react';
 
 const ModernFooter = () => {
     const [uptime, setUptime] = useState<number | null>(null);
