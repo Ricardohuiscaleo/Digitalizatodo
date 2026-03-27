@@ -34,7 +34,7 @@ const sections = [
 ];
 ---
 <!DOCTYPE html>
-<html lang="es" class="scroll-smooth bg-white">
+<html lang="es" class="scroll-smooth">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -44,6 +44,23 @@ const sections = [
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
+
+  <script is:inline>
+    // Force light mode on this page
+    document.documentElement.classList.remove('dark');
+  </script>
+
+  <style is:global>
+    html, body {
+      background-color: white !important;
+      color: #334155 !important;
+    }
+    /* Ensure no dark mode background variables override this */
+    :root {
+      --background: 0 0% 100% !important;
+      --foreground: 222.2 84% 4.9% !important;
+    }
+  </style>
 </head>
 <body class="font-sans text-slate-600 min-h-screen selection:bg-orange-500 selection:text-white bg-white overflow-x-hidden">
   <ModernNavbar client:load />
