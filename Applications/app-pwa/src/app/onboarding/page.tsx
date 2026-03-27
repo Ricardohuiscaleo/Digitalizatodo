@@ -13,7 +13,6 @@ const RealTimeBadgeLogo = ({ formData, step }: { formData: any, step: number }) 
     let currentCount = 0;
     if (step === 1) currentCount = step1Count;
     else if (step === 2) currentCount = 2 + step2Count;
-    else if (step === 3) currentCount = 2 + 3 + (formData.saas_plan_id ? 1 : 0);
 
     return (
         <div className="flex flex-col items-center gap-0.5 md:gap-1">
@@ -38,7 +37,7 @@ export default function OnboardingPage() {
     const [industries, setIndustries] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
-    const [step, setStep] = useState(1); // 1: Negocio, 2: Admin, 3: Plan
+    const [step, setStep] = useState(1); // 1: Negocio, 2: Admin
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
     const [saasPlans, setSaasPlans] = useState<any[]>([]);
@@ -66,18 +65,15 @@ export default function OnboardingPage() {
                 setIndustries(indData);
                 if (planData && planData.length > 0) {
                     setSaasPlans(planData);
-                    // Auto-select the 'free' plan if available
                     const freePlan = planData.find((p: any) => p.slug === 'free' || p.price_monthly === '0.00');
                     if (freePlan) {
                         setFormData(prev => ({ ...prev, saas_plan_id: String(freePlan.id) }));
                     }
                 } else {
-                    // If plans fail to load, use plan id=1 (free) as fallback
                     setFormData(prev => ({ ...prev, saas_plan_id: '1' }));
                 }
             } catch (err) {
                 console.error("Error loading data:", err);
-                // Fallback to free plan on error
                 setFormData(prev => ({ ...prev, saas_plan_id: '1' }));
             } finally {
                 setIsLoadingIndustries(false);
@@ -101,18 +97,6 @@ export default function OnboardingPage() {
         });
     };
 
-    const getDynamicLabels = (industryId: string) => {
-        const industry = industries.find(ind => ind.id?.toString() === industryId || ind.name === industryId);
-        if (!industry) return { target: "Clientes y Usuarios", entity: "Negocio / Empresa", icon: "🚀" };
-        const name = industry.name.toLowerCase();
-        if (name.includes('marcial') || name.includes('dojo') || name.includes('karate') || name.includes('boxeo')) return { target: "Alumnos y Apoderados", entity: "Dojo / Academia", icon: "🥋" };
-        if (name.includes('gym') || name.includes('fitness') || name.includes('entrenamiento')) return { target: "Socios y Miembros", entity: "Gimnasio / Box", icon: "🏋️‍♂️" };
-        if (name.includes('colegio') || name.includes('escuela') || name.includes('educa')) return { target: "Padres y Alumnos", entity: "Institución / Colegio", icon: "📚" };
-        return { target: "Clientes y Usuarios", entity: "Negocio / Empresa", icon: "🚀" };
-    };
-
-    const labels = getDynamicLabels(formData.industry);
-
     const handleSubmit = async (e: any) => {
         if (e && e.preventDefault) e.preventDefault();
         
@@ -126,16 +110,12 @@ export default function OnboardingPage() {
                 setError("Las contraseñas no coinciden");
                 return;
             }
-            setStep(3);
-            return;
-        }
-
-        if (step === 3) {
-            if (!formData.saas_plan_id) {
-                // Fallback to free plan if nothing selected
-                setFormData(prev => ({ ...prev, saas_plan_id: '1' }));
-            }
             
+            if (!formData.saas_plan_id) {
+                const freePlan = saasPlans.find((p: any) => p.slug === 'free' || p.price_monthly === '0.00' || p.id == 1);
+                setFormData(prev => ({ ...prev, saas_plan_id: freePlan ? String(freePlan.id) : '1' }));
+            }
+
             setIsLoading(true);
             setError(null);
             
@@ -144,7 +124,6 @@ export default function OnboardingPage() {
                     ...formData,
                     billing_interval: billingInterval,
                     accepted_terms_at: new Date().toISOString()
-                    // No token here as it is a free demo onboarding
                 }) as any;
 
                 if (!data || data.status === 'error' || data.error) {
@@ -248,7 +227,6 @@ export default function OnboardingPage() {
                              </div>
                         </div>
                     </footer>
-                    {/* Badge for Mobile explicitly */}
                     <div className="md:hidden flex flex-col items-center animate-in zoom-in duration-500">
                          <RealTimeBadgeLogo formData={formData} step={step} />
                     </div>
@@ -262,10 +240,9 @@ export default function OnboardingPage() {
                              <div className="flex items-center gap-2">
                                 <span className={`h-1 w-6 bg-blue-600 rounded-full`} />
                                 <span className={`h-1 w-3 rounded-full transition-all ${step >= 2 ? 'bg-blue-600 w-6' : 'bg-zinc-100'}`} />
-                                <span className={`h-1 w-3 rounded-full transition-all ${step >= 3 ? 'bg-blue-600 w-6' : 'bg-zinc-100'}`} />
                              </div>
                              <h2 className="text-2xl font-black italic uppercase tracking-tighter text-zinc-900">
-                                {step === 1 ? 'Tu Negocio' : step === 2 ? 'Administrador' : 'Activa tu Demo'}
+                                {step === 1 ? 'Tu Negocio' : 'Administrador'}
                              </h2>
                         </div>
 
@@ -341,59 +318,6 @@ export default function OnboardingPage() {
                                 </div>
                             )}
 
-                            {step === 3 && (
-                                <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
-                                    <div className="flex items-center justify-between bg-zinc-50 p-1.5 rounded-2xl border border-zinc-100">
-                                        <button type="button" onClick={() => setBillingInterval('monthly')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${billingInterval === 'monthly' ? 'bg-white shadow-sm text-blue-600' : 'text-zinc-400'}`}>Estimado Mensual</button>
-                                        <button type="button" onClick={() => setBillingInterval('yearly')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${billingInterval === 'yearly' ? 'bg-white shadow-sm text-emerald-600' : 'text-zinc-400'}`}>Estimado Anual</button>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 gap-3">
-                                        {saasPlans.map((plan) => (
-                                            <div 
-                                                key={plan.id}
-                                                onClick={() => setFormData({...formData, saas_plan_id: plan.id.toString()})}
-                                                className={`cursor-pointer p-6 rounded-[2rem] border-2 transition-all relative overflow-hidden ${formData.saas_plan_id === plan.id.toString() ? 'border-blue-600 bg-blue-50/20 shadow-lg shadow-blue-500/5' : 'border-zinc-100 hover:border-zinc-200'}`}
-                                            >
-                                                <div className="flex items-center justify-between relative z-10">
-                                                    <div>
-                                                        <h4 className="text-sm font-black uppercase italic text-zinc-900">{plan.name}</h4>
-                                                        <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Digitaliza Core</p>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-xl font-black tracking-tighter text-zinc-900 leading-none">
-                                                            ${(billingInterval === 'monthly' ? parseInt(plan.price_monthly) : parseInt(plan.price_yearly)).toLocaleString()}
-                                                        </p>
-                                                        <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">Valor Referencial</p>
-                                                    </div>
-                                                </div>
-                                                {billingInterval === 'yearly' && (() => {
-                                                    const savings = parseInt(plan.price_monthly) * 12 - parseInt(plan.price_yearly);
-                                                    return savings > 0 ? (
-                                                        <div className="mt-3 relative z-10">
-                                                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white rounded-full text-[9px] font-black uppercase tracking-widest">
-                                                                🎉 Ahorras ${savings.toLocaleString()} al año
-                                                            </span>
-                                                        </div>
-                                                    ) : null;
-                                                })()}
-                                                {formData.saas_plan_id === plan.id.toString() && (
-                                                    <div className="absolute top-2 right-2">
-                                                        <CheckCircle2 size={18} className="text-blue-600 fill-white" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="p-4 bg-zinc-900 rounded-[1.5rem] flex items-center gap-4 text-white">
-                                         <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
-                                            <ShieldCheck size={20} className="text-green-400" />
-                                         </div>
-                                         <p className="text-[10px] font-black uppercase tracking-widest italic">Demo Gratis por 7 días</p>
-                                    </div>
-                                </div>
-                            )}
-
                             <div className="pt-4 flex flex-col gap-4">
                                 {step === 2 && (
                                     <div className="flex items-start gap-4 cursor-pointer group py-2">
@@ -404,9 +328,9 @@ export default function OnboardingPage() {
                                     </div>
                                 )}
                                 
-                                <button type="submit" disabled={isLoading || (step === 2 && !acceptedTerms) || (step === 3 && !formData.saas_plan_id)} className="w-full h-18 md:h-22 bg-blue-600 hover:bg-black text-white font-black rounded-[1.5rem] md:rounded-[2rem] uppercase tracking-[0.3em] text-[11px] md:text-[12px] flex items-center justify-center gap-4 shadow-xl shadow-blue-500/20 active:scale-[0.98] transition-all disabled:opacity-40">
-                                    {isLoading ? <Loader2 className="animate-spin" size={20} /> : (step === 1 ? 'Continuar' : (step === 2 ? 'Explorar Planes' : 'Activar mi Demo Gratis'))}
-                                    {step < 3 && <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />}
+                                <button type="submit" disabled={isLoading || (step === 2 && !acceptedTerms)} className="w-full h-18 md:h-22 bg-blue-600 hover:bg-black text-white font-black rounded-[1.5rem] md:rounded-[2rem] uppercase tracking-[0.3em] text-[11px] md:text-[12px] flex items-center justify-center gap-4 shadow-xl shadow-blue-500/20 active:scale-[0.98] transition-all disabled:opacity-40">
+                                    {isLoading ? <Loader2 className="animate-spin" size={20} /> : (step === 1 ? 'Continuar' : 'Activar mi Demo Gratis')}
+                                    {step < 2 && <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />}
                                 </button>
 
                                 {step > 1 && (
