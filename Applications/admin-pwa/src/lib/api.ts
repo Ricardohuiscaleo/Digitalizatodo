@@ -130,14 +130,18 @@ export async function resetTenantPassword(token: string, id: string | number) {
 
 export async function getAllSaasPlans(token: string) {
     try {
-        const response = await fetch(`${API_URL}/admin/plans`, {
+        console.log('Fetching SaaS plans from:', `${API_URL}/admin/saas-plans`);
+        const response = await fetch(`${API_URL}/admin/saas-plans`, {
             method: 'GET',
             headers: {
                 ...defaultHeaders,
                 'Authorization': `Bearer ${token}`,
             },
         });
-        if (!response.ok) return null;
+        if (!response.ok) {
+            console.error('SaaS plans response not OK:', response.status);
+            return null;
+        }
         const data = await safeJson(response);
         return data?.plans || [];
     } catch (error) {
@@ -148,6 +152,7 @@ export async function getAllSaasPlans(token: string) {
 
 export async function updateSaasPlan(token: string, id: number, data: any) {
     try {
+        console.log(`Updating SaaS plan ${id} at:`, `${API_URL}/admin/plans/${id}`);
         const response = await fetch(`${API_URL}/admin/plans/${id}`, {
             method: 'PUT',
             headers: {
@@ -165,6 +170,7 @@ export async function updateSaasPlan(token: string, id: number, data: any) {
 
 export async function syncSaasPlanWithMP(token: string, planId: number | string, interval: 'months' | 'years' = 'months') {
     try {
+        console.log(`Syncing SaaS plan ${planId} with MP at:`, `${API_URL}/admin/plans/${planId}/sync-mp`);
         const response = await fetch(`${API_URL}/admin/plans/${planId}/sync-mp`, {
             method: 'POST',
             headers: {
