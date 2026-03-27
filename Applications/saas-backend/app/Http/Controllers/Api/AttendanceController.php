@@ -126,9 +126,20 @@ class AttendanceController extends Controller
             \App\Models\Notification::send($tenantId, $g->id, 'Asistencia registrada', "{$student->name} fue marcado/a presente.", 'attendance', $tenant->slug);
         }
 
+        // Lógica de Rayas Automáticas (Alliance BJJ)
+        $progress = $student->belt_progress;
+        if ($student->degrees < $progress['current_stripe']) {
+            $student->update(['degrees' => $progress['current_stripe']]);
+            // Notificar ascenso automático
+            foreach ($student->guardians as $g) {
+                \App\Models\Notification::send($tenantId, $g->id, '¡Nueva Raya!', "{$student->name} ha ganado su {$progress['current_stripe']}ta raya automáticamente.", 'graduation', $tenant->slug);
+            }
+        }
+
         return response()->json([
             'message' => 'Asistencia registrada correctamente',
-            'attendance' => $attendance
+            'attendance' => $attendance,
+            'stripe_earned' => $student->degrees > ($progress['degrees'] ?? 0)
         ]);
     }
 
@@ -217,10 +228,21 @@ class AttendanceController extends Controller
                 \App\Models\Notification::send($tenant->id, $staffUser->id, 'Check-in vía QR', "{$student->name} registró asistencia escaneando QR.", 'attendance', $tenant->slug);
             }
 
+            // Lógica de Rayas Automáticas (Alliance BJJ)
+            $progress = $student->belt_progress;
+            if ($student->degrees < $progress['current_stripe']) {
+                $student->update(['degrees' => $progress['current_stripe']]);
+                // Notificar ascenso automático
+                foreach ($student->guardians as $g) {
+                    \App\Models\Notification::send($tenant->id, $g->id, '¡Nueva Raya!', "{$student->name} ha ganado su {$progress['current_stripe']}ta raya automáticamente.", 'graduation', $tenant->slug);
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => '¡Asistencia registrada!',
-                'attendance' => $attendance
+                'attendance' => $attendance,
+                'stripe_earned' => $student->degrees > ($progress['degrees'] ?? 0)
             ]);
 
         } catch (\Throwable $e) {

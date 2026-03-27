@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Recordatorios de cuotas: corre diariamente a las 9am
 Schedule::command('fees:send-reminders')->dailyAt('09:00');
+
+// Recordatorios de clases: corre cada minuto (verifica clases en T+30m)
+Schedule::command('classes:send-reminders')->everyMinute();

@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Graduaciones – Jiu-Jitsu Brasileño</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #1a1a1a;
+    font-family: 'Source Sans 3', sans-serif;
+    color: #f0f0f0;
+    padding: 30px 20px;
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  }
+
+  .header {
+    background: #0a0a0a;
+    padding: 22px 30px;
+    border-bottom: 3px solid #c8a84b;
+    text-align: center;
+  }
+
+  .header h1 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 22px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #c8a84b;
+  }
+
+  .header p {
+    font-size: 12px;
+    color: #888;
+    margin-top: 4px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead th {
+    background: #222;
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #c8a84b;
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #333;
+  }
+
+  thead th:nth-child(2) { text-align: center; }
+
+  tbody tr {
+    border-bottom: 1px solid #222;
+    transition: background 0.15s;
+  }
+
+  tbody tr:hover { background: #1c1c1c; }
+
+  /* category rows */
+  .cat-row td {
+    background: #181818;
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #aaa;
+    padding: 10px 16px;
+    border-top: 2px solid #2a2a2a;
+    border-bottom: 1px solid #2a2a2a;
+  }
+
+  .cat-row td:first-child {
+    border-left: 3px solid #c8a84b;
+  }
+
+  td {
+    padding: 9px 16px;
+    font-size: 13px;
+    vertical-align: middle;
+    color: #ccc;
+  }
+
+  /* Belt column */
+  td.belt-cell {
+    padding: 7px 12px;
+    text-align: center;
+    width: 160px;
+    min-width: 140px;
+  }
+
+  /* Belt visual */
+  .belt {
+    display: flex;
+    height: 22px;
+    border-radius: 2px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.07);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.4);
+  }
+
+  .seg { flex: 1; }
+
+  /* Belt colors */
+  .white    { background: #f5f5f5; }
+  .grey     { background: #9e9e9e; }
+  .yellow   { background: #f5c800; }
+  .orange   { background: #e65c00; }
+  .green    { background: #2e7d32; }
+  .blue     { background: #1565c0; }
+  .purple   { background: #6a1b9a; }
+  .brown    { background: #4e2f1a; }
+  .black    { background: #111; border: 1px solid #444; }
+  .red-blk  { background: repeating-linear-gradient(90deg, #c62828 0px, #c62828 12px, #111 12px, #111 18px); }
+  .red      { background: #c62828; }
+  .stripe   { background: #f5f5f5; }
+  .stripe-r { background: #c62828; }
+
+  /* Age/time column */
+  td.age   { font-size: 12px; color: #bbb; white-space: nowrap; }
+  td.time  { font-size: 12px; color: #999; white-space: nowrap; }
+
+  .footer {
+    background: #0a0a0a;
+    padding: 14px 20px;
+    border-top: 1px solid #2a2a2a;
+    font-size: 11px;
+    color: #666;
+    text-align: center;
+    font-style: italic;
+  }
+
+  .footer span { color: #c8a84b; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>Sistema de Graduaciones – Jiu-Jitsu Brasileño</h1>
+    <p>Título · Faja · Edad y/o Tiempo mínimo requerido</p>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:110px">Título</th>
+        <th style="width:160px; text-align:center">Faja</th>
+        <th>Edad y/o Tiempo</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <!-- ALUMNO -->
+      <tr class="cat-row"><td colspan="3">Alumno</td></tr>
+
+      <tr>
+        <td></td>
+        <td class="belt-cell">
+          <div class="belt">
+            <div class="seg white"></div>
+            <div class="seg white"></div>
+            <div class="seg white"></div>
+            <div class="seg black" style="flex:0.6"></div>
+          </div>
+        </td>
+        <td class="age">Principiante, cualquier edad &nbsp;·&nbsp; <span class="time">Lisa hasta 4 grados</span></td>
+      </tr>
+
+      <tr>
+        <td></td>
+        <td class="belt-cell">
+          <div class="belt">
+            <div class="seg grey"></div>
+            <div class="seg grey"></div>
+            <div class="seg grey"></div>
+            <div class="seg black" style="flex:0.6"></div>
+          </div>
+        </td>
+        <td class="age">04 a 15 años de edad &nbsp;·&nbsp; <span class="time">Lisa hasta 4 grados</span></td>
+      </tr>
+
+      <tr>
+        <td></td>
+        <td class="belt-cell">
+          <div class="belt">
+            <div class="seg yellow"></div>
+            <div class="seg yellow"></div>
+            <div class="seg yellow"></div>
+            <div class="seg black" style="flex:0.6"></div>
+          </div>
+        </td>
+        <td class="age">07 a 15 años de edad &nbsp;·&nbsp; <span class="time">Lisa hasta 4 grados</span></td>
+      </tr>
+
+      <tr>
+        <td></td>
+        <td class="belt-cell">
+          <div class="belt">
+            <div class="seg orange"></div>
+            <div class="seg orange"></div>
+            <div class="seg orange"></div>
+            <div class="seg black" style="flex:0.6"></div>
+          </div>
+        </td>
+        <td class="age">10 a 15 años de edad &nbsp;·&nbsp; <span class="time">Lisa hasta 4 grados</span></td>
+      </tr>
+
+      <tr>
+        <td></td>
+        <td class="belt-cell">
+          <div class="belt">
+            <div class="seg green"></div>
+            <div class="seg green"></div>
+            <div class="seg green"></div>
+            <div class="seg black" style="flex:0.6"></div>
+          </div>
+        </td>
+        <td class="age">13 a 15 años de edad &nbsp;·&nbsp; <span class="time">Lisa hasta 4 grados</span></td>
+      </tr>
+
+      <!-- INSTRUCTOR -->
+      <tr class="cat-row"><td colspan="3">Instructor</td></tr>
+
+      <tr>
+        <td></td>
+        <td class="belt-cell">
+          <div class="belt">
+            <div class="seg blue"></div>
+            <div class="seg blue"></div>
+            <div class="seg blue"></div>
+            <div class="seg black" style="flex:0.6"></div>
+          </div>
+        </td>
+        <td class="age">16 años o más &nbsp;·&nbsp; <span class="time">Mín. 2 años &nbsp;|&nbsp; Lisa hasta 4 grados</span></td>
+      </tr>
+
+      <tr>
+        <td></td>
+        <td class="belt-cell">
+          <div class="belt">
+            <div class="seg purple"></div>
+            <div class="seg purple"></div>
+            <div class="seg purple"></div>
+            <div class="seg black" style="flex:0.6"></div>
+          </div>
+        </td>
+        <td class="age">16 años o más &nbsp;·&nbsp; <span class="time">Mín. 1 año ½ &nbsp;|&nbsp; Lisa hasta 4 grados</span></td>
+      </tr>
+
+      <tr>
+        <td></td>
+        <td class="belt-cell">
+          <div class="belt">
+            <div class="seg brown"></div>
+            <div class="seg brown"></div>
+            <div class="seg brown"></div>
+            <div class="seg black" style="flex:0.6"></div>
+          </div>
+        </td>
+        <td class="age">18 años o más &nbsp;·&nbsp; <span class="time">Mín. 1 año &nbsp;|&nbsp; Lisa hasta 4 grados</span></td>
+      </tr>
+
+      <!-- PROFESOR -->
+      <tr class="cat-row"><td colspan="3">Profesor</td></tr>
+
+      <tr>
+        <td></td>
+        <td class="belt-cell">
+          <div class="belt">
+            <div class="seg black"></div>
+            <div class="seg black"></div>
+            <div class="seg black"></div>
+            <div class="seg black"></div>
+          </div>
+        </td>
+        <td class="age">19 años o más &nbsp;·&nbsp; <span class="time">Mín. 3 años de faja negra</span></td>
+      </tr>
+
+      <tr>
+        <td></td>
+        <td class="belt-cell">
+          <div class="belt">
+            <div class="seg black" style="flex:3"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+          </div>
+        </td>
+        <td class="age">19 años o más &nbsp;·&nbsp; <span class="time">Mín. 3 años del grado anterior</span></td>
+      </tr>
+
+      <tr>
+        <td></td>
+        <td class="belt-cell">
+          <div class="belt">
+            <div class="seg black" style="flex:3"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+          </div>
+        </td>
+        <td class="age">19 años o más &nbsp;·&nbsp; <span class="time">Mín. 3 años del grado anterior</span></td>
+      </tr>
+
+      <tr>
+        <td></td>
+        <td class="belt-cell">
+          <div class="belt">
+            <div class="seg black" style="flex:3"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+          </div>
+        </td>
+        <td class="age">19 años o más &nbsp;·&nbsp; <span class="time">Mín. 3 años del grado anterior</span></td>
+      </tr>
+
+      <tr>
+        <td></td>
+        <td class="belt-cell">
+          <div class="belt">
+            <div class="seg black" style="flex:2"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+          </div>
+        </td>
+        <td class="age">19 años o más &nbsp;·&nbsp; <span class="time">Mín. 5 años del grado anterior</span></td>
+      </tr>
+
+      <tr>
+        <td></td>
+        <td class="belt-cell">
+          <div class="belt">
+            <div class="seg black" style="flex:2"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+          </div>
+        </td>
+        <td class="age">19 años o más &nbsp;·&nbsp; <span class="time">Mín. 5 años del grado anterior</span></td>
+      </tr>
+
+      <!-- MESTRE -->
+      <tr class="cat-row"><td colspan="3">Maestro</td></tr>
+
+      <tr>
+        <td></td>
+        <td class="belt-cell">
+          <div class="belt">
+            <div class="seg black" style="flex:2"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+            <div class="seg stripe-r" style="flex:0.5"></div>
+          </div>
+        </td>
+        <td class="age">19 años o más &nbsp;·&nbsp; <span class="time">Mín. 5 años del grado anterior</span></td>
+      </tr>
+
+      <tr>
+        <td></td>
+        <td class="belt-cell">
+          <div class="belt">
+            <div class="seg red-blk" style="flex:4"></div>
+            <div class="seg black" style="flex:0.6"></div>
+          </div>
+        </td>
+        <td class="age">19 años o más &nbsp;·&nbsp; <span class="time">Mín. 7 años del grado anterior</span></td>
+      </tr>
+
+      <tr>
+        <td></td>
+        <td class="belt-cell">
+          <div class="belt">
+            <div class="seg red-blk" style="flex:4"></div>
+            <div class="seg black" style="flex:0.6"></div>
+          </div>
+        </td>
+        <td class="age">19 años o más &nbsp;·&nbsp; <span class="time">Mín. 7 años del grado anterior</span></td>
+      </tr>
+
+      <tr>
+        <td></td>
+        <td class="belt-cell">
+          <div class="belt">
+            <div class="seg red" style="flex:4"></div>
+            <div class="seg black" style="flex:0.6"></div>
+          </div>
+        </td>
+        <td class="age">19 años o más &nbsp;·&nbsp; <span class="time">Mín. 10 años del grado anterior</span></td>
+      </tr>
+
+      <tr>
+        <td></td>
+        <td class="belt-cell">
+          <div class="belt">
+            <div class="seg red"></div>
+            <div class="seg red"></div>
+            <div class="seg red"></div>
+            <div class="seg red"></div>
+          </div>
+        </td>
+        <td class="age" style="color:#c8a84b; font-size:11px;">Solo para los pioneros del Jiu-Jitsu de la familia Gracie:<br>Carlos, Oswaldo, George, Gastão y Hélio Gracie.</td>
+      </tr>
+
+    </tbody>
+  </table>
+
+  <div class="footer">
+    Sistema de graduaciones basado en las normas de la <span>Confederación Brasileña de Jiu-Jitsu</span>
+  </div>
+
+</div>
+</body>
+</html>

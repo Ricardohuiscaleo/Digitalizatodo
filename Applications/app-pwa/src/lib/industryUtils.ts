@@ -55,35 +55,69 @@ export function calcBeltProgress(beltRank: string, degrees: number, beltClassesA
     if (!beltData || beltData.totalClasses === null) return null;
     const belt = beltData as { id: string; name: string; totalClasses: number; classesPerStripe: number | null; stripes: number | null };
 
-    const classesInBelt = Math.max(0, totalAttendances - beltClassesAtPromotion);
+    // Clases reales en este cinturón (desde la última promoción digital)
+    const realClassesInBelt = Math.max(0, totalAttendances - beltClassesAtPromotion);
+    
+    // Clases VIRTUALES: Si el alumno ya tiene grados manuales (existen records previos), 
+    // asumimos que ya "pagó" las clases correspondientes a esos grados.
+    const virtualClassesFromStripes = (degrees ?? 0) * (belt.classesPerStripe ?? 0);
+    
+    // Total efectivo = Clases virtuales + Clases reales registradas
+    const totalEffectiveClasses = virtualClassesFromStripes + realClassesInBelt;
+    
     const nextBeltIdx = BELT_ORDER.indexOf(beltRank as any) + 1;
     const nextBelt = nextBeltIdx < ALLIANCE_BJJ_GRADUATION.length ? ALLIANCE_BJJ_GRADUATION[nextBeltIdx] : null;
 
-    // Raya actual calculada por clases (no la manual del staff)
-    const currentStripe = belt.classesPerStripe ? Math.min(4, Math.floor(classesInBelt / belt.classesPerStripe)) : 0;
-    const classesInCurrentStripe = belt.classesPerStripe ? classesInBelt % belt.classesPerStripe : 0;
-    const classesForNextStripe = belt.classesPerStripe ? belt.classesPerStripe - classesInCurrentStripe : null;
-    const nextStripe = currentStripe + 1;
-    const isReadyForBelt = classesInBelt >= belt.totalClasses;
+    // Milestone actual y siguiente
+    const currentStripe = Math.min(4, Math.floor(totalEffectiveClasses / (belt.classesPerStripe ?? 1)));
+    const classesForNextMilestone = belt.classesPerStripe 
+        ? (currentStripe < 4 
+            ? (currentStripe + 1) * belt.classesPerStripe 
+            : belt.totalClasses)
+        : belt.totalClasses;
 
-    // Progreso hacia la PRÓXIMA RAYA (no el cinturón completo)
-    const progressPct = belt.classesPerStripe
-        ? Math.min(100, Math.round((classesInCurrentStripe / belt.classesPerStripe) * 100))
-        : Math.min(100, Math.round((classesInBelt / (belt.totalClasses ?? 1)) * 100));
+    const remainingForNext = Math.max(0, classesForNextMilestone - totalEffectiveClasses);
+    const isReadyForBelt = totalEffectiveClasses >= belt.totalClasses;
+
+    // Porcentaje de progreso hacia el PRÓXIMO hito (raya o cinturón)
+    const milestoneStart = currentStripe * (belt.classesPerStripe ?? 0);
+    const milestoneEnd = classesForNextMilestone;
+    const progressInMilestone = totalEffectiveClasses - milestoneStart;
+    const milestoneRange = milestoneEnd - milestoneStart;
+    const progressPct = milestoneRange > 0 ? Math.min(100, Math.round((progressInMilestone / milestoneRange) * 100)) : 100;
+
+    // Próximo paso (raya vs cinturón)
+    let nextStepLabel = '';
+    const extraClasses = Math.max(0, totalEffectiveClasses - belt.totalClasses);
+    if (isReadyForBelt) {
+        nextStepLabel = extraClasses > 0 
+            ? `¡LISTO PARA EL ${nextBelt?.name.toUpperCase()}! (+${extraClasses} clases de mérito)`
+            : `¡LISTO PARA EL ${nextBelt?.name.toUpperCase()}!`;
+    } else if (currentStripe === 4) {
+        nextStepLabel = `CAMINO AL ${nextBelt?.name.toUpperCase()}`;
+    } else {
+        const nextStripeNumber = currentStripe + 1;
+        const stripeLabel = nextStripeNumber === 1 ? '1ra' : nextStripeNumber === 2 ? '2da' : nextStripeNumber === 3 ? '3ra' : '4ta';
+        nextStepLabel = remainingForNext === 1 
+            ? `En ${remainingForNext} clase obtendrás tu ${stripeLabel}★ RAYA`
+            : `En ${remainingForNext} clases obtendrás tu ${stripeLabel}★ RAYA`;
+    }
 
     return {
-        classesInBelt,
+        classesInBelt: totalEffectiveClasses, // Devolvemos el total efectivo para la UI
         totalForBelt: belt.totalClasses,
         classesPerStripe: belt.classesPerStripe,
-        classesInCurrentStripe,
-        classesForNextStripe,
+        classesInCurrentStripe: progressInMilestone,
         currentStripe,
-        nextStripe: nextStripe <= 4 ? nextStripe : null,
+        nextStripe: currentStripe < 4 ? currentStripe + 1 : null,
         progressPct,
         nextBeltName: nextBelt?.name ?? null,
+        nextStepLabel,
         isReadyForBelt,
-        isReadyForPromotion: isReadyForBelt, // alias para compatibilidad
-        classesForPromotion: Math.max(0, belt.totalClasses - classesInBelt),
+        isReadyForPromotion: isReadyForBelt, 
+        classesForPromotion: Math.max(0, belt.totalClasses - totalEffectiveClasses),
+        classesForNextStripe: remainingForNext,
+        extraClasses,
     };
 }
 

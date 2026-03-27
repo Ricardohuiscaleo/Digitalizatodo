@@ -42,29 +42,8 @@ class StudentController extends Controller
             ])
             ->get()
             ->map(function ($student) {
-                // Calcular estado de pagos
-                $now = now();
-                $hasOverdue = $student->enrollments->contains(function($e) use ($now) {
-                    return $e->payments->contains(function($p) use ($now) {
-                        return in_array($p->status, ['pending', 'overdue']) && $p->due_date && $p->due_date->isPast();
-                    });
-                });
+                $bp = $student->belt_progress;
                 
-                $hasPendingReview = $student->enrollments->contains(function($e) {
-                    return $e->payments->contains(function($p) {
-                        return in_array($p->status, ['pending_review', 'proof_uploaded']);
-                    });
-                });
-                
-                $paymentStatus = 'paid';
-                if ($hasOverdue) {
-                    $paymentStatus = 'overdue';
-                } elseif ($hasPendingReview) {
-                    $paymentStatus = 'pending';
-                }
-
-                $todayAttendance = $student->attendances->first();
-
                 return [
                     'id' => $student->id,
                     'name' => $student->name,
@@ -72,19 +51,20 @@ class StudentController extends Controller
                     'photo' => $student->photo,
                     'course_id' => $student->course_id,
                     'course_name' => $student->course ? $student->course->name : null,
-                    'has_debt' => $hasOverdue || $hasPendingReview,
-                    'payment_status' => $paymentStatus,
-                    'payerStatus' => $paymentStatus, // Mapping for frontend consistency
+                    'has_debt' => !$student->is_updated,
+                    'payment_status' => $student->is_updated ? 'paid' : 'overdue',
+                    'payerStatus' => $student->is_updated ? 'paid' : 'overdue',
                     'belt_rank' => $student->belt_rank,
-                    'degrees' => (int)($student->degrees ?? 0),
-                    'total_attendances' => $student->attendances()->where('status', 'present')->count(),
-                    'previous_classes' => (int)($student->previous_classes ?? 0),
+                    'degrees' => $bp['degrees'],
+                    'total_attendances' => $bp['system_classes'],
+                    'previous_classes' => $bp['real_classes'] - $bp['system_classes'],
                     'belt_classes_at_promotion' => (int)($student->belt_classes_at_promotion ?? 0),
                     'modality' => $student->modality,
                     'gender' => $student->gender,
                     'weight' => $student->weight,
                     'height' => $student->height,
-                    'today_status' => $todayAttendance ? $todayAttendance->status : null,
+                    'today_status' => $bp['today_status'],
+                    'belt_progress' => $bp,
                 ];
             });
 
