@@ -54,10 +54,10 @@ const ModernNavbar = () => {
   }, []);
 
   const navLinks = [
-    { name: 'Inicio', href: '#hero' },
-    { name: 'Servicios', href: '#servicios' },
-    { name: 'Portafolio', href: '#proyectos' },
-    { name: 'Contacto', href: '#contacto' },
+    { name: 'Inicio', href: '/#hero' },
+    { name: 'Servicios', href: '/#servicios' },
+    { name: 'Portafolio', href: '/#proyectos' },
+    { name: 'Contacto', href: '/#contacto' },
   ];
 
   return (
@@ -75,7 +75,7 @@ const ModernNavbar = () => {
         <div className="flex items-center justify-between px-6 py-3">
 
           {/* LOGO */}
-          <div className="flex items-center gap-3 cursor-pointer">
+          <a href="/" className="flex items-center gap-3 cursor-pointer">
             <div className="w-10 h-10 bg-slate-900 rounded-full flex items-center justify-center shadow-lg transform transition-transform hover:rotate-12 overflow-hidden p-1.5">
               <img src="/DLogo-v2.webp" alt="D" className="w-full h-full object-contain" />
             </div>
@@ -83,20 +83,20 @@ const ModernNavbar = () => {
               <span className={`font-black text-[13px] sm:text-lg tracking-tighter transition-colors ${isMobileMenuOpen ? 'text-white' : 'text-slate-900'}`}>DIGITALIZA</span>
               <span className="font-black text-[13px] sm:text-lg tracking-tighter text-orange-500 ml-1">TODO</span>
             </div>
-          </div>
+          </a>
 
           {/* NAV DESKTOP */}
           <div className="hidden lg:flex items-center gap-1">
-            <a href="#hero" className="text-slate-600 hover:text-slate-900 font-bold text-[11px] uppercase tracking-widest px-5 py-2.5 rounded-full hover:bg-slate-100 transition-all">
+            <a href="/#hero" className="text-slate-600 hover:text-slate-900 font-bold text-[11px] uppercase tracking-widest px-5 py-2.5 rounded-full hover:bg-slate-100 transition-all">
               Inicio
             </a>
             <MegaMenu
-              title="Servicios" href="#servicios"
+              title="Servicios" href="/#servicios"
               items={[
-                { title: "Apps Web Escalables", desc: "Sistemas complejos con arquitecturas de alto rendimiento.", icon: Code2, iconColorClass: "text-orange-500", href: "#servicios" },
-                { title: "Sitios Web Premium", desc: "Presencia digital de alto impacto con optimización SEO extrema.", icon: PanelsTopLeft, iconColorClass: "text-blue-500", href: "#servicios" },
-                { title: "Software a Medida", desc: "Soluciones críticas diseñadas para optimizar tu lógica de negocio.", icon: Smartphone, iconColorClass: "text-emerald-500", href: "#servicios" },
-                { title: "Asesoría Técnica", desc: "Consultoría estratégica en automatización e inteligencia artificial.", icon: Lightbulb, iconColorClass: "text-violet-500", href: "#servicios" },
+                { title: "Apps Web Escalables", desc: "Sistemas complejos con arquitecturas de alto rendimiento.", icon: Code2, iconColorClass: "text-orange-500", href: "/#servicios" },
+                { title: "Sitios Web Premium", desc: "Presencia digital de alto impacto con optimización SEO extrema.", icon: PanelsTopLeft, iconColorClass: "text-blue-500", href: "/#servicios" },
+                { title: "Software a Medida", desc: "Soluciones críticas diseñadas para optimizar tu lógica de negocio.", icon: Smartphone, iconColorClass: "text-emerald-500", href: "/#servicios" },
+                { title: "Asesoría Técnica", desc: "Consultoría estratégica en automatización e inteligencia artificial.", icon: Lightbulb, iconColorClass: "text-violet-500", href: "/#servicios" },
               ]}
               footerText="Transparencia total con precios claros desde el primer día."
               footerIcon={TrendingUp}
