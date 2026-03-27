@@ -132,7 +132,9 @@ class SuperAdminController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string',
             'active' => 'sometimes|boolean',
-            'saas_plan' => 'sometimes|string|in:free,pro,enterprise',
+            'saas_plan' => 'sometimes|string',
+            'saas_plan_id' => 'sometimes|integer|exists:saas_plans,id',
+            'billing_interval' => 'sometimes|string|in:monthly,yearly',
             'force_terms_acceptance' => 'sometimes|boolean',
         ]);
 
@@ -154,9 +156,84 @@ class SuperAdminController extends Controller
         event(new TenantUpdated($id, 'updated'));
 
         return response()->json([
-            'message' => 'Tenant updated successfully' . (!$oldActive && $tenant->active ? ' and welcome email sent.' : ''),
-            'tenant' => $tenant
+            'message' => 'Tenant updated successfully',
+            'tenant' => $tenant->load('saasPlan')
         ]);
+    }
+
+    /**
+     * List all dynamic SaaS Plans (Public).
+     */
+    public function plans()
+    {
+        return response()->json([
+            'plans' => \App\Models\SaasPlan::where('active', true)->get()
+        ]);
+    }
+
+    /**
+     * Update a SaaS Plan (Price, Mercado Pago ID, etc.)
+     */
+    public function updatePlan(Request $request, $id)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $plan = \App\Models\SaasPlan::findOrFail($id);
+        
+        $validated = $request->validate([
+            'name' => 'sometimes|string',
+            'price_monthly' => 'sometimes|numeric',
+            'price_yearly' => 'sometimes|numeric',
+            'mercadopago_plan_id' => 'sometimes|string|nullable',
+            'mp_plan_monthly' => 'sometimes|string|nullable',
+            'mp_plan_yearly' => 'sometimes|string|nullable',
+            'active' => 'sometimes|boolean',
+        ]);
+
+        $plan->update($validated);
+
+        return response()->json([
+            'message' => 'Plan updated successfully',
+            'plan' => $plan
+        ]);
+    }
+
+    /**
+     * Sync a SaaS Plan with Mercado Pago (Create preapproval_plan).
+     */
+    public function syncPlanWithMP(Request $request, $id)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $plan = \App\Models\SaasPlan::findOrFail($id);
+        $interval = $request->get('interval', 'months'); // 'months' o 'years'
+
+        $mpService = new \App\Services\MPService();
+        $mpResult = $mpService->createPreapprovalPlan($plan, $interval);
+
+        if (isset($mpResult['id'])) {
+            $field = ($interval === 'months') ? 'mp_plan_monthly' : 'mp_plan_yearly';
+            $plan->update([
+                $field => $mpResult['id'],
+                'mercadopago_plan_id' => $mpResult['id'] // Mantener por compatibilidad legacy
+            ]);
+
+            return response()->json([
+                'message' => 'Plan sync exitoso',
+                'mp_id' => $mpResult['id'],
+                'field_updated' => $field,
+                'plan' => $plan
+            ]);
+        }
+
+        return response()->json([
+            'error' => 'Fallo al sincronizar con MP',
+            'details' => $mpResult
+        ], 400);
     }
 
 

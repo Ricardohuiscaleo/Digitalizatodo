@@ -23,6 +23,9 @@ class RegisterTenantController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:8|confirmed',
             'accepted_terms_at' => 'required|date',
+            'saas_plan_id' => 'sometimes|numeric|exists:saas_plans,id',
+            'billing_interval' => 'sometimes|string|in:monthly,yearly',
+            'mp_token' => 'sometimes|string|nullable'
         ]);
 
         try {
@@ -33,7 +36,8 @@ class RegisterTenantController extends Controller
                     'slug' => $validated['tenant_slug'],
                     'industry' => $validated['industry'],
                     'email' => $validated['email'], // Contacto empresa
-                    'saas_plan' => 'starter',
+                    'saas_plan_id' => $validated['saas_plan_id'] ?? null,
+                    'billing_interval' => $validated['billing_interval'] ?? 'monthly',
                     'active' => false, // Pendiente de habilitación por Digitaliza Todo
                 ]);
 
@@ -43,23 +47,33 @@ class RegisterTenantController extends Controller
                     'email' => $validated['email'],
                     'password' => Hash::make($validated['password']),
                     'tenant_id' => $tenant->id,
-                    // Si existe la columna la guardará, si no, se ignorará (Laravel no falla si no está en fillable, pero falla si está en fillable y no en DB)
-                    // Como el modelo tiene el campo en fillable, fallará si no hay columna.
-                    // Si tienes problemas, corre: php artisan migrate
                     'accepted_terms_at' => $validated['accepted_terms_at'],
                 ]);
 
-                // 3. Notificar por Telegram
-                $msg = "<b>🚀 ¡SOLICITUD DE NUEVA EMPRESA!</b>\n\n"
+                // 3. Procesar suscripción en Mercado Pago si hay token
+                $subscriptionMessage = "No se configuró pago automático";
+                if (isset($validated['mp_token']) && $validated['mp_token']) {
+                    $mpService = new \App\Services\MPService();
+                    $mpResult = $mpService->createPreapproval($tenant, $validated['mp_token']);
+                    
+                    if (isset($mpResult['id'])) {
+                        $subscriptionMessage = "Suscripción MP creada: " . $mpResult['id'];
+                    } else {
+                        $subscriptionMessage = "Error al crear suscripción: " . json_encode($mpResult);
+                    }
+                }
+
+                // 4. Notificar por Telegram
+                $msg = "<b>🚀 ¡NUEVO REGISTRO DIGITALIZA APP!</b>\n\n"
                     . "🏢 <b>Empresa:</b> {$tenant->name} ({$tenant->industry})\n"
                     . "🔗 <b>Slug:</b> {$tenant->slug}\n"
                     . "👤 <b>Dueño:</b> {$user->name}\n"
+                    . "💳 <b>Plan:</b> " . ($tenant->saasPlan->name ?? 'N/A') . " ({$tenant->billing_interval})\n"
+                    . "📝 <b>Estado Pago:</b> {$subscriptionMessage}\n"
                     . "📧 <b>Email:</b> {$user->email}\n\n"
-                    . "⏳ <b>Estado:</b> PENDIENTE DE APROBACIÓN\n\n"
-                    . "📱 <a href='https://app.digitalizatodo.cl/{$tenant->slug}'>Abrir App de Gestión</a>\n"
-                    . "🌍 <a href='https://admin.digitalizatodo.cl/{$tenant->slug}'>Ver Panel admin.digitalizatodo.cl</a>";
+                    . "⏳ <b>Estado:</b> PENDIENTE DE APROBACIÓN";
 
-                TelegramService::sendMessage($msg);
+                \App\Services\TelegramService::sendMessage($msg);
 
                 return response()->json([
                     'status' => 'success',

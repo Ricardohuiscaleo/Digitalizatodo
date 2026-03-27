@@ -35,8 +35,10 @@ Route::get('debug', [DebugController::class , 'index']);
 Route::get('app-updates', [\App\Http\Controllers\Api\AppUpdateController::class , 'index']);
 
 Route::get('industries', [\App\Http\Controllers\Api\IndustryController::class , 'index']);
+Route::get('saas-plans', [\App\Http\Controllers\Api\SuperAdminController::class , 'plans']);
 
-// ── Public API Endpoints (Chat & Contact) ──────────────────────────────────────────
+// SaaS Webhooks
+Route::post('webhooks/mercadopago-saas', [\App\Http\Controllers\Api\SaaSWebhookController::class, 'handle']);
 Route::post('w/resend-inbound', [TelegramBotController::class , 'handleResendInbound']);
 Route::post('webhooks/resend-inbound', [TelegramBotController::class , 'handleResendInbound']);
 Route::post('w/telegram', [TelegramBotController::class , 'handleTelegramWebhook']);
@@ -194,4 +196,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::patch('admin/tenants/{id}', [\App\Http\Controllers\Api\SuperAdminController::class, 'update']);
     Route::post('admin/tenants/{id}/reset-password', [\App\Http\Controllers\Api\SuperAdminController::class, 'resetPassword']);
+
+    // SaaS Plan Management
+    Route::get('admin/plans', [\App\Http\Controllers\Api\SuperAdminController::class, 'plans']);
+    Route::put('admin/plans/{id}', [\App\Http\Controllers\Api\SuperAdminController::class, 'updatePlan']);
+    Route::post('admin/plans/{id}/sync-mp', [\App\Http\Controllers\Api\SuperAdminController::class, 'syncPlanWithMP']);
+    Route::put('admin/plans/{id}', [\App\Http\Controllers\Api\SuperAdminController::class, 'updatePlan']);
 });

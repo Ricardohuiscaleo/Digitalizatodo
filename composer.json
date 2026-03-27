@@ -13,9 +13,10 @@
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^2.10.1",
         "league/flysystem-aws-s3-v3": "^3.32",
+        "mercadopago/dx-php": "^3.8",
+        "minishlink/web-push": "^9.0",
         "pusher/pusher-php-server": "^7.2",
         "resend/resend-php": "^1.1",
-        "minishlink/web-push": "^9.0",
         "stancl/tenancy": "^3.9"
     },
     "require-dev": {

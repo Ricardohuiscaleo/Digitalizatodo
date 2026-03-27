@@ -13,7 +13,7 @@ class Tenant extends Model implements HasAvatar
 {
     protected $fillable = [
         'id', 'slug', 'name', 'industry', 'email', 'phone', 'logo', 'primary_color',
-        'address', 'city', 'saas_plan', 'saas_trial_ends_at', 'active', 'force_terms_acceptance',
+        'address', 'city', 'saas_plan', 'saas_plan_id', 'billing_interval', 'saas_trial_ends_at', 'active', 'force_terms_acceptance',
         'bank_name', 'bank_account_type', 'bank_account_number',
         'bank_account_holder', 'bank_rut', 'bank_email', 'data',
     ];
@@ -28,7 +28,17 @@ class Tenant extends Model implements HasAvatar
         'force_terms_acceptance' => 'boolean',
         'saas_trial_ends_at' => 'date',
         'data' => 'array',
+        'saas_plan_id' => 'integer',
+        'billing_interval' => 'string',
     ];
+
+    /**
+     * Get the dynamic SaaS Plan details.
+     */
+    public function saasPlan(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(SaasPlan::class, 'saas_plan_id');
+    }
 
 
     // Relaciones
