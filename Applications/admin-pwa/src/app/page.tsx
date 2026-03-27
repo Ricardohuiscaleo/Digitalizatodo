@@ -155,12 +155,14 @@ export default function DeepAdminDashboard() {
 
   React.useEffect(() => {
     const token = localStorage.getItem('super_admin_token');
-    if (token) {
+    if (token && isAuthorized) {
+        // Fetch essential data for components
+        fetchSaasPlans(token);
+        
         if (view === 'tenants') fetchTenants(token);
         if (view === 'users') fetchGlobalUsers(token);
-        if (view === 'plans') fetchSaasPlans(token);
     }
-  }, [view]);
+  }, [view, isAuthorized]);
 
   React.useEffect(() => {
     // Wait for the container to be available after isAuthorized becomes true
@@ -420,45 +422,46 @@ export default function DeepAdminDashboard() {
                       </div>
                     )}
                   </Card>
-                </div>
 
-                <div className="space-y-6">
-                  {/* Smart Filters Mobile */}
-                  <div className="flex flex-col gap-4">
-                    <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4 hide-scrollbar">
+                  {/* Smart Filters - Integrated in Sticky for better UX */}
+                  <div className={`mt-2 md:mt-4 transition-all duration-500 delay-75 ${isScrolled ? 'px-1' : 'px-4 md:px-0'}`}>
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-2 px-2 hide-scrollbar">
                       <Button 
                         variant="ghost" 
                         onClick={() => setFilter('all')}
-                        className={`rounded-2xl h-12 px-6 flex items-center gap-2 border transition-all shrink-0 ${filter === 'all' ? 'bg-primary/20 text-primary border-primary shadow-[0_0_20px_rgba(var(--primary),0.1)]' : 'bg-card border-border text-muted-foreground'}`}
+                        className={`rounded-2xl h-10 px-4 md:px-6 flex items-center gap-2 border transition-all shrink-0 ${filter === 'all' ? 'bg-primary/20 text-primary border-primary shadow-[0_0_20px_rgba(var(--primary),0.1)]' : 'bg-card border-border text-muted-foreground'}`}
                       >
-                        <Globe size={16} />
-                        <span className="text-[10px] font-black uppercase tracking-widest leading-none">Todos</span>
+                        <Globe size={14} />
+                        <span className="text-[9px] font-black uppercase tracking-widest leading-none">Todos</span>
                       </Button>
                       
                       <Button 
                         variant="ghost" 
                         onClick={() => setFilter('pending')}
-                        className={`rounded-2xl h-12 px-6 flex items-center gap-2 border transition-all shrink-0 ${filter === 'pending' ? 'bg-amber-500/20 text-amber-500 border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.1)]' : 'bg-card border-border text-muted-foreground'}`}
+                        className={`rounded-2xl h-10 px-4 md:px-6 flex items-center gap-2 border transition-all shrink-0 ${filter === 'pending' ? 'bg-amber-500/20 text-amber-500 border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.1)]' : 'bg-card border-border text-muted-foreground'}`}
                       >
-                        <Clock size={16} />
-                        <span className="text-[10px] font-black uppercase tracking-widest leading-none">Pendientes</span>
+                        <Clock size={14} />
+                        <span className="text-[9px] font-black uppercase tracking-widest leading-none">Pendientes</span>
                       </Button>
 
-                      <div className="w-px h-8 bg-border mx-2 shrink-0 self-center" />
+                      <div className="w-px h-6 bg-border mx-1 shrink-0 self-center" />
 
                       {saasPlans.map(p => (
                         <Button 
                           key={p.id}
                           variant="ghost" 
                           onClick={() => setFilter(p.slug)}
-                          className={`rounded-2xl h-12 px-6 flex items-center gap-2 border transition-all shrink-0 ${filter === p.slug ? 'bg-indigo-500/20 text-indigo-500 border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.1)]' : 'bg-card border-border text-muted-foreground'}`}
+                          className={`rounded-2xl h-10 px-4 md:px-6 flex items-center gap-2 border transition-all shrink-0 ${filter === p.slug ? 'bg-indigo-500/20 text-indigo-500 border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.1)]' : 'bg-card border-border text-muted-foreground'}`}
                         >
-                          <CreditCard size={14} />
-                          <span className="text-[10px] font-black uppercase tracking-widest leading-none">{p.name}</span>
+                          <CreditCard size={12} />
+                          <span className="text-[9px] font-black uppercase tracking-widest leading-none">{p.name}</span>
                         </Button>
                       ))}
                     </div>
                   </div>
+                </div>
+
+                <div className="space-y-6">
 
                   <div className="space-y-4">
                     {isLoading ? (
