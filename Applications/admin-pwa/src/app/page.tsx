@@ -481,10 +481,10 @@ export default function DeepAdminDashboard() {
                       filteredTenants.map((t) => (
                         <div 
                           key={t.id} 
-                          className={`group bg-card border border-border rounded-3xl p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-muted/50 transition-all backdrop-blur-sm ${!t.active ? 'opacity-60' : ''}`}
+                          className={`group bg-zinc-900/80 border-none shadow-xl rounded-3xl p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:translate-y-[-2px] transition-all duration-300 ${!t.active ? 'opacity-60 bg-zinc-950/40' : ''}`}
                         >
                           <div className="flex items-start md:items-center gap-4 md:gap-6">
-                            <div className="h-12 w-12 md:h-14 md:w-14 rounded-2xl bg-muted flex items-center justify-center border border-border group-hover:scale-105 transition-transform overflow-hidden shrink-0">
+                            <div className="h-14 w-14 md:h-16 md:w-16 rounded-2xl bg-black flex items-center justify-center border-none shadow-inner group-hover:scale-105 transition-transform overflow-hidden shrink-0">
                               {t.logo ? (
                                 <img src={t.logo} alt={t.name} className="w-full h-full object-cover" />
                               ) : (
@@ -596,7 +596,7 @@ export default function DeepAdminDashboard() {
                 {/* Mobile Card List */}
                 <div className="grid grid-cols-1 gap-4 md:hidden">
                   {globalUsers.map((user) => (
-                    <Card key={user.id} className="bg-card border-border p-4 rounded-3xl space-y-4">
+                    <div key={user.id} className="bg-zinc-900/80 border-none shadow-xl p-5 rounded-[2.5rem] space-y-4 hover:translate-y-[-2px] transition-all">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10 border border-border" />
@@ -619,7 +619,7 @@ export default function DeepAdminDashboard() {
                           <p className="text-[10px] font-bold text-muted-foreground uppercase">{user.tenant?.slug}</p>
                         </div>
                       </div>
-                    </Card>
+                    </div>
                   ))}
                 </div>
 
@@ -677,54 +677,54 @@ export default function DeepAdminDashboard() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {saasPlans.map((plan) => (
-                    <Card key={plan.id} className="bg-card border-border p-6 space-y-6 relative overflow-hidden group rounded-[40px]">
-                      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-all duration-700">
-                        <CreditCard size={64} className="text-primary" />
+                    <div key={plan.id} className="bg-zinc-900/80 border-none shadow-xl p-8 space-y-8 relative overflow-hidden group rounded-[3rem] hover:translate-y-[-4px] transition-all duration-500">
+                      <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-30 transition-all duration-700">
+                        <CreditCard size={80} className="text-primary" />
                       </div>
-                      <div className="space-y-1">
-                        <h3 className="text-xl font-black uppercase tracking-tight italic">{plan.name}</h3>
-                        <Badge variant="outline" className="text-[9px] font-black tracking-widest uppercase border-primary/30 text-primary">{plan.slug}</Badge>
+                      <div className="space-y-2 relative z-10">
+                        <h3 className="text-2xl font-black uppercase tracking-tight italic text-foreground">{plan.name}</h3>
+                        <Badge className="bg-primary/20 text-primary border-none text-[10px] font-black tracking-widest uppercase px-3 py-1">{plan.slug}</Badge>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-0.5 p-3 rounded-2xl bg-muted/50 border border-border">
-                          <p className="text-[8px] font-black uppercase text-zinc-500">Mensual</p>
-                          <p className="text-xl font-black tracking-tighter">${parseInt(plan.price_monthly).toLocaleString()}</p>
+                      <div className="grid grid-cols-2 gap-4 relative z-10">
+                        <div className="space-y-1 p-4 rounded-[2rem] bg-black shadow-inner border border-white/5">
+                          <p className="text-[9px] font-black uppercase text-zinc-500">Mensual</p>
+                          <p className="text-2xl font-black tracking-tighter text-foreground">${parseInt(plan.price_monthly).toLocaleString()}</p>
                         </div>
-                        <div className="space-y-0.5 p-3 rounded-2xl bg-muted/50 border border-border">
-                          <p className="text-[8px] font-black uppercase text-zinc-500">Anual</p>
-                          <p className="text-xl font-black tracking-tighter">${parseInt(plan.price_yearly).toLocaleString()}</p>
+                        <div className="space-y-1 p-4 rounded-[2rem] bg-black shadow-inner border border-white/5">
+                          <p className="text-[9px] font-black uppercase text-zinc-500">Anual</p>
+                          <p className="text-2xl font-black tracking-tighter text-foreground">${parseInt(plan.price_yearly).toLocaleString()}</p>
                         </div>
                       </div>
 
-                      <div className="pt-4 border-t border-border space-y-4">
-                        <div className="space-y-1.5">
-                          <p className="text-[8px] font-black uppercase text-primary px-1 tracking-widest">Plan ID Mercado Pago</p>
-                          <div className="text-[10px] font-mono font-bold truncate bg-background p-3 rounded-2xl border border-border text-zinc-400 group-hover:text-foreground transition-colors">
+                      <div className="pt-6 border-t border-white/10 space-y-6 relative z-10">
+                        <div className="space-y-2">
+                          <p className="text-[9px] font-black uppercase text-primary px-1 tracking-widest">Plan ID Mercado Pago</p>
+                          <div className="text-[11px] font-mono font-bold truncate bg-black p-4 rounded-[1.5rem] border border-white/5 text-zinc-400 group-hover:text-foreground transition-colors">
                             {plan.mercadopago_plan_id || 'SIN VINCULAR'}
                           </div>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-4">
                           <Button 
                             onClick={() => handleSyncPlan(plan.id, 'months')}
-                            className="bg-transparent border border-blue-500/30 text-blue-500 hover:bg-blue-500 hover:text-white text-[8px] font-black uppercase tracking-widest rounded-2xl py-5 transition-all"
+                            className="bg-zinc-800 text-white hover:bg-blue-600 border-none text-[9px] font-black uppercase tracking-widest rounded-2xl py-6 transition-all shadow-lg"
                           >
                              Sync Mensual
                           </Button>
                           <Button 
                             onClick={() => handleSyncPlan(plan.id, 'years')}
-                            className="bg-transparent border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500 hover:text-white text-[8px] font-black uppercase tracking-widest rounded-2xl py-5 transition-all"
+                            className="bg-zinc-800 text-white hover:bg-emerald-600 border-none text-[9px] font-black uppercase tracking-widest rounded-2xl py-6 transition-all shadow-lg"
                           >
                              Sync Anual
                           </Button>
                         </div>
                         
-                        <p className="text-[7px] font-bold text-center text-zinc-500 uppercase tracking-tighter">
+                        <p className="text-[8px] font-bold text-center text-zinc-600 uppercase tracking-tighter">
                           * Sincronizar creará el preapproval_plan en tu cuenta de Mercado Pago
                         </p>
                       </div>
-                    </Card>
+                    </div>
                   ))}
                 </div>
               </div>
