@@ -74,7 +74,11 @@ class SaaSWebhookController extends Controller
                     'paid_at' => now(),
                 ]);
 
-                Log::info("SaaS: Payment registered for Tenant {$tenant->id}");
+                // Activar Empresa Automáticamente
+                $tenant->active = true;
+                $tenant->save();
+
+                Log::info("SaaS: Payment registered and Tenant {$tenant->id} activated");
             }
         }
 

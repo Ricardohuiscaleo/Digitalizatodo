@@ -38,6 +38,7 @@ class RegisterTenantController extends Controller
                     'email' => $validated['email'], // Contacto empresa
                     'saas_plan_id' => $validated['saas_plan_id'] ?? null,
                     'billing_interval' => $validated['billing_interval'] ?? 'monthly',
+                    'saas_trial_ends_at' => now()->addDays(7),
                     'active' => false, // Pendiente de habilitación por Digitaliza Todo
                 ]);
 
