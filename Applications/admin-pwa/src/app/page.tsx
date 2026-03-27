@@ -236,16 +236,9 @@ export default function DeepAdminDashboard() {
   }
 
   const stats = [
-    { label: "Tenants", value: tenants.filter(t => t.active).length.toString(), icon: Globe, trend: "Live", color: "text-blue-500", bg: "bg-blue-500/10" },
-    { label: "Admins", value: tenants.reduce((acc, t) => acc + (t.users_count || 0), 0).toString(), icon: Users, trend: "Synced", color: "text-amber-500", bg: "bg-amber-500/10" },
-    { 
-      label: "T&C", 
-      value: tenants.length > 0 ? Math.round((tenants.filter(t => !t.force_terms_acceptance).length / tenants.length) * 100) + "%" : "0%",
-      icon: CheckCircle2, 
-      trend: "Signed", 
-      color: "text-emerald-500",
-      bg: "bg-emerald-500/10"
-    },
+    { label: "Activos", value: tenants.filter(t => t.active).length.toString(), icon: Globe, trend: "Live", color: "text-blue-500", bg: "bg-blue-500/10" },
+    { label: "Pendientes", value: tenants.filter(t => !t.active).length.toString(), icon: Clock, trend: "Review", color: "text-amber-500", bg: "bg-amber-500/10" },
+    { label: "Usuarios", value: tenants.reduce((acc, t) => acc + (t.users_count || 0), 0).toString(), icon: Users, trend: "Synced", color: "text-indigo-500", bg: "bg-indigo-500/10" },
     { label: "Status", value: "OK", icon: Activity, trend: "Online", color: "text-rose-500", bg: "bg-rose-500/10" },
   ];
 
@@ -657,7 +650,7 @@ export default function DeepAdminDashboard() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest px-1">Email Maestro</label>
+                    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest px-1">Email</label>
                     <input 
                       required
                       type="email"
@@ -757,7 +750,7 @@ export default function DeepAdminDashboard() {
                       </div>
                     </div>
                     <div className="space-y-1.5 opacity-70">
-                      <label className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Email Maestro</label>
+                      <label className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Email</label>
                       <div className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-xs truncate">
                         {editingTenant.users?.[0]?.email || 'N/A'}
                       </div>
