@@ -737,92 +737,127 @@ export default function DeepAdminDashboard() {
 
       {showCreateModal && (
         <div className="fixed inset-0 z-[999] flex flex-col md:items-center md:justify-center">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowCreateModal(false)} />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowCreateModal(false)} />
           
-          <div className="relative w-full max-w-lg bg-zinc-950 md:bg-card border-t md:border border-border p-6 md:p-8 space-y-6 shadow-2xl overflow-hidden rounded-t-[2.5rem] md:rounded-[2.5rem] mt-auto md:mt-0 animate-in slide-in-from-bottom-10 duration-500 max-h-[90vh] flex flex-col">
+          <div className="relative w-full max-w-lg bg-zinc-950 md:bg-card border-t md:border border-border p-6 md:p-8 space-y-6 shadow-2xl overflow-hidden rounded-t-[3rem] md:rounded-[3rem] mt-auto md:mt-0 animate-in slide-in-from-bottom-10 duration-500 max-h-[92vh] flex flex-col">
             <div className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto mb-2 md:hidden shrink-0" />
-            <div className="absolute top-0 inset-x-0 h-1 bg-primary hidden md:block" />
             
-            <div className="space-y-1 shrink-0">
-              <h2 className="text-2xl font-black tracking-tighter uppercase italic text-white leading-tight">Nueva Instancia</h2>
-              <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest leading-none">Despliegue de Núcleo</p>
+            <div className="flex items-center gap-4 shrink-0 pb-2">
+              <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Zap className="text-primary" size={24} />
+              </div>
+              <div className="space-y-0.5">
+                <h2 className="text-2xl font-black tracking-tighter uppercase italic text-white leading-tight">Nueva Instancia</h2>
+                <p className="text-[10px] text-primary font-black uppercase tracking-widest leading-none">Despliegue de Núcleo DT_</p>
+              </div>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="flex-1 overflow-y-auto no-scrollbar space-y-6 pr-1">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest px-1">ID / Slug</label>
-                    <input 
-                      required
-                      placeholder="ej: mi-escuela"
-                      className="w-full bg-zinc-900 border border-border rounded-2xl px-4 py-4 text-sm focus:border-primary/50 outline-none transition-all text-white font-bold"
-                      value={newTenant.id}
-                      onChange={e => setNewTenant({...newTenant, id: e.target.value.toLowerCase().replace(/ /g, '-')})}
-                    />
+            <form onSubmit={handleCreateSubmit} className="flex-1 overflow-y-auto no-scrollbar space-y-8 pr-1">
+              {/* Sección 1: Identidad Digital */}
+              <div className="space-y-5 p-5 rounded-[2.5rem] bg-black shadow-inner border border-white/5">
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  <Target size={12} className="text-primary" />
+                  <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Configuración de Dominio</p>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black uppercase text-zinc-500 tracking-[0.2em] px-1">Identificador de Acceso (Slug)</label>
+                    <div className="relative">
+                      <input 
+                        required
+                        placeholder="ej: mi-negocio"
+                        className="w-full bg-zinc-900 border border-border rounded-2xl px-5 h-16 text-sm focus:border-primary outline-none transition-all text-white font-bold"
+                        value={newTenant.id}
+                        onChange={e => setNewTenant({...newTenant, id: e.target.value.toLowerCase().replace(/ /g, '-')})}
+                      />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-zinc-600 bg-black px-2 py-1 rounded-lg">
+                        .digitalizatodo.cl
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest px-1">Giro / Industria</label>
+
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black uppercase text-zinc-500 tracking-[0.2em] px-1">Sector Industrial</label>
                     <select 
-                      className="w-full bg-zinc-900 border border-border rounded-2xl px-4 py-4 text-sm focus:border-primary/50 outline-none transition-all appearance-none uppercase font-black text-white"
+                      className="w-full bg-zinc-900 border border-border rounded-2xl px-5 h-16 text-sm focus:border-primary outline-none transition-all appearance-none uppercase font-black text-white"
                       value={newTenant.industry}
                       onChange={e => setNewTenant({...newTenant, industry: e.target.value})}
                     >
                       <option value="martial_arts">Artes Marciales</option>
-                      <option value="school_treasury">Colegio</option>
-                      <option value="medical">Salud</option>
+                      <option value="school_treasury">Colegio / Instituto</option>
+                      <option value="medical">Salud / Estética</option>
                     </select>
                   </div>
-                </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest px-1">Nombre Comercial</label>
-                  <input 
-                    required
-                    className="w-full bg-zinc-900 border border-border rounded-2xl px-4 py-4 text-sm focus:border-primary/50 outline-none transition-all text-white font-bold uppercase"
-                    value={newTenant.name}
-                    onChange={e => setNewTenant({...newTenant, name: e.target.value})}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-border mt-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest px-1">Nombre Admin</label>
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black uppercase text-zinc-500 tracking-[0.2em] px-1">Nombre Público de la Empresa</label>
                     <input 
                       required
-                      className="w-full bg-zinc-900 border border-border rounded-2xl px-4 py-4 text-sm focus:border-primary/50 outline-none transition-all text-white font-bold"
-                      value={newTenant.admin_name}
-                      onChange={e => setNewTenant({...newTenant, admin_name: e.target.value})}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest px-1">Email</label>
-                    <input 
-                      required
-                      type="email"
-                      className="w-full bg-zinc-900 border border-border rounded-2xl px-4 py-4 text-sm focus:border-primary/50 outline-none transition-all text-white font-bold"
-                      value={newTenant.admin_email}
-                      onChange={e => setNewTenant({...newTenant, admin_email: e.target.value})}
+                      placeholder="Nombre del Negocio"
+                      className="w-full bg-zinc-900 border border-border rounded-2xl px-5 h-16 text-sm focus:border-primary outline-none transition-all text-white font-bold uppercase"
+                      value={newTenant.name}
+                      onChange={e => setNewTenant({...newTenant, name: e.target.value})}
                     />
                   </div>
                 </div>
+              </div>
 
-                <div className="space-y-1.5 pt-2">
-                  <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest px-1">Clave de Acceso</label>
-                  <input 
-                    required
-                    type="password"
-                    className="w-full bg-zinc-900 border border-border rounded-2xl px-4 py-4 text-sm focus:border-primary/50 outline-none transition-all text-white font-bold"
-                    value={newTenant.admin_password}
-                    onChange={e => setNewTenant({...newTenant, admin_password: e.target.value})}
-                  />
+              {/* Sección 2: Identidad del Dueño */}
+              <div className="space-y-5 p-5 rounded-[2.5rem] bg-black shadow-inner border border-white/5">
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  <User size={12} className="text-primary" />
+                  <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Administrador Maestro</p>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black uppercase text-zinc-500 tracking-[0.2em] px-1">Nombre Completo</label>
+                    <div className="relative">
+                      <User className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
+                      <input 
+                        required
+                        className="w-full bg-zinc-900 border border-border rounded-2xl pl-12 pr-5 h-16 text-sm focus:border-primary outline-none transition-all text-white font-bold"
+                        value={newTenant.admin_name}
+                        onChange={e => setNewTenant({...newTenant, admin_name: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black uppercase text-zinc-500 tracking-[0.2em] px-1">E-Mail de Acceso</label>
+                    <div className="relative">
+                      <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
+                      <input 
+                        required
+                        type="email"
+                        className="w-full bg-zinc-900 border border-border rounded-2xl pl-12 pr-5 h-16 text-sm focus:border-primary outline-none transition-all text-white font-bold"
+                        value={newTenant.admin_email}
+                        onChange={e => setNewTenant({...newTenant, admin_email: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black uppercase text-zinc-500 tracking-[0.2em] px-1">Clave Maestra DT_</label>
+                    <div className="relative">
+                      <Shield className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
+                      <input 
+                        required
+                        type="password"
+                        className="w-full bg-zinc-900 border border-border rounded-2xl pl-12 pr-5 h-16 text-sm focus:border-primary outline-none transition-all text-white font-bold"
+                        value={newTenant.admin_password}
+                        onChange={e => setNewTenant({...newTenant, admin_password: e.target.value})}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <div className="flex gap-4 pt-4 pb-[env(safe-area-inset-bottom,1rem)] shrink-0">
-                <Button type="button" variant="ghost" className="flex-1 rounded-2xl border border-border h-14 uppercase text-[10px] font-black tracking-widest text-zinc-400" onClick={() => setShowCreateModal(false)}>Cancelar</Button>
-                <Button type="submit" className="flex-1 rounded-2xl bg-primary text-primary-foreground h-14 font-black uppercase tracking-widest shadow-xl">
-                  Crear Instancia
+                <Button type="button" variant="ghost" className="flex-1 rounded-2xl border border-border h-16 uppercase text-[10px] font-black tracking-widest text-zinc-500 hover:text-white" onClick={() => setShowCreateModal(false)}>Cancelar</Button>
+                <Button type="submit" className="flex-1 rounded-3xl bg-primary text-primary-foreground h-16 font-black uppercase tracking-widest shadow-2xl shadow-primary/20">
+                  Activar Núcleo
                 </Button>
               </div>
             </form>
