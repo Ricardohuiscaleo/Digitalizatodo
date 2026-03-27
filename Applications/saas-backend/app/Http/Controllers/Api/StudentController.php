@@ -77,7 +77,7 @@ class StudentController extends Controller
                     'payerStatus' => $paymentStatus, // Mapping for frontend consistency
                     'belt_rank' => $student->belt_rank,
                     'degrees' => (int)($student->degrees ?? 0),
-                    'total_attendances' => $student->attendances()->count(),
+                    'total_attendances' => $student->attendances()->where('status', 'present')->count(),
                     'previous_classes' => (int)($student->previous_classes ?? 0),
                     'belt_classes_at_promotion' => (int)($student->belt_classes_at_promotion ?? 0),
                     'modality' => $student->modality,
@@ -158,7 +158,75 @@ class StudentController extends Controller
         return response()->json(['error' => 'No se recibió ninguna imagen'], 400);
     }
 
-    // Resto del CRUD...
+    public function update(Request $request, $tenant, $id)
+    {
+        $tenantModel = app('currentTenant');
+        $student = Student::where('tenant_id', $tenantModel->id)->findOrFail($id);
+
+        $user = $request->user();
+        if ($user && $user->role === 'guardian') {
+            $isAssociated = \App\Models\GuardianStudent::where('guardian_id', $user->id)
+                ->where('student_id', $student->id)->exists();
+            if (!$isAssociated) return response()->json(['error' => 'No autorizado'], 403);
+        }
+
+        $validated = $request->validate([
+            'name'  => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'email' => 'nullable|email|max:255',
+        ]);
+
+        $student->update($validated);
+
+        return response()->json([
+            'message' => 'Perfil actualizado correctamente',
+            'student' => $student
+        ]);
+    }
+
+    public function updateBjj(Request $request, $tenant, $id)
+    {
+        $tenantModel = app('currentTenant');
+        $student = Student::where('tenant_id', $tenantModel->id)->findOrFail($id);
+
+        $user = $request->user();
+        if ($user && $user->role === 'guardian') {
+            $isAssociated = \App\Models\GuardianStudent::where('guardian_id', $user->id)
+                ->where('student_id', $student->id)->exists();
+            if (!$isAssociated) return response()->json(['error' => 'No autorizado'], 403);
+        }
+
+        $validated = $request->validate([
+            'belt_rank'        => 'nullable|string',
+            'degrees'          => 'nullable|integer',
+            'modality'         => 'nullable|string',
+            'previous_classes' => 'nullable|integer',
+            'birth_date'       => 'nullable|date',
+            'gender'           => 'nullable|string',
+            'weight'           => 'nullable|numeric',
+            'height'           => 'nullable|numeric',
+            'category'         => 'nullable|string',
+            'promote'          => 'nullable|boolean',
+        ]);
+
+        $promote = $validated['promote'] ?? false;
+        unset($validated['promote']);
+
+        if ($promote) {
+            // Cuando se promociona, guardamos cuántas clases lleva acumuladas (sistema + anteriores)
+            // para que el contador del nuevo cinturón empiece en 0.
+            $inSystem = $student->attendances()->where('status', 'present')->count();
+            $totalBefore = $inSystem + ($validated['previous_classes'] ?? $student->previous_classes ?? 0);
+            $validated['belt_classes_at_promotion'] = $totalBefore;
+        }
+
+        $student->update($validated);
+
+        return response()->json([
+            'message' => 'Perfil BJJ actualizado correctamente',
+            'student' => $student
+        ]);
+    }
     public function store(Request $request) {}
     public function show(string $id) {}
 

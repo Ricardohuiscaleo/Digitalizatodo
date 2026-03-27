@@ -67,10 +67,18 @@ export function StudentAvatar({
             {/* Globito verde — clases (arriba izquierda) */}
             {classesCount != null && classesCount > 0 && (
                 <div
-                    className="absolute w-4 h-4 bg-emerald-500 border border-zinc-950 rounded-full flex items-center justify-center z-20 shadow-lg"
-                    style={{ top: -2, left: -2 }}
+                    className="absolute bg-emerald-500 border border-zinc-950 rounded-full flex items-center justify-center z-20 shadow-lg"
+                    style={{ 
+                        width: Math.max(14, size * 0.25),
+                        height: Math.max(14, size * 0.25),
+                        top: -(Math.max(14, size * 0.25) / 5), 
+                        left: -(Math.max(14, size * 0.25) / 5) 
+                    }}
                 >
-                    <span className="text-[7px] font-black text-black leading-none">{classesCount}</span>
+                    <span 
+                        className="font-black text-black leading-none"
+                        style={{ fontSize: Math.max(7, size / 10) }}
+                    >{classesCount}</span>
                 </div>
             )}
 

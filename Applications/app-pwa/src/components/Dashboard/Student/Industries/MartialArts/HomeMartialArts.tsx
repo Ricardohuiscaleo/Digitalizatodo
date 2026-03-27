@@ -126,103 +126,121 @@ export function HomeMartialArts({
 
                 {students.map((student: any) => {
                     const isPresent = (student.recent_attendance || []).some((a: any) => a.date === todayStr && a.status === 'present');
+                    const totalClasses = (student.total_attendances ?? 0) + (student.previous_classes ?? 0);
                     const progress = student.belt_rank
-                        ? calcBeltProgress(student.belt_rank, student.degrees ?? 0, student.belt_classes_at_promotion ?? 0, student.total_attendances ?? 0)
+                        ? calcBeltProgress(student.belt_rank, student.degrees ?? 0, student.belt_classes_at_promotion ?? 0, totalClasses)
                         : null;
 
                     return (
-                        <div key={student.id} className={`rounded-[2rem] p-4 border transition-all ${
+                        <div key={student.id} className={`rounded-[2.5rem] p-5 border transition-all ${
                             isPresent
                                 ? 'border-emerald-400 bg-emerald-50/50 shadow-emerald-100 shadow-md'
-                                : isDark ? 'bg-zinc-900/50 border-zinc-800' : 'bg-white border-zinc-100 shadow-sm'
+                                : isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100 shadow-sm'
                         }`}>
-                            <div className="flex items-center gap-4">
-                                {/* Foto */}
+                            <div className="flex items-center gap-5">
+                                {/* Foto Perfil Multi-Data */}
                                 <div className="shrink-0">
                                     <StudentAvatar
                                         photo={student.photo}
                                         name={student.name}
-                                        size={64}
-                                        beltRank={null}
+                                        size={80}
+                                        beltRank={student.belt_rank}
+                                        degrees={student.degrees}
+                                        classesCount={progress ? progress.classesInCurrentStripe : totalClasses}
                                         modality={student.modality}
                                         isDark={isDark}
-                                        ring={isPresent ? 'ring-emerald-400' : 'ring-zinc-100'}
+                                        ring={isPresent ? 'ring-emerald-400' : isDark ? 'ring-zinc-800' : 'ring-zinc-50'}
                                     />
                                 </div>
-
-                                {/* Info */}
+                                
+                                {/* Info Principal */}
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-0.5">
-                                        <p className={`text-sm font-black truncate ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+                                    <div className="flex flex-col gap-0.5">
+                                        <p className={`text-lg font-black truncate leading-tight ${isDark ? 'text-white' : 'text-zinc-900'}`}>
                                             {student.name.split(' ').slice(0, 2).join(' ')}
                                         </p>
-                                        {isPresent && (
-                                            <span className="flex items-center gap-1 text-[7px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full shrink-0">
-                                                <CheckCircle2 size={8} /> Presente
-                                            </span>
-                                        )}
+                                        <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                                            {student.category === 'kids' ? vocab.cat1 : vocab.cat2}
+                                            {student.consumable_credits > 0 && (
+                                                <span className="ml-2 text-[#c9a84c]">/ {student.consumable_credits} VIP</span>
+                                            )}
+                                        </p>
+                                        <p className="mt-1 flex items-baseline gap-1 text-zinc-900 border border-zinc-100 bg-zinc-50 rounded-lg px-2 py-1 w-fit">
+                                            <span className="text-[9px] font-black uppercase text-zinc-400 tracking-wider">Acumulado:</span>
+                                            <span className="text-xs font-black">{totalClasses} Clases</span>
+                                        </p>
                                     </div>
-                                    <p className={`text-[9px] font-black uppercase tracking-widest mb-1.5 ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
-                                        {student.category === 'kids' ? vocab.cat1 : vocab.cat2}
-                                    </p>
-                                    {student.belt_rank && (
-                                        <BeltDisplay beltRank={student.belt_rank} degrees={student.degrees ?? 0} size="sm" />
-                                    )}
-                                    {student.consumable_credits > 0 && (
-                                        <div className="mt-1 flex items-center gap-1">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-[#c9a84c] animate-pulse" />
-                                            <span className="text-[8px] font-black uppercase text-[#c9a84c]">{student.consumable_credits} VIP</span>
+                                    
+                                    {/* Estado de Asistencia Hoy */}
+                                    {isPresent && (
+                                        <div className="mt-2 flex items-center gap-1.5 text-emerald-600 bg-emerald-100 self-start px-2 py-0.5 rounded-full w-fit">
+                                            <CheckCircle2 size={10} />
+                                            <span className="text-[8px] font-black uppercase tracking-widest leading-none">Presente Hoy</span>
                                         </div>
                                     )}
                                 </div>
 
-                                {/* QR */}
+                                {/* QR Call to Action */}
                                 <button
                                     onClick={() => setActiveScanner(student.id)}
-                                    className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition-all shrink-0 border ${
+                                    className={`w-16 h-16 rounded-[1.5rem] flex flex-col items-center justify-center gap-1 shadow-lg active:scale-95 transition-all shrink-0 border-2 ${
                                         isPresent
-                                            ? 'bg-emerald-500 border-emerald-400 shadow-emerald-200'
-                                            : 'bg-zinc-900 border-zinc-700 shadow-zinc-200'
+                                            ? 'bg-emerald-500 border-emerald-400 shadow-emerald-500/20'
+                                            : 'bg-zinc-950 border-zinc-800 shadow-black/20'
                                     }`}
                                 >
-                                    <QrCode size={26} className={isPresent ? 'text-white' : 'text-orange-400'} />
+                                    <QrCode size={24} className={isPresent ? 'text-white' : 'text-orange-400'} />
+                                    <span className={`text-[7px] font-black uppercase tracking-widest ${isPresent ? 'text-white' : 'text-zinc-500'}`}>Check-in</span>
                                 </button>
                             </div>
 
-                            {/* Progreso BJJ */}
+                            {/* Gamificación de Grados (Nueva UI) */}
                             {progress && (
-                                <div className={`mt-3 rounded-xl p-3 border ${isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-zinc-50 border-zinc-100'}`}>
-                                    <div className="flex items-center justify-between mb-1.5">
-                                        <span className={`text-[8px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
-                                            {progress.isReadyForBelt
-                                                ? `¡Listo para ${progress.nextBeltName ?? 'Maestría'}!`
-                                                : progress.nextStripe
-                                                    ? `Hacia raya ${progress.nextStripe}`
-                                                    : 'Progreso'}
-                                        </span>
-                                        <span className={`text-[9px] font-black ${progress.isReadyForBelt ? 'text-[#c9a84c]' : isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>
-                                            {progress.isReadyForBelt
-                                                ? `→ ${progress.nextBeltName}`
-                                                : progress.classesForNextStripe != null
-                                                    ? `${progress.classesForNextStripe} clases → ${progress.nextStripe}★`
-                                                    : `${progress.classesForPromotion} → ${progress.nextBeltName}`}
-                                        </span>
+                                <div className="mt-6 pt-5 border-t border-dashed border-zinc-200/50 dark:border-zinc-800/50">
+                                    <div className="flex justify-between items-end mb-3">
+                                        <div className="space-y-1">
+                                            <p className={`text-[9px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>
+                                                Camino a {progress.isReadyForBelt ? progress.nextBeltName : `${progress.nextStripe}★ Raya`}
+                                            </p>
+                                            <div className="flex items-baseline gap-1">
+                                                <span className={`text-xl font-black ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+                                                    {progress.classesInCurrentStripe}
+                                                </span>
+                                                <span className={`text-xs font-bold ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>
+                                                    / {progress.classesPerStripe} clases
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className={`text-[9px] font-black uppercase tracking-widest text-[#c9a84c] mb-1`}>
+                                                Faltan
+                                            </p>
+                                            <p className={`text-lg font-black leading-none ${isDark ? 'text-[#c9a84c]' : 'text-[#c9a84c]'}`}>
+                                                {progress.isReadyForBelt ? '¡LISTO!' : progress.classesForNextStripe}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`}>
-                                        <div className="h-full rounded-full transition-all duration-700"
+                                    
+                                    {/* Barra de Progreso Premium */}
+                                    <div className={`h-2.5 rounded-full overflow-hidden p-0.5 ${isDark ? 'bg-zinc-800' : 'bg-zinc-100'}`}>
+                                        <div 
+                                            className="h-full rounded-full transition-all duration-1000 ease-out relative group"
                                             style={{
                                                 width: `${progress.progressPct}%`,
                                                 backgroundColor: progress.isReadyForBelt ? '#c9a84c' : getBeltHex(student.belt_rank),
-                                                boxShadow: `0 0 6px ${getBeltHex(student.belt_rank)}60`
+                                                boxShadow: `0 0 12px ${getBeltHex(student.belt_rank)}40`
                                             }}
-                                        />
+                                        >
+                                            <div className="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite]" />
+                                        </div>
                                     </div>
-                                    <div className="flex justify-between mt-1">
-                                        <span className={`text-[9px] font-black ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                                            {progress.classesInCurrentStripe} / {progress.classesPerStripe} clases
+                                    
+                                    <div className="flex justify-between mt-2.5">
+                                        <span className={`text-[8px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-700' : 'text-zinc-300'}`}>
+                                            Total en cinturón: {progress.classesInBelt}
                                         </span>
-                                        <span className={`text-[9px] ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>
-                                            {progress.classesInBelt} total en cinturón
+                                        <span className={`text-[8px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-700' : 'text-zinc-300'}`}>
+                                            Alliance BJJ System
                                         </span>
                                     </div>
                                 </div>

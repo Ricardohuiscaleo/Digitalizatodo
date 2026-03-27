@@ -6,7 +6,7 @@ import { BeltDisplay } from './BeltDisplay';
 import { BeltBadge } from './BeltBadge';
 import { StudentAvatar } from './StudentAvatar';
 import { updateStudentBjj, updateStudentProfile } from '@/lib/api';
-import { ALLIANCE_BJJ_GRADUATION } from '@/lib/industryUtils';
+import { ALLIANCE_BJJ_GRADUATION, calcBeltProgress } from '@/lib/industryUtils';
 
 const BELT_OPTIONS = [
     { value: 'white', label: 'Blanco' },
@@ -109,7 +109,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
     const validateBjj = (form: any, student: any): string | null => {
         const config = getBjjMax(form.belt_rank);
         if (!config) return null;
-        const inSystem = Math.max(0, (student?.total_attendances ?? 0) - (student?.previous_classes ?? 0));
+        const inSystem = student?.total_attendances ?? 0;
         const total = Number(form.previous_classes || 0) + inSystem;
         if (total > config.classesPerStripe) {
             const beltLabel = ALLIANCE_BJJ_GRADUATION.find(b => b.id === form.belt_rank)?.name ?? form.belt_rank;
@@ -434,8 +434,12 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
             <div className="grid grid-cols-4 gap-2 md:hidden">
                 {displayedStudents.map(student => {
                     const isPresent = attendance.has(String(student.id));
-                    const inSystem = Math.max(0, (student.total_attendances ?? 0) - (student.previous_classes ?? 0));
-                    const classesCount = (student.previous_classes ?? 0) + inSystem;
+                    const inSystem = student.total_attendances ?? 0;
+                    const totalClasses = (student.previous_classes ?? 0) + inSystem;
+                    const progress = student.belt_rank 
+                        ? calcBeltProgress(student.belt_rank, student.degrees ?? 0, student.belt_classes_at_promotion ?? 0, totalClasses)
+                        : null;
+                    const classesCount = progress ? progress.classesInCurrentStripe : totalClasses;
                     return (
                         <div key={student.id} className="relative">
                             <button
@@ -685,7 +689,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                             {/* Clases anteriores al sistema */}
                             {(() => {
                                 const prevClasses = Number(bjjForm.previous_classes || 0);
-                                const inSystem = Math.max(0, (editingStudent?.total_attendances ?? 0) - (editingStudent?.previous_classes ?? 0));
+                                const inSystem = editingStudent?.total_attendances ?? 0;
                                 const total = prevClasses + inSystem;
                                 const config = ALLIANCE_BJJ_GRADUATION.find(b => b.id === bjjForm.belt_rank);
                                 const maxTotal = (config && config.classesPerStripe) ? config.classesPerStripe : null;
