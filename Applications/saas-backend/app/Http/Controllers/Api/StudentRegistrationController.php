@@ -70,8 +70,8 @@ class StudentRegistrationController extends Controller
 
             // (Eliminado el rastro del JSON de precios legacy)
 
-            // Helper para obtener plan por ID o buscar existente por nombre
-            $getPlan = function ($category, $requestedPlanId = null) use ($tenant) {
+                // Helper para obtener plan por ID o buscar existente por nombre
+                $getPlan = function ($category, $requestedPlanId = null) use ($tenant) {
                     if ($requestedPlanId) {
                         $plan = Plan::where('tenant_id', $tenant->id)->find($requestedPlanId);
                         if ($plan) return $plan;
@@ -79,9 +79,14 @@ class StudentRegistrationController extends Controller
 
                     $planName = $category === 'kids' ? 'Ser parte del dojo Kids - Mensual' : 'Ser parte del dojo - Mensual';
 
-                    return Plan::where('tenant_id', $tenant->id)
+                    $plan = Plan::where('tenant_id', $tenant->id)
                         ->where('name', 'LIKE', '%' . $planName . '%')
                         ->first();
+                    
+                    if ($plan) return $plan;
+
+                    // Fallback para industrias no-MMA (como escuelas) o si no existen los planes por defecto
+                    return Plan::where('tenant_id', $tenant->id)->first();
                 };
 
                 $studentsToCreate = [];
@@ -133,6 +138,13 @@ class StudentRegistrationController extends Controller
                     }
 
                     $plan = $getPlan($category, $requestedPlanId);
+
+                    if (!$plan) {
+                        return response()->json([
+                            'message' => 'No se encontró un plan activo para realizar la inscripción en esta institución.',
+                            'error' => 'plan_not_found'
+                        ], 422);
+                    }
 
                     $courseId = $studentData['course_id'] ?? null;
 
