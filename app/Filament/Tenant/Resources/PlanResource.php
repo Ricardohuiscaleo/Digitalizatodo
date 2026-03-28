@@ -22,7 +22,16 @@ class PlanResource extends Resource
     public static function canAccess(): bool
     {
         $tenant = \Filament\Facades\Filament::getTenant();
-        return $tenant && $tenant->industry === 'Escuela de Artes Marciales';
+        if (!$tenant) return false;
+        
+        $allowedIndustries = [
+            'Escuela de Artes Marciales',
+            'martial_arts',
+            'school_treasury',
+            'education',
+        ];
+
+        return in_array($tenant->industry, $allowedIndustries);
     }
 
     public static function form(Form $form): Form
@@ -33,9 +42,28 @@ class PlanResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('name')
                 ->label('Nombre del Plan')
-                ->placeholder('Ej: Mensualidad Adultos, Plan Kids')
+                ->placeholder('Ej: Mensualidad Adultos, Matrícula Anual')
                 ->required()
                 ->maxLength(255),
+                Forms\Components\Select::make('category')
+                    ->label('Categoría')
+                    ->options([
+                        'dojo' => 'Gimnasio / Dojo (Mensualidad)',
+                        'vip' => 'VIP / Sesiones (Pack)',
+                        'public_school' => 'Colegio Público (Plan Escolar)',
+                        'private_school' => 'Colegio Privado (Plan Escolar)',
+                    ])
+                    ->required()
+                    ->default('dojo'),
+                Forms\Components\Select::make('target_audience')
+                    ->label('Público Objetivo')
+                    ->options([
+                        'all' => 'Todo Público',
+                        'adults' => 'Adultos / Apoderados',
+                        'kids' => 'Niños / Alumnos',
+                    ])
+                    ->required()
+                    ->default('all'),
                 Forms\Components\Textarea::make('description')
                 ->label('Descripción')
                 ->maxLength(65535)
@@ -95,6 +123,16 @@ class PlanResource extends Resource
             ->label('Plan')
             ->searchable()
             ->sortable(),
+            Tables\Columns\TextColumn::make('category')
+            ->label('Categoría')
+            ->badge()
+            ->color(fn (string $state): string => match ($state) {
+                'dojo' => 'info',
+                'vip' => 'warning',
+                'public_school' => 'success',
+                'private_school' => 'primary',
+                default => 'gray',
+            }),
             Tables\Columns\TextColumn::make('price')
             ->label('Precio')
             ->money('CLP')
