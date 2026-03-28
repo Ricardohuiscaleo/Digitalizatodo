@@ -203,6 +203,7 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
                     Route::get('fees/{id}', [\App\Http\Controllers\Api\FeeController::class, 'show']);
                     Route::delete('fees/{id}', [\App\Http\Controllers\Api\FeeController::class, 'destroy']);
                     Route::post('fees/{id}/approve-payment', [\App\Http\Controllers\Api\FeeController::class, 'approvePayment']);
+                    Route::post('fees/{id}/reject-payment', [\App\Http\Controllers\Api\FeeController::class, 'rejectPayment']);
 
                     // Gestión de Cursos
                     Route::post('courses', [CourseController::class, 'store']);
