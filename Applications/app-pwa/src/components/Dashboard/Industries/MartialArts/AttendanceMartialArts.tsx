@@ -65,7 +65,13 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
     });
 
     const [editingStudent, setEditingStudent] = useState<any | null>(null);
-    const [bjjForm, setBjjForm] = useState<any>({});
+    const [bjjForm, setBjjForm] = useState<any>({
+        name: '', phone: '', email: '', 
+        belt_rank: 'white', degrees: 0, 
+        modality: 'gi', category: 'adults', 
+        weight: '', height: '',
+        previous_classes: 0, total_attendances: 0, virtual_classes: 0
+    });
     const [bjjError, setBjjError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [pendingChanges, setPendingChanges] = useState<{ label: string; from: string; to: string }[] | null>(null);
@@ -141,6 +147,8 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                     modality: s.modality || 'gi',
                     category: s.category || 'adults',
                     previous_classes: s.previous_classes ?? 0,
+                    total_attendances: s.total_attendances ?? 0,
+                    virtual_classes: s.belt_progress?.virtual_classes ?? 0,
                 });
             }
         } catch (err) {
@@ -254,27 +262,33 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                 </button>
             </div>
 
-            {/* Banner de Clase Activa */}
             {activeSchedule && (
-                <div className={`mx-1 p-4 rounded-2xl flex items-center justify-between shadow-xl border animate-in slide-in-from-top-2 duration-300 ${
-                    isDark ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white border-zinc-100'
+                <div className={`flex items-center justify-between p-4 rounded-3xl border mb-3 shadow-lg transition-all ${
+                    isDark ? 'bg-zinc-800/40 border-zinc-800' : 'bg-zinc-50 border-zinc-100'
                 }`}>
                     <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                        <div className={`w-2.5 h-2.5 rounded-full animate-pulse shadow-lg ${
+                            isSmartFilterEnabled ? 'bg-indigo-500 shadow-indigo-500/40' : 'bg-zinc-500 shadow-zinc-500/20'
+                        }`} />
                         <div>
-                            <p className={`text-[8px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Clase actual</p>
-                            <p className={`text-[11px] font-black uppercase tracking-widest ${isDark ? 'text-white' : 'text-zinc-950'}`}>{activeSchedule.name}</p>
+                            <p className={`text-[8px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>
+                                {isSmartFilterEnabled ? 'Filtrando por:' : 'Clase actual'}
+                            </p>
+                            <p className={`text-[11px] font-black uppercase tracking-widest ${isDark ? 'text-white' : 'text-zinc-950'}`}>
+                                {activeSchedule.name}
+                            </p>
                         </div>
                     </div>
                     <button 
                         onClick={() => setIsSmartFilterEnabled(!isSmartFilterEnabled)}
-                        className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                        className={`px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
                             isSmartFilterEnabled 
-                                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' 
-                                : isDark ? 'bg-zinc-800 text-zinc-500' : 'bg-zinc-100 text-zinc-400'
+                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' 
+                                : isDark ? 'bg-zinc-800 text-zinc-500 hover:text-zinc-300' : 'bg-white text-zinc-400 border border-zinc-100'
                         }`}
                     >
-                        {isSmartFilterEnabled ? 'Smart Switch ON' : 'Smart Switch OFF'}
+                        <Sparkles size={11} className={isSmartFilterEnabled ? 'animate-pulse' : ''} />
+                        {isSmartFilterEnabled ? 'Activo' : 'Smart Switch'}
                     </button>
                 </div>
             )}
@@ -599,7 +613,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                             <label className={`text-[8px] font-black uppercase tracking-widest block mb-1 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>{label}</label>
                                             <input
                                                 type={type}
-                                                value={bjjForm[key]}
+                                                value={bjjForm[key] || ''}
                                                 onChange={e => setBjjForm((f: any) => ({ ...f, [key]: e.target.value }))}
                                                 className={`w-full border rounded-xl px-4 py-2.5 text-sm font-bold focus:outline-none transition-colors ${
                                                     isDark ? 'bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-700 focus:border-zinc-500' : 'bg-zinc-50 border-zinc-100 text-zinc-900 focus:border-zinc-300'
@@ -610,21 +624,40 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                 </div>
                             </div>
 
-                            {/* Asistencia actual */}
-                            <div className={`flex items-center justify-between px-4 py-3 rounded-2xl ${
-                                attendance.has(String(editingStudent.id))
-                                    ? 'bg-emerald-500/10 border border-emerald-400/30'
-                                    : isDark ? 'bg-zinc-800/50 border border-zinc-700' : 'bg-zinc-50 border border-zinc-100'
-                            }`}>
-                                <div>
-                                    <p className={`text-[8px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Asistencia hoy</p>
-                                    <p className={`text-sm font-black mt-0.5 ${
-                                        attendance.has(String(editingStudent.id)) ? 'text-emerald-500' : isDark ? 'text-zinc-400' : 'text-zinc-500'
-                                    }`}>
-                                        {attendance.has(String(editingStudent.id)) ? `✓ En el ${vocab.unitLabel}` : 'Ausente'}
-                                    </p>
+                            {/* Asistencia actual & Estadísticas */}
+                            <div className="space-y-2">
+                                <div className={`flex items-center justify-between px-4 py-3 rounded-2xl ${
+                                    attendance.has(String(editingStudent.id))
+                                        ? 'bg-emerald-500/10 border border-emerald-400/30'
+                                        : isDark ? 'bg-zinc-800/50 border border-zinc-700' : 'bg-zinc-50 border border-zinc-100'
+                                }`}>
+                                    <div>
+                                        <p className={`text-[8px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Asistencia hoy</p>
+                                        <p className={`text-sm font-black mt-0.5 ${
+                                            attendance.has(String(editingStudent.id)) ? 'text-emerald-500' : isDark ? 'text-zinc-400' : 'text-zinc-500'
+                                        }`}>
+                                            {attendance.has(String(editingStudent.id)) ? `✓ En el ${vocab.unitLabel}` : 'Ausente'}
+                                        </p>
+                                    </div>
+                                    <CheckCircle2 size={20} className={attendance.has(String(editingStudent.id)) ? 'text-emerald-400' : isDark ? 'text-zinc-700' : 'text-zinc-200'} />
                                 </div>
-                                <CheckCircle2 size={20} className={attendance.has(String(editingStudent.id)) ? 'text-emerald-400' : isDark ? 'text-zinc-700' : 'text-zinc-200'} />
+
+                                <div className={`grid grid-cols-3 gap-2 p-4 rounded-2xl border ${
+                                    isDark ? 'bg-zinc-800/30 border-zinc-800' : 'bg-zinc-50 border-zinc-100'
+                                }`}>
+                                    <div className="text-center">
+                                        <p className={`text-[7px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Sistema</p>
+                                        <p className={`text-sm font-black ${isDark ? 'text-white' : 'text-zinc-900'}`}>{bjjForm.total_attendances || 0}</p>
+                                    </div>
+                                    <div className="text-center border-x border-zinc-800/50">
+                                        <p className={`text-[7px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Base</p>
+                                        <p className={`text-sm font-black ${isDark ? 'text-white' : 'text-zinc-900'}`}>{bjjForm.previous_classes || 0}</p>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className={`text-[7px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Total</p>
+                                        <p className={`text-sm font-black text-amber-500`}>{(bjjForm.total_attendances || 0) + (bjjForm.previous_classes || 0)}</p>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Cinturón */}
