@@ -16,7 +16,7 @@ LABEL traefik.http.services.reverb.loadbalancer.server.port="8080"
 # Herramientas del sistema e instalación de extensiones eficiente
 RUN apt-get update && apt-get install -y \
     nginx supervisor curl zip unzip git \
-    && install-php-extensions pdo pdo_mysql pdo_sqlite mbstring zip exif pcntl bcmath dom xml gd intl \
+    && install-php-extensions pdo_mysql zip exif pcntl bcmath gd intl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Composer
