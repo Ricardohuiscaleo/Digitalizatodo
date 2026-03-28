@@ -43,6 +43,30 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
 }) => {
     const [isSmartFilterEnabled, setIsSmartFilterEnabled] = React.useState(true);
 
+    const nextSchedule = useMemo(() => {
+        if (!schedulesList.length) return null;
+        const now = nowCL();
+        const dow = now.getDay();
+        const currentTime = now.toLocaleTimeString('en-GB', { hour12: false });
+    
+        // 1. Mismo día, más tarde
+        let next = schedulesList
+            .filter(s => s.day_of_week === dow && s.start_time > currentTime)
+            .sort((a, b) => a.start_time.localeCompare(b.start_time))[0];
+        
+        // 2. Siguientes días
+        if (!next) {
+            for (let i = 1; i <= 7; i++) {
+                const nextDow = (dow + i) % 7;
+                next = schedulesList
+                    .filter(s => s.day_of_week === nextDow)
+                    .sort((a, b) => a.start_time.localeCompare(b.start_time))[0];
+                if (next) break;
+            }
+        }
+        return next;
+    }, [schedulesList]);
+
     const filteredStudents = allStudents.filter(s => {
         const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase());
         if (!matchesSearch) return false;
@@ -123,29 +147,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
         return 'white';
     };
 
-    const nextSchedule = useMemo(() => {
-        if (!schedulesList.length) return null;
-        const now = nowCL();
-        const dow = now.getDay();
-        const currentTime = now.toLocaleTimeString('en-GB', { hour12: false });
-    
-        // 1. Mismo día, más tarde
-        let next = schedulesList
-            .filter(s => s.day_of_week === dow && s.start_time > currentTime)
-            .sort((a, b) => a.start_time.localeCompare(b.start_time))[0];
-        
-        // 2. Siguientes días
-        if (!next) {
-            for (let i = 1; i <= 7; i++) {
-                const nextDow = (dow + i) % 7;
-                next = schedulesList
-                    .filter(s => s.day_of_week === nextDow)
-                    .sort((a, b) => a.start_time.localeCompare(b.start_time))[0];
-                if (next) break;
-            }
-        }
-        return next;
-    }, [schedulesList]);
+
 
     const getBjjMax = (belt: string) => {
         const entry = ALLIANCE_BJJ_GRADUATION.find(b => b.id === (belt === 'white' ? 'white' : belt)); // fallback for safety
