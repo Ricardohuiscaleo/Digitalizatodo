@@ -154,6 +154,11 @@ class AuthController extends Controller
                     'primary_color' => $tenant->primary_color,
                     'industry'      => $tenant->industry,
                     'data'          => $tenant->data,
+                    'bank_name'     => $tenant->bank_name,
+                    'bank_account_type' => $tenant->bank_account_type,
+                    'bank_account_number' => $tenant->bank_account_number,
+                    'bank_account_holder' => $tenant->bank_account_holder,
+                    'bank_rut'      => $tenant->bank_rut,
                     'force_terms_acceptance' => false,
                 ],
             ]);
