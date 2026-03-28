@@ -119,52 +119,71 @@ class Student extends Model
         $previousClasses = (int)($this->previous_classes ?? 0);
         $realClasses = $systemClasses + $previousClasses;
         
-        // Clases Virtuales (Línea Base por grados manuales)
-        $classesPerStripe = (int)$config->classes_per_stripe;
-        $totalForBelt = (int)$config->total_for_belt;
-        
-        $degrees = (int)($this->degrees ?? 0);
-        $degreesBase = $degrees * $classesPerStripe;
-        if ($degrees >= 4) $degreesBase = $totalForBelt; // 4 grados = 150 base
+        try {
+            // Clases Virtuales (Línea Base por grados manuales)
+            $classesPerStripe = (int)($config->classes_per_stripe ?? 30);
+            $totalForBelt = (int)($config->total_for_belt ?? 150);
+            
+            $degrees = (int)($this->degrees ?? 0);
+            $degreesBase = $degrees * $classesPerStripe;
+            if ($degrees >= 4) $degreesBase = $totalForBelt; // 4 grados = 150 base
 
-        // Clases nuevas en el sistema (evita duplicar si ya estaban en la base)
-        $checkpoint = (int)($this->belt_classes_at_promotion ?? 0);
-        $newClasses = max(0, $systemClasses - $checkpoint);
+            // Clases nuevas en el sistema (evita duplicar si ya estaban en la base)
+            $checkpoint = (int)($this->belt_classes_at_promotion ?? 0);
+            $newClasses = max(0, $systemClasses - $checkpoint);
 
-        // Total Efectivo = Máximo entre el libro oficial (real) o la base ajustada + clases nuevas
-        $totalEffective = max($realClasses, $degreesBase + $newClasses);
-        
-        // Stripe actual (0 a 4)
-        $currentStripe = min(4, (int)floor($totalEffective / $classesPerStripe));
-        
-        // Progreso stripe (%)
-        $milestoneStart = $currentStripe * $classesPerStripe;
-        $milestoneEnd = ($currentStripe < 4) ? ($currentStripe + 1) * $classesPerStripe : $totalForBelt;
-        $progressInStripe = $totalEffective - $milestoneStart;
-        $stripeRange = $milestoneEnd - $milestoneStart;
-        $progressPct = ($stripeRange > 0) ? min(100, ($progressInStripe / $stripeRange) * 100) : 100;
+            // Total Efectivo = Máximo entre el libro oficial (real) o la base ajustada + clases nuevas
+            $totalEffective = max($realClasses, $degreesBase + $newClasses);
+            $virtualClasses = max(0, $totalEffective - $realClasses);
+            
+            // Stripe actual (0 a 4)
+            $currentStripe = min(4, (int)floor($totalEffective / $classesPerStripe));
+            
+            // Progreso stripe (%)
+            $milestoneStart = $currentStripe * $classesPerStripe;
+            $milestoneEnd = ($currentStripe < 4) ? ($currentStripe + 1) * $classesPerStripe : $totalForBelt;
+            $progressInStripe = $totalEffective - $milestoneStart;
+            $stripeRange = $milestoneEnd - $milestoneStart;
+            $progressPct = ($stripeRange > 0) ? min(100, ($progressInStripe / $stripeRange) * 100) : 100;
 
-        $age = $this->birth_date ? $this->birth_date->age : 20;
+            $age = $this->birth_date ? $this->birth_date->age : 20;
 
-        return [
-            'category' => $category,
-            'belt' => $belt,
-            'next_belt' => $config->next_belt,
-            'total_effective' => $totalEffective,
-            'real_classes' => $realClasses,
-            'system_classes' => $systemClasses,
-            'virtual_classes' => $virtualClasses,
-            'current_stripe' => $currentStripe,
-            'degrees' => (int)($this->degrees ?? 0),
-            'progress_pct' => (int)$progressPct,
-            'is_ready_for_belt' => $totalEffective >= (int)$config->total_for_belt && $age >= (int)($config->min_age ?? 0),
-            'age_requirement_met' => $age >= (int)($config->min_age ?? 0),
-            'extra_merit_classes' => max(0, $totalEffective - (int)$config->total_for_belt),
-            'classes_per_stripe' => $classesPerStripe,
-            'total_for_belt' => (int)$config->total_for_belt,
-            'today_status' => $this->attendances()->where('date', now()->format('Y-m-d'))->first()?->status ?? 'absent',
-            'registration_method' => $this->attendances()->where('date', now()->format('Y-m-d'))->first()?->registration_method ?? 'manual',
-        ];
+            $todayAttendance = $this->attendances()->where('date', now()->format('Y-m-d'))->first();
+
+            return [
+                'category' => $category,
+                'belt' => $belt,
+                'next_belt' => $config->next_belt ?? 'Azul',
+                'total_effective' => $totalEffective,
+                'real_classes' => $realClasses,
+                'system_classes' => $systemClasses,
+                'virtual_classes' => $virtualClasses,
+                'current_stripe' => $currentStripe,
+                'degrees' => $degrees,
+                'progress_pct' => (int)$progressPct,
+                'is_ready_for_belt' => $totalEffective >= $totalForBelt && $age >= (int)($config->min_age ?? 0),
+                'age_requirement_met' => $age >= (int)($config->min_age ?? 0),
+                'extra_merit_classes' => max(0, $totalEffective - $totalForBelt),
+                'classes_per_stripe' => $classesPerStripe,
+                'total_for_belt' => $totalForBelt,
+                'today_status' => $todayAttendance?->status ?? 'absent',
+                'registration_method' => $todayAttendance?->registration_method ?? 'manual',
+            ];
+        } catch (\Throwable $e) {
+            \Log::error("Critical Error in BJJ Progress for Student {$this->id}: " . $e->getMessage());
+            return [
+                'error' => 'Error en cálculo',
+                'category' => $category,
+                'belt' => $belt,
+                'total_effective' => $realClasses,
+                'real_classes' => $realClasses,
+                'system_classes' => $systemClasses,
+                'virtual_classes' => 0,
+                'degrees' => (int)($this->degrees ?? 0),
+                'today_status' => 'error',
+                'registration_method' => 'manual',
+            ];
+        }
     }
 
     /**
