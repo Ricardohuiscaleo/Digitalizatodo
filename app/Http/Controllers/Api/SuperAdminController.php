@@ -255,8 +255,14 @@ class SuperAdminController extends Controller
         }
 
         $newPassword = 'dt_' . Str::random(24);
-        $user->password = Hash::make($newPassword);
+        $user->password = \Hash::make($newPassword);
         $user->save();
+
+        try {
+            \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\WelcomeStaffMail($user, $tenant, $newPassword));
+        } catch (\Exception $e) {
+            \Log::error("Error enviando email de reset a {$user->email}: " . $e->getMessage());
+        }
 
         // Signal update
         event(new TenantUpdated($id, 'reset_password'));
@@ -328,6 +334,12 @@ class SuperAdminController extends Controller
             'user_id' => $user->id,
             'role' => $validated['role'],
         ]);
+
+        try {
+            \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\WelcomeStaffMail($user, $tenant, $validated['password']));
+        } catch (\Exception $e) {
+            \Log::error("Error enviando email de bienvenida staff a {$user->email}: " . $e->getMessage());
+        }
 
         return response()->json([
             'message' => 'User created and assigned to tenant successfully',
