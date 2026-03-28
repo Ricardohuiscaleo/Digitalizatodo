@@ -156,6 +156,7 @@ class FeeController extends Controller
             'type'          => 'nullable|in:once,recurring',
             'recurring_day' => 'nullable|integer|min:1|max:31',
             'target'        => 'nullable|string|in:all,custom',
+            'billing_cycle' => 'nullable|string|in:monthly_fixed,quarterly,semi_annual,annual',
             'guardian_ids'  => 'nullable|array',
         ]);
 
@@ -174,6 +175,7 @@ class FeeController extends Controller
             'end_date'      => $type === 'recurring' ? ($validated['end_date'] ?? null) : null,
             'target'        => $validated['target'] ?? 'all',
             'type'          => $type,
+            'billing_cycle' => $validated['billing_cycle'] ?? 'monthly_fixed',
             'recurring_day' => $type === 'recurring' ? ($validated['recurring_day'] ?? null) : null,
             'created_by'    => $request->user()->id,
         ]);
@@ -477,6 +479,14 @@ class FeeController extends Controller
             ]];
         }
 
+        // Determinar intervalo según billing_cycle
+        $interval = match($fee->billing_cycle) {
+            'quarterly'    => '+3 months',
+            'semi_annual'  => '+6 months',
+            'annual'       => '+12 months',
+            default        => '+1 month',
+        };
+
         // Recurrente: desde due_date hasta end_date
         $start = $fee->due_date ? new \DateTime($fee->due_date) : new \DateTime('first day of this month');
         $end   = $fee->end_date ? new \DateTime($fee->end_date) : new \DateTime('last day of december this year');
@@ -495,7 +505,7 @@ class FeeController extends Controller
                 'due_date' => sprintf('%04d-%02d-%02d', $year, $month, min($day, (int) date('t', mktime(0, 0, 0, $month, 1, $year)))),
                 'label'    => $current->format('M Y'),
             ];
-            $current->modify('+1 month');
+            $current->modify($interval);
         }
 
         return $periods;
