@@ -15,7 +15,7 @@ class Student extends Model
     protected $fillable = [
         'tenant_id', 'course_id', 'name', 'phone', 'photo', 'birth_date', 'category', 'belt_rank',
         'gender', 'weight', 'height', 'degrees', 'modality', 'previous_classes', 'belt_classes_at_promotion',
-        'emergency_contact_name', 'emergency_contact_phone', 'active', 'consumable_credits',
+        'belt_updated_at', 'emergency_contact_name', 'emergency_contact_phone', 'active', 'consumable_credits',
     ];
 
     protected $appends = ['belt_progress'];
