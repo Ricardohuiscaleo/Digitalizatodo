@@ -40,17 +40,22 @@ export const getBeltHex = (beltRank: string): string => {
 
 // Tabla de graduación Alliance BJJ — fuente de verdad compartida (IDs ahora en español)
 export const ALLIANCE_BJJ_GRADUATION = [
-    { id: 'Blanco',   name: 'Blanco', totalClasses: 150, classesPerStripe: 30,  stripes: 4 },
-    { id: 'Azul',     name: 'Azul',   totalClasses: 325, classesPerStripe: 65,  stripes: 4 },
-    { id: 'Morado',   name: 'Morado', totalClasses: 375, classesPerStripe: 75,  stripes: 4 },
-    { id: 'Marrón',   name: 'Marrón', totalClasses: 375, classesPerStripe: 75,  stripes: 4 },
-    { id: 'Negro',    name: 'Negro',  totalClasses: null, classesPerStripe: null, stripes: null },
+    { id: 'Blanco',   name: 'Blanco', totalClasses: 150, classesPerStripe: 30,  stripes: 4, category: 'both' },
+    { id: 'Gris',     name: 'Gris',   totalClasses: 80,  classesPerStripe: 20,  stripes: 4, category: 'kids' },
+    { id: 'Amarillo', name: 'Amarillo', totalClasses: 100, classesPerStripe: 25,  stripes: 4, category: 'kids' },
+    { id: 'Naranja',  name: 'Naranja',  totalClasses: 120, classesPerStripe: 30,  stripes: 4, category: 'kids' },
+    { id: 'Verde',    name: 'Verde',    totalClasses: 140, classesPerStripe: 35,  stripes: 4, category: 'kids' },
+    { id: 'Azul',     name: 'Azul',   totalClasses: 325, classesPerStripe: 65,  stripes: 4, category: 'both' },
+    { id: 'Morado',   name: 'Morado', totalClasses: 375, classesPerStripe: 75,  stripes: 4, category: 'adults' },
+    { id: 'Marrón',   name: 'Marrón', totalClasses: 375, classesPerStripe: 75,  stripes: 4, category: 'adults' },
+    { id: 'Negro',    name: 'Negro',  totalClasses: null, classesPerStripe: null, stripes: null, category: 'adults' },
 ] as const;
 
-const BELT_ORDER = ['Blanco', 'Azul', 'Morado', 'Marrón', 'Negro'] as const;
+const BELT_ORDER_KIDS = ['Blanco', 'Gris', 'Amarillo', 'Naranja', 'Verde', 'Azul'];
+const BELT_ORDER_ADULTS = ['Blanco', 'Azul', 'Morado', 'Marrón', 'Negro'];
 
 /** Calcula el progreso de un alumno hacia el siguiente nivel */
-export function calcBeltProgress(beltRank: string, degrees: number, beltClassesAtPromotion: number, totalAttendances: number) {
+export function calcBeltProgress(beltRank: string, degrees: number, beltClassesAtPromotion: number, totalAttendances: number, category: string = 'adults') {
     const beltData = ALLIANCE_BJJ_GRADUATION.find(b => b.id === beltRank);
     if (!beltData || beltData.totalClasses === null) return null;
     const belt = beltData as { id: string; name: string; totalClasses: number; classesPerStripe: number | null; stripes: number | null };
@@ -67,8 +72,10 @@ export function calcBeltProgress(beltRank: string, degrees: number, beltClassesA
     // Total efectivo = Clases virtuales + Clases reales registradas
     const totalEffectiveClasses = virtualClassesFromStripes + realClassesInBelt;
     
-    const nextBeltIdx = BELT_ORDER.indexOf(beltRank as any) + 1;
-    const nextBelt = nextBeltIdx < ALLIANCE_BJJ_GRADUATION.length ? ALLIANCE_BJJ_GRADUATION[nextBeltIdx] : null;
+    const beltOrder = category === 'kids' ? BELT_ORDER_KIDS : BELT_ORDER_ADULTS;
+    const nextBeltIdx = beltOrder.indexOf(beltRank) + 1;
+    const nextBeltName = nextBeltIdx < beltOrder.length ? beltOrder[nextBeltIdx] : null;
+    const nextBelt = nextBeltName ? ALLIANCE_BJJ_GRADUATION.find(b => b.id === nextBeltName) : null;
 
     // Milestone actual y siguiente
     // El 5to estado es visualmente 4 rayas + Ready

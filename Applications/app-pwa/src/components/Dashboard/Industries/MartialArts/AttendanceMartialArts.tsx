@@ -9,13 +9,7 @@ import { updateStudentBjj, updateStudentProfile, getStudent, deleteStudents } fr
 import { ALLIANCE_BJJ_GRADUATION, calcBeltProgress } from '@/lib/industryUtils';
 import { nowCL } from '@/lib/utils';
 
-const BELT_OPTIONS = [
-    { value: 'white', label: 'Blanco' },
-    { value: 'blue', label: 'Azul' },
-    { value: 'purple', label: 'Morado' },
-    { value: 'brown', label: 'Café' },
-    { value: 'black', label: 'Negro' },
-];
+// Opciones de cinturones computadas dinámicamente según la categoría del alumno.
 
 interface AttendanceMartialArtsProps {
     allStudents: any[];
@@ -139,20 +133,24 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
     const CATEGORY_LABELS: Record<string, string> = { adults: 'Adulto', kids: 'Infantil' };
 
     const normalizeBelt = (belt: string | null | undefined): string => {
-        if (!belt) return 'white';
+        if (!belt) return 'Blanco';
         const b = belt.toLowerCase();
-        if (b === 'blanco' || b === 'white') return 'white';
-        if (b === 'azul' || b === 'blue') return 'blue';
-        if (b === 'morado' || b === 'purple') return 'purple';
-        if (b === 'café' || b === 'cafe' || b === 'brown' || b === 'cafê') return 'brown';
-        if (b === 'negro' || b === 'black') return 'black';
-        return 'white';
+        if (b === 'blanco' || b === 'white') return 'Blanco';
+        if (b === 'gris' || b === 'grey' || b === 'gray') return 'Gris';
+        if (b === 'amarillo' || b === 'yellow') return 'Amarillo';
+        if (b === 'naranja' || b === 'orange') return 'Naranja';
+        if (b === 'verde' || b === 'green') return 'Verde';
+        if (b === 'azul' || b === 'blue') return 'Azul';
+        if (b === 'morado' || b === 'purple') return 'Morado';
+        if (b === 'café' || b === 'cafe' || b === 'brown' || b === 'marrón' || b === 'marron') return 'Marrón';
+        if (b === 'negro' || b === 'black') return 'Negro';
+        return 'Blanco';
     };
 
 
 
     const getBjjMax = (belt: string) => {
-        const entry = ALLIANCE_BJJ_GRADUATION.find(b => b.id === (belt === 'white' ? 'white' : belt)); // fallback for safety
+        const entry = ALLIANCE_BJJ_GRADUATION.find(b => b.id === belt);
         if (!entry || entry.totalClasses === null || entry.classesPerStripe === null) return null;
         return { maxTotal: entry.totalClasses, classesPerStripe: entry.classesPerStripe };
     };
@@ -164,8 +162,8 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
         const inSystem = student?.total_attendances ?? 0;
         const total = Number(form.previous_classes || 0) + inSystem;
         if (total > config.classesPerStripe) {
-            const beltLabel = BELT_LABELS[beltKey] ?? form.belt_rank;
-            return `Con ${total} clases desde la última raya supera el máximo de ${config.classesPerStripe} para ${beltLabel}`;
+            const beltLabel = beltKey;
+            return `Con ${total} clases desde la última raya supera el máximo de ${config.classesPerStripe} para el cinturón ${beltLabel}`;
         }
         return null;
     };
@@ -826,24 +824,26 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                             <div>
                                 <p className={`text-[8px] font-black uppercase tracking-[0.2em] mb-2 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Cinturón actual</p>
                                 <div className="flex gap-2 flex-wrap">
-                                    {BELT_OPTIONS.map(b => (
-                                        <button key={b.value} onClick={() => {
-                                            const config = ALLIANCE_BJJ_GRADUATION.find(entry => entry.id === b.value);
+                                    {ALLIANCE_BJJ_GRADUATION
+                                        .filter(b => b.category === 'both' || b.category === bjjForm.category)
+                                        .map(b => (
+                                        <button key={b.id} onClick={() => {
+                                            const config = ALLIANCE_BJJ_GRADUATION.find(entry => entry.id === b.id);
                                             const total = Number(bjjForm.previous_classes || 0) + Math.max(0, (editingStudent?.total_attendances ?? 0) - (editingStudent?.previous_classes ?? 0));
                                             const maxDegrees = (config && config.classesPerStripe) ? Math.min(4, Math.floor(total / config.classesPerStripe)) : 4;
                                             setBjjForm((f: any) => ({
                                                 ...f,
-                                                belt_rank: b.value,
+                                                belt_rank: b.id,
                                                 degrees: Math.min(f.degrees, maxDegrees)
                                             }));
                                             setBjjError(null);
                                         }}
                                             className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border-2 transition-all ${
-                                                bjjForm.belt_rank === b.value
+                                                bjjForm.belt_rank === b.id
                                                     ? 'border-[#c9a84c] bg-[#c9a84c]/10 text-[#c9a84c]'
                                                     : isDark ? 'border-zinc-800 text-zinc-500' : 'border-zinc-100 text-zinc-400'
                                             }`}>
-                                            {b.label}
+                                            {b.name}
                                         </button>
                                     ))}
                                 </div>
@@ -999,7 +999,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                         </div>
                                         {overLimit && (
                                             <p className="px-4 py-2 text-[9px] font-black text-rose-500 uppercase tracking-widest border-t border-rose-400/30">
-                                                ⚠ Supera el máximo para {BELT_OPTIONS.find(b => b.value === bjjForm.belt_rank)?.label} — considera promover
+                                                ⚠ Supera el máximo para {ALLIANCE_BJJ_GRADUATION.find(b => b.id === bjjForm.belt_rank)?.name} — considera promover
                                             </p>
                                         )}
                                     </div>
