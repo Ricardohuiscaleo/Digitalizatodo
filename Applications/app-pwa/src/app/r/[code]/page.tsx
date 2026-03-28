@@ -416,6 +416,7 @@ export default function RegisterPage() {
     plan_id: null as number | null, // Para VIP o planes únicos
     adult_plan_id: null as number | null,
     kid_plan_id: null as number | null,
+    start_date: new Date().toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/-/g, ' / ').replace(/\//g, ' / '),
     accept_dojo_terms: false,
     accept_digitaliza_terms: false,
     pack_type: null as string | null,
@@ -1030,7 +1031,30 @@ export default function RegisterPage() {
             </div>
           </div>
 
-
+          {/* FECHA DE INICIO DE ENTRENAMIENTO */}
+          <div className={`space-y-4 p-6 rounded-[2.5rem] border backdrop-blur-xl transition-all duration-700 ${isDarkMode ? "bg-slate-900/40 border-slate-800/50" : "bg-white border-zinc-200 shadow-sm"}`}>
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500 flex items-center gap-2">
+                <div className="w-1 h-1 rounded-full bg-[#c9a84c]" />
+                ¿Cuándo comienzas a entrenar?
+              </label>
+              <div className="px-3 py-1 rounded-full bg-[#c9a84c]/10 border border-[#c9a84c]/20">
+                <span className="text-[8px] font-black text-[#c9a84c] uppercase tracking-widest">Día 1 es día de pago</span>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <ModernDateInput 
+                value={form.start_date} 
+                placeholder={todayPlaceholder} 
+                isDarkMode={isDarkMode}
+                onChange={(v: string) => setForm({ ...form, start_date: v })}
+                error={errors.start_date}
+              />
+              <p className={`text-[8px] font-bold uppercase tracking-widest leading-relaxed px-1 ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>
+                Tus cuotas se cobrarán los días 1 de cada mes. Si empiezas hoy, tu primera cuota se generará de inmediato. 🥋🗓️
+              </p>
+            </div>
+          </div>
           {/* TOGGLE "YO TAMBIÉN PARTICIPO" — blue card premium */}
           {config.showSelfRegister && isGuardianComplete && (
             <div className={`rounded-[2.5rem] border transition-all duration-700 relative animate-in zoom-in fade-in overflow-hidden ${form.is_self_register
