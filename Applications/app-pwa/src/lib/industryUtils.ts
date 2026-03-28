@@ -38,16 +38,16 @@ export const getBeltHex = (beltRank: string): string => {
     return '#e4e4e7';
 };
 
-// Tabla de graduación Alliance BJJ — fuente de verdad compartida
+// Tabla de graduación Alliance BJJ — fuente de verdad compartida (IDs ahora en español)
 export const ALLIANCE_BJJ_GRADUATION = [
-    { id: 'white',  name: 'Blanco', totalClasses: 150, classesPerStripe: 30,  stripes: 4 },
-    { id: 'blue',   name: 'Azul',   totalClasses: 325, classesPerStripe: 65,  stripes: 4 },
-    { id: 'purple', name: 'Morado', totalClasses: 375, classesPerStripe: 75,  stripes: 4 },
-    { id: 'brown',  name: 'Café',   totalClasses: 375, classesPerStripe: 75,  stripes: 4 },
-    { id: 'black',  name: 'Negro',  totalClasses: null, classesPerStripe: null, stripes: null },
+    { id: 'Blanco',   name: 'Blanco', totalClasses: 150, classesPerStripe: 30,  stripes: 4 },
+    { id: 'Azul',     name: 'Azul',   totalClasses: 325, classesPerStripe: 65,  stripes: 4 },
+    { id: 'Morado',   name: 'Morado', totalClasses: 375, classesPerStripe: 75,  stripes: 4 },
+    { id: 'Marrón',   name: 'Marrón', totalClasses: 375, classesPerStripe: 75,  stripes: 4 },
+    { id: 'Negro',    name: 'Negro',  totalClasses: null, classesPerStripe: null, stripes: null },
 ] as const;
 
-const BELT_ORDER = ['white', 'blue', 'purple', 'brown', 'black'] as const;
+const BELT_ORDER = ['Blanco', 'Azul', 'Morado', 'Marrón', 'Negro'] as const;
 
 /** Calcula el progreso de un alumno hacia el siguiente nivel */
 export function calcBeltProgress(beltRank: string, degrees: number, beltClassesAtPromotion: number, totalAttendances: number) {

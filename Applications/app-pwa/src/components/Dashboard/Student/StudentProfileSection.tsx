@@ -89,43 +89,76 @@ export function StudentProfileSection({
     const otherStudents = students.filter(s => !isSelf(s));
 
     const renderProgress = (student: any) => {
-        const progress = !isSchoolTreasury && student.belt_rank
-            ? calcBeltProgress(student.belt_rank, student.degrees ?? 0, student.belt_classes_at_promotion ?? 0, student.total_attendances ?? 0)
-            : null;
+        if (isSchoolTreasury) return null;
+
+        const totalClasses = (student.total_attendances ?? 0) + (student.previous_classes ?? 0);
+        let progress = null;
+
+        if (student.belt_progress) {
+            const sbp = student.belt_progress;
+            progress = {
+                totalForBelt: sbp.total_for_belt,
+                classesPerStripe: sbp.classes_per_stripe,
+                currentStripe: sbp.current_stripe,
+                progressPct: sbp.progress_pct,
+                isReadyForBelt: sbp.is_ready_for_belt,
+                extraClasses: sbp.extra_merit_classes,
+                classesInBelt: sbp.total_effective,
+                nextBeltName: sbp.next_belt,
+                nextStepLabel: sbp.is_ready_for_belt ? `LISTO PARA ${sbp.next_belt}` : `PRÓXIMO HITO: ${sbp.current_stripe + 1}★`,
+            };
+        } else if (student.belt_rank) {
+            progress = calcBeltProgress(student.belt_rank, student.degrees ?? 0, student.belt_classes_at_promotion ?? 0, totalClasses);
+        }
+
         if (!progress) return null;
+
         return (
-            <div className={`mt-3 rounded-2xl p-3 border ${
-                isDark ? 'bg-zinc-950/60 border-zinc-800' : 'bg-zinc-50 border-zinc-100'
-            }`}>
-                <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-1.5">
-                        <Trophy size={11} className="text-[#c9a84c]" />
-                        <span className={`text-[8px] font-black uppercase tracking-widest ${
-                            isDark ? 'text-zinc-500' : 'text-zinc-400'
-                        }`}>Progreso</span>
-                    </div>
-                    {progress.isReadyForPromotion && (
-                        <span className="text-[8px] font-black text-[#c9a84c] animate-pulse">¡Listo para promover!</span>
-                    )}
-                </div>
-                <div className={`h-2 rounded-full overflow-hidden mb-1.5 ${
-                    isDark ? 'bg-zinc-800' : 'bg-zinc-200'
-                }`}>
-                    <div className="h-full rounded-full transition-all duration-700"
-                        style={{ width: `${progress.progressPct}%`, backgroundColor: getBeltHex(student.belt_rank), boxShadow: `0 0 6px ${getBeltHex(student.belt_rank)}60` }}
-                    />
-                </div>
-                <div className="flex items-center justify-between">
-                    <span className={`text-[10px] font-black ${ isDark ? 'text-zinc-300' : 'text-zinc-700' }`}>
-                        {progress.classesInBelt}
-                        <span className={`text-[9px] ml-0.5 ${ isDark ? 'text-zinc-600' : 'text-zinc-400' }`}>/ {progress.totalForBelt} clases</span>
-                    </span>
-                    <span className={`text-[9px] font-black ${
-                        progress.isReadyForPromotion ? 'text-[#c9a84c]' : isDark ? 'text-zinc-500' : 'text-zinc-400'
+            <div className={`mt-4 pt-3 border-t border-dashed ${isDark ? 'border-zinc-800' : 'border-zinc-100'}`}>
+                <div className="flex justify-between items-center mb-1">
+                    <p className={`text-[8px] font-black uppercase tracking-[0.2em] ${
+                        progress.isReadyForBelt ? 'text-emerald-500 animate-pulse' : isDark ? 'text-zinc-600' : 'text-zinc-400'
                     }`}>
-                        {progress.isReadyForPromotion
-                            ? `→ ${progress.nextBeltName}`
-                            : `${progress.classesForPromotion} clases → ${progress.nextBeltName ?? 'Maestría'}`}
+                        {progress.nextStepLabel}
+                    </p>
+                    <p className={`text-[8px] font-black uppercase tracking-widest ${
+                        progress.isReadyForBelt ? 'text-emerald-500' : 'text-zinc-400'
+                    }`}>
+                        {progress.isReadyForBelt ? '¡LOGRADO!' : `Meta: ${progress.totalForBelt}`}
+                    </p>
+                </div>
+                
+                {/* Visualización de 5 bloques (Rayas) */}
+                <div className="mt-2 flex gap-1 h-3">
+                    {[...Array(5)].map((_, i) => {
+                        const isFull = i < progress.currentStripe;
+                        const isCurrent = i === progress.currentStripe;
+                        const stripeProgress = isFull ? 100 : isCurrent ? progress.progressPct : 0;
+                        const barColor = isFull ? 'bg-emerald-500' : 'bg-amber-400';
+                        const isPromotionBlock = i === 4;
+                        
+                        return (
+                            <div key={i} className={`flex-1 relative rounded-sm overflow-hidden ${isDark ? 'bg-zinc-950 border border-zinc-800' : 'bg-zinc-50 border border-zinc-200'} ${isPromotionBlock ? 'border-dashed' : ''}`}>
+                                <div 
+                                    className={`absolute inset-y-0 left-0 transition-all duration-700 ease-out ${barColor}`}
+                                    style={{ width: `${stripeProgress}%` }}
+                                />
+                            </div>
+                        );
+                    })}
+                </div>
+                
+                <div className="flex items-center justify-between mt-1.5 px-0.5">
+                    <span className={`text-[9px] font-black ${ isDark ? 'text-zinc-300' : 'text-zinc-600' }`}>
+                        {progress.isReadyForBelt && (progress.extraClasses ?? 0) > 0 
+                            ? `${progress.totalForBelt} + ${progress.extraClasses}` 
+                            : progress.classesInBelt}
+                        <span className={`text-[8px] ml-0.5 font-bold ${ isDark ? 'text-zinc-600' : 'text-zinc-400' }`}>clases</span>
+                    </span>
+                    <span className={`text-[8px] font-black uppercase tracking-widest ${
+                        progress.isReadyForBelt ? 'text-emerald-500' : isDark ? 'text-zinc-500' : 'text-zinc-400'
+                    }`}>
+                        {progress.isReadyForBelt ? 'Siguiente nivel →' : `${progress.currentStripe}★ de 5`}
                     </span>
                 </div>
             </div>
