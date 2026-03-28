@@ -127,7 +127,7 @@ class StudentResource extends Resource
                                             ->content(fn ($record) => $record?->attendances()->where('status', 'present')->count() ?? 0),
 
                                         Forms\Components\Placeholder::make('total_classes')
-                                            ->label('TOTAL / 30')
+                                            ->label(fn ($record) => "TOTAL / " . ($record?->belt_progress['classes_per_stripe'] ?? 30))
                                             ->content(function ($get, $record) {
                                                 $prev = (int)$get('previous_classes');
                                                 $sys = $record?->attendances()->where('status', 'present')->count() ?? 0;
