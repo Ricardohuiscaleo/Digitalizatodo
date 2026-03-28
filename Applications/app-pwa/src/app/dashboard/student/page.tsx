@@ -48,6 +48,7 @@ export default function StudentDashboard() {
     const [uploadingPayment, setUploadingPayment] = useState<string | null>(null);
     const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
     const [copiedBank, setCopiedBank] = useState(false);
+    const [expenseLightbox, setExpenseLightbox] = useState<string | null>(null);
 
     const handleBuyPack = async (studentId: string, type: string, file?: File) => {
         if (!slug || !token) return;
@@ -354,7 +355,7 @@ export default function StudentDashboard() {
                 )}
 
                 {activeSection === "rendicion" && (
-                    <StudentRendicionSection expensesTotal={treasury.expensesTotal} expensesBalance={treasury.expensesBalance} expensesList={treasury.expensesList} expensesSummary={treasury.expensesSummary} expensesLoading={treasury.expensesLoading} setExpenseLightbox={()=>{}} />
+                    <StudentRendicionSection expensesTotal={treasury.expensesTotal} expensesBalance={treasury.expensesBalance} expensesList={treasury.expensesList} expensesSummary={treasury.expensesSummary} expensesLoading={treasury.expensesLoading} setExpenseLightbox={setExpenseLightbox} />
                 )}
             </main>
 
@@ -373,6 +374,18 @@ export default function StudentDashboard() {
             {treasury.feePayModal && <FeePayModal fees={treasury.feePayModal.fees} onClose={() => treasury.setFeePayModal(null)} onSuccess={treasury.refreshMyFees} submitFeePayment={treasury.submitFeePayment} />}
             {proofModal && <ProofModal url={proofModal.url} canDelete={proofModal.canDelete} onClose={() => setProofModal(null)} onDelete={() => setConfirmDelete(proofModal.paymentId)} />}
             {confirmDelete && <ConfirmDialog title="¿Eliminar comprobante?" message="Se eliminará la imagen y el pago volverá a estado pendiente." onConfirm={() => handleDeleteProof(confirmDelete)} onCancel={() => setConfirmDelete(null)} />}
+            
+            {/* Expense Lightbox */}
+            {expenseLightbox && (
+                <div className="fixed inset-0 bg-black/95 z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setExpenseLightbox(null)}>
+                    <div className="relative max-w-full max-h-full" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => setExpenseLightbox(null)} className="absolute -top-12 right-0 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-white border border-white/20 active:scale-95">
+                            <X size={18} />
+                        </button>
+                        <img src={expenseLightbox} className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl" />
+                    </div>
+                </div>
+            )}
             
             {common.showPushModal && (
                 <div className="fixed inset-0 z-[300] bg-black/70 backdrop-blur-sm flex items-end justify-center p-4" onClick={() => common.setShowPushModal(false)}>

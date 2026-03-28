@@ -220,6 +220,7 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                     onApprove={(id) => { handlePaymentApprove(id); setBubbleModalPayer(null); }}
                     onViewProof={(url) => setProofModalUrl(url)}
                     isDark={isDark}
+                    industry={branding?.industry}
                 />
             )}
 
@@ -273,6 +274,7 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                                                 modality={student.modality}
                                                 showPayerDot={false}
                                                 isDark={isDark}
+                                                industry={branding?.industry}
                                             />
                                             <div className="flex items-center justify-center gap-1.5 mt-0.5">
                                                 <div className={`w-1 h-1 rounded-full flex-shrink-0 ${

@@ -364,6 +364,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                                             payerStatus={student.payerStatus}
                                                             modality={student.modality}
                                                             isDark={isDark}
+                                                            industry={branding?.industry}
                                                         />
                                                         <div className="flex items-center gap-1 mt-1">
                                                             <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${payerDot}`} />

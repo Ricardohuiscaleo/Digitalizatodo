@@ -14,6 +14,7 @@ interface BubblePaymentModalProps {
     onApprove: (id: string) => void;
     onViewProof: (url: string) => void;
     isDark?: boolean;
+    industry?: string;
 }
 
 const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({ 
@@ -25,7 +26,8 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
     onClose, 
     onApprove, 
     onViewProof,
-    isDark = false
+    isDark = false,
+    industry = 'martial_arts'
 }) => {
     const [dragY, setDragY] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
@@ -121,6 +123,7 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
                                             : undefined
                                         }
                                         isDark={isDark}
+                                        industry={industry}
                                     />
                                 </div>
                                 <div className="flex-1 min-w-0">

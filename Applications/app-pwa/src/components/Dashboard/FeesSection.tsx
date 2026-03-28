@@ -18,6 +18,7 @@ interface FeesSectionProps {
     loadFees: () => void;
     handleCreateFee: (e: React.FormEvent) => void;
     handleDeleteFee: (id: any) => void;
+    handleRejectFeePayment: (gId: number, pId: number, notes?: string) => void;
     formatMoney: (v: any) => string;
     formatCLP: (v: number) => string;
     parseCLP: (v: string) => number;
@@ -51,7 +52,7 @@ export default function FeesSection(props: FeesSectionProps) {
     const {
         feesList, feesLoading, feeSubmitting, feeForm, setFeeForm,
         feeFormError, showCreateFee, setShowCreateFee, loadFees,
-        handleCreateFee, handleDeleteFee, formatMoney, formatCLP,
+        handleCreateFee, handleDeleteFee, handleRejectFeePayment, formatMoney, formatCLP,
         parseCLP, nowCL, STATUS_LABEL, selectedFee, setSelectedFee,
         feeDetailLoading, feePayments, openFee, approvingFeePayment,
         setApprovingFeePayment, feeApproveMethod, setFeeApproveMethod,
@@ -396,7 +397,7 @@ export default function FeesSection(props: FeesSectionProps) {
                                 </button>
                             </div>
                         </div>
-                        <div className="overflow-y-auto flex-1 p-4 space-y-2">
+                        <div className="overflow-y-auto flex-1 p-4 space-y-4 bg-zinc-50/50">
                             {feeDetailLoading ? (
                                 <div className="flex justify-center py-10"><Loader2 className="animate-spin text-zinc-300" size={20} /></div>
                             ) : feePayments.length === 0 ? (
@@ -405,29 +406,65 @@ export default function FeesSection(props: FeesSectionProps) {
                                 const st = (STATUS_LABEL as any)[p.status] || (STATUS_LABEL as any).pending;
                                 const person = p.guardian || p.student || p.user || {};
                                 return (
-                                    <div key={p.id} className="bg-zinc-50 rounded-2xl p-3 border border-zinc-100 flex items-center gap-3">
-                                        <img src={person.photo || '/icon.webp'} className="w-10 h-10 rounded-full object-cover border border-white shadow-sm shrink-0" />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-black text-zinc-900 uppercase leading-none truncate">{person.name || 'Sin nombre'}</p>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full border ${st.color}`}>{st.label}</span>
-                                                {p.payment_method && <span className="text-[8px] text-zinc-400 font-bold uppercase">{p.payment_method === 'cash' ? 'Efectivo' : 'Transferencia'}</span>}
+                                    <div key={p.id} className="bg-white rounded-3xl p-4 border border-zinc-100 shadow-xl shadow-zinc-200/50 flex flex-col gap-4 overflow-hidden">
+                                        <div className="flex items-center gap-4">
+                                            <div className="relative shrink-0">
+                                                <img src={person.photo || '/icon.webp'} className="w-14 h-14 rounded-2xl object-cover border border-zinc-100 shadow-sm" />
+                                                <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${p.status === 'paid' ? 'bg-emerald-500' : p.status === 'review' ? 'bg-amber-400' : 'bg-rose-500'}`} />
                                             </div>
-                                        </div>
-                                        <div className="flex items-center gap-1.5 shrink-0">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-black text-zinc-900 uppercase leading-tight truncate">{person.name || 'Sin nombre'}</p>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full border ${st.color}`}>{st.label}</span>
+                                                    {p.payment_method && (
+                                                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tighter">
+                                                            {p.payment_method === 'cash' ? 'Efectivo' : 'Transferencia'}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
                                             {p.proof_url && (
-                                                <button onClick={() => setFeeProofUrl(p.proof_url)}
-                                                    className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500 active:scale-95">
-                                                    <Eye size={14} />
-                                                </button>
-                                            )}
-                                            {p.status !== 'paid' && (
-                                                <button onClick={() => { setApprovingFeePayment(p); setFeeApproveMethod('cash'); }}
-                                                    className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 active:scale-95">
-                                                    <CheckCircle2 size={14} />
+                                                <button 
+                                                    onClick={() => setFeeProofUrl(p.proof_url)}
+                                                    className="w-14 h-14 rounded-2xl bg-zinc-100 overflow-hidden border border-zinc-200 shadow-inner group relative"
+                                                >
+                                                    <img src={p.proof_url} alt="Comprobante" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                                                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Eye size={16} className="text-white" />
+                                                    </div>
                                                 </button>
                                             )}
                                         </div>
+                                        
+                                        {p.status === 'review' && (
+                                            <div className="flex items-center gap-2">
+                                                <button 
+                                                    onClick={() => {
+                                                        if(confirm('¿Rechazar este pago?')) {
+                                                            handleRejectFeePayment(person.id, p.id);
+                                                        }
+                                                    }}
+                                                    className="flex-1 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest border border-rose-100"
+                                                >
+                                                    <X size={14} /> Rechazar
+                                                </button>
+                                                <button 
+                                                    onClick={() => { setApprovingFeePayment(p); setFeeApproveMethod('transfer'); }}
+                                                    className="flex-[2] h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200 border border-emerald-600"
+                                                >
+                                                    <CheckCircle2 size={14} /> Aprobar Pago
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {p.status === 'pending' && (
+                                            <button 
+                                                onClick={() => { setApprovingFeePayment(p); setFeeApproveMethod('cash'); }}
+                                                className="w-full h-10 rounded-xl bg-zinc-100 text-zinc-600 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest border border-zinc-200"
+                                            >
+                                                <CheckCircle2 size={14} /> Marcar como pagado (Manual)
+                                            </button>
+                                        )}
                                     </div>
                                 );
                             })}

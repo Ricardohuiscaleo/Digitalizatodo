@@ -41,10 +41,11 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                         photo={user?.photo}
                         name={user?.name}
                         size={96}
-                        beltRank={user?.belt_rank}
-                        degrees={user?.degrees}
-                        modality={user?.modality}
+                        beltRank={branding?.industry === 'school_treasury' ? null : user?.belt_rank}
+                        degrees={branding?.industry === 'school_treasury' ? null : user?.degrees}
+                        modality={branding?.industry === 'school_treasury' ? null : user?.modality}
                         isDark={isDark}
+                        industry={branding?.industry}
                     />
                 </div>
                 
@@ -56,7 +57,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                 </h3>
                 <p className={`text-xs font-bold mb-4 ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>{user?.email}</p>
                 
-                {user?.belt_rank && isDark && (
+                {user?.belt_rank && branding?.industry !== 'school_treasury' && isDark && (
                     <div className="flex justify-center mb-2">
                         <BeltDisplay beltRank={user.belt_rank} degrees={user.degrees ?? 0} size="md" />
                     </div>
@@ -127,7 +128,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
             >
                 <p className={`text-[12px] font-black tracking-[0.25em] uppercase ${isDark ? 'text-zinc-700' : 'text-zinc-400'}`}>Digitaliza Todo</p>
                 <p className={`text-[9px] text-center mt-1 px-8 leading-relaxed ${isDark ? 'text-zinc-800' : 'text-zinc-400'}`}>
-                    Sistemas a medida para academias de alto rendimiento.
+                    {branding?.industry === 'school_treasury' ? "Sistemas a medida para gestión financiera escolar." : "Sistemas a medida para academias de alto rendimiento."}
                 </p>
                 <p className="text-[8px] font-black text-orange-400/80 tracking-[0.3em] uppercase mt-3">Arica, Chile 🇨🇱</p>
             </a>

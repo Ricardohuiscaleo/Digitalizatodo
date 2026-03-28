@@ -38,39 +38,26 @@ class FeeController extends Controller
         $result = $guardians->map(function ($guardian) use ($tenant, $fees, $now, &$metrics) {
             $payments = FeePayment::where('tenant_id', $tenant->id)
                 ->where('guardian_id', $guardian->id)
-                ->with('fee:id,title,amount,type,recurring_day,due_date')
+                ->with('fee')
                 ->get();
 
             $hasReview  = $payments->where('status', 'review')->count() > 0;
-            $hasPaid    = $payments->where('status', 'paid')->count() > 0;
             
-            // Determinar si es Moroso
             $isMoroso = false;
-            $hasFuturePending = false;
-
             foreach ($fees as $fee) {
                 $periods = $this->calculatePeriods($fee);
                 foreach ($periods as $period) {
                     $dueDate = $period['due_date'] ? \Carbon\Carbon::parse($period['due_date'])->endOfDay() : null;
-                    
                     $payment = $payments->where('fee_id', $fee->id)
                         ->where('period_month', $period['month'])
                         ->where('period_year', $period['year'])
                         ->first();
-
-                    $status = $payment?->status ?? 'pending';
-
-                    if ($status === 'pending') {
-                        if ($dueDate && $dueDate->isPast()) {
-                            $isMoroso = true;
-                        } else {
-                            $hasFuturePending = true;
-                        }
+                    if (!$payment && $dueDate && $dueDate->isPast()) {
+                        $isMoroso = true;
                     }
                 }
             }
 
-            // Status del apoderado (Prioridad: Moroso > Review > Al día)
             if ($isMoroso) {
                 $status = 'overdue';
                 $metrics['morosos']++;
@@ -78,7 +65,6 @@ class FeeController extends Controller
                 $status = 'review';
                 $metrics['en_revision']++;
             } else {
-                // No es moroso ni tiene nada en revisión => está "Al día" (tenga cuotas futuras o no tenga ninguna)
                 $status = ($fees->count() > 0) ? 'paid' : 'none';
                 $metrics['al_dia']++;
             }
@@ -89,12 +75,11 @@ class FeeController extends Controller
                 'email'    => $guardian->email,
                 'photo'    => $guardian->photo,
                 'status'   => $status,
-                'pending'  => $payments->filter(function($p) use ($now) {
-                    return $p->status === 'pending' && $p->due_date && \Carbon\Carbon::parse($p->due_date)->endOfDay()->isPast();
-                })->count(),
+                'pending'  => $payments->filter(fn($p) => $p->status === 'pending' && $p->due_date && \Carbon\Carbon::parse($p->due_date)->isPast())->count(),
                 'review'   => $payments->where('status', 'review')->count(),
                 'paid'     => $payments->where('status', 'paid')->count(),
                 'total'    => $payments->count(),
+                'payments' => $payments->values(), // Esto asegura el array en JSON
                 'students' => $guardian->students()->select('students.id', 'students.name', 'students.photo')->get(),
             ];
         });
@@ -244,6 +229,39 @@ class FeeController extends Controller
         event(new FeeUpdated($tenant->slug, $guardianId));
 
         return response()->json(['approved' => $payments->count()]);
+    }
+
+    // POST /fees/{id}/reject-payment — tesorero rechaza pago
+    public function rejectPayment(Request $request, $tenant, $id)
+    {
+        $tenant = app('currentTenant');
+
+        $validated = $request->validate([
+            'guardian_id' => 'required|integer',
+            'payment_id'  => 'required|integer',
+            'notes'       => 'nullable|string',
+        ]);
+
+        $payment = FeePayment::where('fee_id', $id)
+            ->where('tenant_id', $tenant->id)
+            ->where('guardian_id', $validated['guardian_id'])
+            ->where('id', $validated['payment_id'])
+            ->firstOrFail();
+
+        // Al rechazar, volvemos a 'pending' y limpiamos el comprobante para que lo suban de nuevo si quieren
+        // O podemos dejarlo pero el status indica que no es válido
+        $payment->update([
+            'status' => 'pending',
+            'notes'  => $validated['notes'] ?? 'Pago rechazado por el tesorero.',
+            'proof_url' => null, // Opcional: limpiar para forzar nueva subida
+        ]);
+
+        $guardianId = $validated['guardian_id'];
+        event(new FeeUpdated($tenant->slug, $guardianId));
+
+        Notification::send($tenant->id, $guardianId, 'Pago rechazado', "Tu pago para '{$payment->fee->title}' ha sido rechazado: " . ($validated['notes'] ?? 'Comprobante no legible o inválido.'), 'fee', $tenant->slug);
+
+        return response()->json(['rejected' => true]);
     }
 
     // POST /fees/{id}/upload-proof — apoderado sube comprobante

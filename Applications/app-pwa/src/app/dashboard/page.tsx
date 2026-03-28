@@ -115,6 +115,7 @@ export default function App() {
         return localStorage.getItem('tenant_industry') === 'martial_arts';
     });
     const isMartialArts = branding?.industry === 'martial_arts';
+    const isTreasury = branding?.industry === 'school_treasury';
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -155,12 +156,14 @@ export default function App() {
         pushPermission, setPushPermission, showPushModal, setShowPushModal,
         showTermsModal, handleAcceptTerms,
         vocab, handleLogout, refreshPayers,
+        showSchedulesModal, setShowSchedulesModal,
 
         tenantTerms, termsLoading,
         loadTenantTerms, handleUpdateTenantTerms,
 
         toggleAttendance, handleConfirmPayment, handleCreateExpense, handleDeleteExpense,
-        handleCreateFee, handleApproveFeePayment, handlePriceInput, handleSavePrices,
+        handleCreateFee, handleApproveFeePayment, handleRejectFeePayment, handlePriceInput, handleSavePrices,
+        guardianPayments, guardianPaymentsLoading, openGuardianPayments,
         handleSaveBankInfo, handleLogoUpload, openFee, markAllNotificationsRead, markNotificationRead,
         loadExpenses, loadSchedules, loadPlans, loadFees,
         formatMoney, formatCLP, parseCLP, handlePaymentApprove, handleActivatePush,
@@ -377,8 +380,18 @@ export default function App() {
 
                     <nav className="flex flex-col gap-2">
                         <SidebarButton icon={LayoutDashboard} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} primaryColor={branding?.primaryColor} isDark={isDark} />
-                        {hasPermission('attendance') && <SidebarButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} isDark={isDark} />}
-                        {hasPermission('payments') && <SidebarButton icon={CreditCard} label={branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos'} active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} isDark={isDark} />}
+                        {hasPermission('attendance') && branding?.industry !== 'school_treasury' && <SidebarButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} isDark={isDark} />}
+                        {hasPermission('payments') && (
+                            <SidebarButton 
+                                icon={CreditCard} 
+                                label={branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos'} 
+                                active={activeTab === 'payments'} 
+                                onClick={() => changeTab('payments')} 
+                                primaryColor={branding?.primaryColor} 
+                                isDark={isDark} 
+                                badge={branding?.industry === 'school_treasury' ? feesSummary?.metrics?.en_revision : undefined}
+                            />
+                        )}
                         {hasPermission('settings') && <SidebarButton icon={Settings} label="Ajustes" active={activeTab === 'settings'} onClick={() => changeTab('settings')} primaryColor={branding?.primaryColor} isDark={isDark} />}
                     </nav>
 
@@ -417,60 +430,78 @@ export default function App() {
                             {activeTab === 'dashboard' && (
                                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
                                     <div className="xl:col-span-8 space-y-8">
-                                        <OverviewSection 
-                                            allStudents={allStudents}
-                                            attendance={attendance}
-                                            attendanceHistory={attendanceHistory}
-                                            historyMonth={historyMonth}
-                                            setHistoryMonth={setHistoryMonth}
-                                            historyYear={historyYear}
-                                            setHistoryYear={setHistoryYear}
-                                            historyPage={historyPage}
-                                            setHistoryPage={setHistoryPage}
-                                            branding={branding}
-                                            now={now}
-                                            setSelectedHistoryDate={setSelectedHistoryDate}
-                                            schedulesList={schedulesList}
-                                            feesSummary={feesSummary}
-                                            vocab={vocab}
-                                            setActiveTab={setActiveTab}
-                                            isDark={isDark}
-                                            hasPermission={hasPermission}
-                                        />
+                                        {branding?.industry === 'school_treasury' ? (
+                                            <OverviewTreasury 
+                                                branding={branding} 
+                                                schedulesList={schedulesList} 
+                                                feesSummary={feesSummary} 
+                                            />
+                                        ) : (
+                                            <OverviewSection 
+                                                allStudents={allStudents}
+                                                attendance={attendance}
+                                                attendanceHistory={attendanceHistory}
+                                                historyMonth={historyMonth}
+                                                setHistoryMonth={setHistoryMonth}
+                                                historyYear={historyYear}
+                                                setHistoryYear={setHistoryYear}
+                                                historyPage={historyPage}
+                                                setHistoryPage={setHistoryPage}
+                                                branding={branding}
+                                                now={now}
+                                                setSelectedHistoryDate={setSelectedHistoryDate}
+                                                schedulesList={schedulesList}
+                                                feesSummary={feesSummary}
+                                                vocab={vocab}
+                                                setActiveTab={setActiveTab}
+                                                isDark={isDark}
+                                                hasPermission={hasPermission}
+                                            />
+                                        )}
                                     </div>
                                     <div className="xl:col-span-4 space-y-8">
                                         <div className="sticky top-0 space-y-8">
-                                            {/* Today's Schedule for PC */}
-                                            <TodaySchedule schedules={schedulesList} primaryColor={branding?.primaryColor} isDark={isDark} />
+                                            {/* Today's Schedule for PC - Only for Martial Arts or if they have schedules */}
+                                            {isMartialArts && (
+                                                <TodaySchedule schedules={schedulesList} primaryColor={branding?.primaryColor} isDark={isDark} />
+                                            )}
                                             
-                                            {/* Quick Actions / Terminal Access */}
-                                            <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-950 border-zinc-800'} p-8 rounded-[3rem] shadow-2xl relative overflow-hidden group`}>
-                                                <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl group-hover:bg-indigo-500/20 transition-all duration-700" />
-                                                <div className="relative z-10">
-                                                    <div className="w-14 h-14 bg-indigo-500 rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-indigo-500/20">
-                                                        <QrCode size={28} className="text-white" />
+                                            {/* Quick Actions / Terminal Access - Only for Martial Arts */}
+                                            {isMartialArts && (
+                                                <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-950 border-zinc-800'} p-8 rounded-[3rem] shadow-2xl relative overflow-hidden group`}>
+                                                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl group-hover:bg-indigo-500/20 transition-all duration-700" />
+                                                    <div className="relative z-10">
+                                                        <div className="w-14 h-14 bg-indigo-500 rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-indigo-500/20">
+                                                            <QrCode size={28} className="text-white" />
+                                                        </div>
+                                                        <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-2">Punto de Marcación</h3>
+                                                        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-relaxed mb-6">Inicia la terminal de entrada para escaneo de alumnos en tiempo real.</p>
+                                                        <button 
+                                                            onClick={() => window.location.href = '/dashboard/checkin'}
+                                                            className="w-full py-4 bg-white text-zinc-950 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-100 transition-all active:scale-95 flex items-center justify-center gap-2"
+                                                        >
+                                                            Abrir Terminal <LayoutDashboard size={14} />
+                                                        </button>
                                                     </div>
-                                                    <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-2">Punto de Marcación</h3>
-                                                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-relaxed mb-6">Inicia la terminal de entrada para escaneo de alumnos en tiempo real.</p>
-                                                    <button 
-                                                        onClick={() => window.location.href = '/dashboard/checkin'}
-                                                        className="w-full py-4 bg-white text-zinc-950 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-100 transition-all active:scale-95 flex items-center justify-center gap-2"
-                                                    >
-                                                        Abrir Terminal <LayoutDashboard size={14} />
-                                                    </button>
                                                 </div>
-                                            </div>
+                                            )}
+
 
                                             {/* Support / Help Mini Card */}
-                                            <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'} p-6 rounded-[2.5rem] border shadow-sm flex items-center gap-4`}>
+                                            <div 
+                                                onClick={() => window.open('https://wa.me/56945392581', '_blank')}
+                                                className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'} p-6 rounded-[2.5rem] border shadow-sm flex items-center gap-4 cursor-pointer hover:scale-[1.02] transition-all active:scale-95`}
+                                            >
                                                 <div className="w-12 h-12 bg-zinc-50 dark:bg-zinc-800 rounded-2xl flex items-center justify-center text-zinc-400">
                                                     <Users size={20} />
                                                 </div>
                                                 <div className="flex-1">
                                                     <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Digitalizatodo Support</p>
-                                                    <p className={`text-[12px] font-bold ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>¿Necesitas ayuda con el dojo?</p>
+                                                    <p className={`text-[12px] font-bold ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>WhatsApp: +56 9 4539 2581</p>
+                                                    <p className={`text-[9px] font-bold text-emerald-500 uppercase tracking-tighter`}>Pulsa para asistencia técnica</p>
                                                 </div>
                                             </div>
+
                                         </div>
                                     </div>
                                 </div>
@@ -522,6 +553,9 @@ export default function App() {
                                         feesGuardiansLoading={feesGuardiansLoading}
                                         feesBubbleModal={feesBubbleModal}
                                         setFeesBubbleModal={setFeesBubbleModal}
+                                        feesGuardianFilter={feesGuardianFilter}
+                                        setFeesGuardianFilter={setFeesGuardianFilter}
+                                        handleRejectFeePayment={handleRejectFeePayment}
                                         approvingFeePayment={approvingFeePayment}
                                         setApprovingFeePayment={setApprovingFeePayment}
                                         selectedFee={selectedFee}
@@ -537,6 +571,9 @@ export default function App() {
                                         vocab={vocab}
                                         token={token}
                                         onDeleteSuccess={refreshPayers}
+                                        guardianPayments={guardianPayments}
+                                        guardianPaymentsLoading={guardianPaymentsLoading}
+                                        openGuardianPayments={openGuardianPayments}
                                     />
                                 ) : (
                                     <PaymentsSection 
@@ -633,6 +670,7 @@ export default function App() {
                                     loadFees={loadFees}
                                     handleCreateFee={handleCreateFee}
                                     handleDeleteFee={handleDeleteFee}
+                                    handleRejectFeePayment={handleRejectFeePayment}
                                     formatMoney={formatMoney}
                                     formatCLP={formatCLP}
                                     parseCLP={parseCLP}
@@ -711,6 +749,7 @@ export default function App() {
                     payers={payers}
                     checkedInStudent={lastCheckedInStudent}
                     onStudentAcknowledged={() => setLastCheckedInStudent(null)}
+                    industry={branding?.industry}
                 />
             )}
 
@@ -846,13 +885,29 @@ export default function App() {
                     <TabButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} isDark={isDark} />
                 )}
                 {hasPermission('payments') && (
-                    <TabButton icon={CreditCard} label={branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos'} active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} isDark={isDark} />
+                    <TabButton 
+                        icon={CreditCard} 
+                        label={branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos'} 
+                        active={activeTab === 'payments'} 
+                        onClick={() => changeTab('payments')} 
+                        primaryColor={branding?.primaryColor} 
+                        isDark={isDark} 
+                        badge={branding?.industry === 'school_treasury' ? feesSummary?.metrics?.en_revision : undefined}
+                    />
                 )}
                 {hasPermission('expenses') && branding?.industry === 'school_treasury' && (
                     <TabButton icon={ShoppingCart} label="Compras" active={activeTab === 'expenses'} onClick={() => changeTab('expenses')} primaryColor={branding?.primaryColor} isDark={isDark} />
                 )}
-                {hasPermission('attendance') && branding?.industry === 'school_treasury' && (
-                    <TabButton icon={Calendar} label="Horario" active={activeTab === 'schedule'} onClick={() => changeTab('schedule')} primaryColor={branding?.primaryColor} isDark={isDark} />
+                {/* Horario - Ahora siempre visible para school_treasury con nombre apropiado si tiene permiso */}
+                {hasPermission('attendance') && (
+                    <TabButton 
+                        icon={Calendar} 
+                        label="Horario" 
+                        active={activeTab === 'schedule'} 
+                        onClick={() => changeTab('schedule')} 
+                        primaryColor={branding?.primaryColor} 
+                        isDark={isDark} 
+                    />
                 )}
                 {/* Profile tab con foto */}
                 <button
@@ -878,11 +933,11 @@ export default function App() {
     );
 }
 
-function SidebarButton({ icon: Icon, label, active, onClick, primaryColor, isDark }: { icon: any, label: string, active: boolean, onClick: () => void, primaryColor?: string, isDark?: boolean }) {
+function SidebarButton({ icon: Icon, label, active, onClick, primaryColor, isDark, badge }: { icon: any, label: string, active: boolean, onClick: () => void, primaryColor?: string, isDark?: boolean, badge?: number }) {
     return (
         <button onClick={onClick} 
             style={active ? { backgroundColor: primaryColor || '#6366f1' } : {}}
-            className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 w-full group ${
+            className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 w-full group relative ${
                 active 
                     ? 'text-white shadow-lg' 
                     : isDark 
@@ -891,15 +946,20 @@ function SidebarButton({ icon: Icon, label, active, onClick, primaryColor, isDar
             }`}>
             <Icon size={20} strokeWidth={active ? 3 : 2} className={`transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`} />
             <span className="text-[11px] font-black uppercase tracking-widest">{label}</span>
+            {badge && badge > 0 && (
+                <div className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-amber-400 text-zinc-950 text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                    {badge}
+                </div>
+            )}
         </button>
     );
 }
 
-function TabButton({ icon: Icon, label, active, onClick, primaryColor = '#000', isDark }: { icon: any, label: string, active: boolean, onClick: () => void, primaryColor?: string, isDark?: boolean }) {
+function TabButton({ icon: Icon, label, active, onClick, primaryColor = '#000', isDark, badge }: { icon: any, label: string, active: boolean, onClick: () => void, primaryColor?: string, isDark?: boolean, badge?: number }) {
     return (
         <button 
             onClick={onClick} 
-            className={`flex flex-col items-center gap-1 transition-all duration-200 ${
+            className={`flex flex-col items-center gap-1 transition-all duration-200 relative ${
                 active 
                     ? '' 
                     : isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600'
@@ -912,6 +972,11 @@ function TabButton({ icon: Icon, label, active, onClick, primaryColor = '#000', 
             >
                 <Icon size={22} strokeWidth={active ? 3 : 2.5} />
             </div>
+            {badge && badge > 0 && (
+                <div className="absolute top-0 right-0 min-w-[16px] h-[16px] bg-amber-400 text-zinc-950 text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                    {badge}
+                </div>
+            )}
             <span className={`text-[7px] font-black uppercase tracking-[0.2em] transition-all ${active ? 'opacity-100' : 'opacity-60'}`}>{label}</span>
         </button>
     );

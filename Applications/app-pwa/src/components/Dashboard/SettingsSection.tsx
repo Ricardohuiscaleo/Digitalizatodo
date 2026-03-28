@@ -207,6 +207,8 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
         }
     }, [showPricingModal, plansList]);
 
+    const isTreasury = branding?.industry === 'school_treasury';
+
     const handlePlanPriceInput = (planId: string, value: string) => {
         const cleanValue = value.replace(/\D/g, '');
         const numericValue = cleanValue === '' ? 0 : parseInt(cleanValue);
@@ -517,18 +519,20 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
             <div className="grid gap-3 pt-2">
                 <p className={`text-[10px] font-black ${isDark ? 'text-zinc-500' : 'text-zinc-400'} uppercase tracking-[0.4em] ml-3 mb-1 opaciy-60`}>ADMINISTRACIÓN</p>
                 
-                <ActionCard 
-                    icon={CreditCard} 
-                    title="Planes y Precios" 
-                    description="Gestiona las cuotas mensuales"
-                    onClick={() => setShowPricingModal(true)}
-                    color="indigo"
-                />
+                {!isTreasury && (
+                    <ActionCard 
+                        icon={CreditCard} 
+                        title="Planes y Precios" 
+                        description="Gestiona las cuotas mensuales"
+                        onClick={() => setShowPricingModal(true)}
+                        color="indigo"
+                    />
+                )}
 
                 <ActionCard 
                     icon={Calendar} 
-                    title="Horarios Dojo" 
-                    description="Configura las clases semanales"
+                    title={isTreasury ? "Horarios / Talleres" : "Horarios Dojo"} 
+                    description={isTreasury ? "Configura los bloques de clases" : "Configura las clases semanales"}
                     onClick={() => {
                         loadSchedules();
                         setShowSchedulesModal(true);
@@ -547,7 +551,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                 <ActionCard 
                     icon={ShieldCheck} 
                     title="Términos Legales" 
-                    description="Contrato de membrecía digital"
+                    description={isTreasury ? "Reglamento y términos" : "Contrato de membrecía digital"}
                     onClick={() => {
                         loadTenantTerms();
                         setShowTermsModal(true);
@@ -555,13 +559,15 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                     color="blue"
                 />
 
-                <ActionCard 
-                    icon={QrCode} 
-                    title="Punto de Marcación" 
-                    description="Cámara / Escáner para el Dojo"
-                    onClick={() => window.location.href = '/dashboard/checkin'}
-                    color="rose"
-                />
+                {!isTreasury && (
+                    <ActionCard 
+                        icon={QrCode} 
+                        title="Punto de Marcación" 
+                        description="Cámara / Escáner para el Dojo"
+                        onClick={() => window.location.href = '/dashboard/checkin'}
+                        color="rose"
+                    />
+                )}
             </div>
 
             {/* LINK DE REGISTRO */}
@@ -628,7 +634,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                             : 'text-zinc-500 hover:text-zinc-400'
                                         }`}
                                     >
-                                        <Home size={14} /> Ser parte del Dojo
+                                        <Home size={14} /> {isTreasury ? "Cuotas Mensuales" : "Ser parte del Dojo"}
                                     </button>
                                     <button 
                                         onClick={() => setPricingCategory('vip')}
@@ -638,7 +644,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                             : 'text-zinc-500 hover:text-zinc-400'
                                         }`}
                                     >
-                                        <Star size={14} /> VIP 1A1
+                                        <Star size={14} /> {isTreasury ? "Matrículas / Otros" : "VIP 1A1"}
                                     </button>
                                 </div>
 
@@ -727,7 +733,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                                             {billingCycleLabels[plan.billing_cycle] || plan.billing_cycle?.replace('_', ' ') || 'PLAN'}
                                                         </span>
                                                         <p className={`text-[11px] font-black uppercase tracking-tight ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>
-                                                            {dojoType === 'kids' ? 'SER PARTE DEL DOJO KIDS' : 'SER PARTE DEL DOJO'}
+                                                            {isTreasury ? (dojoType === 'kids' ? 'CUOTAS ALUMNOS' : 'CUOTAS GENERALES') : (dojoType === 'kids' ? 'SER PARTE DEL DOJO KIDS' : 'SER PARTE DEL DOJO')}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -1432,7 +1438,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                             
                                             if (isHeader) {
                                                 const todayMonth = new Intl.DateTimeFormat('es-CL', { month: 'short', year: 'numeric' }).format(new Date());
-                                                const autoTitle = `REGLAMENTO Y CONDICIONES - ${branding?.name?.toUpperCase() || 'LA ACADEMIA'}`;
+                                                const autoTitle = `REGLAMENTO Y CONDICIONES - ${branding?.name?.toUpperCase() || (isTreasury ? 'EL COLEGIO' : 'LA ACADEMIA')}`;
                                                 const autoVer = `Versión: ${tenantTerms?.version || '1.0'} (${todayMonth})`;
                                                 displayContent = `# ${autoTitle}\n*${autoVer}*\n\n${sec.content}`;
                                             }

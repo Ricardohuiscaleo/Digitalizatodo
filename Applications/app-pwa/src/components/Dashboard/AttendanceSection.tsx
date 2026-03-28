@@ -73,21 +73,23 @@ const AttendanceSection: React.FC<AttendanceSectionProps> = ({
                 <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 group-focus-within:text-zinc-950 text-zinc-300 transition-colors z-10" size={20} />
                 <input
                     type="text"
-                    placeholder="Buscar participante..."
+                    placeholder={branding?.industry === 'school_treasury' ? "BUSCAR ALUMNO..." : "BUSCAR PARTICIPANTE..."}
                     className="w-full bg-white pl-16 pr-6 py-3 rounded-[2.5rem] text-base font-black text-zinc-950 placeholder:text-zinc-300 placeholder:font-black placeholder:uppercase placeholder:tracking-widest focus:outline-none transition-all duration-300 shadow-[8px_8px_16px_#e5e5e5,-8px_-8px_16px_#ffffff] focus:shadow-[inset_4px_4px_8px_#e5e5e5,inset_-4px_-4px_8px_#ffffff] border-2 border-zinc-100 focus:border-zinc-300"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
 
-            <button
-                onClick={() => setShowQRModal(true)}
-                style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
-                className="w-full text-white rounded-2xl p-4 flex items-center justify-center gap-3 shadow-md border-b-4 border-black/20 transition-all active:scale-95 active:border-b-0"
-            >
-                <QrCode size={20} className="text-white" />
-                <span className="text-[11px] font-black uppercase tracking-widest text-white">ACTIVAR ASISTENCIA DINÁMICA QR</span>
-            </button>
+            {branding?.industry !== 'school_treasury' && (
+                <button
+                    onClick={() => setShowQRModal(true)}
+                    style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
+                    className="w-full text-white rounded-2xl p-4 flex items-center justify-center gap-3 shadow-md border-b-4 border-black/20 transition-all active:scale-95 active:border-b-0"
+                >
+                    <QrCode size={20} className="text-white" />
+                    <span className="text-[11px] font-black uppercase tracking-widest text-white">ACTIVAR ASISTENCIA DINÁMICA QR</span>
+                </button>
+            )}
 
             {/* Banner de Clase Activa */}
             {activeSchedule && (
@@ -133,6 +135,7 @@ const AttendanceSection: React.FC<AttendanceSectionProps> = ({
                                                 modality={student.modality}
                                                 isDark={false}
                                                 ring={isPresent ? 'ring-emerald-400' : 'ring-zinc-100'}
+                                                industry={branding?.industry}
                                             />
                                             <span>{student.name}</span>
                                         </div>
@@ -202,6 +205,7 @@ const AttendanceSection: React.FC<AttendanceSectionProps> = ({
                                         modality={student.modality}
                                         showPayerDot={!isPresent}
                                         isDark={false}
+                                        industry={branding?.industry}
                                     />
                                 <p className={`font-black text-[9px] text-center leading-tight line-clamp-2 w-full uppercase mt-1 ${isPresent ? 'text-emerald-900' : 'text-zinc-800'}`}>
                                     {student.name.split(' ')[0]}

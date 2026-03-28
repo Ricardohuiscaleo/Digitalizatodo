@@ -431,15 +431,15 @@ class GuardianController extends Controller
         $currentYear = $now->year;
 
         // Deudas: cuotas pendientes o en revisión
-        $debtsQuery = \App\Models\FeePayment::where('fee_payments.guardian_id', $guardian->id)
+        $debtsPayments = \App\Models\FeePayment::where('fee_payments.guardian_id', $guardian->id)
             ->whereIn('fee_payments.status', ['pending', 'review'])
-            ->join('fees', 'fee_payments.fee_id', '=', 'fees.id');
+            ->with('fee')
+            ->get();
         
-        $debtsAmount = (float) $debtsQuery->sum('fees.amount');
-        $debtsPayments = $debtsQuery->select('fee_payments.*')->with('fee')->get();
+        $debtsAmount = $debtsPayments->sum(function($p) { return (float)($p->fee->amount ?? 0); });
 
         // Devoluciones: cuotas pagadas/aprobadas de meses ESTRICTAMENTE futuros
-        $refundsQuery = \App\Models\FeePayment::where('fee_payments.guardian_id', $guardian->id)
+        $refundsPayments = \App\Models\FeePayment::where('fee_payments.guardian_id', $guardian->id)
             ->where('fee_payments.status', 'paid')
             ->where(function($q) use ($currentMonth, $currentYear) {
                 $q->where('fee_payments.period_year', '>', $currentYear)
@@ -448,10 +448,10 @@ class GuardianController extends Controller
                           ->where('fee_payments.period_month', '>', $currentMonth);
                   });
             })
-            ->join('fees', 'fee_payments.fee_id', '=', 'fees.id');
-
-        $refundsAmount = (float) $refundsQuery->sum('fees.amount');
-        $refundsPayments = $refundsQuery->select('fee_payments.*')->with('fee')->get();
+            ->with('fee')
+            ->get();
+        
+        $refundsAmount = $refundsPayments->sum(function($p) { return (float)($p->fee->amount ?? 0); });
 
         return response()->json([
             'guardian' => [

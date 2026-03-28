@@ -83,6 +83,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
     const [showCreateFee, setShowCreateFee] = useState(false);
     const [showPushModal, setShowPushModal] = useState(false);
     const [showTermsModal, setShowTermsModal] = useState(false);
+    const [showSchedulesModal, setShowSchedulesModal] = useState(false);
     const [lastCheckedInStudent, setLastCheckedInStudent] = useState<any>(null);
 
     useEffect(() => {
@@ -125,7 +126,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         }
         if (newTab === 'expenses') common.loadExpenses();
         if (newTab === 'schedule') common.loadSchedules();
-        if (newTab === 'fees') treasury.loadFees();
+        if (newTab === 'fees' || (newTab === 'payments' && branding?.industry === 'school_treasury')) treasury.loadFees();
     };
 
     const hasPermission = useCallback((module: string) => {
@@ -219,10 +220,6 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
                     martialArts.setAttendanceHistory(attendanceHistoryData?.attendance || []);
                 }
                 
-                if (profile.tenant?.industry === 'school_treasury') {
-                    treasury.loadFees();
-                }
-
                 getAppUpdates('staff', profile.tenant?.industry).then(d => common.setAppUpdates(d?.updates ?? []));
                 getNotifications(tenantSlug, storedToken).then(d => {
                     if (d?.unread !== undefined) common.setUnreadCount(d.unread);
@@ -438,9 +435,10 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         setPaymentActionPayer(null);
     };
 
+    const isTreasury = branding?.industry === 'school_treasury';
     const STATUS_LABEL: Record<string, { label: string; color: string }> = {
-        pending: { label: 'Pendiente', color: 'bg-rose-50 text-rose-600 border-rose-100' },
-        review:  { label: 'En revisión', color: 'bg-amber-50 text-amber-600 border-amber-100' },
+        pending: { label: isTreasury ? 'Moroso' : 'Pendiente', color: 'bg-rose-50 text-rose-600 border-rose-100' },
+        review:  { label: isTreasury ? 'Pendiente' : 'En revisión', color: 'bg-amber-50 text-amber-600 border-amber-100' },
         paid:    { label: 'Pagado', color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
     };
 
@@ -462,6 +460,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         showCreateFee, setShowCreateFee,
         showPushModal, setShowPushModal,
         showTermsModal, setShowTermsModal,
+        showSchedulesModal, setShowSchedulesModal,
         lastCheckedInStudent, setLastCheckedInStudent,
 
         // Spread specialized hooks (Common, Treasury, Martial Arts)

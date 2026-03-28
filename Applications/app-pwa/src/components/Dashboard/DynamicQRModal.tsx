@@ -13,6 +13,7 @@ interface DynamicQRModalProps {
     payers: any[];
     checkedInStudent?: any;
     onStudentAcknowledged?: () => void;
+    industry?: string;
 }
 
 export default function DynamicQRModal({ 
@@ -22,7 +23,8 @@ export default function DynamicQRModal({
     primaryColor, 
     payers, 
     checkedInStudent, 
-    onStudentAcknowledged 
+    onStudentAcknowledged,
+    industry = 'martial_arts'
 }: DynamicQRModalProps) {
     const [qrData, setQrData] = useState<string | null>(null);
     const [timeLeft, setTimeLeft] = useState(60);
@@ -141,6 +143,7 @@ export default function DynamicQRModal({
                                 modality={detectedStudent.modality}
                                 isDark={false}
                                 ring="ring-4 ring-emerald-500 bg-white"
+                                industry={industry}
                             />
                             <div className="absolute -right-2 -bottom-2 z-30 w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg border-4 border-white">
                                 <Check size={20} />

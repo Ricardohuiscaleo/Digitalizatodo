@@ -16,6 +16,7 @@ interface StudentAvatarProps {
     showPayerDot?: boolean;
     isDark?: boolean;
     modality?: string | null; // 'gi' | 'nogi' | 'both'
+    industry?: string;       // 'martial_arts' | 'school_treasury'
 }
 
 export function StudentAvatar({
@@ -30,6 +31,7 @@ export function StudentAvatar({
     showPayerDot = false,
     isDark = true,
     modality,
+    industry = 'martial_arts',
 }: StudentAvatarProps) {
     const payerDot = payerStatus === 'paid'
         ? 'bg-emerald-500'
@@ -103,7 +105,7 @@ export function StudentAvatar({
             )}
 
             {/* Globito dorado — grados (derecha centro) */}
-            {degrees >= 0 && (
+            {industry === 'martial_arts' && degrees >= 0 && (
                 <div
                     className="absolute rounded-full bg-[#c9a84c] border border-zinc-900 flex items-center justify-center z-10 shadow-lg"
                     style={{ 

@@ -53,9 +53,6 @@ export default function OverviewTreasury({ branding, schedulesList, feesSummary 
                     </div>
                 ))}
             </div>
-
-            {/* Horario del Colegio (Talleres/Clases) */}
-            <TodaySchedule schedules={schedulesList} primaryColor={branding?.primaryColor} />
         </div>
     );
 }

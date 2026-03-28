@@ -186,6 +186,7 @@ export function StudentProfileSection({
                             modality={student.modality}
                             isDark={isDark}
                             ring={isDark ? 'ring-zinc-800 bg-zinc-900' : 'ring-zinc-100 bg-zinc-50'}
+                            industry={isSchoolTreasury ? 'school_treasury' : 'martial_arts'}
                         />
                         {studentPhotoLoadingId === String(student.id) && (
                             <div className="absolute inset-0 bg-white/80 rounded-2xl flex items-center justify-center z-10">
@@ -263,6 +264,7 @@ export function StudentProfileSection({
                                 modality={selfStudent?.modality}
                                 isDark={isDark}
                                 ring="ring-2 ring-white/20 bg-white/10"
+                                industry={isSchoolTreasury ? 'school_treasury' : 'martial_arts'}
                             />
                             {isUploadingPhoto && (
                                 <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center rounded-2xl z-10">

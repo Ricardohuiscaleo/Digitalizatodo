@@ -747,6 +747,19 @@ export async function approveFeePayment(tenantId: string, token: string, feeId: 
     }
 }
 
+export async function rejectFeePayment(tenantId: string, token: string, feeId: number, data: { guardian_id: number; payment_id: number; notes?: string }) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/fees/${feeId}/reject-payment`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        return await safeJson(response);
+    } catch {
+        return { message: 'Error de conexión' };
+    }
+}
+
 export async function uploadFeeProof(tenantId: string, token: string, feeId: number, file: File) {
     try {
         const formData = new FormData();

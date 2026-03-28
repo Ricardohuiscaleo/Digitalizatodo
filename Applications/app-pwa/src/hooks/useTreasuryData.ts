@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from 'react';
-import { getFees, getFeesGuardiansSummary, getFeeDetail, createFee, deleteFee, approveFeePayment } from "@/lib/api";
+import { useState, useCallback, useEffect } from 'react';
+import { getFees, getFeesGuardiansSummary, getFeeDetail, createFee, deleteFee, approveFeePayment, rejectFeePayment, getGuardianSettlement } from "@/lib/api";
 
 export function useTreasuryData(slug: string | undefined, token: string | null, industry: string | undefined) {
     const [feesList, setFeesList] = useState<any[]>([]);
@@ -20,11 +20,41 @@ export function useTreasuryData(slug: string | undefined, token: string | null, 
     const [feeApproveMethod, setFeeApproveMethod] = useState<'cash' | 'transfer'>('cash');
     const [feeApproveNotes, setFeeApproveNotes] = useState('');
     const [feeApprovingLoading, setFeeApprovingLoading] = useState(false);
-    const [feesGuardianFilter, setFeesGuardianFilter] = useState<'all' | 'pending' | 'paid'>('all');
+    const [feesGuardianFilter, setFeesGuardianFilter] = useState<'all' | 'pending' | 'paid' | 'overdue' | 'review'>('all');
     const [feesSearch, setFeesSearch] = useState('');
     const [feesGuardianDropdown, setFeesGuardianDropdown] = useState<string | null>(null);
     const [feesBubbleModal, setFeesBubbleModal] = useState<any>(null);
     const [feesView, setFeesView] = useState<'list' | 'history'>('list');
+    const [guardianPayments, setGuardianPayments] = useState<any[]>([]);
+    const [guardianPaymentsLoading, setGuardianPaymentsLoading] = useState(false);
+
+    const openGuardianPayments = useCallback(async (guardian: any) => {
+        if (!guardian || !slug || !token) return;
+        setGuardianPaymentsLoading(true);
+        try {
+            const data = await getGuardianSettlement(slug, token, guardian.id);
+            // Combinamos debts and refunds if we want to show everything, or just debts
+            const allPayments = [
+                ...(data?.debts?.payments || []),
+                ...(data?.refunds?.payments || [])
+            ];
+            setGuardianPayments(allPayments);
+        } catch (error) {
+            console.error("Error loading guardian payments:", error);
+            setGuardianPayments([]);
+        } finally {
+            setGuardianPaymentsLoading(false);
+        }
+    }, [slug, token]);
+
+    // Auto-load payments when modal opens
+    useEffect(() => {
+        if (feesBubbleModal?.id) {
+            openGuardianPayments(feesBubbleModal);
+        } else {
+            setGuardianPayments([]);
+        }
+    }, [feesBubbleModal?.id, openGuardianPayments]);
 
     const filteredFees = useCallback((searchTerm: string) => {
         if (!searchTerm) return feesList;
@@ -50,6 +80,13 @@ export function useTreasuryData(slug: string | undefined, token: string | null, 
             setFeesLoading(false);
         }
     }, [slug, token, industry]);
+
+    // Carga inicial reactiva
+    useEffect(() => {
+        if (slug && token && industry === 'school_treasury') {
+            loadFees();
+        }
+    }, [slug, token, industry, loadFees]);
 
     const handleCreateFee = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -98,6 +135,21 @@ export function useTreasuryData(slug: string | undefined, token: string | null, 
         await loadFees();
     };
 
+    const handleRejectFeePayment = async (guardianId: number, paymentId: number, notes?: string) => {
+        if (!slug || !token || !selectedFee) return;
+        setFeeApprovingLoading(true);
+        await rejectFeePayment(slug, token, selectedFee.id, {
+            guardian_id: guardianId,
+            payment_id: paymentId,
+            notes: notes || 'Pago rechazado por el tesorero.'
+        });
+        setFeeApprovingLoading(false);
+        // Refresh detail and summary
+        const detail = await getFeeDetail(slug, token, selectedFee.id);
+        setFeePayments(detail?.payments || []);
+        await loadFees();
+    };
+
     const openFee = async (fee: any) => {
         if (!slug || !token) return;
         setSelectedFee(fee);
@@ -126,6 +178,7 @@ export function useTreasuryData(slug: string | undefined, token: string | null, 
         feesGuardianFilter, setFeesGuardianFilter, feesSearch, setFeesSearch,
         feesGuardianDropdown, setFeesGuardianDropdown, feesBubbleModal, setFeesBubbleModal,
         feesView, setFeesView, filteredFees,
-        loadFees, openFee, handleDeleteFee, handleCreateFee, handleApproveFeePayment
+        guardianPayments, guardianPaymentsLoading,
+        loadFees, openFee, handleDeleteFee, handleCreateFee, handleApproveFeePayment, handleRejectFeePayment, openGuardianPayments
     };
 }
