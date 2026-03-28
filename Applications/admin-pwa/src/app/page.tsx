@@ -30,7 +30,9 @@ import {
   Sun,
   Moon,
   CreditCard,
-  ChevronRight
+  ChevronRight,
+  Loader2,
+  Trash2
 } from 'lucide-react';
 
 import { Card } from "@/components/ui/card";
@@ -240,6 +242,49 @@ export default function DeepAdminDashboard() {
     } else {
       alert("Error al crear tenant: " + (result?.error || "Verifique los datos"));
     }
+  };
+
+  const [tenantUsers, setTenantUsers] = useState<any[]>([]);
+  const [isUsersLoading, setIsUsersLoading] = useState(false);
+  const [newTenantUser, setNewTenantUser] = useState({
+    name: '', email: '', password: '', role: 'admin'
+  });
+
+  const loadTenantUsers = async (tenantId: string | number) => {
+    const token = localStorage.getItem('super_admin_token');
+    if (!token) return;
+    setIsUsersLoading(true);
+    const { getTenantUsers } = await import('@/lib/api');
+    const users = await getTenantUsers(token, tenantId);
+    setTenantUsers(users);
+    setIsUsersLoading(false);
+  };
+
+  const handleAddTenantUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem('super_admin_token');
+    if (!token || !editingTenant) return;
+
+    const { addTenantUser } = await import('@/lib/api');
+    const result = await addTenantUser(token, editingTenant.id, newTenantUser);
+    
+    if (result?.user) {
+      toast.success("Usuario creado e invitado");
+      setNewTenantUser({ name: '', email: '', password: '', role: 'admin' });
+      loadTenantUsers(editingTenant.id);
+    } else {
+      toast.error(result?.message || "Error al crear usuario");
+    }
+  };
+
+  const handleRemoveTenantUser = async (userId: string | number) => {
+    const token = localStorage.getItem('super_admin_token');
+    if (!token || !editingTenant) return;
+    if (!confirm("¿Seguro de remover este usuario de la academia?")) return;
+
+    const { removeTenantUser } = await import('@/lib/api');
+    await removeTenantUser(token, editingTenant.id, userId);
+    loadTenantUsers(editingTenant.id);
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
@@ -567,6 +612,7 @@ export default function DeepAdminDashboard() {
                                 onClick={() => {
                                   setEditingTenant({...t});
                                   setShowEditModal(true);
+                                  loadTenantUsers(t.id);
                                 }}
                               >
                                 <Settings size={16} className="text-muted-foreground" />
@@ -1028,6 +1074,93 @@ export default function DeepAdminDashboard() {
                         </div>
                       );
                     })}
+                  </div>
+
+                  <div className="pt-6 border-t border-border space-y-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between px-1">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-primary">Usuarios de la Academia</p>
+                        <Users size={14} className="text-zinc-500" />
+                      </div>
+
+                      {/* Lista de Usuarios */}
+                      <div className="space-y-2">
+                        {isUsersLoading ? (
+                          <div className="flex justify-center py-4">
+                            <Loader2 className="animate-spin text-zinc-500" size={16} />
+                          </div>
+                        ) : tenantUsers.length === 0 ? (
+                          <p className="text-[10px] text-zinc-500 text-center py-2 uppercase font-bold italic">Sin usuarios adicionales</p>
+                        ) : (
+                          tenantUsers.map((u: any) => (
+                            <div key={u.id} className="flex items-center justify-between p-3 rounded-2xl bg-zinc-950 border border-zinc-900 group">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-xl bg-zinc-900 flex items-center justify-center text-[10px] font-black uppercase text-zinc-400 border border-zinc-800">
+                                  {u.name?.[0] || 'U'}
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-black text-zinc-100 uppercase tracking-tighter leading-none">{u.name}</p>
+                                  <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest mt-1">{u.email} • {u.role}</p>
+                                </div>
+                              </div>
+                              <button 
+                                type="button"
+                                onClick={() => handleRemoveTenantUser(u.id)}
+                                className="opacity-0 group-hover:opacity-100 p-2 hover:bg-rose-500/10 text-rose-500/50 hover:text-rose-500 rounded-lg transition-all"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {/* Formulario Añadir Usuario */}
+                      <div className="bg-zinc-950/50 rounded-3xl p-4 border border-zinc-900 space-y-4">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 px-1">Invitar Usuario Nuevo</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <input 
+                            type="text" 
+                            placeholder="NOMBRE"
+                            value={newTenantUser.name}
+                            onChange={e => setNewTenantUser({...newTenantUser, name: e.target.value})}
+                            className="bg-black border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-300 placeholder:text-zinc-600 focus:border-primary outline-none transition-colors"
+                          />
+                          <input 
+                            type="email" 
+                            placeholder="EMAIL"
+                            value={newTenantUser.email}
+                            onChange={e => setNewTenantUser({...newTenantUser, email: e.target.value})}
+                            className="bg-black border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-300 placeholder:text-zinc-600 focus:border-primary outline-none transition-colors"
+                          />
+                          <input 
+                            type="password" 
+                            placeholder="CLAVE"
+                            value={newTenantUser.password}
+                            onChange={e => setNewTenantUser({...newTenantUser, password: e.target.value})}
+                            className="bg-black border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-300 placeholder:text-zinc-600 focus:border-primary outline-none transition-colors"
+                          />
+                          <select 
+                            value={newTenantUser.role}
+                            onChange={e => setNewTenantUser({...newTenantUser, role: e.target.value})}
+                            className="bg-black border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-300 focus:border-primary outline-none transition-colors appearance-none"
+                          >
+                            <option value="owner">Dueño</option>
+                            <option value="admin">Administrador</option>
+                            <option value="coach">Coach / Instructor</option>
+                            <option value="receptionist">Recepcionista</option>
+                          </select>
+                        </div>
+                        <Button 
+                          type="button"
+                          onClick={handleAddTenantUser}
+                          disabled={!newTenantUser.email || !newTenantUser.name || !newTenantUser.password}
+                          className="w-full h-10 rounded-2xl text-[9px] font-black uppercase tracking-widest"
+                        >
+                          Crear e Invitar
+                        </Button>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="pt-6 border-t border-border space-y-6">

@@ -185,3 +185,56 @@ export async function syncSaasPlanWithMP(token: string, planId: number | string,
         return null;
     }
 }
+
+// ─── Tenant-specific User Management ───────────────────────────────────────
+
+export async function getTenantUsers(token: string, tenantId: string | number) {
+    try {
+        const response = await fetch(`${API_URL}/admin/tenants/${tenantId}/users`, {
+            method: 'GET',
+            headers: {
+                ...defaultHeaders,
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        if (!response.ok) return [];
+        const data = await safeJson(response);
+        return data?.users || [];
+    } catch (error) {
+        console.error('Error fetching tenant users:', error);
+        return [];
+    }
+}
+
+export async function addTenantUser(token: string, tenantId: string | number, userData: any) {
+    try {
+        const response = await fetch(`${API_URL}/admin/tenants/${tenantId}/users`, {
+            method: 'POST',
+            headers: {
+                ...defaultHeaders,
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(userData),
+        });
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error adding tenant user:', error);
+        return null;
+    }
+}
+
+export async function removeTenantUser(token: string, tenantId: string | number, userId: string | number) {
+    try {
+        const response = await fetch(`${API_URL}/admin/tenants/${tenantId}/users/${userId}`, {
+            method: 'DELETE',
+            headers: {
+                ...defaultHeaders,
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error removing tenant user:', error);
+        return null;
+    }
+}
