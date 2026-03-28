@@ -288,16 +288,20 @@ class GuardianController extends Controller
             
             try {
                 // Optimizar logo a un máximo de 500x500px para la UI
-                $optimizedPath = $this->imageService->optimize($file, 150, 150, 80);
+                $imageInfo = $this->imageService->optimize($file, 150, 150, 80);
+                $optimizedPath = $imageInfo['path'];
+                $extension = $imageInfo['extension'];
                 
-                $filename = Str::uuid() . '.webp';
+                $filename = Str::uuid() . '.' . $extension;
                 $s3Path = 'digitalizatodo/' . $tenantId . '/logo/' . $filename;
                 
-                // Subir a S3 (sin ACL 'public' para evitar error)
+                // Subir a S3
                 Storage::disk('s3')->put($s3Path, file_get_contents($optimizedPath));
                 
                 // Limpiar temporal
-                unlink($optimizedPath);
+                if ($optimizedPath !== $file->getRealPath()) {
+                    unlink($optimizedPath);
+                }
 
                 $bucket = env('AWS_BUCKET', env('S3_BUCKET'));
                 $region = env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1'));
@@ -372,16 +376,20 @@ class GuardianController extends Controller
             
             try {
                 // Optimizar a un tamaño manejable para avatares (400x400)
-                $optimizedPath = $this->imageService->optimize($file, 150, 150, 80);
+                $imageInfo = $this->imageService->optimize($file, 150, 150, 80);
+                $optimizedPath = $imageInfo['path'];
+                $extension = $imageInfo['extension'];
                 
-                $filename = Str::uuid() . '.webp';
+                $filename = Str::uuid() . '.' . $extension;
                 $s3Path = 'digitalizatodo/' . $tenantId . '/guardians/' . $filename;
                 
                 // Subir a S3
                 Storage::disk('s3')->put($s3Path, file_get_contents($optimizedPath));
                 
                 // Limpiar temporal
-                unlink($optimizedPath);
+                if ($optimizedPath !== $file->getRealPath()) {
+                    unlink($optimizedPath);
+                }
 
                 $bucket = env('AWS_BUCKET', env('S3_BUCKET'));
                 $region = env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1'));

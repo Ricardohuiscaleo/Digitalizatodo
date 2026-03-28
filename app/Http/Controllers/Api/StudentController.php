@@ -102,17 +102,21 @@ class StudentController extends Controller
             $file = $request->file('photo');
             
             try {
-                // Optimizar y convertir a WebP
-                $optimizedPath = $this->imageService->optimize($file, 150, 150, 80);
+                // Optimizar y convertir
+                $imageInfo = $this->imageService->optimize($file, 150, 150, 80);
+                $optimizedPath = $imageInfo['path'];
+                $extension = $imageInfo['extension'];
                 
-                $filename = "student_{$student->id}_" . time() . ".webp";
+                $filename = "student_{$student->id}_" . time() . ".{$extension}";
                 $s3Path = "tenants/{$tenantId}/students/{$filename}";
 
-                // Subir a S3 el archivo optimizado (sin ACL 'public' para evitar error)
+                // Subir a S3 el archivo optimizado
                 $uploaded = Storage::disk('s3')->put($s3Path, file_get_contents($optimizedPath));
                 
-                // Limpiar archivo temporal
-                unlink($optimizedPath);
+                // Limpiar archivo temporal si no es el original
+                if ($optimizedPath !== $file->getRealPath()) {
+                    unlink($optimizedPath);
+                }
 
                 if ($uploaded) {
                     $url = Storage::disk('s3')->url($s3Path);

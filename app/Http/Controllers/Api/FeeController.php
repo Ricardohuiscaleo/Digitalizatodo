@@ -267,8 +267,11 @@ class FeeController extends Controller
 
         // Subir foto
         $file      = $request->file('proof');
-        $optimized = $this->imageService->optimize($file, 1200, 1200, 85);
-        $filename  = "fee_proof_{$id}_{$guardian->id}_" . time() . ".webp";
+        $imageInfo = $this->imageService->optimize($file, 1200, 1200, 85);
+        $optimized = $imageInfo['path'];
+        $extension = $imageInfo['extension'];
+        
+        $filename  = "fee_proof_{$id}_{$guardian->id}_" . time() . ".{$extension}";
         $s3Path    = "tenants/{$tenant->id}/fees/{$filename}";
 
         Storage::disk('s3')->put($s3Path, file_get_contents($optimized));
@@ -419,8 +422,11 @@ class FeeController extends Controller
 
         // Subir comprobante una sola vez
         $file      = $request->file('proof');
-        $optimized = $this->imageService->optimize($file, 1200, 1200, 85);
-        $filename  = "fee_proof_bulk_{$guardian->id}_" . time() . ".webp";
+        $imageInfo = $this->imageService->optimize($file, 1200, 1200, 85);
+        $optimized = $imageInfo['path'];
+        $extension = $imageInfo['extension'];
+        
+        $filename  = "fee_proof_bulk_{$guardian->id}_" . time() . ".{$extension}";
         $s3Path    = "tenants/{$tenant->id}/fees/{$filename}";
         Storage::disk('s3')->put($s3Path, file_get_contents($optimized));
         unlink($optimized);

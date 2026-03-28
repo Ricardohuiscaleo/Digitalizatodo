@@ -114,13 +114,16 @@ class ExpenseController extends Controller
         if (!$request->hasFile($field)) return null;
 
         try {
-            $file     = $request->file($field);
-            $optimized = $this->imageService->optimize($file, 1200, 1200, 85);
-            $filename  = "expense_{$prefix}_" . time() . ".webp";
+            $file      = $request->file($field);
+            $imageInfo = $this->imageService->optimize($file, 1200, 1200, 85);
+            $optimized = $imageInfo['path'];
+            $extension = $imageInfo['extension'];
+            
+            $filename  = "expense_{$prefix}_" . time() . ".{$extension}";
             $s3Path    = "tenants/{$tenantId}/expenses/{$filename}";
 
             Storage::disk('s3')->put($s3Path, file_get_contents($optimized));
-            unlink($optimized);
+            if ($optimized !== $file->getRealPath()) unlink($optimized);
 
             return Storage::disk('s3')->temporaryUrl($s3Path, now()->addHours(24));
         } catch (\Exception $e) {
