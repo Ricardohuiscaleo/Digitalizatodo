@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, CheckCircle2, QrCode, Edit2, X, Save, Loader2, User, MoreHorizontal, Users, UserCheck, UserX } from 'lucide-react';
+import { Search, CheckCircle2, QrCode, Edit2, X, Save, Loader2, User, MoreHorizontal, Users, UserCheck, UserX, Sparkles } from 'lucide-react';
 import { BeltDisplay } from './BeltDisplay';
 import { BeltBadge } from './BeltBadge';
 import { StudentAvatar } from './StudentAvatar';
@@ -298,17 +298,30 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
-                    <button
-                        onClick={() => setEditMode(!editMode)}
-                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
-                            editMode
-                                ? 'bg-amber-400 text-white shadow-lg shadow-amber-400/20'
-                                : isDark ? 'bg-zinc-700 text-zinc-400 hover:text-white' : 'bg-zinc-100 text-zinc-400 hover:text-zinc-600'
-                        }`}
-                        title="Modo Edición"
-                    >
-                        <Edit2 size={13} strokeWidth={3} />
-                    </button>
+                    <div className="flex items-center gap-2 border-l border-zinc-200 dark:border-zinc-700 pl-2">
+                        <button
+                            onClick={() => setIsSmartFilterEnabled(!isSmartFilterEnabled)}
+                            className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+                                isSmartFilterEnabled
+                                    ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                                    : isDark ? 'bg-zinc-700 text-zinc-400 hover:text-white' : 'bg-zinc-100 text-zinc-400 hover:text-zinc-600'
+                            }`}
+                            title={isSmartFilterEnabled ? "Filtro Inteligente Activo" : "Filtro Inteligente Apagado"}
+                        >
+                            <Sparkles size={13} strokeWidth={3} className={isSmartFilterEnabled ? 'animate-pulse' : ''} />
+                        </button>
+                        <button
+                            onClick={() => setEditMode(!editMode)}
+                            className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+                                editMode
+                                    ? 'bg-amber-400 text-white shadow-lg shadow-amber-400/20'
+                                    : isDark ? 'bg-zinc-700 text-zinc-400 hover:text-white' : 'bg-zinc-100 text-zinc-400 hover:text-zinc-600'
+                            }`}
+                            title="Modo Edición"
+                        >
+                            <Edit2 size={13} strokeWidth={3} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Barra de Selección Animada */}
