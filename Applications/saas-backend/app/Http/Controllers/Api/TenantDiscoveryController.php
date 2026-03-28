@@ -51,6 +51,18 @@ class TenantDiscoveryController extends Controller
         }
 
         foreach ($users as $u) {
+            // Check direct tenant_id
+            if ($u->tenant && $u->tenant->active) {
+                $tid = $u->tenant->id;
+                if (!isset($allTenantsMap[$tid])) {
+                    $allTenantsMap[$tid] = ['tenant' => $u->tenant, 'roles' => []];
+                }
+                if (!in_array('staff', $allTenantsMap[$tid]['roles'])) {
+                    $allTenantsMap[$tid]['roles'][] = 'staff';
+                }
+            }
+            
+            // Check multi-tenant relations
             foreach ($u->tenantUsers as $tu) {
                 if ($tu->tenant && $tu->tenant->active) {
                     $tid = $tu->tenant->id;
