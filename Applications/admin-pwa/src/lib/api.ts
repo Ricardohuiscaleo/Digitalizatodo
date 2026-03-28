@@ -223,6 +223,23 @@ export async function addTenantUser(token: string, tenantId: string | number, us
     }
 }
 
+export async function updateTenantUser(token: string, tenantId: string | number, userId: string | number, userData: any) {
+    try {
+        const response = await fetch(`${API_URL}/admin/tenants/${tenantId}/users/${userId}`, {
+            method: 'PATCH',
+            headers: {
+                ...defaultHeaders,
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(userData),
+        });
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error updating tenant user:', error);
+        return null;
+    }
+}
+
 export async function removeTenantUser(token: string, tenantId: string | number, userId: string | number) {
     try {
         const response = await fetch(`${API_URL}/admin/tenants/${tenantId}/users/${userId}`, {

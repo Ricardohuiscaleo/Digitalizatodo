@@ -32,7 +32,8 @@ import {
   CreditCard,
   ChevronRight,
   Loader2,
-  Trash2
+  Trash2,
+  Edit2
 } from 'lucide-react';
 
 import { Card } from "@/components/ui/card";
@@ -249,6 +250,7 @@ export default function DeepAdminDashboard() {
   const [newTenantUser, setNewTenantUser] = useState({
     name: '', email: '', password: '', role: 'admin'
   });
+  const [isEditingUser, setIsEditingUser] = useState<string | number | null>(null);
 
   const loadTenantUsers = async (tenantId: string | number) => {
     const token = localStorage.getItem('super_admin_token');
@@ -265,15 +267,33 @@ export default function DeepAdminDashboard() {
     const token = localStorage.getItem('super_admin_token');
     if (!token || !editingTenant) return;
 
-    const { addTenantUser } = await import('@/lib/api');
-    const result = await addTenantUser(token, editingTenant.id, newTenantUser);
-    
-    if (result?.user) {
-      toast.success("Usuario creado e invitado");
-      setNewTenantUser({ name: '', email: '', password: '', role: 'admin' });
-      loadTenantUsers(editingTenant.id);
+    if (isEditingUser) {
+      const { updateTenantUser } = await import('@/lib/api');
+      const result = await updateTenantUser(token, editingTenant.id, isEditingUser, {
+        name: newTenantUser.name,
+        role: newTenantUser.role,
+        password: newTenantUser.password || undefined
+      });
+
+      if (result?.user) {
+        toast.success("Usuario actualizado");
+        setIsEditingUser(null);
+        setNewTenantUser({ name: '', email: '', password: '', role: 'admin' });
+        loadTenantUsers(editingTenant.id);
+      } else {
+        toast.error(result?.message || "Error al actualizar");
+      }
     } else {
-      toast.error(result?.message || "Error al crear usuario");
+      const { addTenantUser } = await import('@/lib/api');
+      const result = await addTenantUser(token, editingTenant.id, newTenantUser);
+      
+      if (result?.user) {
+        toast.success("Usuario creado e invitado");
+        setNewTenantUser({ name: '', email: '', password: '', role: 'admin' });
+        loadTenantUsers(editingTenant.id);
+      } else {
+        toast.error(result?.message || "Error al crear usuario");
+      }
     }
   };
 
@@ -1103,21 +1123,48 @@ export default function DeepAdminDashboard() {
                                   <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest mt-1">{u.email} • {u.role}</p>
                                 </div>
                               </div>
-                              <button 
-                                type="button"
-                                onClick={() => handleRemoveTenantUser(u.id)}
-                                className="opacity-0 group-hover:opacity-100 p-2 hover:bg-rose-500/10 text-rose-500/50 hover:text-rose-500 rounded-lg transition-all"
-                              >
-                                <Trash2 size={12} />
-                              </button>
+                              <div className="flex items-center gap-1">
+                                <button 
+                                  type="button"
+                                  onClick={() => {
+                                    setIsEditingUser(u.id);
+                                    setNewTenantUser({ name: u.name, email: u.email, password: '', role: u.role });
+                                  }}
+                                  className="p-2 hover:bg-zinc-800 text-zinc-500 hover:text-white rounded-lg transition-all"
+                                >
+                                  <Edit2 size={12} />
+                                </button>
+                                <button 
+                                  type="button"
+                                  onClick={() => handleRemoveTenantUser(u.id)}
+                                  className="p-2 hover:bg-rose-500/10 text-rose-500/50 hover:text-rose-500 rounded-lg transition-all"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
                             </div>
                           ))
                         )}
                       </div>
 
-                      {/* Formulario Añadir Usuario */}
+                      {/* Formulario Añadir/Editar Usuario */}
                       <div className="bg-zinc-950/50 rounded-3xl p-4 border border-zinc-900 space-y-4">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 px-1">Invitar Usuario Nuevo</p>
+                        <div className="flex items-center justify-between px-1">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                            {isEditingUser ? 'Editar Usuario' : 'Invitar Usuario Nuevo'}
+                          </p>
+                          {isEditingUser && (
+                            <button 
+                              onClick={() => {
+                                setIsEditingUser(null);
+                                setNewTenantUser({ name: '', email: '', password: '', role: 'admin' });
+                              }}
+                              className="text-[8px] font-black text-rose-500 uppercase tracking-widest hover:underline"
+                            >
+                              Cancelar
+                            </button>
+                          )}
+                        </div>
                         <div className="grid grid-cols-2 gap-3">
                           <input 
                             type="text" 
@@ -1129,13 +1176,14 @@ export default function DeepAdminDashboard() {
                           <input 
                             type="email" 
                             placeholder="EMAIL"
+                            disabled={!!isEditingUser}
                             value={newTenantUser.email}
                             onChange={e => setNewTenantUser({...newTenantUser, email: e.target.value})}
-                            className="bg-black border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-300 placeholder:text-zinc-600 focus:border-primary outline-none transition-colors"
+                            className={`bg-black border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-300 placeholder:text-zinc-600 focus:border-primary outline-none transition-colors ${isEditingUser ? 'opacity-50 cursor-not-allowed' : ''}`}
                           />
                           <input 
                             type="password" 
-                            placeholder="CLAVE"
+                            placeholder={isEditingUser ? "NUEVA CLAVE (OPCIONAL)" : "CLAVE"}
                             value={newTenantUser.password}
                             onChange={e => setNewTenantUser({...newTenantUser, password: e.target.value})}
                             className="bg-black border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-300 placeholder:text-zinc-600 focus:border-primary outline-none transition-colors"
@@ -1154,10 +1202,10 @@ export default function DeepAdminDashboard() {
                         <Button 
                           type="button"
                           onClick={handleAddTenantUser}
-                          disabled={!newTenantUser.email || !newTenantUser.name || !newTenantUser.password}
+                          disabled={!newTenantUser.name || (!isEditingUser && (!newTenantUser.email || !newTenantUser.password))}
                           className="w-full h-10 rounded-2xl text-[9px] font-black uppercase tracking-widest"
                         >
-                          Crear e Invitar
+                          {isEditingUser ? 'Guardar Cambios' : 'Crear e Invitar'}
                         </Button>
                       </div>
                     </div>

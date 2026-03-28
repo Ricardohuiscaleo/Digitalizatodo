@@ -75,6 +75,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // User management per tenant
     Route::get('admin/tenants/{id}/users', [\App\Http\Controllers\Api\SuperAdminController::class, 'getTenantUsers']);
     Route::post('admin/tenants/{id}/users', [\App\Http\Controllers\Api\SuperAdminController::class, 'addTenantUser']);
+    Route::patch('admin/tenants/{id}/users/{userId}', [\App\Http\Controllers\Api\SuperAdminController::class, 'updateTenantUser']);
     Route::delete('admin/tenants/{id}/users/{userId}', [\App\Http\Controllers\Api\SuperAdminController::class, 'removeTenantUser']);
 
     // SaaS Plan Management
