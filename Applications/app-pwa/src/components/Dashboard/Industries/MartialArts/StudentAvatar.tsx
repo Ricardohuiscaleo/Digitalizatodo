@@ -103,7 +103,7 @@ export function StudentAvatar({
             )}
 
             {/* Globito dorado — grados (derecha centro) */}
-            {degrees > 0 && (
+            {degrees >= 0 && (
                 <div
                     className="absolute rounded-full bg-[#c9a84c] border border-zinc-900 flex items-center justify-center z-10 shadow-lg"
                     style={{ 

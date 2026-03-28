@@ -48,7 +48,7 @@ export function BeltDisplay({ beltRank, degrees = 0, size = "sm" }: BeltDisplayP
 
             {/* Label */}
             <span className={`${textSize} font-black uppercase tracking-widest text-zinc-500 leading-none flex items-center gap-1`}>
-                {label}{degrees > 0 ? (degrees === 5 ? ' · 🎓' : ` · ${degrees}★`) : ''}
+                {label}{degrees >= 0 ? (degrees === 5 ? ' · 🎓' : ` · ${degrees}★`) : ''}
             </span>
         </div>
     );
