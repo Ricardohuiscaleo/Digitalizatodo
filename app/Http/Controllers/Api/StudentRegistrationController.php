@@ -30,6 +30,8 @@ class StudentRegistrationController extends Controller
             'url' => $request->fullUrl()
         ]);
         $tenant = app('currentTenant');
+        $isSchool = $tenant->industry === 'school_treasury';
+
         $validator = Validator::make($request->all(), [
             'guardian_name' => 'required|string|max:255',
             'guardian_email' => 'required|email|max:255',
@@ -46,7 +48,7 @@ class StudentRegistrationController extends Controller
             'plan_id' => 'nullable|exists:plans,id',
             'adult_plan_id' => 'nullable|exists:plans,id',
             'kid_plan_id' => 'nullable|exists:plans,id',
-            'accept_dojo_terms' => 'required|accepted',
+            'accept_dojo_terms' => $isSchool ? 'nullable' : 'required|accepted',
             'accept_digitaliza_terms' => 'required|accepted',
         ]);
 
