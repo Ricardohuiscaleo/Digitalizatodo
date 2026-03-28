@@ -5,7 +5,7 @@ import { Search, CheckCircle2, QrCode, Edit2, X, Save, Loader2, User, MoreHorizo
 import { BeltDisplay } from './BeltDisplay';
 import { BeltBadge } from './BeltBadge';
 import { StudentAvatar } from './StudentAvatar';
-import { updateStudentBjj, updateStudentProfile } from '@/lib/api';
+import { updateStudentBjj, updateStudentProfile, getStudent } from '@/lib/api';
 import { ALLIANCE_BJJ_GRADUATION, calcBeltProgress } from '@/lib/industryUtils';
 
 const BELT_OPTIONS = [
@@ -71,6 +71,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
     const [pendingChanges, setPendingChanges] = useState<{ label: string; from: string; to: string }[] | null>(null);
     const [editMode, setEditMode] = useState(false);
     const [filter, setFilter] = useState<'all' | 'present' | 'absent'>('all');
+    const [loadingStudent, setLoadingStudent] = useState(false);
     const [showOptions, setShowOptions] = useState(false);
     const optionsRef = useRef<HTMLDivElement>(null);
     const sheetRef = useRef<HTMLDivElement>(null);
@@ -118,23 +119,36 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
         return null;
     };
 
-    const openEdit = (student: any) => {
-        setEditingStudent(student);
-        setPendingChanges(null);
-        setBjjError(null);
-        setBjjForm({
-            name: student.name || '',
-            phone: student.phone || student.guardian_phone || '',
-            email: student.email || student.guardian_email || '',
-            belt_rank: student.belt_rank || '',
-            degrees: student.degrees ?? 0,
-            gender: student.gender || '',
-            weight: student.weight || '',
-            height: student.height || '',
-            modality: student.modality || 'gi',
-            category: student.category || 'adults',
-            previous_classes: student.previous_classes ?? 0,
-        });
+    const openEdit = async (student: any) => {
+        if (!branding?.slug || !token) return;
+        
+        setLoadingStudent(true);
+        setEditingStudent(student); // Abrimos con datos locales primero para feedback visual instantáneo
+        
+        try {
+            const response = await getStudent(branding.slug, token, student.id);
+            if (response && response.student) {
+                const s = response.student;
+                setBjjForm({
+                    name: s.name || '',
+                    phone: s.phone || '',
+                    email: s.email || '',
+                    belt_rank: s.belt_rank || '',
+                    degrees: s.degrees ?? 0,
+                    gender: s.gender || '',
+                    weight: s.weight || '',
+                    height: s.height || '',
+                    modality: s.modality || 'gi',
+                    category: s.category || 'adults',
+                    previous_classes: s.previous_classes ?? 0,
+                });
+            }
+        } catch (err) {
+            console.error("Error fetching student realtime:", err);
+            // Si falla, mantenemos los locales que ya cargamos
+        } finally {
+            setLoadingStudent(false);
+        }
     };
 
     const buildChangeSummary = () => {
@@ -265,8 +279,8 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                 </div>
             )}
 
-            {/* Buscador + Opciones */}
-            <div className="relative" ref={optionsRef}>
+            {/* Buscador + Barra de Selección (Filtros) */}
+            <div className="space-y-3">
                 <div className={`flex items-center gap-2.5 px-4 py-2 rounded-2xl border transition-all ${
                     isDark
                         ? 'bg-zinc-800 border-zinc-700 focus-within:border-zinc-500'
@@ -285,59 +299,56 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                     <button
-                        onClick={() => setShowOptions(v => !v)}
-                        className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-                            showOptions
-                                ? isDark ? 'bg-zinc-600 text-white' : 'bg-zinc-200 text-zinc-900'
-                                : isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600'
+                        onClick={() => setEditMode(!editMode)}
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+                            editMode
+                                ? 'bg-amber-400 text-white shadow-lg shadow-amber-400/20'
+                                : isDark ? 'bg-zinc-700 text-zinc-400 hover:text-white' : 'bg-zinc-100 text-zinc-400 hover:text-zinc-600'
                         }`}
+                        title="Modo Edición"
                     >
-                        <MoreHorizontal size={14} />
+                        <Edit2 size={13} strokeWidth={3} />
                     </button>
                 </div>
 
-                {/* Dropdown opciones */}
-                {showOptions && (
-                    <div className={`absolute right-0 top-full mt-2 w-52 rounded-2xl border shadow-xl z-50 overflow-hidden ${
-                        isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'
-                    }`}>
-                        <p className={`px-4 pt-3 pb-1 text-[8px] font-black uppercase tracking-[0.2em] ${
-                            isDark ? 'text-zinc-600' : 'text-zinc-400'
-                        }`}>Filtrar</p>
-                        {([
+                {/* Barra de Selección Animada */}
+                <div className={`flex p-1 rounded-2xl h-10 relative ${isDark ? 'bg-zinc-800/80' : 'bg-zinc-100/60'}`}>
+                    {(() => {
+                        const FILTERS = [
                             { key: 'all', label: 'Todos', icon: Users },
                             { key: 'present', label: 'Presentes', icon: UserCheck },
                             { key: 'absent', label: 'Ausentes', icon: UserX },
-                        ] as const).map(({ key, label, icon: Icon }) => (
-                            <button
-                                key={key}
-                                onClick={() => { setFilter(key); setEditMode(false); setShowOptions(false); }}
-                                className={`w-full flex items-center gap-3 px-4 py-2.5 text-[11px] font-black uppercase tracking-widest transition-colors ${
-                                    filter === key
-                                        ? isDark ? 'text-white bg-zinc-800' : 'text-zinc-900 bg-zinc-50'
-                                        : isDark ? 'text-zinc-500 hover:bg-zinc-800/50' : 'text-zinc-400 hover:bg-zinc-50'
-                                }`}
-                            >
-                                <Icon size={13} />
-                                {label}
-                                {filter === key && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400" />}
-                            </button>
-                        ))}
-                        <div className={`mx-4 my-1 border-t ${isDark ? 'border-zinc-800' : 'border-zinc-100'}`} />
-                        <button
-                            onClick={() => { setEditMode(v => !v); setShowOptions(false); }}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 mb-1 text-[11px] font-black uppercase tracking-widest transition-colors ${
-                                editMode
-                                    ? 'text-amber-400 bg-amber-400/10'
-                                    : isDark ? 'text-zinc-500 hover:bg-zinc-800/50' : 'text-zinc-400 hover:bg-zinc-50'
-                            }`}
-                        >
-                            <Edit2 size={13} />
-                            Editar perfiles
-                            {editMode && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-400" />}
-                        </button>
-                    </div>
-                )}
+                        ] as const;
+                        const activeIdx = FILTERS.findIndex(f => f.key === filter);
+                        
+                        return (
+                            <>
+                                <div
+                                    className={`absolute inset-y-1 rounded-xl shadow-sm border transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+                                        isDark ? 'bg-zinc-700 border-zinc-600' : 'bg-white border-zinc-100'
+                                    }`}
+                                    style={{
+                                        width: `calc(${100 / FILTERS.length}% - 2px)`,
+                                        transform: `translateX(${activeIdx * 100}%)`
+                                    }}
+                                />
+                                {FILTERS.map(f => (
+                                    <button key={f.key}
+                                        onClick={() => setFilter(f.key)}
+                                        className={`flex-1 relative z-10 flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest transition-colors duration-200 ${
+                                            filter === f.key
+                                                ? isDark ? 'text-white' : 'text-zinc-950'
+                                                : isDark ? 'text-zinc-500' : 'text-zinc-400'
+                                        }`}
+                                    >
+                                        <f.icon size={11} strokeWidth={3} />
+                                        {f.label}
+                                    </button>
+                                ))}
+                            </>
+                        );
+                    })()}
+                </div>
             </div>
 
             {/* VISTA DESKTOP: TABLA */}
@@ -543,12 +554,28 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                 <X size={14} className={isDark ? 'text-zinc-400' : 'text-zinc-500'} />
                             </button>
                         </div>
+                        
+                        <div className="relative">
+                            {loadingStudent && (
+                                <div className={`absolute inset-0 z-50 flex flex-col items-center justify-center backdrop-blur-sm transition-all ${
+                                    isDark ? 'bg-zinc-900/60' : 'bg-white/60'
+                                }`}>
+                                    <div className="relative">
+                                        <div className="w-12 h-12 rounded-full border-4 border-t-amber-500 border-zinc-200 animate-spin" />
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <div className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                                        </div>
+                                    </div>
+                                    <p className={`mt-4 text-[10px] font-black uppercase tracking-[0.2em] animate-pulse ${
+                                        isDark ? 'text-amber-500/80' : 'text-amber-600/80'
+                                    }`}>Sincronizando...</p>
+                                </div>
+                            )}
 
-                        <div className="px-6 py-4 space-y-3 max-h-[45vh] overflow-y-auto">
-
-                            {/* Datos personales */}
-                            <div>
-                                <p className={`text-[8px] font-black uppercase tracking-[0.2em] mb-3 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Datos personales</p>
+                            <div className={`px-6 py-4 space-y-3 max-h-[45vh] overflow-y-auto ${loadingStudent ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
+                                {/* Datos personales */}
+                                <div>
+                                    <p className={`text-[8px] font-black uppercase tracking-[0.2em] mb-3 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Datos personales</p>
                                 <div className="space-y-2">
                                     {([
                                         { label: 'Nombre completo', key: 'name', type: 'text' },
@@ -778,8 +805,9 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                 </p>
                             )}
                         </div>
+                    </div>
 
-                        {/* Acciones */}
+                    {/* Acciones */}
                         <div className={`px-6 pb-8 pt-4 border-t ${isDark ? 'border-zinc-800' : 'border-zinc-100'}`}>
                             <button onClick={() => handleRequestSave(false)}
                                 style={{ backgroundColor: primary }}

@@ -837,16 +837,16 @@ export default function App() {
             <nav className={`fixed bottom-0 left-0 right-0 pt-3 pb-8 px-6 flex justify-between items-center h-22 z-50 md:hidden transition-colors duration-500 ${
                 isMartialArts && isDark ? 'bg-zinc-950/95 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-50 text-zinc-950'
             } border-t`}>
-                <TabButton icon={LayoutDashboard} label="Inicio" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} primaryColor={branding?.primaryColor} />
+                <TabButton icon={LayoutDashboard} label="Inicio" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} primaryColor={branding?.primaryColor} isDark={isDark} />
                 {branding?.industry !== 'school_treasury' && (
-                    <TabButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} />
+                    <TabButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} isDark={isDark} />
                 )}
-                <TabButton icon={CreditCard} label={branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos'} active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} />
+                <TabButton icon={CreditCard} label={branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos'} active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} isDark={isDark} />
                 {branding?.industry === 'school_treasury' && (
-                    <TabButton icon={ShoppingCart} label="Compras" active={activeTab === 'expenses'} onClick={() => changeTab('expenses')} primaryColor={branding?.primaryColor} />
+                    <TabButton icon={ShoppingCart} label="Compras" active={activeTab === 'expenses'} onClick={() => changeTab('expenses')} primaryColor={branding?.primaryColor} isDark={isDark} />
                 )}
                 {branding?.industry === 'school_treasury' && (
-                    <TabButton icon={Calendar} label="Horario" active={activeTab === 'schedule'} onClick={() => changeTab('schedule')} primaryColor={branding?.primaryColor} />
+                    <TabButton icon={Calendar} label="Horario" active={activeTab === 'schedule'} onClick={() => changeTab('schedule')} primaryColor={branding?.primaryColor} isDark={isDark} />
                 )}
                 {/* Profile tab con foto */}
                 <button
@@ -889,16 +889,20 @@ function SidebarButton({ icon: Icon, label, active, onClick, primaryColor, isDar
     );
 }
 
-function TabButton({ icon: Icon, label, active, onClick, primaryColor = '#000' }: { icon: any, label: string, active: boolean, onClick: () => void, primaryColor?: string }) {
+function TabButton({ icon: Icon, label, active, onClick, primaryColor = '#000', isDark }: { icon: any, label: string, active: boolean, onClick: () => void, primaryColor?: string, isDark?: boolean }) {
     return (
         <button 
             onClick={onClick} 
-            className={`flex flex-col items-center gap-1 transition-all duration-200 ${active ? '' : 'text-zinc-400 hover:text-zinc-600'}`}
+            className={`flex flex-col items-center gap-1 transition-all duration-200 ${
+                active 
+                    ? '' 
+                    : isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600'
+            }`}
             style={active ? { color: primaryColor } : {}}
         >
             <div 
                 className={`p-2 transition-all duration-300 ${active ? 'rounded-2xl shadow-sm' : 'bg-transparent'}`}
-                style={active ? { backgroundColor: `${primaryColor}15` } : {}}
+                style={active ? { backgroundColor: `${primaryColor}20` } : {}}
             >
                 <Icon size={22} strokeWidth={active ? 3 : 2.5} />
             </div>

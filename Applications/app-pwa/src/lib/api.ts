@@ -281,6 +281,25 @@ export async function getStudents(tenantId: string, token: string) {
     }
 }
 
+export async function getStudent(tenantId: string, token: string, studentId: string | number) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/students/${studentId}`, {
+            method: 'GET',
+            cache: 'no-store' as RequestCache,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'X-Tenant-Id': tenantId,
+            },
+        });
+
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error fetching student:', error);
+        return null;
+    }
+}
+
 export async function storeAttendance(tenantId: string, token: string, data: { student_id: string, status: string, notes?: string }) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/attendance`, {
