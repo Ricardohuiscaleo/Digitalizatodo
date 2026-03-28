@@ -57,6 +57,23 @@ function getStudentCategory(student: any): 'adults' | 'kids' {
     return 'adults';
 }
 
+// Helper: Formatear fecha de forma amigable (D MMM, YYYY)
+function formatDateFriendly(dateStr: string) {
+    if (!dateStr) return '';
+    // Intentar manejar YYYY-MM-DD sin problemas de zona horaria
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+        const year = parseInt(parts[0]);
+        const month = parseInt(parts[1]) - 1;
+        const day = parseInt(parts[2]);
+        const date = new Date(year, month, day);
+        return date.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', '');
+    }
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', '');
+}
+
 export function PaymentsMartialArts({
     paymentTab,
     setPaymentTab,
@@ -82,6 +99,11 @@ export function PaymentsMartialArts({
 }: PaymentsMartialArtsProps) {
     const [showBankInfo, setShowBankInfo] = React.useState(false);
     const [isBuying, setIsBuying] = React.useState<string | null>(null);
+    const [expandedStudents, setExpandedStudents] = React.useState<Record<string, boolean>>({});
+
+    const toggleStudentExpansion = (sid: string) => {
+        setExpandedStudents(prev => ({ ...prev, [sid]: !prev[sid] }));
+    };
 
     // Separar alumnos por categoría
     const adultStudents = students.filter(s => getStudentCategory(s) === 'adults');
@@ -142,6 +164,121 @@ export function PaymentsMartialArts({
         } finally {
             setIsUploadingPending(null);
         }
+    };
+
+    const renderPaymentCard = (payment: any, student: any) => {
+        const pid = String(payment.id);
+        const isOpen = pendingPaymentId === pid;
+        const isInReview = payment.status === 'pending_review';
+        const isUploading = isUploadingPending === pid;
+
+        return (
+            <div key={pid} className="space-y-0 relative">
+                <div className={`p-4 rounded-[2rem] border transition-all duration-300 ${
+                    isOpen 
+                    ? 'bg-orange-50/40 border-orange-300 border-2' 
+                    : isInReview
+                    ? 'bg-yellow-50 border-yellow-200'
+                    : 'bg-white border-zinc-100 hover:border-zinc-200 hover:shadow-md'
+                }`}>
+                    <div className="flex items-center justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-black text-zinc-900 truncate">{payment.title || 'Pago'}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-base font-black text-zinc-900">${Number(payment.amount).toLocaleString('es-CL')}</span>
+                                {payment.due_date && (
+                                    <span className="text-[9px] text-zinc-400 font-bold uppercase">{formatDateFriendly(payment.due_date)}</span>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                            {isInReview ? (
+                                <span className="text-[8px] font-black uppercase px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 border border-yellow-200">
+                                    ⏳ En Revisión
+                                </span>
+                            ) : (
+                                <button
+                                    onClick={() => handleOpenPendingUpload(pid)}
+                                    className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3.5 py-2 rounded-2xl transition-all ${
+                                        isOpen
+                                        ? 'bg-zinc-200 text-zinc-600'
+                                        : 'bg-zinc-900 text-white hover:bg-orange-600 active:scale-95'
+                                    }`}
+                                >
+                                    {isOpen ? <><X size={11} /> Cancel</> : <><Upload size={11} /> Pagar</>}
+                                </button>
+                            )}
+                            {payment.proof_image && (
+                                <button
+                                    onClick={() => setProofModal({ url: payment.proof_image, canDelete: !isInReview, paymentId: pid })}
+                                    className="w-9 h-9 flex items-center justify-center bg-zinc-50 text-zinc-400 rounded-xl hover:bg-zinc-900 hover:text-white transition-all border border-zinc-100"
+                                >
+                                    <Eye size={16} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {isOpen && (
+                    <div className="mx-2 rounded-b-[2rem] border-x border-b border-orange-200 bg-orange-50/30 p-5 space-y-4 animate-in slide-in-from-top-2 duration-300">
+                        <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-lg bg-orange-500 flex items-center justify-center">
+                                <Upload size={12} className="text-white" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-zinc-900 uppercase tracking-wide">Sube tu comprobante</p>
+                                <p className="text-[9px] text-zinc-500">El Sensei lo aprobará pronto 🥋</p>
+                            </div>
+                        </div>
+
+                        {pendingProofPreview ? (
+                            <div className="relative rounded-2xl overflow-hidden border-2 border-dashed border-zinc-200 bg-white">
+                                <img src={pendingProofPreview} alt="Comprobante" className="w-full h-40 object-cover" />
+                                <button
+                                    onClick={() => { setPendingProofFile(null); setPendingProofPreview(null); }}
+                                    className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center shadow hover:bg-red-600 transition-colors"
+                                >
+                                    <Trash2 size={12} />
+                                </button>
+                                <div className="absolute bottom-2 left-2 bg-black/60 text-white text-[8px] font-bold px-2 py-1 rounded-lg truncate max-w-[80%]">
+                                    {pendingProofFile?.name}
+                                </div>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => pendingFileRef.current?.click()}
+                                className="w-full h-28 rounded-2xl border-2 border-dashed border-zinc-200 bg-white hover:border-orange-300 hover:bg-orange-50 transition-all flex flex-col items-center justify-center gap-2 group"
+                            >
+                                <ImageIcon size={24} className="text-zinc-300 group-hover:text-orange-400 transition-colors" />
+                                <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400 group-hover:text-orange-600">Toca para subir foto</span>
+                                <span className="text-[8px] text-zinc-300">JPG, PNG, HEIC — máx 50MB</span>
+                            </button>
+                        )}
+
+                        <button
+                            onClick={() => handleSubmitPendingProof(pid)}
+                            disabled={!pendingProofFile || isUploading}
+                            className={`w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2 ${
+                                pendingProofFile
+                                ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-lg shadow-orange-200 active:scale-95'
+                                : 'bg-zinc-100 text-zinc-300 cursor-not-allowed'
+                            }`}
+                        >
+                            {isUploading ? (
+                                <><Loader2 size={14} className="animate-spin" /> Enviando...</>
+                            ) : (
+                                <><Check size={14} /> Confirmar y Enviar</>
+                            )}
+                        </button>
+
+                        <p className="text-center text-[8px] text-zinc-400">
+                            Una vez validado, tu pago quedará registrado como aprobado
+                        </p>
+                    </div>
+                )}
+            </div>
+        );
     };
 
     const handleSelectPlan = (planId: string) => {
@@ -286,16 +423,56 @@ export function PaymentsMartialArts({
 
                         {/* Agrupar pagos pendientes por alumno */}
                         {(() => {
-                            // 1) Construir mapa studentId → { student, payments[] }
                             const groups: Record<string, { student: any; payments: any[] }> = {};
 
-                            // Fees del sistema (myFees), agrupados por student_id
+                            // 2) Collect Real Payments first to use as reference
+                            students.forEach((s: any) => {
+                                const sid = String(s.id);
+                                const pending = (s.payments || []).filter((p: any) => p.status !== 'approved');
+                                if (pending.length > 0) {
+                                    if (!groups[sid]) groups[sid] = { student: s, payments: [] };
+                                    pending.forEach((p: any) => {
+                                        groups[sid].payments.push({ ...p, isReal: true });
+                                    });
+                                }
+                            });
+
+                             // 2.5) Map of covered months per student: "sid-YYYY-MM"
+                            const coveredMonths = new Set<string>();
+                            Object.values(groups).forEach((g: any) => {
+                                const sid = String(g.student.id);
+                                g.payments.forEach((p: any) => {
+                                    if (p.due_date) {
+                                        const parts = p.due_date.split('-');
+                                        if (parts.length >= 2) {
+                                            const y = parseInt(parts[0]);
+                                            const m = parseInt(parts[1]);
+                                            coveredMonths.add(`${sid}-${y}-${m}`);
+                                        }
+                                    }
+                                });
+
+                                // También cubrimos el mes de creación del alumno para no duplicar con la prorrata
+                                if (g.student.created_at) {
+                                    const d = new Date(g.student.created_at);
+                                    if (!isNaN(d.getTime())) {
+                                        coveredMonths.add(`${sid}-${d.getFullYear()}-${d.getMonth() + 1}`);
+                                    }
+                                }
+                            });
+
+                            // 3) Add Projected Fees (myFees), skipping duplicates
                             if (myFees) {
                                 myFees.forEach((fd: any) => {
                                     const sid = String(fd.student_id || fd.fee?.student_id || 'all');
                                     const student = students.find(s => String(s.id) === sid) || { id: sid, name: 'General', photo_url: null };
                                     if (!groups[sid]) groups[sid] = { student, payments: [] };
+                                    
                                     (fd.periods || []).filter((p: any) => p.status === 'pending' || p.status === 'review').forEach((p: any) => {
+                                        const monthKey = `${sid}-${p.year}-${p.month}`;
+                                        // Skip if we already have a manual payment for this period
+                                        if (coveredMonths.has(monthKey)) return;
+
                                         groups[sid].payments.push({
                                             id: p.payment_id ? `pay-${p.payment_id}` : `fee-${sid}-${fd.enrollment_id || 0}-${fd.fee.id}-${p.month}-${p.year}`,
                                             amount: fd.fee.amount,
@@ -303,27 +480,13 @@ export function PaymentsMartialArts({
                                             due_date: p.due_date || `${p.year}-${String(p.month).padStart(2, '0')}-01`,
                                             status: p.status === 'review' ? 'pending_review' : 'pending',
                                             proof_image: p.proof_url,
+                                            isProjected: true
                                         });
                                     });
                                 });
                             }
 
-                            // Payments directos de cada student (payments tradicionales)
-                            students.forEach((s: any) => {
-                                const sid = String(s.id);
-                                const pending = (s.payments || []).filter((p: any) => p.status !== 'approved');
-                                if (pending.length > 0) {
-                                    if (!groups[sid]) groups[sid] = { student: s, payments: [] };
-                                    pending.forEach((p: any) => {
-                                        // Evitar duplicados si ya está en feePays
-                                        if (!groups[sid].payments.find(x => String(x.id) === `pay-${p.id}`)) {
-                                            groups[sid].payments.push({ ...p });
-                                        }
-                                    });
-                                }
-                            });
-
-                            const groupList = Object.values(groups).filter(g => g.payments.length > 0);
+                            const groupList: any[] = Object.values(groups).filter((g: any) => g.payments.length > 0);
 
                             if (groupList.length === 0) return (
                                 <div className="bg-white border border-dashed border-zinc-200 rounded-[2.5rem] p-12 text-center mt-6">
@@ -332,7 +495,7 @@ export function PaymentsMartialArts({
                                 </div>
                             );
 
-                            return groupList.map(({ student, payments }) => (
+                            return groupList.map(({ student, payments }: any) => (
                                 <div key={student.id} className="space-y-2">
                                     {/* Header del alumno (solo si hay más de un grupo) */}
                                     {groupList.length > 1 && (
@@ -349,121 +512,55 @@ export function PaymentsMartialArts({
                                         </div>
                                     )}
 
-                                    {/* Tarjetas del alumno */}
-                                    {payments.map((payment: any) => {
-                                        const pid = String(payment.id);
-                                        const isOpen = pendingPaymentId === pid;
-                                        const isInReview = payment.status === 'pending_review';
-                                        const isUploading = isUploadingPending === pid;
+                                    {/* Tarjetas del alumno - Con Lógica de Expandible */}
+                                     {(() => {
+                                        const sortedPayments = [...payments].sort((a, b) => {
+                                            // 1. Prioridad: Reales primero (Registration/Manual)
+                                            if (a.isReal && !b.isReal) return -1;
+                                            if (!a.isReal && b.isReal) return 1;
+
+                                            // 2. Fecha ascendente
+                                            if (!a.due_date) return 1;
+                                            if (!b.due_date) return -1;
+                                            return a.due_date.localeCompare(b.due_date);
+                                        });
+
+                                        const mainPayment = sortedPayments[0];
+                                        const otherPayments = sortedPayments.slice(1);
+                                        const isExpanded = expandedStudents[String(student.id)];
 
                                         return (
-                                            <div key={pid} className="space-y-0">
-                                                <div className={`p-4 rounded-[2rem] border transition-all duration-300 ${
-                                                    isOpen 
-                                                    ? 'bg-orange-50/40 border-orange-300 border-2' 
-                                                    : isInReview
-                                                    ? 'bg-yellow-50 border-yellow-200'
-                                                    : 'bg-white border-zinc-100 hover:border-zinc-200 hover:shadow-md'
-                                                }`}>
-                                                    <div className="flex items-center justify-between gap-3">
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="text-sm font-black text-zinc-900 truncate">{payment.title || 'Pago'}</p>
-                                                            <div className="flex items-center gap-2 mt-0.5">
-                                                                <span className="text-base font-black text-zinc-900">${Number(payment.amount).toLocaleString('es-CL')}</span>
-                                                                {payment.due_date && (
-                                                                    <span className="text-[9px] text-zinc-400 font-bold uppercase">{payment.due_date}</span>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-2 flex-shrink-0">
-                                                            {isInReview ? (
-                                                                <span className="text-[8px] font-black uppercase px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 border border-yellow-200">
-                                                                    ⏳ En Revisión
-                                                                </span>
-                                                            ) : (
-                                                                <button
-                                                                    onClick={() => handleOpenPendingUpload(pid)}
-                                                                    className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3.5 py-2 rounded-2xl transition-all ${
-                                                                        isOpen
-                                                                        ? 'bg-zinc-200 text-zinc-600'
-                                                                        : 'bg-zinc-900 text-white hover:bg-orange-600 active:scale-95'
-                                                                    }`}
-                                                                >
-                                                                    {isOpen ? <><X size={11} /> Cancel</> : <><Upload size={11} /> Pagar</>}
-                                                                </button>
-                                                            )}
-                                                            {payment.proof_image && (
-                                                                <button
-                                                                    onClick={() => setProofModal({ url: payment.proof_image, canDelete: !isInReview, paymentId: pid })}
-                                                                    className="w-9 h-9 flex items-center justify-center bg-zinc-50 text-zinc-400 rounded-xl hover:bg-zinc-900 hover:text-white transition-all border border-zinc-100"
-                                                                >
-                                                                    <Eye size={16} />
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                            <div className="space-y-3">
+                                                {/* Cuota Principal (La más próxima) */}
+                                                {renderPaymentCard(mainPayment, student)}
 
-                                                {isOpen && (
-                                                    <div className="mx-2 rounded-b-[2rem] border-x border-b border-orange-200 bg-orange-50/30 p-5 space-y-4 animate-in slide-in-from-top-2 duration-300">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="w-6 h-6 rounded-lg bg-orange-500 flex items-center justify-center">
-                                                                <Upload size={12} className="text-white" />
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-[10px] font-black text-zinc-900 uppercase tracking-wide">Sube tu comprobante</p>
-                                                                <p className="text-[9px] text-zinc-500">El Sensei lo aprobará pronto 🥋</p>
-                                                            </div>
-                                                        </div>
-
-                                                        {pendingProofPreview ? (
-                                                            <div className="relative rounded-2xl overflow-hidden border-2 border-dashed border-zinc-200 bg-white">
-                                                                <img src={pendingProofPreview} alt="Comprobante" className="w-full h-40 object-cover" />
-                                                                <button
-                                                                    onClick={() => { setPendingProofFile(null); setPendingProofPreview(null); }}
-                                                                    className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center shadow hover:bg-red-600 transition-colors"
-                                                                >
-                                                                    <Trash2 size={12} />
-                                                                </button>
-                                                                <div className="absolute bottom-2 left-2 bg-black/60 text-white text-[8px] font-bold px-2 py-1 rounded-lg truncate max-w-[80%]">
-                                                                    {pendingProofFile?.name}
-                                                                </div>
-                                                            </div>
-                                                        ) : (
-                                                            <button
-                                                                onClick={() => pendingFileRef.current?.click()}
-                                                                className="w-full h-28 rounded-2xl border-2 border-dashed border-zinc-200 bg-white hover:border-orange-300 hover:bg-orange-50 transition-all flex flex-col items-center justify-center gap-2 group"
-                                                            >
-                                                                <ImageIcon size={24} className="text-zinc-300 group-hover:text-orange-400 transition-colors" />
-                                                                <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400 group-hover:text-orange-600">Toca para subir foto</span>
-                                                                <span className="text-[8px] text-zinc-300">JPG, PNG, HEIC — máx 50MB</span>
-                                                            </button>
-                                                        )}
-
-                                                        <button
-                                                            onClick={() => handleSubmitPendingProof(pid)}
-                                                            disabled={!pendingProofFile || isUploading}
-                                                            className={`w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2 ${
-                                                                pendingProofFile
-                                                                ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-lg shadow-orange-200 active:scale-95'
-                                                                : 'bg-zinc-100 text-zinc-300 cursor-not-allowed'
-                                                            }`}
+                                                {/* Cuotas Adicionales colapsadas */}
+                                                {otherPayments.length > 0 && (
+                                                    <div className="space-y-3 mt-4">
+                                                        <button 
+                                                            onClick={() => toggleStudentExpansion(String(student.id))}
+                                                            className="flex items-center gap-3 w-full px-5 py-3 rounded-2xl bg-zinc-50 border border-zinc-100 hover:bg-zinc-100 transition-all group"
                                                         >
-                                                            {isUploading ? (
-                                                                <><Loader2 size={14} className="animate-spin" /> Enviando...</>
-                                                            ) : (
-                                                                <><Check size={14} /> Confirmar y Enviar</>
-                                                            )}
+                                                            <div className="w-8 h-8 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-400 group-hover:text-zinc-600 transition-colors">
+                                                                {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                                            </div>
+                                                            <div className="flex-1 text-left">
+                                                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                                                                    {isExpanded ? 'Ocultar proyecciones' : `Ver ${otherPayments.length} cuotas proyectadas`}
+                                                                </p>
+                                                            </div>
                                                         </button>
 
-                                                        <p className="text-center text-[8px] text-zinc-400">
-                                                            Una vez validado, tu pago quedará registrado como aprobado
-                                                        </p>
+                                                        {isExpanded && (
+                                                            <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300 pl-4 border-l-2 border-zinc-100/50 ml-4">
+                                                                {otherPayments.map(p => renderPaymentCard(p, student))}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
                                         );
-                                    })}
+                                     })()}
                                 </div>
                             ));
                         })()}

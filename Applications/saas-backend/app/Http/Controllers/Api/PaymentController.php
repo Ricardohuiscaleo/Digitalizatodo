@@ -63,7 +63,7 @@ class PaymentController extends Controller
         }
 
         // Aceptamos archivos hasta 50MB para ser procesados
-        $request->validate(['proof' => 'required|image|max:51200']);
+        $request->validate(['proof' => 'required|file|mimes:jpeg,png,jpg,webp,heic|max:51200']);
 
         if ($request->hasFile('proof')) {
             $file = $request->file('proof');
@@ -178,7 +178,7 @@ class PaymentController extends Controller
         $request->validate([
             'payment_ids' => 'required|array',
             'payment_ids.*' => 'exists:payments,id',
-            'proof' => 'required|image|max:51200'
+            'proof' => 'required|file|mimes:jpeg,png,jpg,webp,heic|max:51200'
         ]);
 
         $paymentIds = $request->input('payment_ids');
@@ -236,7 +236,7 @@ class PaymentController extends Controller
     /**
      * Crea un pago pendiente por clases personalizadas (consumibles).
      */
-    public function storeConsumable(Request $request): JsonResponse
+    public function storeConsumable(Request $request, $tenant): JsonResponse
     {
         $guardian = $request->user();
         $request->validate([
@@ -277,13 +277,13 @@ class PaymentController extends Controller
     /**
      * Crea un pago en revisión por la compra de un plan mensual/trimestral/anual.
      */
-    public function storePlanPurchase(Request $request): JsonResponse
+    public function storePlanPurchase(Request $request, $tenant): JsonResponse
     {
         $guardian = $request->user();
         $request->validate([
             'student_id' => 'required|exists:students,id',
             'plan_id' => 'required|exists:plans,id',
-            'proof' => 'required|image|max:51200'
+            'proof' => 'required|file|mimes:jpeg,png,jpg,webp,heic|max:51200'
         ]);
 
         $student = $guardian->students()->find($request->student_id);

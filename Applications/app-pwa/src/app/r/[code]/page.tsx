@@ -336,7 +336,7 @@ const PlanCard = ({ plan, isSelected, onSelect, isDarkMode, monthlyBase = 0 }: a
     <button
       type="button"
       onClick={onSelect}
-      className={`p-6 rounded-[1.5rem] border transition-all text-center group relative overflow-hidden flex flex-col items-center gap-4 ${isSelected
+      className={`p-4 sm:p-6 rounded-[1.2rem] sm:rounded-[1.5rem] border transition-all text-center group relative overflow-hidden flex flex-col items-center gap-3 sm:gap-4 ${isSelected
         ? 'border-[#c9a84c] bg-[#c9a84c]/5 shadow-[0_0_30px_rgba(201,168,76,0.15)] scale-[1.02]'
         : (isElite 
            ? 'border-[#c9a84c]/40 bg-zinc-950/40 hover:border-[#c9a84c]' 
@@ -957,7 +957,7 @@ export default function RegisterPage() {
           <div className="absolute top-[30%] left-[10%] w-[40%] h-[40%] bg-sky-500/15 rounded-full blur-[80px]" />
         </div>
       )}
-      <div className="w-full max-w-sm pt-20 space-y-10 animate-in fade-in duration-1000">
+      <div className={`w-full pt-20 space-y-10 animate-in fade-in duration-1000 transition-all duration-700 ${totals.adultsCount > 0 && totals.kidsCount > 0 ? 'max-w-5xl' : 'max-w-sm'}`}>
 
         {/* Branding */}
         <div className="flex flex-col items-center gap-5">
@@ -1636,7 +1636,7 @@ export default function RegisterPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-10 relative z-10">
+                  <div className={`relative z-10 transition-all duration-700 ${totals.adultsCount > 0 && totals.kidsCount > 0 ? 'grid grid-cols-2 gap-3 md:gap-12 items-start' : 'space-y-10'}`}>
                     {totals.adultsCount > 0 && (
                       <div className="space-y-6">
                         <div className="space-y-1">
@@ -1712,7 +1712,7 @@ export default function RegisterPage() {
 
           {/* RESUMEN DE PRECIOS — solo industrias con pricing */}
           {config.showPricing && totals.totalInscriptions > 0 && form.registration_mode !== null && (
-            <div className={`backdrop-blur-md rounded-[2.5rem] p-6 sm:p-8 border space-y-5 shadow-2xl relative overflow-hidden group transition-all duration-700 ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white border-zinc-200'}`}>
+            <div className={`backdrop-blur-md rounded-[2.5rem] p-6 sm:p-8 border space-y-5 shadow-2xl relative overflow-hidden group transition-all duration-700 mx-auto w-full ${totals.adultsCount > 0 && totals.kidsCount > 0 ? 'max-w-md' : ''} ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white border-zinc-200'}`}>
               <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-[#c9a84c]/5 rounded-full blur-3xl" />
               <h3 className="text-[10px] uppercase font-black tracking-[0.2em] text-zinc-500">Resumen de Inscripción</h3>
               <div className="space-y-3 text-sm">
