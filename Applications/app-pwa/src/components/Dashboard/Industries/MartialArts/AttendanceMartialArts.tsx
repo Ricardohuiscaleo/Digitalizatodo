@@ -107,19 +107,55 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
     const MODALITY_LABELS: Record<string, string> = { gi: 'Gi', nogi: 'No-Gi', both: 'Ambos' };
     const CATEGORY_LABELS: Record<string, string> = { adults: 'Adulto', kids: 'Infantil' };
 
+    const normalizeBelt = (belt: string | null | undefined): string => {
+        if (!belt) return 'white';
+        const b = belt.toLowerCase();
+        if (b === 'blanco' || b === 'white') return 'white';
+        if (b === 'azul' || b === 'blue') return 'blue';
+        if (b === 'morado' || b === 'purple') return 'purple';
+        if (b === 'café' || b === 'cafe' || b === 'brown' || b === 'cafê') return 'brown';
+        if (b === 'negro' || b === 'black') return 'black';
+        return 'white';
+    };
+
+    const nextSchedule = useMemo(() => {
+        if (!schedulesList.length) return null;
+        const now = nowCL();
+        const dow = now.getDay();
+        const currentTime = now.toLocaleTimeString('en-GB', { hour12: false });
+    
+        // 1. Mismo día, más tarde
+        let next = schedulesList
+            .filter(s => s.day_of_week === dow && s.start_time > currentTime)
+            .sort((a, b) => a.start_time.localeCompare(b.start_time))[0];
+        
+        // 2. Siguientes días
+        if (!next) {
+            for (let i = 1; i <= 7; i++) {
+                const nextDow = (dow + i) % 7;
+                next = schedulesList
+                    .filter(s => s.day_of_week === nextDow)
+                    .sort((a, b) => a.start_time.localeCompare(b.start_time))[0];
+                if (next) break;
+            }
+        }
+        return next;
+    }, [schedulesList]);
+
     const getBjjMax = (belt: string) => {
-        const entry = ALLIANCE_BJJ_GRADUATION.find(b => b.id === belt);
+        const entry = ALLIANCE_BJJ_GRADUATION.find(b => b.id === (belt === 'white' ? 'white' : belt)); // fallback for safety
         if (!entry || entry.totalClasses === null || entry.classesPerStripe === null) return null;
         return { maxTotal: entry.totalClasses, classesPerStripe: entry.classesPerStripe };
     };
 
     const validateBjj = (form: any, student: any): string | null => {
-        const config = getBjjMax(form.belt_rank);
+        const beltKey = normalizeBelt(form.belt_rank);
+        const config = getBjjMax(beltKey);
         if (!config) return null;
         const inSystem = student?.total_attendances ?? 0;
         const total = Number(form.previous_classes || 0) + inSystem;
         if (total > config.classesPerStripe) {
-            const beltLabel = ALLIANCE_BJJ_GRADUATION.find(b => b.id === form.belt_rank)?.name ?? form.belt_rank;
+            const beltLabel = BELT_LABELS[beltKey] ?? form.belt_rank;
             return `Con ${total} clases desde la última raya supera el máximo de ${config.classesPerStripe} para ${beltLabel}`;
         }
         return null;
@@ -139,7 +175,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                     name: s.name || '',
                     phone: s.phone || '',
                     email: s.email || '',
-                    belt_rank: s.belt_rank || '',
+                    belt_rank: normalizeBelt(s.belt_rank),
                     degrees: s.degrees ?? 0,
                     gender: s.gender || '',
                     weight: s.weight || '',
@@ -262,20 +298,38 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                 </button>
             </div>
 
-            {activeSchedule && (
+            {(activeSchedule || nextSchedule) && (
                 <div className={`flex items-center justify-between p-4 rounded-3xl border mb-3 shadow-lg transition-all ${
                     isDark ? 'bg-zinc-800/40 border-zinc-800' : 'bg-zinc-50 border-zinc-100'
                 }`}>
                     <div className="flex items-center gap-3">
-                        <div className={`w-2.5 h-2.5 rounded-full animate-pulse shadow-lg ${
-                            isSmartFilterEnabled ? 'bg-indigo-500 shadow-indigo-500/40' : 'bg-zinc-500 shadow-zinc-500/20'
+                        <div className={`w-2.5 h-2.5 rounded-full shadow-lg ${
+                            activeSchedule 
+                                ? 'bg-emerald-500 animate-pulse shadow-emerald-500/40' 
+                                : 'bg-amber-500 shadow-amber-500/20'
                         }`} />
                         <div>
                             <p className={`text-[8px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>
-                                {isSmartFilterEnabled ? 'Filtrando por:' : 'Clase actual'}
+                                {isSmartFilterEnabled ? 'Smart Switch Active:' : activeSchedule ? 'Clase Actual:' : 'Próxima Clase:'}
                             </p>
                             <p className={`text-[11px] font-black uppercase tracking-widest ${isDark ? 'text-white' : 'text-zinc-950'}`}>
-                                {activeSchedule.name}
+                                {activeSchedule?.name || nextSchedule?.name}
+                                {!activeSchedule && nextSchedule && (
+                                    <span className="ml-2 opacity-40 text-[9px] lowercase font-bold">
+                                        (falta {(() => {
+                                            const h = Number(nextSchedule.start_time.split(':')[0]);
+                                            const m = Number(nextSchedule.start_time.split(':')[1]);
+                                            const now = nowCL();
+                                            const target = new Date(now);
+                                            target.setHours(h, m, 0);
+                                            if (target < now) target.setDate(target.getDate() + 1);
+                                            const diff = target.getTime() - now.getTime();
+                                            const dh = Math.floor(diff / (1000 * 60 * 60));
+                                            const dm = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                                            return dh > 0 ? `${dh}h ${dm}m` : `${dm}m`;
+                                        })()})
+                                    </span>
+                                )}
                             </p>
                         </div>
                     </div>
@@ -477,7 +531,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                     const progress = student.belt_rank 
                         ? calcBeltProgress(student.belt_rank, student.degrees ?? 0, student.belt_classes_at_promotion ?? 0, totalClasses)
                         : null;
-                    const classesCount = progress ? progress.classesInCurrentStripe : totalClasses;
+                    const classesCount = totalClasses;
                     return (
                         <div key={student.id} className="relative">
                             <button
@@ -642,20 +696,26 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                     <CheckCircle2 size={20} className={attendance.has(String(editingStudent.id)) ? 'text-emerald-400' : isDark ? 'text-zinc-700' : 'text-zinc-200'} />
                                 </div>
 
-                                <div className={`grid grid-cols-3 gap-2 p-4 rounded-2xl border ${
-                                    isDark ? 'bg-zinc-800/30 border-zinc-800' : 'bg-zinc-50 border-zinc-100'
+                                <div className={`grid grid-cols-3 gap-2 px-1 py-1 rounded-2xl border ${
+                                    isDark ? 'bg-zinc-800/20 border-zinc-800/50' : 'bg-zinc-100/50 border-zinc-100'
                                 }`}>
-                                    <div className="text-center">
-                                        <p className={`text-[7px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Sistema</p>
-                                        <p className={`text-sm font-black ${isDark ? 'text-white' : 'text-zinc-900'}`}>{bjjForm.total_attendances || 0}</p>
+                                    <div className="text-center py-2 px-1">
+                                        <p className={`text-[6px] font-black uppercase tracking-widest opacity-40 mb-1 ${isDark ? 'text-white' : 'text-zinc-900'}`}>Anteriores</p>
+                                        <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-[11px] font-black ${isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-white text-zinc-500'}`}>
+                                            {bjjForm.previous_classes || 0}
+                                        </div>
                                     </div>
-                                    <div className="text-center border-x border-zinc-800/50">
-                                        <p className={`text-[7px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Base</p>
-                                        <p className={`text-sm font-black ${isDark ? 'text-white' : 'text-zinc-900'}`}>{bjjForm.previous_classes || 0}</p>
+                                    <div className="text-center py-2 px-1">
+                                        <p className={`text-[6px] font-black uppercase tracking-widest opacity-40 mb-1 ${isDark ? 'text-white' : 'text-zinc-900'}`}>Sistema</p>
+                                        <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-[11px] font-black ${isDark ? 'bg-zinc-800 text-emerald-500' : 'bg-white text-emerald-600'}`}>
+                                            {bjjForm.total_attendances || 0}
+                                        </div>
                                     </div>
-                                    <div className="text-center">
-                                        <p className={`text-[7px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Total</p>
-                                        <p className={`text-sm font-black text-amber-500`}>{(bjjForm.total_attendances || 0) + (bjjForm.previous_classes || 0)}</p>
+                                    <div className="text-center py-2 px-1">
+                                        <p className={`text-[6px] font-black uppercase tracking-widest opacity-40 mb-1 ${isDark ? 'text-white' : 'text-zinc-900'}`}>Total / 30</p>
+                                        <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-[11px] font-black bg-amber-500/10 text-amber-500 border border-amber-500/20`}>
+                                            {(bjjForm.total_attendances || 0) + (bjjForm.previous_classes || 0)}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
