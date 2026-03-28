@@ -1,4 +1,5 @@
 "use client";
+// Payments Refactor 🥋💳🔘
 
 import React, { useEffect, useRef, useState } from "react";
 import { Bell, X } from "lucide-react";
@@ -125,18 +126,29 @@ export default function StudentDashboard() {
     const handleUploadProof = async (paymentId: string, file: File) => {
         setUploadingPayment(paymentId);
         if (!token || !slug) return;
+        
+        const isFee = paymentId.startsWith('fee-');
+        const cleanId = isFee ? paymentId.replace('fee-', '') : paymentId;
+        
         const formData = new FormData();
         formData.append("proof", file);
         try {
             const API = process.env.NEXT_PUBLIC_API_URL || "https://admin.digitalizatodo.cl/api";
-            const res = await fetch(`${API}/${slug}/payments/${paymentId}/upload-proof`, {
+            // Usar endpoint de cuotas o de pagos genéricos según prefijo
+            const endpoint = isFee ? `fees/${cleanId}/upload-proof` : `payments/${cleanId}/upload-proof`;
+            
+            const res = await fetch(`${API}/${slug}/${endpoint}`, {
                 method: "POST",
                 headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
                 body: formData,
             });
             if (res.ok) {
                 setUploadSuccess(paymentId);
-                setTimeout(() => { setUploadSuccess(null); common.refreshData(); }, 2000);
+                setTimeout(() => { 
+                    setUploadSuccess(null); 
+                    common.refreshData();
+                    if (isFee) treasury.refreshMyFees();
+                }, 2000);
             }
         } finally { setUploadingPayment(null); }
     };
@@ -299,7 +311,7 @@ export default function StudentDashboard() {
                     isSchoolTreasury ? (
                         <PaymentsTreasury paymentTab={paymentTab} setPaymentTab={setPaymentTab} bankInfo={common.data?.bank_info} copiedBank={copiedBank} setCopiedBank={setCopiedBank} selectedPayments={selectedPayments} setSelectedPayments={setSelectedPayments} uploadingPayment={uploadingPayment} bulkFileInputRef={bulkFileInputRef as any} myFees={treasury.myFees} setFeePayModal={treasury.setFeePayModal} students={students} primaryColor={primaryColor} uploadSuccess={uploadSuccess} handleUploadProof={handleUploadProof} setProofModal={setProofModal} setConfirmDelete={setConfirmDelete} handleBulkUploadProof={handleBulkUploadProof} paymentHistory={common.data?.payment_history || []} vocab={vocab} />
                     ) : (
-                        <PaymentsMartialArts paymentTab={paymentTab} setPaymentTab={setPaymentTab} bankInfo={common.data?.bank_info} copiedBank={copiedBank} setCopiedBank={setCopiedBank} selectedPayments={selectedPayments} setSelectedPayments={setSelectedPayments} uploadingPayment={uploadingPayment} bulkFileInputRef={bulkFileInputRef as any} students={students} primaryColor={primaryColor} uploadSuccess={uploadSuccess} handleUploadProof={handleUploadProof} setProofModal={setProofModal} setConfirmDelete={setConfirmDelete} handleBulkUploadProof={handleBulkUploadProof} paymentHistory={common.data?.payment_history || []} vocab={vocab} onBuyPack={handleBuyPack} />
+                        <PaymentsMartialArts paymentTab={paymentTab} setPaymentTab={setPaymentTab} bankInfo={common.data?.bank_info} copiedBank={copiedBank} setCopiedBank={setCopiedBank} selectedPayments={selectedPayments} setSelectedPayments={setSelectedPayments} uploadingPayment={uploadingPayment} bulkFileInputRef={bulkFileInputRef as any} myFees={treasury.myFees} students={students} primaryColor={primaryColor} uploadSuccess={uploadSuccess} handleUploadProof={handleUploadProof} setProofModal={setProofModal} setConfirmDelete={setConfirmDelete} handleBulkUploadProof={handleBulkUploadProof} paymentHistory={common.data?.payment_history || []} vocab={vocab} onBuyPack={handleBuyPack} />
                     )
                 )}
 

@@ -26,6 +26,7 @@ interface PaymentsMartialArtsProps {
     setSelectedPayments: React.Dispatch<React.SetStateAction<string[]>>;
     uploadingPayment: string | null;
     bulkFileInputRef: React.RefObject<HTMLInputElement>;
+    myFees?: any[];
     students: any[];
     primaryColor: string;
     uploadSuccess: string | null;
@@ -48,6 +49,7 @@ export function PaymentsMartialArts({
     setSelectedPayments,
     uploadingPayment,
     bulkFileInputRef,
+    myFees,
     students,
     primaryColor,
     uploadSuccess,
@@ -197,9 +199,37 @@ export function PaymentsMartialArts({
                         </div>
 
                         <div className="flex items-center justify-between ml-2 mb-1 mt-4">
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Pagos Mensuales</h3>
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Pagos Pendientes</h3>
                         </div>
-                        {students.flatMap((s: any) => s.payments || []).map((payment: any) => (
+                        
+                        {/* 1. Renderizar Cuotas Pendientes (Fees) */}
+                        {myFees && myFees.flatMap((fd: any) => 
+                            (fd.periods || []).filter((p: any) => p.status === 'pending' || p.status === 'review').map((p: any) => ({
+                                id: `fee-${p.id}`,
+                                amount: fd.fee.amount,
+                                title: fd.fee.title,
+                                due_date: `${p.year}-${String(p.month).padStart(2, '0')}-01`, // Normalización para visualización
+                                status: p.status === 'review' ? 'pending_review' : 'pending',
+                                proof_image: p.proof_image,
+                                type: 'monthly_fee'
+                            }))
+                        ).map((payment: any) => (
+                            <PaymentRow 
+                                key={payment.id} 
+                                payment={payment} 
+                                primaryColor={primaryColor} 
+                                uploading={uploadingPayment === String(payment.id)} 
+                                uploadSuccess={uploadSuccess === String(payment.id)} 
+                                onUpload={(file) => handleUploadProof(String(payment.id), file)} 
+                                onViewProof={(url) => setProofModal({ url, canDelete: payment.status !== 'approved', paymentId: String(payment.id) })} 
+                                onDeleteProof={() => setConfirmDelete(String(payment.id))} 
+                                isSelected={selectedPayments.includes(String(payment.id))} 
+                                onToggleSelect={() => { setSelectedPayments(prev => prev.includes(String(payment.id)) ? prev.filter(id => id !== String(payment.id)) : [...prev, String(payment.id)]); }} 
+                            />
+                        ))}
+
+                        {/* 2. Renderizar Pagos Genéricos/VIP (Payments tradicionales) */}
+                        {students.flatMap((s: any) => (s.payments || []).filter((p:any) => p.status !== 'approved')).map((payment: any) => (
                             <PaymentRow key={payment.id} payment={payment} primaryColor={primaryColor} uploading={uploadingPayment === String(payment.id)} uploadSuccess={uploadSuccess === String(payment.id) || (uploadSuccess === "bulk" && selectedPayments.includes(String(payment.id)))} onUpload={(file) => handleUploadProof(String(payment.id), file)} onViewProof={(url) => setProofModal({ url, canDelete: payment.status !== 'approved', paymentId: String(payment.id) })} onDeleteProof={() => setConfirmDelete(String(payment.id))} isSelected={selectedPayments.includes(String(payment.id))} onToggleSelect={() => { setSelectedPayments(prev => prev.includes(String(payment.id)) ? prev.filter(id => id !== String(payment.id)) : [...prev, String(payment.id)]); }} />
                         ))}
                     </div>
