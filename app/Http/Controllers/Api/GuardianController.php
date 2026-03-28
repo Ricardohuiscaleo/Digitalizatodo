@@ -185,10 +185,75 @@ class GuardianController extends Controller
                 ->get();
 
             foreach ($paymentsToApprove as $payment) {
+                // Lógica de consumibles
                 if ($payment->type === 'pack_4') {
                     $student->increment('consumable_credits', 4);
                 } elseif ($payment->type === 'single') {
                     $student->increment('consumable_credits', 1);
+                }
+
+                // Lógica de UPGRADE DE PLAN o REGISTRO INICIAL (Propagar a cuotas mensuales)
+                if (in_array($payment->type, ['plan_upgrade', 'monthly_fee']) && $payment->plan_id) {
+                    $plan = \App\Models\Plan::find($payment->plan_id);
+                    if ($plan) {
+                        // 1. Actualizar el enrollment del alumno
+                        $enrollment = $payment->enrollment;
+                        if ($enrollment) {
+                            $enrollment->update(['plan_id' => $plan->id, 'status' => 'active']);
+                        }
+
+                        // 2. Determinar cobertura de meses
+                        $monthsToCover = match($plan->billing_cycle) {
+                            'quarterly'    => 3,
+                            'semi_annual'  => 6,
+                            'annual'       => 12,
+                            default        => 1,
+                        };
+
+                        // 3. Obtener o crear la plantilla de cobro (Fee) para este plan
+                        $feeTemplate = \App\Models\Fee::firstOrCreate(
+                            ['tenant_id' => $tenantId, 'plan_id' => $plan->id],
+                            [
+                                'title'         => $plan->name,
+                                'amount'        => $plan->price,
+                                'type'          => 'recurring',
+                                'billing_cycle' => $plan->billing_cycle ?? 'monthly_fixed',
+                                'recurring_day' => $plan->billing_day ?? 1,
+                                'target'        => 'custom',
+                            ]
+                        );
+
+                        // 4. Marcar los próximos N meses como pagados
+                        $currentDate = now();
+                        for ($i = 0; $i < $monthsToCover; $i++) {
+                            $targetDate = $currentDate->copy()->addMonths($i);
+                            \App\Models\FeePayment::updateOrCreate(
+                                [
+                                    'fee_id'       => $feeTemplate->id,
+                                    'tenant_id'    => $tenantId,
+                                    'guardian_id'  => $guardian->id,
+                                    'student_id'   => $student->id,
+                                    'enrollment_id'=> $enrollment?->id,
+                                    'period_month' => $targetDate->month,
+                                    'period_year'  => $targetDate->year,
+                                ],
+                                [
+                                    'status'         => 'paid',
+                                    'payment_method' => 'transfer',
+                                    'paid_at'        => now(),
+                                    'approved_by'    => $request->user()->id,
+                                    'notes'          => 'Cubierto por Plan: ' . $plan->name,
+                                ]
+                            );
+                        }
+
+                        // 5. Limpieza: Eliminar cuotas proyectadas (pending) de otros planes 
+                        // para evitar que el alumno las vea duplicadas
+                        \App\Models\FeePayment::where('student_id', $student->id)
+                            ->where('status', 'pending')
+                            ->where('fee_id', '!=', $feeTemplate->id)
+                            ->delete();
+                    }
                 }
 
                 $payment->update([

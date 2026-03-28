@@ -321,7 +321,7 @@ class FeeController extends Controller
         $planFees = Fee::where('tenant_id', $tenant->id)
             ->whereIn('plan_id', $planIds)
             ->get()
-            ->keyBy('plan_id');
+            ->groupBy('plan_id');
 
         $result = [];
 
@@ -330,23 +330,26 @@ class FeeController extends Controller
             $result[] = $this->buildFeeEntry($fee, $guardian, null);
         }
 
-        // Procesar fees por plan, UNA ENTRADA POR ENROLLMENT (por alumno)
+        // Procesar fees por plan, TODAS LAS ENTRADAS POR ENROLLMENT (por alumno)
         foreach ($enrollments as $enrollment) {
-            $fee = $planFees->get($enrollment->plan_id);
-            if (!$fee) continue;
+            $fees = $planFees->get($enrollment->plan_id);
+            if (!$fees) continue;
 
-            $result[] = $this->buildFeeEntry($fee, $guardian, $enrollment->student_id);
+            foreach ($fees as $fee) {
+                $result[] = $this->buildFeeEntry($fee, $guardian, $enrollment->student_id, $enrollment->id);
+            }
         }
 
         return response()->json(['fees' => $result]);
     }
 
-    private function buildFeeEntry(Fee $fee, $guardian, $studentId): array
+    private function buildFeeEntry(Fee $fee, $guardian, $studentId, $enrollmentId = null): array
     {
         $periods = $this->calculatePeriods($fee);
         $paidPeriods = FeePayment::where('fee_id', $fee->id)
             ->where('guardian_id', $guardian->id)
             ->when($studentId, fn($q) => $q->where('student_id', $studentId))
+            ->when($enrollmentId, fn($q) => $q->where('enrollment_id', $enrollmentId))
             ->whereNotNull('period_month')
             ->get()
             ->keyBy(fn($p) => $p->period_year . '-' . $p->period_month);
@@ -372,9 +375,10 @@ class FeeController extends Controller
         }, $periods);
 
         return [
-            'student_id' => $studentId,   // ← NUEVO: para agrupar en el frontend
-            'fee'        => $fee,
-            'periods'    => $periodsWithStatus,
+            'student_id'    => $studentId,
+            'enrollment_id' => $enrollmentId, // ← NUEVO: para agrupar en el frontend
+            'fee'           => $fee,
+            'periods'       => $periodsWithStatus,
         ];
     }
 
