@@ -208,7 +208,48 @@ class StudentController extends Controller
         ]);
     }
     public function store(Request $request) {}
-    public function show(string $id) {}
+    public function show(Request $request, $tenant, $id)
+    {
+        $tenantModel = app('currentTenant');
+        $student = Student::where('tenant_id', $tenantModel->id)
+            ->with(['course', 'enrollments.payments'])
+            ->findOrFail($id);
+
+        $user = $request->user();
+        if ($user && $user->role === 'guardian') {
+            $isAssociated = \App\Models\GuardianStudent::where('guardian_id', $user->id)
+                ->where('student_id', $student->id)->exists();
+            if (!$isAssociated) return response()->json(['error' => 'No autorizado'], 403);
+        }
+
+        $bp = $student->belt_progress;
+        
+        $data = [
+            'id' => $student->id,
+            'name' => $student->name,
+            'phone' => $student->phone,
+            'email' => $student->email,
+            'category' => $student->category,
+            'photo' => $student->photo,
+            'course_id' => $student->course_id,
+            'course_name' => $student->course ? $student->course->name : null,
+            'has_debt' => !$student->is_updated,
+            'payment_status' => $student->is_updated ? 'paid' : 'overdue',
+            'belt_rank' => $student->belt_rank,
+            'degrees' => $bp['degrees'],
+            'total_attendances' => $bp['system_classes'],
+            'previous_classes' => $bp['real_classes'] - $bp['system_classes'],
+            'belt_classes_at_promotion' => (int)($student->belt_classes_at_promotion ?? 0),
+            'modality' => $student->modality,
+            'gender' => $student->gender,
+            'weight' => $student->weight,
+            'height' => $student->height,
+            'birth_date' => $student->birth_date,
+            'belt_progress' => $bp,
+        ];
+
+        return response()->json(['student' => $data]);
+    }
 
     public function updateName(Request $request, $tenant, $id)
     {
