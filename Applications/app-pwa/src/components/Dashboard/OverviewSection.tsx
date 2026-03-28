@@ -219,7 +219,6 @@ export default function OverviewSection(props: OverviewSectionProps) {
                             </div>
                         </div>
 
-                        {attendanceHistory.length > 0 ? (
                             <div 
                                 ref={scrollRef}
                                 className="flex gap-3 overflow-x-auto py-2 no-scrollbar -mx-2 px-2 snap-x"
@@ -314,11 +313,6 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                     return days;
                                 })()}
                             </div>
-                        ) : (
-                            <div className={`py-8 rounded-[2rem] border-2 border-dashed flex flex-col items-center justify-center ${ isDark ? 'bg-zinc-800/30 border-zinc-700' : 'bg-zinc-50 border-zinc-100' }`}>
-                                <p className={`text-[10px] font-black uppercase tracking-widest ${ isDark ? 'text-zinc-500' : 'text-zinc-300' }`}>Sin registros este mes</p>
-                            </div>
-                        )}
 
                         {/* Visor Dinámico de Asistentes */}
                         <div className={`mt-4 pt-4 border-t ${ isDark ? 'border-zinc-800' : 'border-zinc-100' }`}>
