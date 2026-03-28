@@ -172,9 +172,33 @@ class StudentRegistrationController extends Controller
                         'status' => 'active',
                     ]);
 
-                    // 3. Crear primer pago pendiente (Aplicando descuento dinámico si es Dojo)
+                    // 3. Crear primer pago pendiente (Aplicando lógica PROPORCIONAL)
                     $isVipOnly = $request->registration_mode === 'vip_only';
                     $amount = $plan->price;
+                    
+                    // Lógica de Prorrateo (Backend)
+                    $now = now();
+                    $daysInMonth = $now->daysInMonth;
+                    $remainingDays = $daysInMonth - $now->day + 1;
+                    $ratio = $remainingDays / $daysInMonth;
+
+                    // Determinamos bases mensuales para el cálculo
+                    $isMultiMonth = in_array($plan->billing_cycle, ['quarterly', 'semiannual', 'annual']);
+                    $isMonthly = $plan->billing_cycle === 'monthly' || str_contains(strtolower($plan->name), 'mensual');
+
+                    if (!$isVipOnly && ($isMultiMonth || $isMonthly)) {
+                        // Intentamos obtener el precio base mensual si es multi-mes
+                        $monthlyBase = $plan->price;
+                        if ($plan->billing_cycle === 'quarterly') $monthlyBase = $plan->price / 3; // Estimación simple si no hay meta-data
+                        
+                        $proRata = round($monthlyBase * $ratio);
+
+                        if ($isMultiMonth) {
+                            $amount = $plan->price + $proRata;
+                        } else {
+                            $amount = $proRata;
+                        }
+                    }
 
                     // Descuento Familar (Usando columnas del Plan)
                     $threshold = (int)($plan->family_discount_min_students ?? 2);
@@ -189,9 +213,9 @@ class StudentRegistrationController extends Controller
                         'tenant_id' => $tenant->id,
                         'student_id' => $student->id,
                         'enrollment_id' => $enrollment->id,
-                        'plan_id' => $plan->id, // Consistent with our DB addition
+                        'plan_id' => $plan->id,
                         'amount' => $amount,
-                        'due_date' => $startDate->copy()->startOfMonth(), // Day 1 is payday
+                        'due_date' => $now->copy()->startOfMonth(), // Sincronizado al día 1
                         'status' => 'pending',
                         'type' => $plan->is_recurring ? 'monthly_fee' : 'single_session',
                     ]);

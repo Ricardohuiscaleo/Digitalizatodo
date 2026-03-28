@@ -416,7 +416,6 @@ export default function RegisterPage() {
     plan_id: null as number | null, // Para VIP o planes únicos
     adult_plan_id: null as number | null,
     kid_plan_id: null as number | null,
-    start_date: new Date().toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/-/g, ' / ').replace(/\//g, ' / '),
     accept_dojo_terms: false,
     accept_digitaliza_terms: false,
     pack_type: null as string | null,
@@ -563,26 +562,59 @@ export default function RegisterPage() {
     });
 
     const totalInscriptions = kidsCount + adultsCount;
-
-    // Monthly subtotal calculation
     const isVipOnly = form.registration_mode === 'vip_only';
     const activePlans = tenant?.plans || [];
 
+    // Lógica de Prorrateo
+    const now = new Date();
+    const today = now.getDate();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const remainingRatio = (daysInMonth - today + 1) / daysInMonth;
+    const currentMonthName = now.toLocaleDateString('es-ES', { month: 'long' });
+
     let subtotal = 0;
+    let proRataTotal = 0;
     let selectedVipPrice = 0;
+    let proRataDays = daysInMonth - today + 1;
 
     if (isVipOnly && form.plan_id) {
       const selectedPlan = activePlans.find((p: any) => p.id === form.plan_id);
       selectedVipPrice = selectedPlan ? parseFloat(selectedPlan.price) : 0;
     } else if (!isVipOnly) {
-      // Cálculo separado por categoría si se eligen planes específicos
       const adultPlan = activePlans.find((p: any) => p.id === form.adult_plan_id);
       const kidPlan = activePlans.find((p: any) => p.id === form.kid_plan_id);
 
       const adultPrice = adultPlan ? parseFloat(adultPlan.price) : 0;
       const kidPrice = kidPlan ? parseFloat(kidPlan.price) : 0;
 
-      subtotal = (adultsCount * adultPrice) + (kidsCount * kidPrice);
+      // Un plan es recurrente si su ciclo no es 'once' o si tiene descuento familiar habilitado/menciona mensual
+      const isAdultRecurr = adultPlan && adultPlan.billing_cycle !== 'once';
+      const isKidRecurr = kidPlan && kidPlan.billing_cycle !== 'once';
+
+      // Si es "Mensual", el precio ya es el del mes, pero el usuario dice: "si es mensual un solo mes paga del 15 a fin de mes"
+      // Si es "Trimestral/Semestral", paga Prorrata + Plan.
+      // Vamos a determinar si el plan es multi-mes (Trimestral/Semestral)
+      const isAdultMultiMonth = adultPlan && ['quarterly', 'semiannual', 'annual'].includes(adultPlan.billing_cycle);
+      const isKidMultiMonth = kidPlan && ['quarterly', 'semiannual', 'annual'].includes(kidPlan.billing_cycle);
+
+      // Calculo de prorrata basado en base mensual (si no hay base, usamos el precio del plan / meses)
+      const adultMonthly = adultMonthlyBase || (adultPrice / (adultPlan?.billing_cycle === 'quarterly' ? 3 : 1));
+      const kidMonthly = kidsMonthlyBase || (kidPrice / (kidPlan?.billing_cycle === 'quarterly' ? 3 : 1));
+
+      const adultProRata = Math.round(adultMonthly * remainingRatio);
+      const kidProRata = Math.round(kidMonthly * remainingRatio);
+
+      // Caso Mensual: Solo paga Pro-rata
+      // Caso Multi-mes: Paga Pro-rata + Precio del Plan
+      const adultInitial = isAdultMultiMonth ? (adultPrice + adultProRata) : adultProRata;
+      const kidInitial = isKidMultiMonth ? (kidPrice + kidProRata) : kidProRata;
+      
+      // Si el plan es mensual simple (no multi-mes pero recurrente)
+      const adultFinal = (!isAdultMultiMonth && isAdultRecurr) ? adultProRata : adultInitial;
+      const kidFinal = (!isKidMultiMonth && isKidRecurr) ? kidProRata : kidInitial;
+
+      subtotal = (adultsCount * adultFinal) + (kidsCount * kidFinal);
+      proRataTotal = (adultsCount * adultProRata) + (kidsCount * kidProRata);
     }
 
     const packPrice = selectedVipPrice;
@@ -592,7 +624,7 @@ export default function RegisterPage() {
       total = (subtotal * (1 - pricing.discountPercentage / 100)) + packPrice;
       hasDiscount = true;
     }
-    return { kidsCount, adultsCount, totalInscriptions, subtotal, total, hasDiscount, packPrice, isVipOnly };
+    return { kidsCount, adultsCount, totalInscriptions, subtotal, total, hasDiscount, packPrice, isVipOnly, proRataTotal, proRataDays, currentMonthName };
   };
 
   const totals = calculateTotal();
@@ -1028,31 +1060,6 @@ export default function RegisterPage() {
                 <ValidationIcon isValid={validatePhone(form.guardian_phone)} value={form.guardian_phone} />
                 {errors.guardian_phone && <span className="text-[9px] text-red-500 font-bold uppercase ml-4 absolute -bottom-4 left-0">{errors.guardian_phone}</span>}
               </div>
-            </div>
-          </div>
-
-          {/* FECHA DE INICIO DE ENTRENAMIENTO */}
-          <div className={`space-y-4 p-6 rounded-[2.5rem] border backdrop-blur-xl transition-all duration-700 ${isDarkMode ? "bg-slate-900/40 border-slate-800/50" : "bg-white border-zinc-200 shadow-sm"}`}>
-            <div className="flex items-center justify-between">
-              <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500 flex items-center gap-2">
-                <div className="w-1 h-1 rounded-full bg-[#c9a84c]" />
-                ¿Cuándo comienzas a entrenar?
-              </label>
-              <div className="px-3 py-1 rounded-full bg-[#c9a84c]/10 border border-[#c9a84c]/20">
-                <span className="text-[8px] font-black text-[#c9a84c] uppercase tracking-widest">Día 1 es día de pago</span>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <ModernDateInput 
-                value={form.start_date} 
-                placeholder={todayPlaceholder} 
-                isDarkMode={isDarkMode}
-                onChange={(v: string) => setForm({ ...form, start_date: v })}
-                error={errors.start_date}
-              />
-              <p className={`text-[8px] font-bold uppercase tracking-widest leading-relaxed px-1 ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>
-                Tus cuotas se cobrarán los días 1 de cada mes. Si empiezas hoy, tu primera cuota se generará de inmediato. 🥋🗓️
-              </p>
             </div>
           </div>
           {/* TOGGLE "YO TAMBIÉN PARTICIPO" — blue card premium */}
@@ -1737,21 +1744,35 @@ export default function RegisterPage() {
                 ) : (
                   <>
                     {(totals.adultsCount > 0 && form.adult_plan_id) && (
-                      <div className={`flex justify-between items-center transition-colors ${isDarkMode ? 'text-white' : 'text-zinc-900'} animate-in slide-in-from-left duration-300`}>
-                        <span className="font-bold uppercase tracking-tighter">
-                          {totals.adultsCount}x {tenant?.plans?.find((p: any) => p.id === form.adult_plan_id)?.name || 'PLAN ADULTO'}
-                        </span>
-                        <span className="font-black">${((tenant?.plans?.find((p: any) => p.id === form.adult_plan_id)?.price || 0) * totals.adultsCount).toLocaleString("es-CL")}</span>
+                      <div className="space-y-1 py-1">
+                        <div className={`flex justify-between items-center transition-colors ${isDarkMode ? 'text-white' : 'text-zinc-900'} animate-in slide-in-from-left duration-300`}>
+                          <span className="font-bold uppercase tracking-tighter text-[11px]">
+                            {totals.adultsCount}x {tenant?.plans?.find((p: any) => p.id === form.adult_plan_id)?.name || 'PLAN ADULTO'}
+                          </span>
+                          <span className="font-black text-[11px]">${((tenant?.plans?.find((p: any) => p.id === form.adult_plan_id)?.price || 0) * totals.adultsCount).toLocaleString("es-CL")}</span>
+                        </div>
                       </div>
                     )}
                     
                     {/* PLAN KIDS */}
                     {(totals.kidsCount > 0 && form.kid_plan_id) && (
-                      <div className={`flex justify-between items-center transition-colors ${isDarkMode ? 'text-white' : 'text-zinc-900'} animate-in slide-in-from-left duration-300 delay-75`}>
-                        <span className="font-bold uppercase tracking-tighter">
-                          {totals.kidsCount}x {tenant?.plans?.find((p: any) => p.id === form.kid_plan_id)?.name || 'PLAN KID'}
+                      <div className="space-y-1 py-1 border-t border-zinc-500/10 mt-1 pt-1">
+                        <div className={`flex justify-between items-center transition-colors ${isDarkMode ? 'text-white' : 'text-zinc-900'} animate-in slide-in-from-left duration-300 delay-75`}>
+                          <span className="font-bold uppercase tracking-tighter text-[11px]">
+                            {totals.kidsCount}x {tenant?.plans?.find((p: any) => p.id === form.kid_plan_id)?.name || 'PLAN KID'}
+                          </span>
+                          <span className="font-black text-[11px]">${((tenant?.plans?.find((p: any) => p.id === form.kid_plan_id)?.price || 0) * totals.kidsCount).toLocaleString("es-CL")}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* DETALLE PROPORCIONAL (GLOBAL PARA TODOS LOS PLANES RECURRENTES) */}
+                    {totals.proRataTotal > 0 && (
+                      <div className="flex justify-between items-center text-[#c9a84c] animate-in fade-in duration-700 py-1 border-t border-dashed border-[#c9a84c]/20 mt-1">
+                        <span className="font-black uppercase tracking-widest text-[9px]">
+                          PROPORCIONAL {totals.currentMonthName} ({totals.proRataDays} DÍAS)
                         </span>
-                        <span className="font-black">${((tenant?.plans?.find((p: any) => p.id === form.kid_plan_id)?.price || 0) * totals.kidsCount).toLocaleString("es-CL")}</span>
+                        <span className="font-black text-[10px]">+ ${totals.proRataTotal.toLocaleString("es-CL")}</span>
                       </div>
                     )}
                   </>
