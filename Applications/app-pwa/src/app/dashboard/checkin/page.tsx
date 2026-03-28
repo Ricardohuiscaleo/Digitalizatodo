@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useBranding } from "@/context/BrandingContext";
 import { getEcho } from '@/lib/echo';
-import { getProfile, getPayers, getSchedules } from "@/lib/api";
+import { getProfile, getPayers, getSchedules, getStudents } from "@/lib/api";
 import { unlockAudio, playNotificationSound, playDebtorSound } from "@/lib/audio";
 import { QRCodeCanvas } from 'qrcode.react';
 import { 
@@ -43,10 +43,11 @@ export default function CheckinPage() {
             if (!storedToken || !tenantSlug) { window.location.href = "/"; return; }
             setToken(storedToken);
 
-            const [profile, payersData, schedsRes] = await Promise.all([
+            const [profile, payersData, schedsRes, studentsRes] = await Promise.all([
                 getProfile(tenantSlug, storedToken),
                 getPayers(tenantSlug, storedToken, { month: nowCL().getMonth() + 1, year: nowCL().getFullYear() }),
-                getSchedules(tenantSlug, storedToken)
+                getSchedules(tenantSlug, storedToken),
+                getStudents(tenantSlug, storedToken)
             ]);
 
             if (profile) {
@@ -63,7 +64,21 @@ export default function CheckinPage() {
                 }
             }
 
-            if (payersData?.payers) {
+            // Integración de Alumnos: Priorizar getStudents y enriquecer con payerStatus
+            if (studentsRes?.students) {
+                const students = studentsRes.students.map((s: any) => {
+                    const payer = payersData?.payers?.find((p: any) => 
+                        (p.enrolledStudents || p.students || []).some((es: any) => String(es.id) === String(s.id))
+                    );
+                    return {
+                        ...s,
+                        payerStatus: payer?.status || 'unknown',
+                        payerId: payer?.id
+                    };
+                });
+                setAllStudents(students);
+            } else if (payersData?.payers) {
+                // Fallback si getStudents falla
                 const students = payersData.payers.flatMap((p: any) => {
                     const sList = p.enrolledStudents || p.students || [];
                     return sList.map((s: any) => ({
