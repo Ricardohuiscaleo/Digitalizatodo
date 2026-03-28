@@ -304,7 +304,22 @@ class FeeController extends Controller
 
         if (!$guardian instanceof Guardian) return response()->json(['fees' => []]);
 
-        $fees = Fee::where('tenant_id', $tenant->id)->get();
+        // Obtener los planes en los que están inscritos los alumnos de este apoderado
+        $studentIds = $guardian->students()->pluck('students.id');
+        $planIds = \App\Models\Enrollment::whereIn('student_id', $studentIds)
+            ->where('status', 'active')
+            ->pluck('plan_id')
+            ->unique()
+            ->filter();
+
+        // Obtener cuotas que sean globales (all) o para los planes del apoderado
+        $fees = Fee::where('tenant_id', $tenant->id)
+            ->where(function ($q) use ($planIds) {
+                $q->where('target', 'all')
+                  ->orWhereIn('plan_id', $planIds);
+            })
+            ->get();
+
         $result = [];
 
         foreach ($fees as $fee) {

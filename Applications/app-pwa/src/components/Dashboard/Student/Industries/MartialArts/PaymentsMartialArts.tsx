@@ -37,6 +37,7 @@ interface PaymentsMartialArtsProps {
     paymentHistory: any[];
     vocab: any;
     onBuyPack?: (studentId: string, type: string) => Promise<void>;
+    plans: any[];
 }
 
 export function PaymentsMartialArts({
@@ -59,11 +60,15 @@ export function PaymentsMartialArts({
     handleBulkUploadProof,
     paymentHistory,
     vocab,
-    onBuyPack
+    onBuyPack,
+    plans
 }: PaymentsMartialArtsProps) {
     const [showBankInfo, setShowBankInfo] = React.useState(false);
     const [selectedStudentForPack, setSelectedStudentForPack] = React.useState<string>(students[0]?.id || "");
     const [isBuying, setIsBuying] = React.useState<string | null>(null);
+    const [planCategory, setPlanCategory] = React.useState<'adults' | 'kids' | '1-1'>(
+        students.find(s => String(s.id) === String(selectedStudentForPack))?.category === 'kids' ? 'kids' : 'adults'
+    );
 
     const handleBuy = async (type: string) => {
         if (!onBuyPack || !selectedStudentForPack) return;
@@ -148,13 +153,17 @@ export function PaymentsMartialArts({
                             </div>
                         )}
                         
-                        {/* COMPRA DE PACKS VIP */}
+                        {/* SECCIÓN DE UPGRADES / PLANES */}
                         <div className="mt-2 p-6 rounded-[2.5rem] border border-zinc-800 bg-zinc-900/40 relative overflow-hidden transition-all duration-700">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-[#c9a84c]/5 rounded-full blur-3xl" />
+                            
                             <div className="flex items-center justify-between mb-5 relative z-10">
                                 <div className="space-y-0.5">
-                                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#c9a84c]">Compra de Packs VIP</h3>
-                                    <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest">Sesiones 1-a-1 personalizadas</p>
+                                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#c9a84c]">Mejora tu Plan</h3>
+                                    <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest">
+                                        {planCategory === 'adults' ? 'Entrenamiento Adulto' : 
+                                         planCategory === 'kids' ? 'Pequeños Guerreros' : 'Sesiones Personalizadas'}
+                                    </p>
                                 </div>
                                 {students.length > 1 && (
                                     <select 
@@ -167,34 +176,96 @@ export function PaymentsMartialArts({
                                 )}
                             </div>
 
-                            <div className="grid grid-cols-1 gap-2.5 relative z-10">
-                                {[
-                                    { id: 'single', name: 'CLASE INDIVIDUAL', price: '$18.000', label: 'Clase Suelta · CLP 1hr', desc: 'Ideal para probar la metodología. Sin compromiso previo.' },
-                                    { id: 'pack_4', name: 'Pack 4 Clases', price: '$65.000', label: '$16.250 c/u · Ahorra $7.000', badge: 'MEJOR VALOR' },
-                                    { id: 'referral', name: 'Clase Referido', price: '$15.000', label: 'Beneficio Alumnos · 1hr', badge: 'PARA EL GRUPO' }
-                                ].map((pack) => (
+                            {/* TABS DE CATEGORÍA */}
+                            <div className="flex bg-zinc-950/60 p-1 rounded-xl mb-6 border border-zinc-800/50">
+                                {(['adults', 'kids', '1-1'] as const).map((cat) => (
                                     <button
-                                        key={pack.id}
-                                        onClick={() => handleBuy(pack.id)}
-                                        disabled={!!isBuying}
-                                        className="group flex items-center justify-between p-4 rounded-2xl border border-zinc-800/50 bg-zinc-950/40 hover:border-[#c9a84c]/50 transition-all active:scale-[0.98]"
+                                        key={cat}
+                                        onClick={() => setPlanCategory(cat)}
+                                        className={`flex-1 py-2 text-[8px] font-black uppercase tracking-widest rounded-lg transition-all ${
+                                            planCategory === cat 
+                                            ? 'bg-zinc-800 text-[#c9a84c] shadow-lg' 
+                                            : 'text-zinc-500 hover:text-zinc-300'
+                                        }`}
                                     >
-                                        <div className="flex flex-col text-left">
-                                            <div className="flex items-center gap-2">
-                                                {pack.badge && <span className="bg-[#c9a84c] text-black text-[7px] font-black px-1.5 py-0.5 rounded-full tracking-widest">{pack.badge}</span>}
-                                                <span className="text-[10px] font-black uppercase tracking-tight text-white">{pack.name}</span>
-                                            </div>
-                                            <span className="text-[8px] text-zinc-500 font-bold uppercase mt-0.5">{pack.label}</span>
-                                            <p className="text-[7.5px] text-zinc-600 font-medium leading-tight mt-1 max-w-[180px]">{pack.desc || ''}</p>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-[13px] font-black text-[#c9a84c] tracking-tighter">{pack.price}</span>
-                                            <div className="w-7 h-7 rounded-xl bg-zinc-900 flex items-center justify-center text-white shadow-lg group-hover:bg-[#c9a84c] group-hover:text-black transition-all">
-                                                {isBuying === pack.id ? <Loader2 size={12} className="animate-spin" /> : <CreditCard size={12} />}
-                                            </div>
-                                        </div>
+                                        {cat === 'adults' ? 'Adulto' : cat === 'kids' ? 'Kid' : '1-1'}
                                     </button>
                                 ))}
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-2.5 relative z-10">
+                                {plans
+                                    .filter(p => {
+                                        if (planCategory === '1-1') return p.category === 'personal' || p.name.toLowerCase().includes('1-1') || p.name.toLowerCase().includes('individual');
+                                        return p.target_audience === planCategory;
+                                    })
+                                    .map((plan) => {
+                                        const student = students.find(s => String(s.id) === String(selectedStudentForPack));
+                                        const isCurrentPlan = student?.enrollments?.some((e: any) => e.plan_id === plan.id && e.status === 'active');
+                                        
+                                        // Calcular ahorro o etiqueta según ciclo
+                                        let badge = "";
+                                        if (plan.billing_cycle === 'quarterly') badge = "AHORRO TRIMESTRAL";
+                                        if (plan.billing_cycle === 'semi_annual') badge = "AHORRO SEMESTRAL";
+                                        if (plan.billing_cycle === 'annual') badge = "MEJOR VALOR ANUAL";
+                                        if (isCurrentPlan) badge = "PLAN ACTUAL";
+
+                                        return (
+                                            <button
+                                                key={plan.id}
+                                                onClick={() => handleBuy(`plan_${plan.id}`)}
+                                                disabled={!!isBuying || isCurrentPlan}
+                                                className={`group flex items-center justify-between p-4 rounded-2xl border transition-all active:scale-[0.98] ${
+                                                    isCurrentPlan 
+                                                    ? 'border-[#c9a84c]/30 bg-[#c9a84c]/5 cursor-default' 
+                                                    : 'border-zinc-800/50 bg-zinc-950/40 hover:border-[#c9a84c]/50'
+                                                }`}
+                                            >
+                                                <div className="flex flex-col text-left">
+                                                    <div className="flex items-center gap-2">
+                                                        {badge && (
+                                                            <span className={`text-[7px] font-black px-1.5 py-0.5 rounded-full tracking-widest ${
+                                                                isCurrentPlan ? 'bg-[#c9a84c] text-black' : 'bg-zinc-800 text-[#c9a84c]'
+                                                            }`}>
+                                                                {badge}
+                                                            </span>
+                                                        )}
+                                                        <span className={`text-[10px] font-black uppercase tracking-tight ${isCurrentPlan ? 'text-[#c9a84c]' : 'text-white'}`}>
+                                                            {plan.name}
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-[8px] text-zinc-500 font-bold uppercase mt-0.5">
+                                                        {plan.billing_cycle === 'monthly_fixed' ? 'Mensualidad' : 
+                                                         plan.billing_cycle === 'quarterly' ? 'Pack 3 Meses' :
+                                                         plan.billing_cycle === 'annual' ? 'Acceso Anual' : 'Plan Especial'}
+                                                    </span>
+                                                    <p className="text-[7.5px] text-zinc-600 font-medium leading-tight mt-1 max-w-[180px]">
+                                                        {plan.description || 'Entrena con nosotros y alcanza tu siguiente nivel.'}
+                                                    </p>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-[13px] font-black text-[#c9a84c] tracking-tighter">
+                                                        ${Number(plan.price).toLocaleString('es-CL')}
+                                                    </span>
+                                                    <div className={`w-7 h-7 rounded-xl flex items-center justify-center shadow-lg transition-all ${
+                                                        isCurrentPlan ? 'bg-[#c9a84c] text-black' : 'bg-zinc-900 text-white group-hover:bg-[#c9a84c] group-hover:text-black'
+                                                    }`}>
+                                                        {isBuying === `plan_${plan.id}` ? <Loader2 size={12} className="animate-spin" /> : 
+                                                         isCurrentPlan ? <ShieldCheck size={12} /> : <CreditCard size={12} />}
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                
+                                {plans.filter(p => {
+                                    if (planCategory === '1-1') return p.category === 'personal' || p.name.toLowerCase().includes('1-1') || p.name.toLowerCase().includes('individual');
+                                    return p.target_audience === planCategory;
+                                }).length === 0 && (
+                                    <div className="p-8 text-center bg-zinc-950/20 rounded-2xl border border-dashed border-zinc-800/50">
+                                        <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Sin planes activos en esta categoría</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -205,12 +276,12 @@ export function PaymentsMartialArts({
                         {/* 1. Renderizar Cuotas Pendientes (Fees) */}
                         {myFees && myFees.flatMap((fd: any) => 
                             (fd.periods || []).filter((p: any) => p.status === 'pending' || p.status === 'review').map((p: any) => ({
-                                id: `fee-${p.id}`,
+                                id: p.payment_id ? `pay-${p.payment_id}` : `fee-${fd.fee.id}-${p.month}-${p.year}`,
                                 amount: fd.fee.amount,
                                 title: fd.fee.title,
-                                due_date: `${p.year}-${String(p.month).padStart(2, '0')}-01`, // Normalización para visualización
+                                due_date: p.due_date || `${p.year}-${String(p.month).padStart(2, '0')}-01`,
                                 status: p.status === 'review' ? 'pending_review' : 'pending',
-                                proof_image: p.proof_image,
+                                proof_image: p.proof_url,
                                 type: 'monthly_fee'
                             }))
                         ).map((payment: any) => (
