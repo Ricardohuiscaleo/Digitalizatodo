@@ -17,8 +17,8 @@ import {
 import { FeeCard, PaymentRow } from "../../StudentPaymentComponents";
 
 interface PaymentsTreasuryProps {
-    paymentTab: "pending" | "history";
-    setPaymentTab: (tab: "pending" | "history") => void;
+    paymentTab: "pending" | "upgrade" | "history";
+    setPaymentTab: (tab: "pending" | "upgrade" | "history") => void;
     bankInfo: any;
     copiedBank: boolean;
     setCopiedBank: (val: boolean) => void;

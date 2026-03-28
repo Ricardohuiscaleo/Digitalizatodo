@@ -380,15 +380,34 @@ export async function buyConsumablePack(tenantId: string, token: string, student
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
             },
-            body: JSON.stringify({ student_id: studentId, type }),
+            body: JSON.stringify({ student_id: studentId, type })
         });
-
         return await safeJson(response);
     } catch (error) {
         console.error('Error buying consumable pack:', error);
         return { message: 'Error de conexión' };
     }
+}
+
+export async function buyPlanWithProof(tenantId: string, token: string, studentId: string, planId: string, file: File) {
+    try {
+        const formData = new FormData();
+        formData.append('student_id', studentId);
+        formData.append('plan_id', planId);
+        formData.append('proof', file);
+        
+        const response = await fetch(`${API_URL}/${tenantId}/payments/plan-purchase`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+            },
+            body: formData
+        });
+        return await safeJson(response);
+    } catch { return null; }
 }
 
 export async function getPayers(tenantId: string, token: string, filters?: { month?: string | number, year?: string | number, history?: boolean }) {

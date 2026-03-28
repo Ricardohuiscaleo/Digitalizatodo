@@ -43,22 +43,32 @@ export default function StudentDashboard() {
     // Common states for UI helpers
     const [proofModal, setProofModal] = useState<{ url: string; canDelete: boolean; paymentId: string } | null>(null);
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-    const [paymentTab, setPaymentTab] = useState<"pending" | "history">("pending");
+    const [paymentTab, setPaymentTab] = useState<"pending" | "upgrade" | "history">("pending");
     const [selectedPayments, setSelectedPayments] = useState<string[]>([]);
     const [uploadingPayment, setUploadingPayment] = useState<string | null>(null);
     const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
     const [copiedBank, setCopiedBank] = useState(false);
 
-    const handleBuyPack = async (studentId: string, type: string) => {
+    const handleBuyPack = async (studentId: string, type: string, file?: File) => {
         if (!slug || !token) return;
-        const res = await buyConsumablePack(slug, token, studentId, type);
-        if (res && res.payment) {
+        
+        let res;
+        if (file) {
+            // Es un upgrade de plan con comprobante
+            const { buyPlanWithProof } = await import("@/lib/api");
+            res = await buyPlanWithProof(slug, token, studentId, type, file);
+        } else {
+            // Es la compra de un consumible (legacy o sin comprobante inmediato)
+            res = await buyConsumablePack(slug, token, studentId, type);
+        }
+
+        if (res && (res.payment || res.status)) {
             common.refreshData();
-            setPaymentTab("pending");
+            setPaymentTab("history"); // Mover al historial para ver el estado "En Revisión"
             common.setToastNotification({
                 id: Date.now().toString(),
-                title: "¡Solicitud Creada!",
-                body: "Pila con esto: Sube el comprobante de transferencia abajo para que el staff lo valide.",
+                title: "¡Recibido!",
+                body: "Tu comprobante está en revisión. Lo validaremos a la brevedad.",
                 type: "payment"
             });
         }

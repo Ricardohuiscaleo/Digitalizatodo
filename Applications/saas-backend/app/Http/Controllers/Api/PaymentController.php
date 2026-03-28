@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Enrollment;
+use App\Models\Plan;
 use App\Services\PaymentService;
 use App\Services\ImageService;
 use Illuminate\Http\JsonResponse;
@@ -271,5 +272,70 @@ class PaymentController extends Controller
             'message' => 'Solicitud de compra creada. Por favor suba el comprobante de transferencia.',
             'payment' => $payment
         ]);
+    }
+
+    /**
+     * Crea un pago en revisión por la compra de un plan mensual/trimestral/anual.
+     */
+    public function storePlanPurchase(Request $request): JsonResponse
+    {
+        $guardian = $request->user();
+        $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'plan_id' => 'required|exists:plans,id',
+            'proof' => 'required|image|max:51200'
+        ]);
+
+        $student = $guardian->students()->find($request->student_id);
+        if (!$student) {
+            return response()->json(['message' => 'Alumno no encontrado.'], 403);
+        }
+
+        $plan = Plan::findOrFail($request->plan_id);
+        $tenant = app('currentTenant');
+
+        try {
+            // Crear el registro de pago
+            $payment = Payment::create([
+                'tenant_id' => $tenant->id,
+                'student_id' => $student->id,
+                'plan_id' => $plan->id,
+                'amount' => $plan->price,
+                'type' => 'plan_upgrade',
+                'status' => 'pending_review', // Empieza en revisión porque ya trae el proof
+                'due_date' => now()->toDateString(),
+                'notes' => 'Solicitud de cambio a plan: ' . $plan->name
+            ]);
+
+            // Procesar comprobante
+            if ($request->hasFile('proof')) {
+                $file = $request->file('proof');
+                $optimizedPath = $this->imageService->optimize($file);
+                $filename = "plan_proof_{$payment->id}_" . time() . ".webp";
+                $s3Path = "tenants/{$tenant->id}/payments/{$filename}";
+
+                Storage::disk('s3')->put($s3Path, file_get_contents($optimizedPath));
+                unlink($optimizedPath);
+
+                $url = Storage::disk('s3')->url($s3Path);
+                $payment->update(['proof_image' => $url]);
+
+                // Notificar a staff
+                foreach ($tenant->users as $staffUser) {
+                    \App\Models\Notification::send($tenant->id, $staffUser->id, 'Nuevo Upgrade', "{$guardian->name} solicitó el plan {$plan->name} para {$student->name}.", 'payment', $tenant->slug);
+                }
+
+                return response()->json([
+                    'message' => 'Comprobante recibido. El cambio de plan está en revisión.',
+                    'status' => 'pending_review',
+                    'proof_url' => $url
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al procesar la solicitud: ' . $e->getMessage()], 500);
+        }
+
+        return response()->json(['error' => 'No se recibió el comprobante.'], 400);
     }
 }
