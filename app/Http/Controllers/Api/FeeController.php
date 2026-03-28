@@ -253,7 +253,7 @@ class FeeController extends Controller
         $guardian = $request->user();
 
         $request->validate([
-            'proof' => 'required|image|mimes:jpeg,png,jpg,webp,heic|max:20480',
+            'proof' => 'required|file|mimes:jpeg,png,jpg,webp,heic|max:20480',
         ]);
 
         if (!$guardian instanceof Guardian) {
@@ -346,6 +346,24 @@ class FeeController extends Controller
     private function buildFeeEntry(Fee $fee, $guardian, $studentId, $enrollmentId = null): array
     {
         $periods = $this->calculatePeriods($fee);
+
+        // Si tenemos studentId, filtramos periodos anteriores a su registro
+        if ($studentId) {
+            $student = \App\Models\Student::find($studentId);
+            if ($student) {
+                $regMonth = (int)$student->created_at->format('n');
+                $regYear  = (int)$student->created_at->format('Y');
+
+                // Solo mostramos periodos que sean POSTERIORES al mes de registro
+                // ya que el mes actual se cubre con el pago de inscripción (prorrata)
+                $periods = array_filter($periods, function($p) use ($regYear, $regMonth) {
+                    if ($p['year'] < $regYear) return false;
+                    if ($p['year'] == $regYear && $p['month'] <= $regMonth) return false;
+                    return true;
+                });
+                $periods = array_values($periods); // reset keys
+            }
+        }
         $paidPeriods = FeePayment::where('fee_id', $fee->id)
             ->where('guardian_id', $guardian->id)
             ->when($studentId, fn($q) => $q->where('student_id', $studentId))
@@ -391,7 +409,7 @@ class FeeController extends Controller
         if (!$guardian instanceof Guardian) return response()->json(['message' => 'No autorizado'], 403);
 
         $request->validate([
-            'proof'           => 'required|image|mimes:jpeg,png,jpg,webp,heic|max:20480',
+            'proof'           => 'required|file|mimes:jpeg,png,jpg,webp,heic|max:20480',
             'items'           => 'required|array|min:1',
             'items.*.fee_id'  => 'required|integer',
             'items.*.periods' => 'required|array|min:1',
