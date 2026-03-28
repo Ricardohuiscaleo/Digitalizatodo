@@ -667,6 +667,33 @@ export default function RegisterPage() {
       </div>
       <h1 className={`text-2xl font-black uppercase tracking-tighter ${isDarkMode ? 'text-white' : 'text-black'}`}>¡Registro exitoso!</h1>
       <p className="text-sm text-zinc-500 mt-3 font-bold">Bienvenido a <span className="text-[#c9a84c]">{tenant.name}</span></p>
+      
+      {tenant.bank_info && tenant.bank_info.bank_name && (
+        <div className={`mt-10 p-6 rounded-[2.5rem] border backdrop-blur-sm max-w-sm w-full animate-in fade-in slide-in-from-bottom-4 duration-1000 ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'}`}>
+          <div className="flex flex-col items-center gap-1.5 mb-4">
+            <span className="text-[10px] font-black text-[#c9a84c] uppercase tracking-[0.2em]">Paga tu primera cuota</span>
+            <h4 className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Datos de Transferencia</h4>
+          </div>
+          <div className="space-y-3 text-left">
+            {[
+              { label: 'Banco', value: tenant.bank_info.bank_name },
+              { label: 'Tipo', value: tenant.bank_info.account_type },
+              { label: 'Número', value: tenant.bank_info.account_number },
+              { label: 'Titular', value: tenant.bank_info.holder_name },
+              { label: 'RUT', value: tenant.bank_info.holder_rut },
+            ].map((item, i) => (
+              <div key={i} className="flex justify-between items-center border-b border-zinc-800/10 last:border-0 pb-2">
+                <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">{item.label}</span>
+                <span className={`text-[10px] font-black uppercase tracking-tighter ${isDarkMode ? 'text-zinc-300' : 'text-zinc-800'}`}>{item.value}</span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-[8px] font-bold text-zinc-500 uppercase tracking-widest leading-relaxed">
+            Una vez transferido, inicia sesión para subir tu comprobante y el Sensei te aprobará pronto. 🥋✨
+          </p>
+        </div>
+      )}
+
       <a href="/login" className={`mt-10 h-14 px-10 rounded-2xl flex items-center justify-center transition-all active:scale-95 shadow-xl text-[11px] font-black uppercase tracking-widest ${isDarkMode ? 'bg-white text-black' : 'bg-black text-white hover:bg-zinc-800'}`}>
         Ir al login
       </a>
