@@ -8,7 +8,7 @@ class Fee extends Model
 {
     protected $fillable = [
         'tenant_id', 'title', 'description', 'amount', 'due_date',
-        'target', 'type', 'recurring_day', 'created_by',
+        'target', 'type', 'recurring_day', 'billing_cycle', 'created_by',
     ];
 
     protected $casts = ['due_date' => 'date', 'amount' => 'float'];
