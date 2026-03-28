@@ -119,19 +119,27 @@ class Student extends Model
         $previousClasses = (int)($this->previous_classes ?? 0);
         $realClasses = $systemClasses + $previousClasses;
         
-        // Clases Virtuales (Crédito por rayas manuales)
-        $stripeDebt = (int)($this->degrees ?? 0) * (int)$config->classes_per_stripe;
-        $virtualClasses = max(0, $stripeDebt - $realClasses);
-        
-        $totalEffective = $realClasses + $virtualClasses;
+        // Clases Virtuales (Línea Base por grados manuales)
         $classesPerStripe = (int)$config->classes_per_stripe;
+        $totalForBelt = (int)$config->total_for_belt;
+        
+        $degrees = (int)($this->degrees ?? 0);
+        $degreesBase = $degrees * $classesPerStripe;
+        if ($degrees >= 4) $degreesBase = $totalForBelt; // 4 grados = 150 base
+
+        // Clases nuevas en el sistema (evita duplicar si ya estaban en la base)
+        $checkpoint = (int)($this->belt_classes_at_promotion ?? 0);
+        $newClasses = max(0, $systemClasses - $checkpoint);
+
+        // Total Efectivo = Máximo entre el libro oficial (real) o la base ajustada + clases nuevas
+        $totalEffective = max($realClasses, $degreesBase + $newClasses);
         
         // Stripe actual (0 a 4)
         $currentStripe = min(4, (int)floor($totalEffective / $classesPerStripe));
         
         // Progreso stripe (%)
         $milestoneStart = $currentStripe * $classesPerStripe;
-        $milestoneEnd = ($currentStripe < 4) ? ($currentStripe + 1) * $classesPerStripe : (int)$config->total_for_belt;
+        $milestoneEnd = ($currentStripe < 4) ? ($currentStripe + 1) * $classesPerStripe : $totalForBelt;
         $progressInStripe = $totalEffective - $milestoneStart;
         $stripeRange = $milestoneEnd - $milestoneStart;
         $progressPct = ($stripeRange > 0) ? min(100, ($progressInStripe / $stripeRange) * 100) : 100;
