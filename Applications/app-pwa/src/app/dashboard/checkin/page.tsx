@@ -485,13 +485,22 @@ export default function CheckinPage() {
                                     const sched = activeSchedule || nextSchedule;
                                     let displayList = sched?.students || sched?.enrolled_students || [];
                                     
-                                    // Fallback: If list is empty and class name matches category
-                                    if (displayList.length === 0 && sched?.name && allStudents.length > 0) {
-                                        const nameLower = sched.name.toLowerCase();
-                                        if (nameLower.includes('kids') || nameLower.includes('infantil')) {
-                                            displayList = allStudents.filter(s => s.category === 'kids');
-                                        } else if (nameLower.includes('adult') || nameLower.includes('jiu jitsu')) {
-                                            displayList = allStudents.filter(s => s.category === 'adults');
+                                    // Fallback: If list is empty, filter participants by class category
+                                    if (displayList.length === 0 && sched && allStudents.length > 0) {
+                                        const scheduleCat = (sched as any).category?.toLowerCase() || '';
+                                        const nameLower = (sched as any).name?.toLowerCase() || '';
+                                        
+                                        if (scheduleCat.includes('kids') || nameLower.includes('kids') || nameLower.includes('infantil')) {
+                                            displayList = allStudents.filter(s => {
+                                                const sCat = s.category?.toLowerCase() || '';
+                                                return sCat.includes('kids') || sCat.includes('infantil');
+                                            });
+                                        } else {
+                                            // Assume Adult/Iniciantes/General
+                                            displayList = allStudents.filter(s => {
+                                                const sCat = s.category?.toLowerCase() || '';
+                                                return sCat.includes('adult') || sCat.includes('adulto') || !sCat;
+                                            });
                                         }
                                     }
 
