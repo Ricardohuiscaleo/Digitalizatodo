@@ -71,10 +71,12 @@ class PaymentController extends Controller
             $tenantId = $tenant->id;
 
             try {
-                // Optimizar y convertir a WebP
-                $optimizedPath = $this->imageService->optimize($file);
+                // Optimizar y convertir
+                $imageInfo = $this->imageService->optimize($file);
+                $optimizedPath = $imageInfo['path'];
+                $extension = $imageInfo['extension'];
                 
-                $filename = "proof_{$payment->id}_" . time() . ".webp";
+                $filename = "proof_{$payment->id}_" . time() . ".{$extension}";
                 $s3Path = "tenants/{$tenantId}/payments/{$filename}";
 
                 // Subir a S3 el archivo optimizado
@@ -197,9 +199,11 @@ class PaymentController extends Controller
             try {
                 $file = $request->file('proof');
                 $tenant = app('currentTenant');
-                $optimizedPath = $this->imageService->optimize($file);
+                $imageInfo = $this->imageService->optimize($file);
+                $optimizedPath = $imageInfo['path'];
+                $extension = $imageInfo['extension'];
                 
-                $filename = "bulk_proof_" . time() . "_" . Str::random(5) . ".webp";
+                $filename = "bulk_proof_" . time() . "_" . Str::random(5) . ".{$extension}";
                 $s3Path = "tenants/{$tenant->id}/payments/{$filename}";
                 
                 Storage::disk('s3')->put($s3Path, file_get_contents($optimizedPath));
@@ -310,8 +314,11 @@ class PaymentController extends Controller
             // Procesar comprobante
             if ($request->hasFile('proof')) {
                 $file = $request->file('proof');
-                $optimizedPath = $this->imageService->optimize($file);
-                $filename = "plan_proof_{$payment->id}_" . time() . ".webp";
+                $imageInfo = $this->imageService->optimize($file);
+                $optimizedPath = $imageInfo['path'];
+                $extension = $imageInfo['extension'];
+
+                $filename = "plan_proof_{$payment->id}_" . time() . ".{$extension}";
                 $s3Path = "tenants/{$tenant->id}/payments/{$filename}";
 
                 Storage::disk('s3')->put($s3Path, file_get_contents($optimizedPath));

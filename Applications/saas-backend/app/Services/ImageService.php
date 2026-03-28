@@ -15,14 +15,21 @@ class ImageService
      * @param int $maxWidth
      * @param int $maxHeight
      * @param int $quality
-     * @return string Path temporal del archivo WebP
+     * @return array ['path' => string, 'extension' => string]
      */
-    public function optimize(UploadedFile $file, int $maxWidth = 1200, int $maxHeight = 1200, int $quality = 80): string
+    public function optimize(UploadedFile $file, int $maxWidth = 1200, int $maxHeight = 1200, int $quality = 80): array
     {
         $imagePath = $file->getRealPath();
         $mimeType = $file->getMimeType();
+        $originalExtension = $file->getClientOriginalExtension() ?: 'jpg';
 
-        // Crear recurso de imagen según el tipo
+        // Si es HEIC o similar y no tenemos soporte garantizado, devolvemos el original
+        if (str_contains($mimeType, 'heic')) {
+            return ['path' => $imagePath, 'extension' => $originalExtension];
+        }
+
+        try {
+            // Crear recurso de imagen según el tipo
         switch ($mimeType) {
             case 'image/jpeg':
             case 'image/jpg':
@@ -45,7 +52,8 @@ class ImageService
         }
 
         if (!$image) {
-            throw new \Exception("No se pudo procesar el formato de imagen: {$mimeType}");
+            // Fallback total: si no se pudo procesar, devolvemos el original sin optimizar
+            return ['path' => $imagePath, 'extension' => $originalExtension];
         }
 
         // Obtener dimensiones originales
@@ -81,6 +89,6 @@ class ImageService
         imagewebp($image, $tempPath, $quality);
         imagedestroy($image);
 
-        return $tempPath;
+        return ['path' => $tempPath, 'extension' => 'webp'];
     }
 }
