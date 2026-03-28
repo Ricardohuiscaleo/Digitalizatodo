@@ -229,7 +229,7 @@ export async function registerStudent(tenantId: string, data: any) {
         const response = await fetch(`${API_URL}/${tenantId}/register-student`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                ...defaultHeaders,
             },
             body: JSON.stringify(data),
         });

@@ -521,7 +521,7 @@ export default function RegisterPage() {
     e.preventDefault();
     if (!validate()) return;
     setSubmitting(true); setError("");
-    const result = await registerStudent(tenant.id, form);
+    const result = await registerStudent(tenant.slug || tenant.id, form);
     setSubmitting(false);
     if (result?.errors) {
       const first = Object.values(result.errors)[0] as string[];
