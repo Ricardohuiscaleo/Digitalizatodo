@@ -18,7 +18,8 @@ import {
     ImageIcon,
     Users,
     Baby,
-    User
+    User,
+    Calendar
 } from "lucide-react";
 import { PaymentRow } from "../../StudentPaymentComponents";
 
@@ -296,7 +297,7 @@ export function PaymentsMartialArts({
                                     if (!groups[sid]) groups[sid] = { student, payments: [] };
                                     (fd.periods || []).filter((p: any) => p.status === 'pending' || p.status === 'review').forEach((p: any) => {
                                         groups[sid].payments.push({
-                                            id: p.payment_id ? `pay-${p.payment_id}` : `fee-${fd.fee.id}-${p.month}-${p.year}`,
+                                            id: p.payment_id ? `pay-${p.payment_id}` : `fee-${sid}-${fd.enrollment_id || 0}-${fd.fee.id}-${p.month}-${p.year}`,
                                             amount: fd.fee.amount,
                                             title: fd.fee.title,
                                             due_date: p.due_date || `${p.year}-${String(p.month).padStart(2, '0')}-01`,
@@ -661,6 +662,12 @@ export function PaymentsMartialArts({
                                                     {savingAmount > 0 && (
                                                         <span className="text-[9px] font-black text-emerald-600 bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg">
                                                             💚 Ahorro de ${savingAmount.toLocaleString('es-CL')}
+                                                        </span>
+                                                    )}
+                                                    {plan.billing_cycle && plan.billing_cycle !== 'monthly_fixed' && plan.billing_cycle !== 'monthly_from_enrollment' && (
+                                                        <span className="text-[9px] font-black text-blue-600 bg-blue-100 border border-blue-200 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                                                            <Calendar size={10} />
+                                                            {plan.billing_cycle === 'quarterly' ? '3 Meses' : plan.billing_cycle === 'semi_annual' ? '6 Meses' : '12 Meses'} de Cobertura
                                                         </span>
                                                     )}
                                                 </div>

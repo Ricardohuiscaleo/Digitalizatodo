@@ -288,4 +288,66 @@ class StudentController extends Controller
     }
 
     public function destroy(string $id) {}
+
+    /**
+     * Bulk delete students.
+     */
+    public function bulkDelete(Request $request)
+    {
+        $tenant = app('currentTenant');
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:students,id'
+        ]);
+
+        $ids = $validated['ids'];
+
+        try {
+            \DB::beginTransaction();
+
+            // Solo eliminar alumnos que pertenecen al tenant actual
+            $students = Student::where('tenant_id', $tenant->id)
+                ->whereIn('id', $ids)
+                ->get();
+
+            foreach ($students as $student) {
+                // Borrado integral sugerido por el usuario (SoftDelete en Student)
+                // Pero podemos limpiar relaciones críticas si es necesario
+                
+                // 1. Eliminar asistencias
+                $student->attendances()->delete();
+                
+                // 2. Eliminar notificaciones enviadas a este usuario (si aplica el mapeo user_id = student_id en algunos casos)
+                // Ojo: muchos alumnos no tienen user_id directo, pero si lo tuvieran:
+                // if ($student->user_id) \App\Models\Notification::where('user_id', $student->user_id)->delete();
+
+                // 3. Eliminar inscripciones (Enrollments)
+                foreach ($student->enrollments as $enrollment) {
+                    $enrollment->payments()->delete();
+                    $enrollment->delete();
+                }
+
+                // 4. Quitar de horarios
+                $student->schedules()->detach();
+
+                // 5. Quitar relación con apoderados
+                $student->guardians()->detach();
+
+                // 6. Finalmente, el alumno
+                $student->delete();
+            }
+
+            \DB::commit();
+
+            return response()->json([
+                'message' => count($students) . ' alumnos eliminados correctamente.',
+                'deleted_count' => count($students)
+            ]);
+
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            \Log::error("Error en borrado masivo: " . $e->getMessage());
+            return response()->json(['error' => 'Error al procesar el borrado masivo: ' . $e->getMessage()], 500);
+        }
+    }
 }

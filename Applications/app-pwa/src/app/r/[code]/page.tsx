@@ -701,32 +701,11 @@ export default function RegisterPage() {
       <h1 className={`text-2xl font-black uppercase tracking-tighter ${isDarkMode ? 'text-white' : 'text-black'}`}>¡Registro exitoso!</h1>
       <p className="text-sm text-zinc-500 mt-3 font-bold">Bienvenido a <span className="text-[#c9a84c]">{tenant.name}</span></p>
       
-      {tenant.bank_info && tenant.bank_info.bank_name && (
-        <div className={`mt-10 p-6 rounded-[2.5rem] border backdrop-blur-sm max-w-sm w-full animate-in fade-in slide-in-from-bottom-4 duration-1000 ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'}`}>
-          <div className="flex flex-col items-center gap-1.5 mb-4">
-            <span className="text-[10px] font-black text-[#c9a84c] uppercase tracking-[0.2em] text-center px-4">Paga tu primera cuota en tu app de gestión de horarios y pagos</span>
-            <div className="h-px w-8 bg-zinc-500/20 my-1" />
-            <h4 className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Datos de Transferencia</h4>
-          </div>
-          <div className="space-y-3 text-left px-2">
-            {[
-              { label: 'Banco', value: tenant.bank_info.bank_name },
-              { label: 'Tipo', value: tenant.bank_info.account_type },
-              { label: 'Número', value: tenant.bank_info.account_number },
-              { label: 'Titular', value: tenant.bank_info.holder_name },
-              { label: 'RUT', value: tenant.bank_info.holder_rut },
-            ].map((item, i) => (
-              <div key={i} className="flex justify-between items-center border-b border-zinc-500/5 last:border-0 pb-2">
-                <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">{item.label}</span>
-                <span className={`text-[9px] font-black uppercase tracking-tighter ${isDarkMode ? 'text-zinc-300' : 'text-zinc-800'}`}>{item.value}</span>
-              </div>
-            ))}
-          </div>
-          <p className={`mt-5 text-[9px] font-black uppercase tracking-widest leading-relaxed text-center ${isDarkMode ? 'text-[#c9a84c]' : 'text-amber-800'}`}>
-            ¡TRASNFIERE, SUBE TU COMPROBANTE EN LA APP Y EL SENSEI TE ACTIVARÁ AL INSTANTE! 🥋✨
-          </p>
-        </div>
-      )}
+      <div className={`mt-10 p-8 rounded-[3rem] border backdrop-blur-sm max-w-sm w-full animate-in fade-in slide-in-from-bottom-4 duration-1000 ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white border-zinc-200 shadow-xl shadow-zinc-200/50'}`}>
+        <p className={`text-xs font-black uppercase tracking-[0.2em] leading-relaxed text-center ${isDarkMode ? 'text-[#c9a84c]' : 'text-amber-800'}`}>
+          PAGA TU PRIMERA CUOTA EN TU APP DE GESTIÓN DE HORARIOS Y PAGOS 🥋✨
+        </p>
+      </div>
 
       <a href="/login" className={`mt-10 h-14 px-10 rounded-2xl flex items-center justify-center transition-all active:scale-95 shadow-xl text-[11px] font-black uppercase tracking-widest ${isDarkMode ? 'bg-white text-black' : 'bg-black text-white hover:bg-zinc-800'}`}>
         Ir al login

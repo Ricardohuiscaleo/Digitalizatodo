@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, CheckCircle2, QrCode, Edit2, X, Save, Loader2, User, MoreHorizontal, Users, UserCheck, UserX, Sparkles } from 'lucide-react';
+import { Search, CheckCircle2, QrCode, Edit2, X, Save, Loader2, User, MoreHorizontal, Users, UserCheck, UserX, Sparkles, Trash2, Check } from 'lucide-react';
 import { BeltDisplay } from './BeltDisplay';
 import { BeltBadge } from './BeltBadge';
 import { StudentAvatar } from './StudentAvatar';
-import { updateStudentBjj, updateStudentProfile, getStudent } from '@/lib/api';
+import { updateStudentBjj, updateStudentProfile, getStudent, deleteStudents } from '@/lib/api';
 import { ALLIANCE_BJJ_GRADUATION, calcBeltProgress } from '@/lib/industryUtils';
 import { nowCL } from '@/lib/utils';
 
@@ -105,6 +105,8 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
     const [saving, setSaving] = useState(false);
     const [pendingChanges, setPendingChanges] = useState<{ label: string; from: string; to: string }[] | null>(null);
     const [editMode, setEditMode] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isDeleting, setIsDeleting] = useState(false);
     const [filter, setFilter] = useState<'all' | 'present' | 'absent'>('all');
     const [loadingStudent, setLoadingStudent] = useState(false);
     const [showOptions, setShowOptions] = useState(false);
@@ -235,6 +237,11 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
         promoteRef.current = promote;
     };
 
+    const onStudentUpdatedInternal = () => {
+        onStudentUpdated?.();
+        setSelectedIds(new Set());
+    };
+
     const handleConfirmSave = async () => {
         if (!editingStudent || !branding?.slug || !token) return;
         const promote = promoteRef.current;
@@ -247,7 +254,40 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
         setSaving(false);
         setPendingChanges(null);
         setEditingStudent(null);
-        onStudentUpdated?.();
+        onStudentUpdatedInternal();
+    };
+
+    const toggleSelect = (id: string) => {
+        const next = new Set(selectedIds);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setSelectedIds(next);
+    };
+
+    const selectAll = () => {
+        if (selectedIds.size === displayedStudents.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(displayedStudents.map(s => String(s.id))));
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedIds.size === 0 || !branding?.slug || !token) return;
+        
+        const confirmMsg = `¿Estás seguro de eliminar a ${selectedIds.size} ${selectedIds.size === 1 ? 'alumno' : 'alumnos'}? Esta acción borrará inscripciones, pagos y asistencias asociadas.`;
+        if (!window.confirm(confirmMsg)) return;
+
+        setIsDeleting(true);
+        try {
+            const res = await deleteStudents(branding.slug, token, Array.from(selectedIds));
+            if (res.error) alert(res.error);
+            else onStudentUpdatedInternal();
+        } catch (err) {
+            console.error("Error deleting students:", err);
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     // Swipe to close
@@ -374,19 +414,21 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                     <div className="flex items-center gap-2 border-l border-zinc-200 dark:border-zinc-700 pl-2">
+                        {selectedIds.size > 0 && (
+                            <button
+                                onClick={handleBulkDelete}
+                                disabled={isDeleting}
+                                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all bg-rose-500 text-white shadow-lg shadow-rose-500/20 active:scale-95`}
+                                title="Eliminar Seleccionados"
+                            >
+                                {isDeleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} strokeWidth={3} />}
+                            </button>
+                        )}
                         <button
-                            onClick={() => setIsSmartFilterEnabled(!isSmartFilterEnabled)}
-                            className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
-                                isSmartFilterEnabled
-                                    ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
-                                    : isDark ? 'bg-zinc-700 text-zinc-400 hover:text-white' : 'bg-zinc-100 text-zinc-400 hover:text-zinc-600'
-                            }`}
-                            title={isSmartFilterEnabled ? "Filtro Inteligente Activo" : "Filtro Inteligente Apagado"}
-                        >
-                            <Sparkles size={13} strokeWidth={3} className={isSmartFilterEnabled ? 'animate-pulse' : ''} />
-                        </button>
-                        <button
-                            onClick={() => setEditMode(!editMode)}
+                            onClick={() => {
+                                setEditMode(!editMode);
+                                if (editMode) setSelectedIds(new Set());
+                            }}
                             className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
                                 editMode
                                     ? 'bg-amber-400 text-white shadow-lg shadow-amber-400/20'
@@ -446,6 +488,20 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className={`border-b ${isDark ? 'border-zinc-800' : 'border-zinc-50'}`}>
+                            {editMode && (
+                                <th className="px-6 py-4 w-10">
+                                    <button 
+                                        onClick={selectAll}
+                                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                                            selectedIds.size === displayedStudents.length && displayedStudents.length > 0
+                                                ? 'bg-indigo-500 border-indigo-500 text-white'
+                                                : isDark ? 'border-zinc-700 bg-zinc-800' : 'border-zinc-200 bg-white'
+                                        }`}
+                                    >
+                                        {selectedIds.size === displayedStudents.length && displayedStudents.length > 0 && <Check size={12} strokeWidth={4} />}
+                                    </button>
+                                </th>
+                            )}
                             {['Atleta', 'Grado', 'Estado', ''].map((h, i) => (
                                 <th key={i} className={`px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-zinc-600' : 'text-zinc-400'} ${i === 3 ? 'text-right' : ''}`}>
                                     {h}
@@ -456,8 +512,27 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                     <tbody className={`divide-y ${isDark ? 'divide-zinc-800/50' : 'divide-zinc-50'}`}>
                         {displayedStudents.map(student => {
                             const isPresent = attendance.has(String(student.id));
+                            const isSelected = selectedIds.has(String(student.id));
                             return (
-                                <tr key={student.id} className={`transition-colors ${isDark ? 'hover:bg-zinc-800/30' : 'hover:bg-zinc-50/80'}`}>
+                                <tr key={student.id} className={`transition-colors ${
+                                    isSelected 
+                                        ? isDark ? 'bg-indigo-500/10' : 'bg-indigo-50' 
+                                        : isDark ? 'hover:bg-zinc-800/30' : 'hover:bg-zinc-50/80'
+                                }`}>
+                                    {editMode && (
+                                        <td className="px-6 py-4">
+                                            <button 
+                                                onClick={() => toggleSelect(String(student.id))}
+                                                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                                                    isSelected
+                                                        ? 'bg-indigo-500 border-indigo-500 text-white'
+                                                        : isDark ? 'border-zinc-700 bg-zinc-800' : 'border-zinc-200 bg-white'
+                                                }`}
+                                            >
+                                                {isSelected && <Check size={12} strokeWidth={4} />}
+                                            </button>
+                                        </td>
+                                    )}
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
                                             <StudentAvatar
@@ -533,26 +608,33 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
             <div className="grid grid-cols-4 gap-2 md:hidden">
                 {displayedStudents.map(student => {
                     const isPresent = attendance.has(String(student.id));
+                    const isSelected = selectedIds.has(String(student.id));
                     const inSystem = student.total_attendances ?? 0;
                     const totalClasses = (student.previous_classes ?? 0) + inSystem;
-                    const progress = student.belt_rank 
-                        ? calcBeltProgress(student.belt_rank, student.degrees ?? 0, student.belt_classes_at_promotion ?? 0, totalClasses)
-                        : null;
                     const classesCount = totalClasses;
                     return (
                         <div key={student.id} className="relative">
                             <button
-                                onClick={() => editMode ? openEdit(student) : toggleAttendance(student.id)}
+                                onClick={() => {
+                                    if (editMode) toggleSelect(String(student.id));
+                                    else toggleAttendance(student.id);
+                                }}
+                                onContextMenu={(e) => {
+                                    e.preventDefault();
+                                    openEdit(student);
+                                }}
                                 className={`relative flex flex-col items-center justify-center p-2 rounded-2xl transition-all w-full aspect-square active:scale-95 ${
-                                    editMode
-                                        ? isDark
-                                            ? 'bg-zinc-900/60 border-2 border-dashed border-amber-500/50'
-                                            : 'bg-white border-2 border-dashed border-amber-400/60 shadow-sm'
-                                        : isPresent
-                                            ? 'bg-emerald-500/10 border-2 border-emerald-400 shadow-lg shadow-emerald-500/10'
-                                            : isDark
-                                                ? 'bg-zinc-800 border border-zinc-700'
-                                                : 'bg-white border border-zinc-100 shadow-sm'
+                                    isSelected
+                                        ? 'bg-indigo-500/10 border-2 border-indigo-500 shadow-lg shadow-indigo-500/10'
+                                        : editMode
+                                            ? isDark
+                                                ? 'bg-zinc-900/60 border-2 border-dashed border-amber-500/50'
+                                                : 'bg-white border-2 border-dashed border-amber-400/60 shadow-sm'
+                                            : isPresent
+                                                ? 'bg-emerald-500/10 border-2 border-emerald-400 shadow-lg shadow-emerald-500/10'
+                                                : isDark
+                                                    ? 'bg-zinc-800 border border-zinc-700'
+                                                    : 'bg-white border border-zinc-100 shadow-sm'
                                 }`}
                             >
                                 <div className="relative">
@@ -565,16 +647,23 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                         classesCount={!editMode ? classesCount : undefined}
                                         modality={student.modality}
                                         isDark={isDark}
-                                        ring={editMode
-                                            ? 'ring-amber-400/40 bg-zinc-800'
-                                            : isPresent
-                                                ? 'ring-emerald-400 bg-zinc-800'
-                                                : isDark ? 'ring-zinc-700 bg-zinc-800' : 'ring-zinc-100 bg-zinc-100'
+                                        ring={isSelected
+                                            ? 'ring-indigo-500 bg-zinc-800'
+                                            : editMode
+                                                ? 'ring-amber-400/40 bg-zinc-800'
+                                                : isPresent
+                                                    ? 'ring-emerald-400 bg-zinc-800'
+                                                    : isDark ? 'ring-zinc-700 bg-zinc-800' : 'ring-zinc-100 bg-zinc-100'
                                         }
                                     />
-                                    {editMode && (
-                                        <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/40 pointer-events-none" style={{ borderRadius: '50%', width: 52, height: 52 }}>
-                                            <Edit2 size={16} className="text-white/90" />
+                                    {editMode && isSelected && (
+                                        <div className="absolute -top-1 -right-1 bg-indigo-500 rounded-full p-1 border-2 border-white shadow-lg z-30">
+                                            <Check className="text-white" size={10} strokeWidth={4} />
+                                        </div>
+                                    )}
+                                    {editMode && !isSelected && (
+                                        <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/10 pointer-events-none" style={{ borderRadius: '50%', width: 52, height: 52 }}>
+                                            <div className="w-4 h-4 rounded-full border-2 border-white/50" />
                                         </div>
                                     )}
                                     {!editMode && isPresent && (
@@ -582,6 +671,12 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                             <CheckCircle2 className="text-white" size={10} />
                                         </div>
                                     )}
+                                    <div 
+                                        onClick={(e) => { e.stopPropagation(); openEdit(student); }}
+                                        className="absolute -bottom-1 -right-1 bg-white dark:bg-zinc-800 rounded-full p-1.5 shadow-lg border border-zinc-100 dark:border-zinc-700 active:scale-90"
+                                    >
+                                        <Edit2 size={10} className={isDark ? 'text-zinc-400' : 'text-zinc-500'} />
+                                    </div>
                                 </div>
                                 <div className="flex items-center justify-center gap-1 mt-1.5 px-0.5">
                                     <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
@@ -590,7 +685,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                         'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]'
                                     }`} />
                                     <p className={`font-black text-[9px] text-center leading-none line-clamp-1 uppercase ${
-                                        editMode ? 'text-amber-400' : isPresent ? 'text-emerald-500' : isDark ? 'text-zinc-300' : 'text-zinc-700'
+                                        isSelected ? 'text-indigo-500' : editMode ? 'text-amber-400' : isPresent ? 'text-emerald-500' : isDark ? 'text-zinc-300' : 'text-zinc-700'
                                     }`}>
                                         {student.name.split(' ')[0]}
                                     </p>

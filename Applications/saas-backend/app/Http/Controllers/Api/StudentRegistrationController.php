@@ -179,6 +179,21 @@ class StudentRegistrationController extends Controller
                         'status' => 'active',
                     ]);
 
+                    // Asegurar que exista una plantilla de cobro recurrente (Fee) para este plan
+                    if ($plan->is_recurring) {
+                        \App\Models\Fee::firstOrCreate(
+                            ['tenant_id' => $tenant->id, 'plan_id' => $plan->id],
+                            [
+                                'title'         => $plan->name,
+                                'amount'        => $plan->price,
+                                'type'          => 'recurring',
+                                'billing_cycle' => $plan->billing_cycle ?? 'monthly_fixed',
+                                'recurring_day' => $plan->billing_day ?? 1,
+                                'target'        => 'custom',
+                            ]
+                        );
+                    }
+
                     // 3. Crear primer pago pendiente (Aplicando lógica PROPORCIONAL)
                     $isVipOnly = $request->registration_mode === 'vip_only';
                     $amount = $plan->price;
@@ -222,7 +237,7 @@ class StudentRegistrationController extends Controller
                         'enrollment_id' => $enrollment->id,
                         'plan_id' => $plan->id,
                         'amount' => $amount,
-                        'due_date' => $now->copy()->startOfMonth(), // Sincronizado al día 1
+                        'due_date' => $now, // Fecha de registro para el cobro inicial
                         'status' => 'pending',
                         'type' => $plan->is_recurring ? 'monthly_fee' : 'single_session',
                     ]);

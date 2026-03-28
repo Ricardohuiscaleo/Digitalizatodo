@@ -178,7 +178,9 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
                     Route::put('schedules/{id}', [\App\Http\Controllers\Api\ScheduleController::class, 'update']);
                     Route::delete('schedules/{id}', [\App\Http\Controllers\Api\ScheduleController::class, 'destroy']);
 
-                    // Gestión de Planes
+                    // Gestión de Alumnos masivo
+                    Route::post('students/bulk-delete', [StudentController::class, 'bulkDelete']);
+
                     Route::post('plans', [PlanController::class, 'store']);
                     Route::put('plans/{id}', [PlanController::class, 'update']);
                     Route::delete('plans/{id}', [PlanController::class, 'destroy']);

@@ -9,7 +9,9 @@ import {
     LogOut,
     Moon,
     Sun,
-    Trophy
+    Trophy,
+    Mail,
+    Phone
 } from "lucide-react";
 import { updateStudentName } from "@/lib/api";
 import AppUpdatesAccordion from "../AppUpdatesAccordion";
@@ -273,14 +275,14 @@ export function StudentProfileSection({
                         </button>
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-orange-400">
-                            {selfStudent ? 'Titular · Atleta' : 'Titular'}
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-400 mb-1">
+                            {selfStudent ? 'Titular · Atleta' : 'Titular · Apoderado'}
                         </p>
-                        <h2 className="text-base font-black truncate leading-tight">
-                            {guardian.name.split(' ').slice(0, 2).join(' ')}
+                        <h2 className="text-xl font-black truncate leading-tight">
+                            {guardian.name}
                         </h2>
                         {selfStudent?.belt_rank && (
-                            <div className="mt-1">
+                            <div className="mt-2">
                                 <BeltDisplay beltRank={selfStudent.belt_rank} degrees={selfStudent.degrees ?? 0} size="sm" />
                             </div>
                         )}
@@ -292,8 +294,41 @@ export function StudentProfileSection({
                         </button>
                     )}
                 </div>
+
+                <div className="mt-8 pt-6 border-t border-white/10 space-y-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Datos de Contacto (Titular)</p>
+                    <div className="flex flex-col gap-3">
+                        {guardian.email && (
+                            <div className="flex items-center gap-4 group">
+                                <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center text-orange-400 group-hover:bg-orange-500 group-hover:text-white transition-all shadow-lg">
+                                    <Mail size={18} />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-white/40 mb-0.5">Email del Responsable</span>
+                                    <span className="text-sm font-bold text-white leading-none">{guardian.email}</span>
+                                </div>
+                            </div>
+                        )}
+                        {guardian.phone && (
+                            <div className="flex items-center gap-4 group">
+                                <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center text-orange-400 group-hover:bg-orange-500 group-hover:text-white transition-all shadow-lg">
+                                    <Phone size={18} />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-white/40 mb-0.5">Teléfono de Contacto</span>
+                                    <span className="text-sm font-bold text-white leading-none">{guardian.phone}</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 {/* Progreso del titular si también es atleta */}
-                {selfStudent && renderProgress(selfStudent)}
+                {selfStudent && (
+                    <div className="mt-4">
+                        {renderProgress(selfStudent)}
+                    </div>
+                )}
                 <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl" />
             </div>
 

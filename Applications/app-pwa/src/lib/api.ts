@@ -998,3 +998,20 @@ export async function updateTenantTerms(tenantSlug: string, token: string, conte
     } catch { return { message: 'Error de conexión' }; }
 }
 
+export async function deleteStudents(tenantId: string, token: string, ids: (string | number)[]) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/students/bulk-delete`, {
+            method: 'POST',
+            headers: { 
+                'Authorization': `Bearer ${token}`, 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json' 
+            },
+            body: JSON.stringify({ ids }),
+        });
+        return await safeJson(response);
+    } catch {
+        return { error: 'Error de conexión' };
+    }
+}
+
