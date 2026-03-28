@@ -1,15 +1,16 @@
 "use client";
 
 import React from 'react';
-import { CalendarCheck } from 'lucide-react';
+import { CalendarCheck, Clock } from 'lucide-react';
 import { nowCL } from '@/lib/utils';
 
 interface TodayScheduleProps {
     schedules: any[];
     primaryColor?: string;
+    isDark?: boolean;
 }
 
-export default function TodaySchedule({ schedules, primaryColor }: TodayScheduleProps) {
+export default function TodaySchedule({ schedules, primaryColor, isDark = false }: TodayScheduleProps) {
     const dow = nowCL().getDay();
     const today = (schedules || []).filter(s => s.day_of_week === dow).sort((a, b) => a.start_time.localeCompare(b.start_time));
     const dayName = nowCL().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -49,46 +50,78 @@ export default function TodaySchedule({ schedules, primaryColor }: TodaySchedule
     });
 
     return (
-        <div className="bg-white rounded-3xl p-5 shadow-sm border border-zinc-100 h-full">
-            <h3 className="text-sm font-black text-zinc-800 flex items-center gap-2 uppercase tracking-tighter mb-4">
-                <CalendarCheck style={{ color: primaryColor || '#6366f1' }} size={18} />
+        <div className={`rounded-[2.5rem] p-6 shadow-sm border transition-colors duration-500 h-full ${
+            isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'
+        }`}>
+            <h3 className={`text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 mb-6 ${
+                isDark ? 'text-white' : 'text-zinc-900'
+            }`}>
+                <CalendarCheck style={{ color: primaryColor || '#6366f1' }} size={16} />
                 Clases de hoy
-                {/* título normalizado con student */}
-                <span className="text-[9px] font-bold text-zinc-400 normal-case tracking-normal capitalize">{dayName}</span>
+                <span className={`text-[9px] font-bold lowercase tracking-normal capitalize opacity-40 ml-auto`}>{dayName}</span>
             </h3>
+
             {grouped.length === 0 ? (
-                <div className="flex items-center gap-3 py-8 px-4 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200 justify-center">
-                    <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest text-center">Sin clases hoy</p>
+                <div className={`flex items-center gap-3 py-12 px-4 rounded-[2rem] border-2 border-dashed justify-center ${
+                    isDark ? 'bg-zinc-800/30 border-zinc-700' : 'bg-zinc-50 border-zinc-100'
+                }`}>
+                    <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest text-center">Sin clases hoy</p>
                 </div>
             ) : (
-                <div className="space-y-1.5">
+                <div className="space-y-3">
                     {items.map((item, idx) => {
                         if (item.type === 'break') return (
                             <div key={`break-${idx}`} className="flex items-center gap-3 px-4 py-1.5 mx-1">
                                 <div className="flex flex-col items-center shrink-0 w-10">
-                                    <span className="text-[9px] font-bold text-zinc-500 leading-none">{item.start}</span>
+                                    <span className={`text-[9px] font-bold leading-none ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>{item.start}</span>
                                 </div>
-                                <div className="flex-1 flex items-center gap-2">
-                                    <div className="flex-1 h-px bg-zinc-300" />
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">🍎🧃 {item.dur}</span>
-                                    <div className="flex-1 h-px bg-zinc-300" />
+                                <div className="flex-1 flex items-center gap-3">
+                                    <div className={`flex-1 h-px ${isDark ? 'bg-zinc-800' : 'bg-zinc-100'}`} />
+                                    <span className={`text-[8px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-zinc-700' : 'text-zinc-300'}`}>
+                                        RECESO {item.dur}
+                                    </span>
+                                    <div className={`flex-1 h-px ${isDark ? 'bg-zinc-800' : 'bg-zinc-100'}`} />
                                 </div>
                             </div>
                         );
-                        const bg = item.color;
-                        const lum = bg !== '#f4f4f5' ? (() => { const r=parseInt(bg.slice(1,3),16),g2=parseInt(bg.slice(3,5),16),b=parseInt(bg.slice(5,7),16); return (0.299*r+0.587*g2+0.114*b)/255; })() : 1;
-                        const fg = lum > 0.55 ? '#18181b' : '#ffffff';
+
+                        const isDefaultColor = item.color === '#f4f4f5' || !item.color;
+                        const bg = isDefaultColor 
+                            ? (isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc') 
+                            : item.color;
+                        
+                        const fg = !isDefaultColor 
+                            ? (() => { 
+                                const c = item.color.replace('#','');
+                                const r=parseInt(c.slice(0,2),16), g2=parseInt(c.slice(2,4),16), b=parseInt(c.slice(4,6),16);
+                                const lum = (0.299*r+0.587*g2+0.114*b)/255;
+                                return lum > 0.55 ? '#18181b' : '#ffffff';
+                              })()
+                            : (isDark ? '#e4e4e7' : '#18181b');
+
                         const dur = durationLabel(item.start, item.end);
+                        
                         return (
-                            <div key={item.ids.join('-')} className="flex items-center gap-3 px-4 py-3 rounded-2xl transition-all" style={{ backgroundColor: bg, color: fg }}>
+                            <div key={item.ids.join('-')} 
+                                className={`flex items-center gap-4 px-5 py-4 rounded-3xl transition-all border ${
+                                    isDefaultColor ? (isDark ? 'border-zinc-800/50' : 'border-zinc-100') : 'border-transparent shadow-lg'
+                                }`} 
+                                style={{ backgroundColor: bg, color: fg }}>
                                 <div className="flex flex-col items-center shrink-0 w-10">
-                                    <span className="text-[10px] font-black leading-none">{item.start}</span>
-                                    <div className="w-px h-3 my-0.5" style={{ backgroundColor: fg, opacity: 0.3 }} />
-                                    <span className="text-[10px] font-black leading-none opacity-70">{item.end}</span>
+                                    <span className="text-[11px] font-black leading-none">{item.start}</span>
+                                    <div className="w-px h-3 my-1" style={{ backgroundColor: fg, opacity: 0.2 }} />
+                                    <span className="text-[11px] font-black leading-none opacity-40">{item.end}</span>
                                 </div>
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-black uppercase tracking-tight">{item.subject}</span>
-                                    {dur && <span className="text-[9px] font-bold opacity-60 mt-0.5">{dur}</span>}
+                                <div className="flex flex-col flex-1">
+                                    <span className="text-sm font-black uppercase tracking-tight leading-tight">{item.subject}</span>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        {dur && <span className="text-[9px] font-bold opacity-40 uppercase tracking-widest">{dur}</span>}
+                                        <div className="w-1 h-1 rounded-full bg-current opacity-20" />
+                                        <span className="text-[9px] font-bold opacity-40 uppercase tracking-widest">Dojo Central</span>
+                                    </div>
+                                </div>
+                                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white/10 border border-white/10 shrink-0">
+                                    <Clock size={14} className="opacity-40" />
                                 </div>
                             </div>
                         );

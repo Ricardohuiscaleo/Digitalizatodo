@@ -125,8 +125,14 @@ class Student extends Model
             $totalForBelt = (int)($config->total_for_belt ?? 150);
             
             $degrees = (int)($this->degrees ?? 0);
+            
+            // 0=0, 1=30, 2=60, 3=90, 4=120, 5=150 (Listo para ascenso)
             $degreesBase = $degrees * $classesPerStripe;
-            if ($degrees >= 4) $degreesBase = $totalForBelt; // 4 grados = 150 base
+            
+            // Si el profesor marca "Listo para ascenso" (5) o superior, la base es el total del cinturón
+            if ($degrees >= 5) {
+                $degreesBase = $totalForBelt;
+            }
 
             // Clases nuevas en el sistema (evita duplicar si ya estaban en la base)
             $checkpoint = (int)($this->belt_classes_at_promotion ?? 0);
@@ -136,7 +142,7 @@ class Student extends Model
             $totalEffective = max($realClasses, $degreesBase + $newClasses);
             $virtualClasses = max(0, $totalEffective - $realClasses);
             
-            // Stripe actual (0 a 4)
+            // Stripe actual (0 a 4) — El 5to estado es visualmente 4 rayas + Ready
             $currentStripe = min(4, (int)floor($totalEffective / $classesPerStripe));
             
             // Progreso stripe (%)

@@ -32,10 +32,10 @@ export function BeltDisplay({ beltRank, degrees = 0, size = "sm" }: BeltDisplayP
                 className={`relative flex items-center rounded-full overflow-hidden ${barH} ${size === "md" ? "w-28" : "w-20"} shrink-0`}
                 style={{ backgroundColor: hex, border: isWhite ? '1px solid #d4d4d8' : 'none' }}
             >
-                {/* Rayas doradas al extremo derecho */}
+                {/* Rayas doradas al extremo derecho (Máximo 4 visualmente) */}
                 {degrees > 0 && (
                     <div className="absolute right-0 top-0 bottom-0 flex items-stretch">
-                        {Array.from({ length: degrees }).map((_, i) => (
+                        {Array.from({ length: Math.min(degrees, 4) }).map((_, i) => (
                             <div
                                 key={i}
                                 className={`${stripeW} h-full bg-[#c9a84c]`}
@@ -47,8 +47,8 @@ export function BeltDisplay({ beltRank, degrees = 0, size = "sm" }: BeltDisplayP
             </div>
 
             {/* Label */}
-            <span className={`${textSize} font-black uppercase tracking-widest text-zinc-500 leading-none`}>
-                {label}{degrees > 0 ? ` · ${degrees}★` : ''}
+            <span className={`${textSize} font-black uppercase tracking-widest text-zinc-500 leading-none flex items-center gap-1`}>
+                {label}{degrees > 0 ? (degrees === 5 ? ' · 🎓' : ` · ${degrees}★`) : ''}
             </span>
         </div>
     );

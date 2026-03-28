@@ -60,7 +60,9 @@ export function calcBeltProgress(beltRank: string, degrees: number, beltClassesA
     
     // Clases VIRTUALES: Si el alumno ya tiene grados manuales (existen records previos), 
     // asumimos que ya "pagó" las clases correspondientes a esos grados.
-    const virtualClassesFromStripes = (degrees ?? 0) * (belt.classesPerStripe ?? 0);
+    // 0=0, 1=30, 2=60, 3=90, 4=120, 5=150 (Listo para ascenso)
+    let virtualClassesFromStripes = (degrees ?? 0) * (belt.classesPerStripe ?? 0);
+    if (degrees >= 5) virtualClassesFromStripes = belt.totalClasses;
     
     // Total efectivo = Clases virtuales + Clases reales registradas
     const totalEffectiveClasses = virtualClassesFromStripes + realClassesInBelt;
@@ -69,6 +71,7 @@ export function calcBeltProgress(beltRank: string, degrees: number, beltClassesA
     const nextBelt = nextBeltIdx < ALLIANCE_BJJ_GRADUATION.length ? ALLIANCE_BJJ_GRADUATION[nextBeltIdx] : null;
 
     // Milestone actual y siguiente
+    // El 5to estado es visualmente 4 rayas + Ready
     const currentStripe = Math.min(4, Math.floor(totalEffectiveClasses / (belt.classesPerStripe ?? 1)));
     const classesForNextMilestone = belt.classesPerStripe 
         ? (currentStripe < 4 

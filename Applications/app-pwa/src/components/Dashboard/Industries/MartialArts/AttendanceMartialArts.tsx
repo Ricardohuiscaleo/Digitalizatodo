@@ -145,7 +145,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
             ['phone', 'Teléfono', v => v || '—'],
             ['email', 'Correo', v => v || '—'],
             ['belt_rank', 'Cinturón', v => BELT_LABELS[v] || v || '—'],
-            ['degrees', 'Rayas', v => String(v)],
+            ['degrees', 'Rayas', v => v === 5 ? '🎓 Listo para Ascenso' : String(v)],
             ['category', 'Categoría', v => CATEGORY_LABELS[v] || v],
             ['modality', 'Modalidad', v => MODALITY_LABELS[v] || v],
             ['previous_classes', 'Clases anteriores', v => String(v ?? 0)],
@@ -621,22 +621,28 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                 const maxAllowed = (config && config.classesPerStripe) ? Math.min(4, Math.floor(total / config.classesPerStripe)) : 4;
                                 return (
                                     <div>
-                                        <p className={`text-[8px] font-black uppercase tracking-[0.2em] mb-2 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Rayas actuales</p>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className={`text-[8px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Rayas actuales</p>
+                                            {bjjForm.degrees === 5 && (
+                                                <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest animate-pulse">🎓 Listo para Ascenso</span>
+                                            )}
+                                        </div>
                                         <div className="flex gap-2">
-                                            {[0,1,2,3,4].map(n => {
-                                                const disabled = n > maxAllowed && bjjForm.belt_rank !== 'black';
+                                            {[0, 1, 2, 3, 4, 5].map(n => {
+                                                // Grado 5 es "Listo para ascenso" (Base 150)
+                                                const disabled = n > maxAllowed && bjjForm.belt_rank !== 'black' && n !== 5;
                                                 return (
                                                     <button key={n}
                                                         disabled={disabled}
                                                         onClick={() => { setBjjForm((f: any) => ({ ...f, degrees: n })); setBjjError(null); }}
-                                                        className={`w-10 h-10 rounded-xl text-sm font-black border-2 transition-all ${
+                                                        className={`w-10 h-10 rounded-xl text-sm font-black border-2 transition-all flex items-center justify-center ${
                                                             disabled
                                                                 ? isDark ? 'border-zinc-800 text-zinc-700 opacity-30' : 'border-zinc-100 text-zinc-200 opacity-40'
                                                                 : bjjForm.degrees === n
                                                                     ? 'border-[#c9a84c] bg-[#c9a84c]/10 text-[#c9a84c]'
-                                                                    : isDark ? 'border-zinc-800 text-zinc-500' : 'border-zinc-100 text-zinc-400'
+                                                                    : isDark ? 'border-zinc-800 text-zinc-500 hover:border-zinc-600' : 'border-zinc-100 text-zinc-400 hover:border-zinc-200'
                                                         }`}>
-                                                        {n}
+                                                        {n === 5 ? '🎓' : n}
                                                     </button>
                                                 );
                                             })}

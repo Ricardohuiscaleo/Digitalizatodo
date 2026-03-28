@@ -115,8 +115,8 @@ export function StudentAvatar({
                 >
                     <span 
                         className="font-black text-zinc-900 leading-none"
-                        style={{ fontSize: Math.max(7, size / 10) }}
-                    >{degrees}</span>
+                        style={{ fontSize: degrees === 5 ? Math.max(9, size / 8) : Math.max(7, size / 10) }}
+                    >{degrees === 5 ? '🎓' : degrees}</span>
                 </div>
             )}
 

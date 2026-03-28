@@ -406,10 +406,8 @@ export default function OverviewSection(props: OverviewSectionProps) {
                 </div>
             )}
 
-            {/* CLASES DE HOY — Ocultar si NO es tesorería y no hay nada */}
-            {isTreasury && (
-                <TodaySchedule schedules={schedulesList} primaryColor={branding?.primaryColor} />
-            )}
+            {/* CLASES DE HOY */}
+            <TodaySchedule schedules={schedulesList} primaryColor={branding?.primaryColor} isDark={isDark} />
         </div>
     );
 }

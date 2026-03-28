@@ -347,7 +347,9 @@ export default function App() {
 
             <div className="flex flex-1 overflow-hidden">
                 {/* SIDEBAR DESKTOP */}
-                <aside className="hidden md:flex flex-col w-64 bg-white border-r border-zinc-100 p-6 gap-8">
+                <aside className={`hidden md:flex flex-col w-64 border-r p-6 gap-8 transition-colors duration-500 ${
+                    isMartialArts && isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-zinc-100'
+                }`}>
                     <div className="flex items-center gap-3 px-2">
                         <div className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full overflow-hidden border-2 border-zinc-100">
                             {branding?.logo ? (
@@ -372,19 +374,19 @@ export default function App() {
                     </div>
 
                     <nav className="flex flex-col gap-2">
-                        <SidebarButton icon={LayoutDashboard} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} primaryColor={branding?.primaryColor} />
-                        <SidebarButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} />
-                        <SidebarButton icon={CreditCard} label={branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos'} active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} />
-                        <SidebarButton icon={Settings} label="Ajustes" active={activeTab === 'settings'} onClick={() => changeTab('settings')} primaryColor={branding?.primaryColor} />
+                        <SidebarButton icon={LayoutDashboard} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} primaryColor={branding?.primaryColor} isDark={isDark} />
+                        <SidebarButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} isDark={isDark} />
+                        <SidebarButton icon={CreditCard} label={branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos'} active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} isDark={isDark} />
+                        <SidebarButton icon={Settings} label="Ajustes" active={activeTab === 'settings'} onClick={() => changeTab('settings')} primaryColor={branding?.primaryColor} isDark={isDark} />
                     </nav>
 
-                    <div className="mt-auto pt-6 border-t border-zinc-50 flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full overflow-hidden border border-zinc-100">
+                    <div className={`mt-auto pt-6 border-t flex items-center gap-3 ${isDark ? 'border-zinc-800' : 'border-zinc-50'}`}>
+                        <div className={`w-8 h-8 rounded-full overflow-hidden border ${isDark ? 'border-zinc-700' : 'border-zinc-100'}`}>
                             <img src="/DLogo-v2.webp" className="w-full h-full object-cover" alt="D" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-[10px] font-black text-zinc-900 truncate leading-none uppercase">{user?.name || 'Admin'}</p>
-                            <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">Administrator</p>
+                            <p className={`text-[10px] font-black truncate leading-none uppercase ${isDark ? 'text-white' : 'text-zinc-900'}`}>{user?.name || 'Admin'}</p>
+                            <p className={`text-[8px] font-bold uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Administrator</p>
                         </div>
                         <button onClick={() => { localStorage.clear(); window.location.href = "/"; }} className="text-zinc-300 hover:text-rose-500 transition-colors">
                             <LogOut size={16} />
@@ -870,11 +872,17 @@ export default function App() {
     );
 }
 
-function SidebarButton({ icon: Icon, label, active, onClick, primaryColor }: { icon: any, label: string, active: boolean, onClick: () => void, primaryColor?: string }) {
+function SidebarButton({ icon: Icon, label, active, onClick, primaryColor, isDark }: { icon: any, label: string, active: boolean, onClick: () => void, primaryColor?: string, isDark?: boolean }) {
     return (
         <button onClick={onClick} 
             style={active ? { backgroundColor: primaryColor || '#6366f1' } : {}}
-            className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 w-full group ${active ? 'text-white shadow-lg' : 'text-zinc-400 hover:bg-zinc-50 hover:text-zinc-600'}`}>
+            className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 w-full group ${
+                active 
+                    ? 'text-white shadow-lg' 
+                    : isDark 
+                        ? 'text-zinc-500 hover:bg-zinc-800 hover:text-white' 
+                        : 'text-zinc-400 hover:bg-zinc-50 hover:text-zinc-600'
+            }`}>
             <Icon size={20} strokeWidth={active ? 3 : 2} className={`transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`} />
             <span className="text-[11px] font-black uppercase tracking-widest">{label}</span>
         </button>
