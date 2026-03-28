@@ -1032,11 +1032,11 @@ export default function RegisterPage() {
 
 
           {/* TOGGLE "YO TAMBIÉN PARTICIPO" — blue card premium */}
-          {config.showSelfRegister && isGuardianNameComplete && (
+          {config.showSelfRegister && isGuardianComplete && (
             <div className={`rounded-[2.5rem] border transition-all duration-700 relative animate-in zoom-in fade-in overflow-hidden ${form.is_self_register
               ? (isDarkMode ? "bg-blue-900/10 border-blue-500/50 p-6 shadow-[0_0_50px_rgba(37,99,235,0.1)] scale-[1.02]" : "bg-blue-50 border-blue-300 p-6 shadow-xl scale-[1.02]")
               : (isDarkMode ? "bg-blue-900/5 border-blue-900/30 p-4" : "bg-blue-50/50 border-blue-100 p-4")}`}>
-              {isGuardianComplete && (
+              <>
                 <>
                   {form.is_self_register && (
                     <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl"></div>
@@ -1056,8 +1056,7 @@ export default function RegisterPage() {
                     </div>
                   </label>
                 </>
-              )}
-
+              
               {form.is_self_register && (
                 <div className="mt-8 space-y-6 pt-8 border-t border-zinc-800 animate-in fade-in zoom-in duration-500">
                   <div className="space-y-4">
@@ -1245,6 +1244,7 @@ export default function RegisterPage() {
                   </div>
                 </div>
               )}
+              </>
             </div>
           )}
 
