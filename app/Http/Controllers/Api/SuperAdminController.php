@@ -377,4 +377,61 @@ class SuperAdminController extends Controller
 
         return response()->json(['message' => 'User removed from tenant']);
     }
+
+    /**
+     * Update a tenant user (Role or Password).
+     */
+    public function updateTenantUser(Request $request, $tenantId, $userId)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $tenant = Tenant::findOrFail($tenantId);
+        $user = \App\Models\User::findOrFail($userId);
+
+        $validated = $request->validate([
+            'name' => 'sometimes|string',
+            'role' => 'sometimes|string',
+            'password' => 'sometimes|string|min:6',
+        ]);
+
+        if (isset($validated['name'])) {
+            $user->name = $validated['name'];
+        }
+
+        if (isset($validated['password'])) {
+            $user->password = \Hash::make($validated['password']);
+        }
+
+        $user->save();
+
+        if (isset($validated['role'])) {
+            $pivot = \App\Models\TenantUser::where('tenant_id', $tenant->id)
+                ->where('user_id', $user->id)
+                ->first();
+            if ($pivot) {
+                $pivot->role = $validated['role'];
+                $pivot->save();
+            }
+        }
+
+        if (isset($validated['password'])) {
+             try {
+                \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\WelcomeStaffMail($user, $tenant, $validated['password']));
+            } catch (\Exception $e) {
+                \Log::error("Error enviando email de actualización de clave a {$user->email}: " . $e->getMessage());
+            }
+        }
+
+        return response()->json([
+            'message' => 'User updated successfully',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->getRoleForTenant($tenant->id) ?? 'staff'
+            ]
+        ]);
+    }
 }
