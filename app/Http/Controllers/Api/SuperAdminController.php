@@ -136,6 +136,7 @@ class SuperAdminController extends Controller
             'saas_plan_id' => 'sometimes|integer|exists:saas_plans,id',
             'billing_interval' => 'sometimes|string|in:monthly,yearly',
             'force_terms_acceptance' => 'sometimes|boolean',
+            'role_permissions' => 'nullable|array',
         ]);
 
         $oldActive = $tenant->active;
