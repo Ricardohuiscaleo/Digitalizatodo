@@ -18,6 +18,11 @@ class ResolveTenantFromPath
     public function handle(Request $request, Closure $next): Response
     {
         $identifier = $request->route('tenant');
+        \Illuminate\Support\Facades\Log::info("ResolveTenantFromPath::handle", [
+            'identifier' => $identifier,
+            'method' => $request->method(),
+            'path' => $request->path()
+        ]);
 
         if ($identifier) {
             $tenant = Tenant::where('active', true)

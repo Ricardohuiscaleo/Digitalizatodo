@@ -24,6 +24,11 @@ class StudentRegistrationController extends Controller
      */
     public function register(Request $request, $tenantSlug)
     {
+        Log::info("StudentRegistrationController::register", [
+            'method' => $request->method(),
+            'tenantSlug' => $tenantSlug,
+            'url' => $request->fullUrl()
+        ]);
         $tenant = app('currentTenant');
         $validator = Validator::make($request->all(), [
             'guardian_name' => 'required|string|max:255',
