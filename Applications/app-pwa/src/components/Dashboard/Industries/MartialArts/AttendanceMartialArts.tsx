@@ -7,6 +7,7 @@ import { BeltBadge } from './BeltBadge';
 import { StudentAvatar } from './StudentAvatar';
 import { updateStudentBjj, updateStudentProfile, getStudent } from '@/lib/api';
 import { ALLIANCE_BJJ_GRADUATION, calcBeltProgress } from '@/lib/industryUtils';
+import { nowCL } from '@/lib/utils';
 
 const BELT_OPTIONS = [
     { value: 'white', label: 'Blanco' },
@@ -31,12 +32,14 @@ interface AttendanceMartialArtsProps {
     onStudentUpdated?: () => void;
     isDark?: boolean;
     activeSchedule: any;
+    schedulesList?: any[];
 }
 
 const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
     allStudents, attendance, searchTerm, setSearchTerm,
     toggleAttendance, setShowQRModal, branding, vocab,
-    token, onStudentUpdated, isDark = false, activeSchedule
+    token, onStudentUpdated, isDark = false, activeSchedule,
+    schedulesList = []
 }) => {
     const [isSmartFilterEnabled, setIsSmartFilterEnabled] = React.useState(true);
 

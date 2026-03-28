@@ -489,6 +489,7 @@ export default function App() {
                                         onStudentUpdated={() => refreshPayers()}
                                         isDark={isDark}
                                         activeSchedule={activeSchedule}
+                                        schedulesList={schedulesList}
                                     />
                                 ) : (
                                 <AttendanceSection 
