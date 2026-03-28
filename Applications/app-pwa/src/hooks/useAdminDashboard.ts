@@ -159,10 +159,11 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
             if (!storedToken || !tenantSlug) { window.location.href = "/"; return; }
             setToken(storedToken);
 
-            let [profile, payersData, attendanceHistoryData] = await Promise.all([
+            let [profile, payersData, attendanceHistoryData, schedulesData] = await Promise.all([
                 getProfile(tenantSlug, storedToken),
                 getPayers(tenantSlug, storedToken, { month: selectedMonth, year: selectedYear, history: paymentFilter === 'history' }),
                 getAttendanceHistory(tenantSlug, storedToken),
+                getSchedules(tenantSlug, storedToken)
             ]);
 
             if (profile) {
@@ -192,6 +193,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
 
                 // Load Initial Data
                 common.setPayers(payersData?.payers || []);
+                common.setSchedulesList(schedulesData?.schedules || []);
                 
                 if (profile.tenant?.industry === 'martial_arts' || !profile.tenant?.industry) {
                     const currentAttendance = new Set<string>();
@@ -204,7 +206,6 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
                 }
                 
                 if (profile.tenant?.industry === 'school_treasury') {
-                    common.loadSchedules();
                     treasury.loadFees();
                 }
 
