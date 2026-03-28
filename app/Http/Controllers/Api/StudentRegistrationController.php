@@ -160,11 +160,15 @@ class StudentRegistrationController extends Controller
                     $isPrimary = (empty($studentsToCreate) || $studentData === $studentsToCreate[0]);
                     $guardian->students()->attach($student->id, ['primary' => $isPrimary]);
 
+                    $startDate = !empty($request->start_date) 
+                        ? \Carbon\Carbon::createFromFormat('d / m / Y', $request->start_date) 
+                        : now();
+
                     $enrollment = Enrollment::create([
                         'tenant_id' => $tenant->id,
                         'student_id' => $student->id,
                         'plan_id' => $plan->id,
-                        'start_date' => now(),
+                        'start_date' => $startDate,
                         'status' => 'active',
                     ]);
 
@@ -185,8 +189,9 @@ class StudentRegistrationController extends Controller
                         'tenant_id' => $tenant->id,
                         'student_id' => $student->id,
                         'enrollment_id' => $enrollment->id,
+                        'plan_id' => $plan->id, // Consistent with our DB addition
                         'amount' => $amount,
-                        'due_date' => now(),
+                        'due_date' => $startDate->copy()->startOfMonth(), // Day 1 is payday
                         'status' => 'pending',
                         'type' => $plan->is_recurring ? 'monthly_fee' : 'single_session',
                     ]);
