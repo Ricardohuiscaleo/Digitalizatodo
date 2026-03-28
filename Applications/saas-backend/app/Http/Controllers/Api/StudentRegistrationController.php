@@ -84,6 +84,7 @@ class StudentRegistrationController extends Controller
 
                 $studentsToCreate = [];
 
+                if ($request->is_self_register) {
                     $selfData = $request->input('self_student', []);
                     $studentsToCreate[] = [
                         'name' => $request->guardian_name,
@@ -96,6 +97,7 @@ class StudentRegistrationController extends Controller
                         'weight' => $selfData['weight'] ?? null,
                         'height' => $selfData['height'] ?? null,
                     ];
+                }
 
                 // Añadir el resto de los alumnos si existen
                 if ($request->has('students') && is_array($request->students)) {
