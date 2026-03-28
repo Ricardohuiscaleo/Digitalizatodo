@@ -262,9 +262,15 @@ class PaymentController extends Controller
 
         $amount = $prices[$request->type];
 
+        $enrollment = $student->enrollments()->latest()->first();
+        if (!$enrollment) {
+            return response()->json(['message' => 'El alumno no tiene una inscripción activa.'], 422);
+        }
+
         $payment = Payment::create([
             'tenant_id' => app('currentTenant')->id,
             'student_id' => $student->id,
+            'enrollment_id' => $enrollment->id,
             'amount' => $amount,
             'type' => $request->type,
             'status' => 'pending',
@@ -298,11 +304,17 @@ class PaymentController extends Controller
         $plan = Plan::findOrFail($request->plan_id);
         $tenant = app('currentTenant');
 
+        $enrollment = $student->enrollments()->latest()->first();
+        if (!$enrollment) {
+            return response()->json(['message' => 'El alumno no tiene una inscripción activa.'], 422);
+        }
+
         try {
             // Crear el registro de pago
             $payment = Payment::create([
                 'tenant_id' => $tenant->id,
                 'student_id' => $student->id,
+                'enrollment_id' => $enrollment->id,
                 'plan_id' => $plan->id,
                 'amount' => $plan->price,
                 'type' => 'plan_upgrade',
