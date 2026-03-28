@@ -92,7 +92,7 @@ class Student extends Model
         if ($beltConfigs === null) {
             try {
                 $beltConfigs = \App\Models\BeltConfig::all()->groupBy('category');
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $beltConfigs = collect([]);
             }
         }

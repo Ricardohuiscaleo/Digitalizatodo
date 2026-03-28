@@ -197,7 +197,7 @@ const ModernDateInput = ({ value, onChange, placeholder, error, isDarkMode }: an
 
 const ALLIANCE_BJJ_GRADUATION = [
   {
-    id: 'white',
+    id: 'Blanco',
     name: 'Blanco',
     level: 'Nivel fundamentos',
     totalClasses: 150,
@@ -208,7 +208,7 @@ const ALLIANCE_BJJ_GRADUATION = [
     textColor: 'text-zinc-400',
   },
   {
-    id: 'blue',
+    id: 'Azul',
     name: 'Azul',
     level: 'Nivel intermedio bajo',
     totalClasses: 325,
@@ -219,7 +219,7 @@ const ALLIANCE_BJJ_GRADUATION = [
     textColor: 'text-blue-100',
   },
   {
-    id: 'purple',
+    id: 'Morado',
     name: 'Morado',
     level: 'Nivel intermedio avanzado',
     totalClasses: 375,
@@ -230,8 +230,8 @@ const ALLIANCE_BJJ_GRADUATION = [
     textColor: 'text-purple-100',
   },
   {
-    id: 'brown',
-    name: 'Café',
+    id: 'Marrón',
+    name: 'Marrón',
     level: 'Nivel avanzado',
     totalClasses: 375,
     classesPerStripe: 75,
@@ -241,7 +241,7 @@ const ALLIANCE_BJJ_GRADUATION = [
     textColor: 'text-amber-100',
   },
   {
-    id: 'black',
+    id: 'Negro',
     name: 'Negro',
     level: 'Maestría',
     totalClasses: null,
