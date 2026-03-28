@@ -18,7 +18,7 @@ class Student extends Model
         'emergency_contact_name', 'emergency_contact_phone', 'active', 'consumable_credits',
     ];
 
-    // protected $appends = ['belt_progress'];
+    protected $appends = ['belt_progress'];
 
     public function course(): BelongsTo
     {

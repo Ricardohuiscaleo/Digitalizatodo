@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Resources;
 
+use App\Filament\Tenant\Resources\BeltConfigResource\Pages;
 use App\Models\BeltConfig;
 use Filament\Forms;
 use Filament\Forms\Form;
