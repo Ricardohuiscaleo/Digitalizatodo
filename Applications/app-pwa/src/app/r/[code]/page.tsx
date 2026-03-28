@@ -41,6 +41,8 @@ type IndustryConfig = {
   showPricing: boolean;
   showCategory: boolean;
   showBJJGraduation: boolean; // New: BJJ belts/stripes
+  showPhysicalStats: boolean;
+  isSchool: boolean;
   courseLabel: string;
   courseOptions: { value: string; label: string }[];
   guardianLabel: string;
@@ -57,8 +59,10 @@ function getIndustryConfig(industry: string): IndustryConfig {
       selfRegisterLabel: "",
       showSelfRegister: false,
       showPricing: false,
-      showCategory: true,
+      showCategory: false,
       showBJJGraduation: false,
+      showPhysicalStats: false,
+      isSchool: true,
       courseLabel: "Curso",
       courseOptions: [
         { value: "pre_kinder", label: "Pre-Kinder" },
@@ -89,6 +93,8 @@ function getIndustryConfig(industry: string): IndustryConfig {
     showPricing: true,
     showCategory: true,
     showBJJGraduation: isMartialArts,
+    showPhysicalStats: true,
+    isSchool: false,
     courseLabel: "Categoría",
     courseOptions: [
       { value: "kids", label: "Kids" },
@@ -306,12 +312,19 @@ const ALLIANCE_BJJ_GRADUATION = [
   },
 ];
 
-const RegistrationProgress = ({ form, canShowPlans, isDarkMode }: any) => {
-  const steps = [
+const RegistrationProgress = ({ form, canShowPlans, isDarkMode, config, isGuardianComplete, areStudentsComplete }: any) => {
+  const steps = config.isSchool ? [
+    { id: 1, label: 'Apoderado', done: true }, // At initial view, this is the current step
+    { id: 2, label: 'Alumno', done: isGuardianComplete },
+    { id: 3, label: 'Finalizar', done: isGuardianComplete && areStudentsComplete && !!(form.password && form.accept_digitaliza_terms) }
+  ] : [
     { id: 1, label: 'Identidad', done: true },
-    { id: 2, label: 'Participantes', done: !!(form.guardian_name && form.guardian_email) },
-    { id: 3, label: 'Horarios', done: canShowPlans },
-    { id: 4, label: 'Pago', done: !!(form.plan_id || form.adult_plan_id || form.kid_plan_id) }
+    { id: 2, label: config.membersLabel, done: isGuardianComplete },
+    ...(config.showPricing ? [
+      { id: 3, label: 'Horarios', done: isGuardianComplete && areStudentsComplete },
+      { id: 4, label: 'Pago', done: canShowPlans }
+    ] : []),
+    { id: 5, label: 'Cuenta', done: !!(form.password && form.accept_digitaliza_terms) }
   ];
 
   const currentStep = steps.reduce((acc, s) => s.done ? s.id : acc, 0);
@@ -490,6 +503,11 @@ export default function RegisterPage() {
     getRegistrationPage(code as string).then(t => {
       setTenant(t);
       setLoading(false);
+      // Auto-accept institution terms for schools since we hide the checkbox
+      const config = getIndustryConfig(t.industry || "default");
+      if (config.isSchool) {
+        setForm(prev => ({ ...prev, accept_dojo_terms: true }));
+      }
     });
   }, [code]);
 
@@ -540,7 +558,7 @@ export default function RegisterPage() {
     if (!form.is_self_register && form.students.some(s => !s.name))
       e.students = "El nombre del alumno es obligatorio";
 
-    if (!form.registration_mode)
+    if (config.showPricing && !form.registration_mode)
       e.registration_mode = "Debes elegir un plan (Dojo o VIP)";
     
     if (form.registration_mode === 'dojo') {
@@ -548,8 +566,9 @@ export default function RegisterPage() {
       if (totals.kidsCount > 0 && !form.kid_plan_id) e.kid_plan_id = "Selecciona un plan para niños";
     }
 
-    if (!form.accept_dojo_terms || !form.accept_digitaliza_terms)
-      e.terms = "Debes aceptar los términos y condiciones";
+    const mustAcceptDojoTerms = !config.isSchool;
+    if ((mustAcceptDojoTerms && !form.accept_dojo_terms) || !form.accept_digitaliza_terms)
+      e.terms = `Debes aceptar los términos y condiciones${!config.isSchool ? " de la institución" : ""}`;
 
     if (config.showBJJGraduation) {
       if (form.is_self_register && !form.self_student.belt)
@@ -575,7 +594,14 @@ export default function RegisterPage() {
     e.preventDefault();
     if (!validate()) return;
     setSubmitting(true); setError("");
-    const result = await registerStudent(tenant.slug || tenant.id, form);
+    
+    // Satisfy backend validation for hidden terms in school flow
+    const finalForm = { ...form };
+    if (config.isSchool) {
+      finalForm.accept_dojo_terms = true;
+    }
+
+    const result = await registerStudent(tenant.slug || tenant.id, finalForm);
     setSubmitting(false);
     if (result?.errors) {
       const first = Object.values(result.errors)[0] as string[];
@@ -685,6 +711,24 @@ export default function RegisterPage() {
   const guardianNameParts = form.guardian_name.trim().split(/\s+/).filter(p => p.length > 0);
   const isGuardianNameComplete = guardianNameParts.length >= 2;
 
+  const getCourseNames = () => {
+    const list: string[] = [];
+    if (form.is_self_register && form.self_student.belt) {
+      const b = BJJ_BELTS.find(x => x.id === form.self_student.belt);
+      if (b) list.push(b.name);
+    }
+    form.students.forEach(s => {
+      if (s.belt) {
+        const b = BJJ_BELTS.find(x => x.id === s.belt);
+        if (b) list.push(b.name);
+      }
+    });
+    const unique = Array.from(new Set(list));
+    if (unique.length === 0) return "";
+    if (unique.length === 1) return `del curso ${unique[0]}`;
+    return `de los cursos ${unique.join(", ")}`;
+  };
+
   const hasSpecificAdultPlans = (tenant?.plans || []).some((p: any) => p.category === 'dojo' && p.target_audience === 'adults');
   const hasSpecificKidPlans = (tenant?.plans || []).some((p: any) => p.category === 'dojo' && p.target_audience === 'kids');
 
@@ -757,7 +801,9 @@ export default function RegisterPage() {
       
       <div className={`mt-10 p-8 rounded-[3rem] border backdrop-blur-sm max-w-sm w-full animate-in fade-in slide-in-from-bottom-4 duration-1000 ${isDarkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white border-zinc-200 shadow-xl shadow-zinc-200/50'}`}>
         <p className={`text-xs font-black uppercase tracking-[0.2em] leading-relaxed text-center ${isDarkMode ? 'text-[#c9a84c]' : 'text-amber-800'}`}>
-          PAGA TU PRIMERA CUOTA EN TU APP DE GESTIÓN DE HORARIOS Y PAGOS 🥋✨
+          {config.isSchool 
+            ? `¡BIENVENIDO! INGRESA A TU APLICACIÓN PARA GESTIONAR PAGOS, CUOTAS Y HORARIOS ${getCourseNames().toUpperCase()} DE ${tenant.name.toUpperCase()}. 🎓✨`
+            : "PAGA TU PRIMERA CUOTA EN TU APP DE GESTIÓN DE HORARIOS Y PAGOS 🥋✨"}
         </p>
       </div>
 
@@ -998,12 +1044,21 @@ export default function RegisterPage() {
                             form.guardian_phone.replace(/\D/g, '').length >= 11;
 
   const isSelfComplete = !form.is_self_register || form.self_student.modality !== "";
-  const areStudentsComplete = form.students.length === 0 || form.students.every((s: any) => s.modality !== "");
+  const areStudentsComplete = form.students.length === 0 || form.students.every((s: any) => 
+    config.isSchool ? (s.belt && s.birth_date) : (s.modality !== "")
+  );
   const canShowPlans = isSelfComplete && areStudentsComplete && (form.is_self_register || form.students.length > 0);
 
   return (
     <div className={`min-h-screen flex flex-col items-center px-2 py-6 sm:p-6 pb-2 selection:bg-[#c9a84c] selection:text-black transition-colors duration-700 ${isDarkMode ? 'bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950' : 'bg-zinc-100'}`}>
-      <RegistrationProgress form={form} canShowPlans={canShowPlans} isDarkMode={isDarkMode} />
+      <RegistrationProgress 
+        form={form} 
+        canShowPlans={canShowPlans} 
+        isDarkMode={isDarkMode} 
+        config={config}
+        isGuardianComplete={isGuardianComplete}
+        areStudentsComplete={areStudentsComplete}
+      />
       {isDarkMode && (
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
           <div className="absolute top-[-5%] right-[-5%] w-[80%] h-[80%] bg-blue-600/20 rounded-full blur-[120px]" />
@@ -1025,7 +1080,7 @@ export default function RegisterPage() {
           <div className="text-center space-y-2">
             <h1 className={`text-2xl font-black uppercase tracking-tighter ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Únete a {tenant.name}</h1>
             <div className="flex flex-col items-center gap-1">
-              <p className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.3em]">Formulario de registro</p>
+              <p className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.3em]">Formulario de registro <span className="text-[#c9a84c]/50 ml-1">v2.0</span></p>
 
               {/* THEME TOGGLE — ULTRA MINIMALIST */}
               <button type="button" onClick={() => setIsDarkMode(!isDarkMode)}
@@ -1130,7 +1185,7 @@ export default function RegisterPage() {
                         <label className={`text-[11px] uppercase tracking-[0.2em] font-black ${isDarkMode ? 'text-white/90' : 'text-zinc-800'}`}>Tu Fecha de Nacimiento</label>
                         <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-bold mt-1">Día / Mes / Año</span>
                       </div>
-                      {form.self_student.category && (
+                      {config.showCategory && form.self_student.category && (
                         <div className="flex flex-col items-end group/cat">
                           <span className={`text-[7px] font-black uppercase tracking-[0.2em] mb-0.5 ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>Categoría</span>
                           <div key={form.self_student.category} className={`text-[10px] font-black uppercase tracking-widest animate-in fade-in zoom-in-95 slide-in-from-right-2 duration-500 ${isDarkMode ? 'text-[#c9a84c]' : 'text-amber-700'}`}>
@@ -1192,45 +1247,49 @@ export default function RegisterPage() {
                         </button>
                       </div>
 
-                      <div className="space-y-1.5">
-                        <label className={`text-[8px] uppercase tracking-wider font-black ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Peso</label>
-                        <div className="relative h-12">
-                          <input type="number" placeholder="90"
-                            value={form.self_student.weight}
-                            onChange={e => setForm({ ...form, self_student: { ...form.self_student, weight: e.target.value.replace(/[^0-9]/g, '').slice(0, 3) } })}
-                            className={`w-full h-full rounded-2xl border px-2 text-center text-[10px] font-black transition-all outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${isDarkMode
-                              ? 'bg-zinc-800 border-zinc-700 text-white placeholder-white/10'
-                              : 'bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400/20'
-                              } focus:border-[#c9a84c]/50`}
-                          />
-                          <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                            {form.self_student.weight && (
-                              <CheckCircle2 size={10} className="text-emerald-500 animate-in zoom-in fade-in" />
-                            )}
+                      {config.showPhysicalStats && (
+                        <>
+                          <div className="space-y-1.5">
+                            <label className={`text-[8px] uppercase tracking-wider font-black ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Peso</label>
+                            <div className="relative h-12">
+                              <input type="number" placeholder="90"
+                                value={form.self_student.weight}
+                                onChange={e => setForm({ ...form, self_student: { ...form.self_student, weight: e.target.value.replace(/[^0-9]/g, '').slice(0, 3) } })}
+                                className={`w-full h-full rounded-2xl border px-2 text-center text-[10px] font-black transition-all outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${isDarkMode
+                                  ? 'bg-zinc-800 border-zinc-700 text-white placeholder-white/10'
+                                  : 'bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400/20'
+                                  } focus:border-[#c9a84c]/50`}
+                              />
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                {form.self_student.weight && (
+                                  <CheckCircle2 size={10} className="text-emerald-500 animate-in zoom-in fade-in" />
+                                )}
+                              </div>
+                              <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[6px] font-black text-zinc-500/40 uppercase">kg</span>
+                            </div>
                           </div>
-                          <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[6px] font-black text-zinc-500/40 uppercase">kg</span>
-                        </div>
-                      </div>
 
-                      <div className="space-y-1.5">
-                        <label className={`text-[8px] uppercase tracking-wider font-black ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Altura</label>
-                        <div className="relative h-12">
-                          <input type="number" placeholder="180"
-                            value={form.self_student.height}
-                            onChange={e => setForm({ ...form, self_student: { ...form.self_student, height: e.target.value.replace(/[^0-9]/g, '').slice(0, 3) } })}
-                            className={`w-full h-full rounded-2xl border px-2 text-center text-[10px] font-black transition-all outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${isDarkMode
-                              ? 'bg-zinc-800 border-zinc-700 text-white placeholder-white/10'
-                              : 'bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400/20'
-                              } focus:border-[#c9a84c]/50`}
-                          />
-                          <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                            {form.self_student.height && (
-                              <CheckCircle2 size={10} className="text-emerald-500 animate-in zoom-in fade-in" />
-                            )}
+                          <div className="space-y-1.5">
+                            <label className={`text-[8px] uppercase tracking-wider font-black ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Altura</label>
+                            <div className="relative h-12">
+                              <input type="number" placeholder="180"
+                                value={form.self_student.height}
+                                onChange={e => setForm({ ...form, self_student: { ...form.self_student, height: e.target.value.replace(/[^0-9]/g, '').slice(0, 3) } })}
+                                className={`w-full h-full rounded-2xl border px-2 text-center text-[10px] font-black transition-all outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${isDarkMode
+                                  ? 'bg-zinc-800 border-zinc-700 text-white placeholder-white/10'
+                                  : 'bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400/20'
+                                  } focus:border-[#c9a84c]/50`}
+                              />
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                {form.self_student.height && (
+                                  <CheckCircle2 size={10} className="text-emerald-500 animate-in zoom-in fade-in" />
+                                )}
+                              </div>
+                              <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[6px] font-black text-zinc-500/40 uppercase">cm</span>
+                            </div>
                           </div>
-                          <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[6px] font-black text-zinc-500/40 uppercase">cm</span>
-                        </div>
-                      </div>
+                        </>
+                      )}
 
                     </div>
 
@@ -1402,7 +1461,7 @@ export default function RegisterPage() {
                       <div className="flex flex-col flex-1">
                         <label className={`text-[11px] uppercase tracking-[0.2em] font-black ${isDarkMode ? 'text-white/90' : 'text-zinc-800'}`}>Fecha Nacimiento</label>
                       </div>
-                      {s.category && (
+                      {config.showCategory && s.category && (
                         <div className="flex flex-col items-end group/cat">
                           <span className={`text-[7px] font-black uppercase tracking-[0.2em] mb-0.5 ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>Categoría</span>
                           <div key={s.category} className={`text-[10px] font-black uppercase tracking-widest animate-in fade-in zoom-in-95 slide-in-from-right-2 duration-500 ${isDarkMode ? 'text-[#c9a84c]' : 'text-amber-700'}`}>
@@ -1440,7 +1499,9 @@ export default function RegisterPage() {
                             </button>
                             {activeTooltip === `gender_${i}` && (
                               <div className="absolute bottom-full left-0 mb-2 w-52 p-3 rounded-3xl bg-zinc-900 border border-zinc-800 text-[9px] font-bold text-zinc-300 shadow-[0_0_30px_rgba(0,0,0,0.5)] z-100 animate-in fade-in zoom-in duration-300">
-                                Según certificado de nacimiento. Se usa para categorías de competencia IBJJF.
+                                {config.isSchool 
+                                  ? "El género se utiliza para personalizaciones del perfil y sugerencias de compras." 
+                                  : "Según certificado de nacimiento. Se usa para categorías de competencia IBJJF."}
                                 <div className="absolute top-full left-4 border-8 border-transparent border-t-zinc-900" />
                               </div>
                             )}
@@ -1466,39 +1527,43 @@ export default function RegisterPage() {
                         </button>
                       </div>
 
-                      <div className="space-y-1.5">
-                        <label className={`text-[8px] uppercase tracking-wider font-black ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Peso</label>
-                        <div className="relative h-12">
-                          <input type="number" placeholder="90"
-                            value={s.weight}
-                            onChange={e => {
-                              const st = [...form.students];
-                              st[i].weight = e.target.value.replace(/[^0-9]/g, '').slice(0, 3);
-                              setForm({ ...form, students: st });
-                            }}
-                            className={`w-full h-full rounded-2xl border px-2 text-center text-[10px] font-black transition-all outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${isDarkMode ? 'bg-zinc-800 border-zinc-700 text-white placeholder-white/10' : 'bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400/20'
-                              } focus:border-[#c9a84c]/50`}
-                          />
-                          <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[6px] font-black text-zinc-500/40 uppercase">kg</span>
-                        </div>
-                      </div>
+                      {config.showPhysicalStats && (
+                        <>
+                          <div className="space-y-1.5">
+                            <label className={`text-[8px] uppercase tracking-wider font-black ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Peso</label>
+                            <div className="relative h-12">
+                              <input type="number" placeholder="90"
+                                value={s.weight}
+                                onChange={e => {
+                                  const st = [...form.students];
+                                  st[i].weight = e.target.value.replace(/[^0-9]/g, '').slice(0, 3);
+                                  setForm({ ...form, students: st });
+                                }}
+                                className={`w-full h-full rounded-2xl border px-2 text-center text-[10px] font-black transition-all outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${isDarkMode ? 'bg-zinc-800 border-zinc-700 text-white placeholder-white/10' : 'bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400/20'
+                                  } focus:border-[#c9a84c]/50`}
+                              />
+                              <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[6px] font-black text-zinc-500/40 uppercase">kg</span>
+                            </div>
+                          </div>
 
-                      <div className="space-y-1.5">
-                        <label className={`text-[8px] uppercase tracking-wider font-black ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Altura</label>
-                        <div className="relative h-12">
-                          <input type="number" placeholder="180"
-                            value={s.height}
-                            onChange={e => {
-                              const st = [...form.students];
-                              st[i].height = e.target.value.replace(/[^0-9]/g, '').slice(0, 3);
-                              setForm({ ...form, students: st });
-                            }}
-                            className={`w-full h-full rounded-2xl border px-2 text-center text-[10px] font-black transition-all outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${isDarkMode ? 'bg-zinc-800 border-zinc-700 text-white placeholder-white/10' : 'bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400/20'
-                              } focus:border-[#c9a84c]/50`}
-                          />
-                          <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[6px] font-black text-zinc-500/40 uppercase">cm</span>
-                        </div>
-                      </div>
+                          <div className="space-y-1.5">
+                            <label className={`text-[8px] uppercase tracking-wider font-black ${isDarkMode ? 'text-zinc-500' : 'text-zinc-400'}`}>Altura</label>
+                            <div className="relative h-12">
+                              <input type="number" placeholder="180"
+                                value={s.height}
+                                onChange={e => {
+                                  const st = [...form.students];
+                                  st[i].height = e.target.value.replace(/[^0-9]/g, '').slice(0, 3);
+                                  setForm({ ...form, students: st });
+                                }}
+                                className={`w-full h-full rounded-2xl border px-2 text-center text-[10px] font-black transition-all outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${isDarkMode ? 'bg-zinc-800 border-zinc-700 text-white placeholder-white/10' : 'bg-zinc-50 border-zinc-200 text-zinc-900 placeholder-zinc-400/20'
+                                  } focus:border-[#c9a84c]/50`}
+                              />
+                              <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[6px] font-black text-zinc-500/40 uppercase">cm</span>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
 
                     {config.showBJJGraduation && (
@@ -1535,6 +1600,34 @@ export default function RegisterPage() {
                       </div>
                     )}
                   </div>
+
+
+                  {/* SCHOOL: COURSE SELECTION */}
+                  {config.isSchool && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700 mt-4">
+                      <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500 px-1 flex justify-between">
+                        Selecciona {config.courseLabel}
+                        {errors.students_belt && <span className="text-red-500 animate-pulse">{errors.students_belt}</span>}
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {config.courseOptions.map(opt => (
+                          <button key={opt.value} type="button"
+                            onClick={() => {
+                              const st = [...form.students];
+                              st[i].belt = opt.value;
+                              setForm({ ...form, students: st });
+                              if (errors.students_belt) setErrors({ ...errors, students_belt: "" });
+                            }}
+                            className={`h-11 rounded-2xl border transition-all flex items-center justify-center px-3 text-[9px] font-black uppercase tracking-tight text-center ${s.belt === opt.value
+                              ? 'border-[#c9a84c] bg-[#c9a84c]/5 text-[#c9a84c] shadow-[0_0_15px_rgba(201,168,76,0.1)]'
+                              : (isDarkMode ? 'border-zinc-800 bg-zinc-900/40 text-zinc-500 hover:border-zinc-700' : 'border-zinc-200 bg-white text-zinc-400 hover:border-zinc-300 shadow-sm')}`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* BJJ FIELDS */}
                   {config.showBJJGraduation && (
@@ -1593,11 +1686,11 @@ export default function RegisterPage() {
                     </div>
                   )}
 
-                  <div className="flex justify-end">
+                  <div className="flex justify-center mt-6">
                     <button type="button"
                       onClick={() => setForm({ ...form, students: form.students.filter((_, idx) => idx !== i) })}
                       className="text-[9px] font-black uppercase text-red-400 hover:text-red-500 transition-colors flex items-center gap-1 active:scale-95 group/del">
-                      Eliminar {config.memberLabel.toLowerCase()} <span key={form.students.length} className="inline-block animate-spin-inverse text-xs">×</span>
+                      ELIMINAR PERFIL <span key={form.students.length} className="inline-block animate-spin-inverse text-xs ml-1">×</span>
                     </button>
                   </div>
                 </div>
@@ -1606,10 +1699,11 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* REGISTRATION & PLANS — SOLO SI HAY MODALIDAD SELECCIONADA EN TODOS */}
-        {canShowPlans && (
+        {/* REGISTRATION & PLANS — SOLO SI HAY PRICING O ES COLEGIO */}
+        {(canShowPlans && (config.showPricing || config.isSchool)) && (
           <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-            <div className="space-y-8 animate-in fade-in duration-1000">
+            {config.showPricing && (
+              <div className="space-y-8 animate-in fade-in duration-1000">
             {/* REGISTRATION MODE SELECTOR (MOVED) */}
             <div className="space-y-4">
               <label className="text-[10px] uppercase tracking-[0.2em] font-black text-zinc-500 px-2 flex items-center gap-2">
@@ -1763,6 +1857,7 @@ export default function RegisterPage() {
               </div>
             )}
           </div>
+        )}
 
           {/* RESUMEN DE PRECIOS — solo industrias con pricing */}
           {config.showPricing && totals.totalInscriptions > 0 && form.registration_mode !== null && (
@@ -1844,27 +1939,31 @@ export default function RegisterPage() {
           <div className="space-y-4 px-2">
             <div className={`p-6 rounded-[2.5rem] border backdrop-blur-sm transition-all duration-700 ${isDarkMode ? "bg-zinc-900/40 border-zinc-800/80" : "bg-zinc-50 border-zinc-200"}`}>
               <div className="space-y-4">
-                <label className="flex items-start gap-4 cursor-pointer group">
-                  <div className="relative flex items-center mt-1">
-                    <input 
-                      type="checkbox" 
-                      className="peer sr-only" 
-                      checked={form.accept_dojo_terms}
-                      onChange={(e) => setForm({ ...form, accept_dojo_terms: e.target.checked })}
-                    />
-                    <div className={`w-6 h-6 rounded-xl border-2 transition-all flex items-center justify-center ${form.accept_dojo_terms ? 'bg-[#c9a84c] border-[#c9a84c] shadow-[0_0_15px_rgba(201,168,76,0.3)]' : `bg-transparent ${isDarkMode ? 'border-zinc-800' : 'border-zinc-300'} group-hover:border-zinc-700`}`}>
-                      <Check size={14} className={`text-black transition-opacity ${form.accept_dojo_terms ? 'opacity-100' : 'opacity-0'}`} />
-                    </div>
-                  </div>
-                  <div className="flex flex-col text-left">
-                    <span className={`text-[11px] font-black uppercase tracking-widest leading-relaxed ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                      Acepto los <a href={`/r/${code}/terms`} target="_blank" className="text-[#c9a84c] hover:underline underline-offset-4">términos y condiciones</a> del dojo
-                    </span>
-                    <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">Contrato de prestación de servicios deportivos</span>
-                  </div>
-                </label>
+                {!config.isSchool && (
+                  <>
+                    <label className="flex items-start gap-4 cursor-pointer group">
+                      <div className="relative flex items-center mt-1">
+                        <input 
+                          type="checkbox" 
+                          className="peer sr-only" 
+                          checked={form.accept_dojo_terms}
+                          onChange={(e) => setForm({ ...form, accept_dojo_terms: e.target.checked })}
+                        />
+                        <div className={`w-6 h-6 rounded-xl border-2 transition-all flex items-center justify-center ${form.accept_dojo_terms ? 'bg-[#c9a84c] border-[#c9a84c] shadow-[0_0_15px_rgba(201,168,76,0.3)]' : `bg-transparent ${isDarkMode ? 'border-zinc-800' : 'border-zinc-300'} group-hover:border-zinc-700`}`}>
+                          <Check size={14} className={`text-black transition-opacity ${form.accept_dojo_terms ? 'opacity-100' : 'opacity-0'}`} />
+                        </div>
+                      </div>
+                      <div className="flex flex-col text-left">
+                        <span className={`text-[11px] font-black uppercase tracking-widest leading-relaxed ${isDarkMode ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                          Acepto los <a href={`/r/${code}/terms`} target="_blank" className="text-[#c9a84c] hover:underline underline-offset-4">términos y condiciones</a> de la institución
+                        </span>
+                        <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">Contrato de prestación de servicios</span>
+                      </div>
+                    </label>
 
-                <div className="h-px bg-zinc-900/50" />
+                    <div className="h-px bg-zinc-900/50" />
+                  </>
+                )}
 
                 <label className="flex items-start gap-4 cursor-pointer group">
                   <div className="relative flex items-center mt-1">
@@ -1926,7 +2025,7 @@ export default function RegisterPage() {
           </div>
 
           {/* SECCIÓN: RESUMEN SEMANAL — Vista Global */}
-          {tenant?.schedules && tenant.schedules.length > 0 && (
+          {(!config.isSchool && tenant?.schedules && tenant.schedules.length > 0) && (
             <div className={`p-4 sm:p-6 rounded-[2.5rem] border animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200 transition-all ${isDarkMode ? 'bg-zinc-950/40 border-zinc-800' : 'bg-zinc-50 border-zinc-100'}`}>
               <div className="flex items-center justify-between mb-4">
                 <label className={`text-[8px] sm:text-[9px] uppercase tracking-[0.3em] font-black ${isDarkMode ? 'text-zinc-600' : 'text-zinc-400'}`}>Resumen Semanal (LUN-VIE)</label>
