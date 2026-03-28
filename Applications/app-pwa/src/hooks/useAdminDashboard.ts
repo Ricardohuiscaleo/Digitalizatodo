@@ -189,6 +189,14 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
                         logo: profile.tenant.logo,
                         primaryColor: profile.tenant.primary_color
                     });
+
+                    setBankData({
+                        bank_name: profile.tenant.bank_name || '',
+                        account_type: profile.tenant.bank_account_type || '',
+                        account_number: profile.tenant.bank_account_number || '',
+                        holder_name: profile.tenant.bank_account_holder || '',
+                        holder_rut: profile.tenant.bank_rut || ''
+                    });
                 }
 
                 // Load Initial Data
