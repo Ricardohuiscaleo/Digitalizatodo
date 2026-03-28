@@ -977,6 +977,59 @@ export default function DeepAdminDashboard() {
                     </select>
                   </div>
 
+                  <div className="pt-6 border-t border-border space-y-4">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-primary px-1">Control de Accesos (RBAC)</p>
+                      <p className="text-[8px] text-muted-foreground uppercase tracking-widest px-1 mb-2">Habilite módulos por rol (Owner tiene acceso total)</p>
+                    </div>
+                    
+                    {(['admin', 'coach', 'receptionist'] as const).map(role => {
+                      const rolePermissions = editingTenant.role_permissions?.[role] || [];
+                      const modules = ['attendance', 'students', 'payments', 'expenses', 'reports', 'settings'];
+                      const roleLabels: Record<string, string> = { admin: 'Administrador', coach: 'Coach / Sensei', receptionist: 'Recepcionista' };
+                      
+                      return (
+                        <div key={role} className="bg-zinc-900 border border-border rounded-2xl p-4 space-y-3">
+                          <p className="text-[10px] font-black uppercase text-white tracking-widest">{roleLabels[role]}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {modules.map(mod => {
+                              const isGranted = rolePermissions.includes(mod) || rolePermissions.includes('*');
+                              const modLabels: Record<string, string> = { attendance: 'Asistencia', students: 'Directorio', payments: 'Pagos', expenses: 'Gastos', reports: 'Reportes', settings: 'Ajustes' };
+                              return (
+                                <button
+                                  key={mod}
+                                  type="button"
+                                  onClick={() => {
+                                    const currentRolePerms = [...rolePermissions];
+                                    if (isGranted) {
+                                      const idx = currentRolePerms.indexOf(mod);
+                                      if (idx > -1) currentRolePerms.splice(idx, 1);
+                                      // Remove * if resolving individually
+                                      const starIdx = currentRolePerms.indexOf('*');
+                                      if (starIdx > -1) currentRolePerms.splice(starIdx, 1);
+                                    } else {
+                                      currentRolePerms.push(mod);
+                                    }
+                                    setEditingTenant({
+                                      ...editingTenant,
+                                      role_permissions: {
+                                        ...(editingTenant.role_permissions || {}),
+                                        [role]: currentRolePerms
+                                      }
+                                    });
+                                  }}
+                                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${isGranted ? 'bg-primary/20 text-primary border-primary/50' : 'bg-zinc-950 text-zinc-500 border-border hover:border-zinc-700'}`}
+                                >
+                                  {isGranted ? '✓' : ''} {modLabels[mod]}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
                   <div className="pt-6 border-t border-border space-y-6">
                     <div className="space-y-1">
                       <p className="text-[10px] font-black uppercase tracking-widest text-primary px-1">Acciones Críticas</p>

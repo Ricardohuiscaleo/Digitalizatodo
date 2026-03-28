@@ -30,6 +30,7 @@ interface OverviewSectionProps {
     setActiveTab?: (tab: string) => void;
     isDark?: boolean;
     isDemo?: boolean;
+    hasPermission?: (module: string) => boolean;
 }
 
 export default function OverviewSection(props: OverviewSectionProps) {
@@ -38,7 +39,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
         historyMonth, setHistoryMonth, historyYear, setHistoryYear,
         historyPage, setHistoryPage, branding, now, 
         setSelectedHistoryDate, schedulesList, feesSummary,
-        vocab, setActiveTab, isDark = false
+        vocab, setActiveTab, isDark = false, hasPermission
     } = props;
 
     const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -105,7 +106,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
                     { icon: <CheckCircle2 size={24} />, label: 'Mensualidad OK', value: paidStudents, colorClass: 'text-emerald-500', bgClass: 'bg-emerald-500/5', borderClass: 'border-emerald-500/10' },
                     { icon: <RefreshCw size={24} />, label: 'Por Validar', value: allStudents.filter(s => s.payerStatus === 'review').length, colorClass: 'text-amber-500', bgClass: 'bg-amber-500/5', borderClass: 'border-amber-500/10', spin: true },
                     { icon: <XCircle size={24} />, label: 'En Deuda', value: allStudents.filter(s => s.payerStatus === 'pending').length, colorClass: 'text-rose-500', bgClass: 'bg-rose-500/5', borderClass: 'border-rose-500/10' }
-                ]).map((card, i) => (
+                ]).filter((_, i) => i === 0 || (hasPermission?.('payments') ?? true)).map((card, i) => (
                     <div 
                         key={i} 
                         className={`group relative rounded-[2.5rem] p-6 md:p-8 border shadow-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl overflow-hidden ${
@@ -150,7 +151,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
             </div>
 
             {/* BANDEJA DE APROBACIÓN — Solo Martial Arts y si hay pendientes */}
-            {hasPending && !isTreasury && (
+            {hasPending && !isTreasury && (hasPermission?.('attendance') ?? true) && (
                 <div className="bg-zinc-950 rounded-[2.5rem] p-6 shadow-xl border border-zinc-800 shadow-zinc-200 animate-in slide-in-from-top-2 duration-700 relative overflow-hidden group">
                     {/* Background Glow */}
                     <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl group-hover:bg-amber-500/20 transition-all duration-700"></div>
@@ -196,7 +197,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
             )}
 
             {/* SECCIÓN INFERIOR — Oculta si es tesorería */}
-            {!isTreasury && (
+            {!isTreasury && (hasPermission?.('attendance') ?? true) && (
                 <div className="space-y-4">
 
 

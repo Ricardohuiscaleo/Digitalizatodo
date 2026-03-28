@@ -120,7 +120,7 @@ export default function App() {
 
     const {
         activeTab, setActiveTab, changeTab, tabDirection,
-        payers, setPayers, attendance, loading, token, user, isDemo,
+        payers, setPayers, attendance, loading, token, isDemo,
         prices, setPrices, bankData, setBankData,
         searchTerm, setSearchTerm, paymentFilter, setPaymentFilter,
         selectedMonth, setSelectedMonth, selectedYear, setSelectedYear,
@@ -169,7 +169,9 @@ export default function App() {
         handleCreateSchedule, handleUpdateSchedule, handleDeleteSchedule,
         allStudents, STATUS_LABEL,
         plansList, plansLoading,
-        activeSchedule
+        activeSchedule,
+        hasPermission,
+        user
     } = useAdminDashboard(branding, setBranding);
 
     if (loading) return (
@@ -375,9 +377,9 @@ export default function App() {
 
                     <nav className="flex flex-col gap-2">
                         <SidebarButton icon={LayoutDashboard} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} primaryColor={branding?.primaryColor} isDark={isDark} />
-                        <SidebarButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} isDark={isDark} />
-                        <SidebarButton icon={CreditCard} label={branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos'} active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} isDark={isDark} />
-                        <SidebarButton icon={Settings} label="Ajustes" active={activeTab === 'settings'} onClick={() => changeTab('settings')} primaryColor={branding?.primaryColor} isDark={isDark} />
+                        {hasPermission('attendance') && <SidebarButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} isDark={isDark} />}
+                        {hasPermission('payments') && <SidebarButton icon={CreditCard} label={branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos'} active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} isDark={isDark} />}
+                        {hasPermission('settings') && <SidebarButton icon={Settings} label="Ajustes" active={activeTab === 'settings'} onClick={() => changeTab('settings')} primaryColor={branding?.primaryColor} isDark={isDark} />}
                     </nav>
 
                     <div className={`mt-auto pt-6 border-t flex items-center gap-3 ${isDark ? 'border-zinc-800' : 'border-zinc-50'}`}>
@@ -433,6 +435,7 @@ export default function App() {
                                             vocab={vocab}
                                             setActiveTab={setActiveTab}
                                             isDark={isDark}
+                                            hasPermission={hasPermission}
                                         />
                                     </div>
                                     <div className="xl:col-span-4 space-y-8">
@@ -839,14 +842,16 @@ export default function App() {
                 isMartialArts && isDark ? 'bg-zinc-950/95 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-50 text-zinc-950'
             } border-t`}>
                 <TabButton icon={LayoutDashboard} label="Inicio" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} primaryColor={branding?.primaryColor} isDark={isDark} />
-                {branding?.industry !== 'school_treasury' && (
+                {hasPermission('attendance') && branding?.industry !== 'school_treasury' && (
                     <TabButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} isDark={isDark} />
                 )}
-                <TabButton icon={CreditCard} label={branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos'} active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} isDark={isDark} />
-                {branding?.industry === 'school_treasury' && (
+                {hasPermission('payments') && (
+                    <TabButton icon={CreditCard} label={branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos'} active={activeTab === 'payments'} onClick={() => changeTab('payments')} primaryColor={branding?.primaryColor} isDark={isDark} />
+                )}
+                {hasPermission('expenses') && branding?.industry === 'school_treasury' && (
                     <TabButton icon={ShoppingCart} label="Compras" active={activeTab === 'expenses'} onClick={() => changeTab('expenses')} primaryColor={branding?.primaryColor} isDark={isDark} />
                 )}
-                {branding?.industry === 'school_treasury' && (
+                {hasPermission('attendance') && branding?.industry === 'school_treasury' && (
                     <TabButton icon={Calendar} label="Horario" active={activeTab === 'schedule'} onClick={() => changeTab('schedule')} primaryColor={branding?.primaryColor} isDark={isDark} />
                 )}
                 {/* Profile tab con foto */}

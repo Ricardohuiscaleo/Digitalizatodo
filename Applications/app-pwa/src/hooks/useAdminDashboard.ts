@@ -128,6 +128,12 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         if (newTab === 'fees') treasury.loadFees();
     };
 
+    const hasPermission = useCallback((module: string) => {
+        if (!user || user.role === 'owner') return true;
+        const perms = (user.permissions as string[]) || [];
+        return perms.includes('*') || perms.includes(module);
+    }, [user]);
+
     const allStudents = useMemo(() => {
         return common.payers.flatMap((payer: any) => {
             const students = payer.enrolledStudents || payer.students || [];
@@ -471,7 +477,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         handlePriceInput, handleSavePrices, handleSaveBankInfo, handleLogoUpload,
         handlePaymentApprove, handleActivatePush, handleLoadDemo, handleConfirmPayment,
         handleAcceptTerms,
-
+        hasPermission,
         formatMoney: (a: number) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(a),
         STATUS_LABEL,
         longPressTimer
@@ -483,6 +489,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         selectedHistoryDate, showNotifications, toastNotification, 
         showCreateExpense, showCreateFee, showPushModal, showTermsModal,
         lastCheckedInStudent,
+        hasPermission,
 
         common, treasury, martialArts,
         allStudents, toggleAttendance, branding?.industry

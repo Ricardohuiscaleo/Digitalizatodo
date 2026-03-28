@@ -103,12 +103,14 @@ class AuthController extends Controller
             }
 
             $role = ($userType === 'staff') ? $user->getRoleForTenant($tenant->id) : null;
+            $permissions = ($userType === 'staff') ? $this->getPermissionsForRole($role, $tenant) : [];
 
             return response()->json([
                 'token' => $token,
                 'remember_token' => $rememberToken,
                 'user_type' => $userType,
                 'role' => $role,
+                'permissions' => $permissions,
                 'user' => $user->only('id', 'name', 'email', 'phone'),
                 'tenant' => [
                     'id' => $tenant->id,
@@ -139,12 +141,15 @@ class AuthController extends Controller
         if ($user instanceof User) {
             $tenant = app('currentTenant');
             $role = $user->getRoleForTenant($tenant->id);
+            $permissions = $this->getPermissionsForRole($role, $tenant);
+            
             return response()->json([
                 'user_type' => 'staff',
                 'id'        => $user->id,
                 'name'      => $user->name,
                 'email'     => $user->email,
                 'role'      => $role,
+                'permissions' => $permissions,
                 'tenant_id' => $tenant->id,
                 'tenant'    => [
                     'id'            => $tenant->id,
@@ -359,5 +364,22 @@ class AuthController extends Controller
         $token = $guardian->createToken("portal-{$tenant->id}")->plainTextToken;
 
         return response()->json(['token' => $token, 'guardian' => $guardian->only('id', 'name', 'email')], 201);
+    }
+
+    /**
+     * Helper to get permissions based on the role and tenant.
+     */
+    private function getPermissionsForRole(?string $role, Tenant $tenant): array
+    {
+        if ($role === 'owner') {
+            return ['*'];
+        }
+
+        if (!$role) {
+            return [];
+        }
+
+        $permissionsMap = $tenant->role_permissions ?? [];
+        return $permissionsMap[$role] ?? [];
     }
 }
