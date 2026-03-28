@@ -90,5 +90,9 @@ class ImageService
         imagedestroy($image);
 
         return ['path' => $tempPath, 'extension' => 'webp'];
+        } catch (\Exception $e) {
+            \Log::error("Error en ImageService: " . $e->getMessage());
+            return ['path' => $imagePath, 'extension' => $originalExtension];
+        }
     }
 }
