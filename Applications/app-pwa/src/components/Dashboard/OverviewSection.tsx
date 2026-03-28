@@ -405,9 +405,6 @@ export default function OverviewSection(props: OverviewSectionProps) {
                     </div>
                 </div>
             )}
-
-            {/* CLASES DE HOY */}
-            <TodaySchedule schedules={schedulesList} primaryColor={branding?.primaryColor} isDark={isDark} />
         </div>
     );
 }

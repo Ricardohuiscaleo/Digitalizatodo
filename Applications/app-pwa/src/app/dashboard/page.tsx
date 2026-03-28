@@ -438,7 +438,7 @@ export default function App() {
                                     <div className="xl:col-span-4 space-y-8">
                                         <div className="sticky top-0 space-y-8">
                                             {/* Today's Schedule for PC */}
-                                            <TodaySchedule schedules={schedulesList} primaryColor={branding?.primaryColor} />
+                                            <TodaySchedule schedules={schedulesList} primaryColor={branding?.primaryColor} isDark={isDark} />
                                             
                                             {/* Quick Actions / Terminal Access */}
                                             <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-950 border-zinc-800'} p-8 rounded-[3rem] shadow-2xl relative overflow-hidden group`}>
