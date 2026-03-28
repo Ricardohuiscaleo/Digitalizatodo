@@ -47,8 +47,10 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
         const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase());
         if (!matchesSearch) return false;
 
-        if (activeSchedule && isSmartFilterEnabled) {
-            const scheduleCat = activeSchedule.category?.toLowerCase(); // "adulto" o "kids"
+        const activeOrNext = activeSchedule || nextSchedule;
+
+        if (activeOrNext && isSmartFilterEnabled) {
+            const scheduleCat = activeOrNext.category?.toLowerCase(); // "adulto" o "kids"
             const studentCat = s.category?.toLowerCase(); // "adults" o "kids"
             
             // Mapeo flexible

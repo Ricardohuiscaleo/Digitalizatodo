@@ -437,35 +437,50 @@ export default function CheckinPage() {
                         {/* Left Side: Active/Next Schedule & Enrolled Students */}
                         <div className="space-y-10">
                             <div>
-                                <div className="flex items-center gap-3 mb-4">
+                                <div className="flex items-center gap-3 mb-6">
                                     {activeSchedule ? (
-                                        <div className="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                            En Curso
+                                        <div className="px-4 py-2 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-black uppercase tracking-widest flex items-center gap-3 shadow-[0_0_30px_rgba(16,185,129,0.1)]">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                                            Clase en Curso
                                         </div>
                                     ) : nextSchedule ? (
-                                        <div className="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                                            <Clock size={12} />
-                                            Siguiente Clase en {minsToNext} min
+                                        <div className="px-4 py-2 rounded-2xl bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-black uppercase tracking-widest flex items-center gap-3 shadow-[0_0_30px_rgba(245,158,11,0.1)]">
+                                            <Clock size={16} className="animate-pulse" />
+                                            PRÓXIMA CLASE EN {minsToNext} MIN
                                         </div>
-                                    ) : null}
-                                    <h1 className="text-xl font-black text-white/40 uppercase tracking-[0.2em]">
-                                        {activeSchedule ? 'Vigentes' : 'Próximos'}
-                                    </h1>
+                                    ) : (
+                                        <div className="px-4 py-2 rounded-2xl bg-zinc-900/50 border border-zinc-800 text-zinc-500 text-xs font-black uppercase tracking-widest flex items-center gap-3">
+                                            <ShieldAlert size={16} />
+                                            FUERA DE HORARIO
+                                        </div>
+                                    )}
                                 </div>
-                                <h2 className="text-7xl font-black text-white tracking-tighter leading-none uppercase">
-                                    {activeSchedule?.name || nextSchedule?.name || 'Escanea tu código'}
+                                <h1 className="text-xl font-black text-white/40 uppercase tracking-[0.3em] mb-3">
+                                    {activeSchedule ? 'BIENVENIDOS A' : 'PREPARÁNDOSE PARA'}
+                                </h1>
+                                <h2 className="text-8xl font-black text-white tracking-tighter leading-[0.9] uppercase break-words">
+                                    {activeSchedule?.name || nextSchedule?.name || 'Punto de Marcación'}
                                 </h2>
-                                <p className="text-lg font-bold text-zinc-500 uppercase tracking-widest mt-4">
+                                <p className="text-2xl font-black text-zinc-500 uppercase tracking-[0.2em] mt-8 flex items-center gap-4">
                                     {activeSchedule 
-                                        ? `${activeSchedule.start_time.slice(0, 5)} - ${activeSchedule.end_time.slice(0, 5)}`
+                                        ? <>
+                                            <Clock size={24} className="text-emerald-500" />
+                                            {activeSchedule.start_time.slice(0, 5)} — {activeSchedule.end_time.slice(0, 5)}
+                                          </>
                                         : nextSchedule 
-                                            ? `Inicia a las ${nextSchedule.start_time.slice(0, 5)}`
+                                            ? <>
+                                                <Clock size={24} className="text-amber-500" />
+                                                INICIA A LAS {nextSchedule.start_time.slice(0, 5)}
+                                              </>
                                             : 'Abre tu app para marcar ingreso al dojo'}
                                 </p>
                             </div>
 
-                            <div className="grid grid-cols-4 gap-4">
+                            <div className="space-y-4">
+                                <h3 className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em] flex items-center gap-2">
+                                    <Users size={12} /> PARTICIPANTES PROGRAMADOS
+                                </h3>
+                                <div className="grid grid-cols-5 gap-y-8 gap-x-2">
                                 {(() => {
                                     const sched = activeSchedule || nextSchedule;
                                     let displayList = sched?.students || sched?.enrolled_students || [];
@@ -515,8 +530,9 @@ export default function CheckinPage() {
                                 )}
                             </div>
                         </div>
+                    </div>
 
-                        {/* Right Side: QR Container */}
+                    {/* Right Side: QR Container */}
                         <div className="flex flex-col items-center">
                             <div className="relative p-12 bg-white rounded-[4rem] shadow-[0_0_100px_rgba(255,255,255,0.05)] border-[16px] border-zinc-900 relative overflow-hidden group">
                                 {qrData ? (
