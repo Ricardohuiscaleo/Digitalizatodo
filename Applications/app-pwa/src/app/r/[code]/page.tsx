@@ -206,6 +206,55 @@ const ALLIANCE_BJJ_GRADUATION = [
     ibjjfMinYears: null,
     color: '#ffffff',
     textColor: 'text-zinc-400',
+    category: 'both',
+  },
+  {
+    id: 'Gris',
+    name: 'Gris',
+    level: 'Infantil',
+    totalClasses: 80,
+    classesPerStripe: 20,
+    stripes: 4,
+    ibjjfMinYears: null,
+    color: '#9ca3af',
+    textColor: 'text-gray-100',
+    category: 'kids',
+  },
+  {
+    id: 'Amarillo',
+    name: 'Amarillo',
+    level: 'Infantil',
+    totalClasses: 100,
+    classesPerStripe: 25,
+    stripes: 4,
+    ibjjfMinYears: null,
+    color: '#facc15',
+    textColor: 'text-yellow-800',
+    category: 'kids',
+  },
+  {
+    id: 'Naranja',
+    name: 'Naranja',
+    level: 'Infantil',
+    totalClasses: 120,
+    classesPerStripe: 30,
+    stripes: 4,
+    ibjjfMinYears: null,
+    color: '#f97316',
+    textColor: 'text-orange-100',
+    category: 'kids',
+  },
+  {
+    id: 'Verde',
+    name: 'Verde',
+    level: 'Infantil',
+    totalClasses: 140,
+    classesPerStripe: 35,
+    stripes: 4,
+    ibjjfMinYears: null,
+    color: '#22c55e',
+    textColor: 'text-green-100',
+    category: 'kids',
   },
   {
     id: 'Azul',
@@ -217,6 +266,7 @@ const ALLIANCE_BJJ_GRADUATION = [
     ibjjfMinYears: null,
     color: '#1e40af',
     textColor: 'text-blue-100',
+    category: 'both',
   },
   {
     id: 'Morado',
@@ -228,6 +278,7 @@ const ALLIANCE_BJJ_GRADUATION = [
     ibjjfMinYears: 2,
     color: '#7e22ce',
     textColor: 'text-purple-100',
+    category: 'adults',
   },
   {
     id: 'Marrón',
@@ -239,6 +290,7 @@ const ALLIANCE_BJJ_GRADUATION = [
     ibjjfMinYears: 1.5,
     color: '#78350f',
     textColor: 'text-amber-100',
+    category: 'adults',
   },
   {
     id: 'Negro',
@@ -250,6 +302,7 @@ const ALLIANCE_BJJ_GRADUATION = [
     ibjjfMinYears: 1.5,
     color: '#18181b',
     textColor: 'text-zinc-100',
+    category: 'adults',
   },
 ];
 
@@ -427,9 +480,10 @@ export default function RegisterPage() {
 
   const BJJ_BELTS = ALLIANCE_BJJ_GRADUATION.map(b => ({
     id: b.id,
-    name: b.name[0],
+    name: b.name,
     color: b.color,
     textColor: b.textColor,
+    category: b.category,
   }));
 
   useEffect(() => {
@@ -1214,7 +1268,7 @@ export default function RegisterPage() {
                         {errors.self_belt && <span className="text-red-500 animate-pulse">{errors.self_belt}</span>}
                       </label>
                       <div className="flex gap-1.5 h-10">
-                        {BJJ_BELTS.map(belt => (
+                        {BJJ_BELTS.filter(b => b.category === 'both' || b.category === calculateCategory(form.self_student.birth_date)).map(belt => (
                           <button key={belt.id} type="button"
                             onClick={() => !form.self_student.is_new_to_jiujitsu && setForm({ ...form, self_student: { ...form.self_student, belt: belt.id } })}
                             disabled={form.self_student.is_new_to_jiujitsu}
@@ -1492,7 +1546,7 @@ export default function RegisterPage() {
                           {errors.students_belt && <span className="text-red-500 animate-pulse">{errors.students_belt}</span>}
                         </label>
                         <div className="flex gap-1.5 h-10">
-                          {BJJ_BELTS.map(belt => (
+                          {BJJ_BELTS.filter(b => b.category === 'both' || b.category === calculateCategory(s.birth_date)).map(belt => (
                             <button key={belt.id} type="button"
                               onClick={() => !s.is_new_to_jiujitsu && (function () { const st = [...form.students]; st[i].belt = belt.id; setForm({ ...form, students: st }); })()}
                               disabled={s.is_new_to_jiujitsu}
