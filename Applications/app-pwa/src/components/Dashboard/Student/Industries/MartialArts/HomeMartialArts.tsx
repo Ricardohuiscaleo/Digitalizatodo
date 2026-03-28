@@ -142,6 +142,7 @@ export function HomeMartialArts({
                             isReadyForBelt: sbp.is_ready_for_belt,
                             extraClasses: sbp.extra_merit_classes,
                             classesInBelt: sbp.total_effective,
+                            classesInCurrentStripe: sbp.total_effective % (sbp.classes_per_stripe || 1),
                             nextBeltName: sbp.next_belt,
                             nextStepLabel: sbp.is_ready_for_belt ? `PROFESOR: LISTO PARA ${sbp.next_belt}` : `PRÓXIMO HITO: ${sbp.current_stripe + 1}★`,
                         };
