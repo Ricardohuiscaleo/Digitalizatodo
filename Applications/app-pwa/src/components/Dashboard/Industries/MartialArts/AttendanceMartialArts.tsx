@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Search, CheckCircle2, QrCode, Edit2, X, Save, Loader2, User, MoreHorizontal, Users, UserCheck, UserX, Sparkles } from 'lucide-react';
 import { BeltDisplay } from './BeltDisplay';
 import { BeltBadge } from './BeltBadge';
