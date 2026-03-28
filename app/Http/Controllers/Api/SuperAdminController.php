@@ -267,4 +267,102 @@ class SuperAdminController extends Controller
             'new_password' => $newPassword
         ]);
     }
+
+    /**
+     * List all users associated with a tenant.
+     */
+    public function getTenantUsers($id)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $tenant = Tenant::findOrFail($id);
+        
+        // Get users from pivot AND direct tenant_id
+        $users = \App\Models\User::where('tenant_id', $tenant->id)
+            ->orWhereHas('tenantUsers', fn($q) => $q->where('tenant_id', $tenant->id))
+            ->get()
+            ->map(function($user) use ($tenant) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->getRoleForTenant($tenant->id) ?? 'staff',
+                    'active' => $user->active,
+                ];
+            });
+
+        return response()->json(['users' => $users]);
+    }
+
+    /**
+     * Add a new user to a tenant.
+     */
+    public function addTenantUser(Request $request, $id)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $tenant = Tenant::findOrFail($id);
+        
+        $validated = $request->validate([
+            'name' => 'required|string',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+            'role' => 'required|string'
+        ]);
+
+        $user = \App\Models\User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => \Hash::make($validated['password']),
+            'tenant_id' => $tenant->id, // Legacy support
+            'active' => true,
+        ]);
+
+        // New multi-tenant support
+        \App\Models\TenantUser::create([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'role' => $validated['role'],
+        ]);
+
+        return response()->json([
+            'message' => 'User created and assigned to tenant successfully',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $validated['role']
+            ]
+        ]);
+    }
+
+    /**
+     * Remove a user from a tenant.
+     */
+    public function removeTenantUser($tenantId, $userId)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $tenant = Tenant::findOrFail($tenantId);
+        $user = \App\Models\User::findOrFail($userId);
+
+        // Remove from pivot
+        \App\Models\TenantUser::where('tenant_id', $tenant->id)
+            ->where('user_id', $user->id)
+            ->delete();
+
+        // If it was their primary tenant, null it out
+        if ($user->tenant_id == $tenant->id) {
+            $user->tenant_id = null;
+            $user->save();
+        }
+
+        return response()->json(['message' => 'User removed from tenant']);
+    }
 }
