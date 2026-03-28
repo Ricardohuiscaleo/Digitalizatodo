@@ -304,60 +304,78 @@ class FeeController extends Controller
 
         if (!$guardian instanceof Guardian) return response()->json(['fees' => []]);
 
-        // Obtener los planes en los que están inscritos los alumnos de este apoderado
+        // Obtener enrollments activos de los alumnos del apoderado (con student_id)
         $studentIds = $guardian->students()->pluck('students.id');
-        $planIds = \App\Models\Enrollment::whereIn('student_id', $studentIds)
+        $enrollments = \App\Models\Enrollment::whereIn('student_id', $studentIds)
             ->where('status', 'active')
-            ->pluck('plan_id')
-            ->unique()
-            ->filter();
+            ->whereNotNull('plan_id')
+            ->get(['student_id', 'plan_id']);
 
-        // Obtener cuotas que sean globales (all) o para los planes del apoderado
-        $fees = Fee::where('tenant_id', $tenant->id)
-            ->where(function ($q) use ($planIds) {
-                $q->where('target', 'all')
-                  ->orWhereIn('plan_id', $planIds);
-            })
+        // Fees globales (target = all) — se muestran una vez, sin student_id específico
+        $globalFees = Fee::where('tenant_id', $tenant->id)
+            ->where('target', 'all')
             ->get();
+
+        // Fees por plan — una entrada por enrollment (student)
+        $planIds = $enrollments->pluck('plan_id')->unique()->filter();
+        $planFees = Fee::where('tenant_id', $tenant->id)
+            ->whereIn('plan_id', $planIds)
+            ->get()
+            ->keyBy('plan_id');
 
         $result = [];
 
-        foreach ($fees as $fee) {
-            $periods = $this->calculatePeriods($fee);
-            $paidPeriods = FeePayment::where('fee_id', $fee->id)
-                ->where('guardian_id', $guardian->id)
-                ->whereNotNull('period_month')
-                ->get()
-                ->keyBy(fn($p) => $p->period_year . '-' . $p->period_month);
+        // Procesar fees globales (una sola vez, sin student_id)
+        foreach ($globalFees as $fee) {
+            $result[] = $this->buildFeeEntry($fee, $guardian, null);
+        }
 
-            // Para fees sin period_month (legacy), buscar el pago único
-            $legacyPayment = FeePayment::where('fee_id', $fee->id)
-                ->where('guardian_id', $guardian->id)
-                ->whereNull('period_month')
-                ->first();
+        // Procesar fees por plan, UNA ENTRADA POR ENROLLMENT (por alumno)
+        foreach ($enrollments as $enrollment) {
+            $fee = $planFees->get($enrollment->plan_id);
+            if (!$fee) continue;
 
-            $periodsWithStatus = array_map(function ($period) use ($paidPeriods, $legacyPayment) {
-                $key = $period['year'] . '-' . $period['month'];
-                $payment = $paidPeriods[$key] ?? null;
-                // Si no hay pago por período, usar legacy
-                if (!$payment && $legacyPayment) $payment = $legacyPayment;
-                return [
-                    ...$period,
-                    'status'         => $payment?->status ?? 'pending',
-                    'payment_id'     => $payment?->id,
-                    'proof_url'      => $payment?->proof_url,
-                    'payment_method' => $payment?->payment_method,
-                    'paid_at'        => $payment?->paid_at,
-                ];
-            }, $periods);
-
-            $result[] = [
-                'fee'     => $fee,
-                'periods' => $periodsWithStatus,
-            ];
+            $result[] = $this->buildFeeEntry($fee, $guardian, $enrollment->student_id);
         }
 
         return response()->json(['fees' => $result]);
+    }
+
+    private function buildFeeEntry(Fee $fee, $guardian, $studentId): array
+    {
+        $periods = $this->calculatePeriods($fee);
+        $paidPeriods = FeePayment::where('fee_id', $fee->id)
+            ->where('guardian_id', $guardian->id)
+            ->when($studentId, fn($q) => $q->where('student_id', $studentId))
+            ->whereNotNull('period_month')
+            ->get()
+            ->keyBy(fn($p) => $p->period_year . '-' . $p->period_month);
+
+        $legacyPayment = FeePayment::where('fee_id', $fee->id)
+            ->where('guardian_id', $guardian->id)
+            ->when($studentId, fn($q) => $q->where('student_id', $studentId))
+            ->whereNull('period_month')
+            ->first();
+
+        $periodsWithStatus = array_map(function ($period) use ($paidPeriods, $legacyPayment) {
+            $key = $period['year'] . '-' . $period['month'];
+            $payment = $paidPeriods[$key] ?? null;
+            if (!$payment && $legacyPayment) $payment = $legacyPayment;
+            return [
+                ...$period,
+                'status'         => $payment?->status ?? 'pending',
+                'payment_id'     => $payment?->id,
+                'proof_url'      => $payment?->proof_url,
+                'payment_method' => $payment?->payment_method,
+                'paid_at'        => $payment?->paid_at,
+            ];
+        }, $periods);
+
+        return [
+            'student_id' => $studentId,   // ← NUEVO: para agrupar en el frontend
+            'fee'        => $fee,
+            'periods'    => $periodsWithStatus,
+        ];
     }
 
     // POST /fees/submit-payment — apoderado paga uno o varios períodos de una o varias fees

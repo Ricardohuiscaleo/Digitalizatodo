@@ -12,7 +12,7 @@ class Plan extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'tenant_id', 'name', 'category', 'description', 'price', 'billing_cycle', 'is_recurring', 'billing_day',
+        'tenant_id', 'name', 'category', 'target_audience', 'description', 'price', 'billing_cycle', 'is_recurring', 'billing_day',
         'family_discount_percent', 'family_discount_min_students', 'active',
     ];
 
