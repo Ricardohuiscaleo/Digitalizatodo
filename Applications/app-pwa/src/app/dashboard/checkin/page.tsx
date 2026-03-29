@@ -513,6 +513,9 @@ export default function CheckinPage() {
                                 <div className="h-2 w-full bg-zinc-950 rounded-full border border-zinc-800">
                                     <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${(timeLeft / 60) * 100}%` }} />
                                 </div>
+                                <div className="mt-8 text-center">
+                                    <p className="text-[12px] font-black text-white/20 uppercase tracking-[0.6em]">Control de Acceso</p>
+                                </div>
                             </div>
                         </div>
                     </div>
