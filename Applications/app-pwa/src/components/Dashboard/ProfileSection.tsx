@@ -50,7 +50,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                 </div>
                 
                 <p className="text-[9px] font-black uppercase tracking-[0.25em] text-orange-400 mb-1">
-                    Panel de Control · Staff
+                    Panel de Control · {branding?.industry === 'school_treasury' ? 'Tesorero' : (user?.role === 'coach' ? 'Sensei / Coach' : 'Staff')}
                 </p>
                 <h3 className={`text-xl font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-zinc-900'}`}>
                     {user?.name || 'Admin'}
@@ -128,7 +128,12 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
             >
                 <p className={`text-[12px] font-black tracking-[0.25em] uppercase ${isDark ? 'text-zinc-700' : 'text-zinc-400'}`}>Digitaliza Todo</p>
                 <p className={`text-[9px] text-center mt-1 px-8 leading-relaxed ${isDark ? 'text-zinc-800' : 'text-zinc-400'}`}>
-                    {branding?.industry === 'school_treasury' ? "Sistemas a medida para gestión financiera escolar." : "Sistemas a medida para academias de alto rendimiento."}
+                    {branding?.industry === 'school_treasury' 
+                        ? "Sistemas a medida para gestión financiera escolar." 
+                        : (branding?.industry === 'martial_arts' 
+                            ? "Sistemas a medida para academias de alto rendimiento."
+                            : "Sistemas a medida para la gestión de tu negocio.")
+                    }
                 </p>
                 <p className="text-[8px] font-black text-orange-400/80 tracking-[0.3em] uppercase mt-3">Arica, Chile 🇨🇱</p>
             </a>

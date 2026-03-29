@@ -5,6 +5,10 @@ export const industryConfig: Record<string, {
     memberLabel: string; 
     placeLabel: string;
     unitLabel: string;
+    settingsTitle: string;
+    profileDescription: string;
+    registrationLinkTitle: string;
+    scheduleTitle: string;
 }> = {
     school_treasury: { 
         attendance: 'Asistencia', 
@@ -12,7 +16,11 @@ export const industryConfig: Record<string, {
         cat2: 'Matrícula', 
         memberLabel: 'Alumno', 
         placeLabel: 'Colegio',
-        unitLabel: 'Curso'
+        unitLabel: 'Curso',
+        settingsTitle: 'Ajustes Institución',
+        profileDescription: 'Sistemas a medida para gestión financiera escolar.',
+        registrationLinkTitle: 'Inscripción Escolar',
+        scheduleTitle: 'Horarios / Talleres'
     },
     martial_arts: { 
         attendance: 'Tatami', 
@@ -20,47 +28,11 @@ export const industryConfig: Record<string, {
         cat2: 'Adultos', 
         memberLabel: 'Alumno', 
         placeLabel: 'Dojo',
-        unitLabel: 'Tatami'
-    },
-    clinic: { 
-        attendance: 'Box', 
-        cat1: 'Consulta', 
-        cat2: 'Procedimiento', 
-        memberLabel: 'Paciente', 
-        placeLabel: 'Clínica',
-        unitLabel: 'Box'
-    },
-    education: { 
-        attendance: 'Aula', 
-        cat1: 'Taller', 
-        cat2: 'Curso', 
-        memberLabel: 'Alumno', 
-        placeLabel: 'Centro',
-        unitLabel: 'Aula'
-    },
-    fitness: { 
-        attendance: 'Clase', 
-        cat1: 'Mensual', 
-        cat2: 'Trimestral', 
-        memberLabel: 'Socio', 
-        placeLabel: 'Gimnasio',
-        unitLabel: 'Sala'
-    },
-    dance: { 
-        attendance: 'Sala', 
-        cat1: 'Infantil', 
-        cat2: 'Adultos', 
-        memberLabel: 'Alumno', 
-        placeLabel: 'Academia',
-        unitLabel: 'Sala'
-    },
-    music: { 
-        attendance: 'Sala', 
-        cat1: 'Individual', 
-        cat2: 'Grupal', 
-        memberLabel: 'Alumno', 
-        placeLabel: 'Escuela',
-        unitLabel: 'Sala'
+        unitLabel: 'Tatami',
+        settingsTitle: 'Configuración Dojo',
+        profileDescription: 'Sistemas a medida para academias de alto rendimiento.',
+        registrationLinkTitle: 'Página de Registro Público',
+        scheduleTitle: 'Horarios Dojo'
     },
     default: { 
         attendance: 'Clase', 
@@ -68,6 +40,10 @@ export const industryConfig: Record<string, {
         cat2: 'Categoría 2', 
         memberLabel: 'Miembro', 
         placeLabel: 'Clientes',
-        unitLabel: 'Unidad'
+        unitLabel: 'Unidad',
+        settingsTitle: 'Ajustes de Cuenta',
+        profileDescription: 'Sistemas a medida para la gestión de tu negocio.',
+        registrationLinkTitle: 'Página de Registro Público',
+        scheduleTitle: 'Horarios'
     },
 };

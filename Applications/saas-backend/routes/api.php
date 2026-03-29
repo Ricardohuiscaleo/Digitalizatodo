@@ -161,7 +161,7 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
             Route::post('push/subscribe', [\App\Http\Controllers\Api\PushController::class, 'subscribe']);
 
             // Asistencia (solo teachers/admins - Escritura)
-            Route::middleware('role:teacher,admin,owner')->group(function () {
+            Route::middleware('role:teacher,admin,owner,coach,instructor')->group(function () {
                     Route::post('attendance', [AttendanceController::class , 'store']);
                     Route::delete('attendance/{student_id}', [AttendanceController::class , 'destroy']);
                     Route::get('attendance/qr-token', [AttendanceQRController::class , 'generate']);

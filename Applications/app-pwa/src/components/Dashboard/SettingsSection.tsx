@@ -509,21 +509,21 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                         {branding?.name || 'Academy'}
                     </h3>
                     <div className="flex items-center gap-2">
-                        <p className={`text-[10px] font-black ${isDark ? 'text-zinc-500' : 'text-zinc-400'} uppercase tracking-widest`}>STAFF DASHBOARD v5.1</p>
-                        <span className={`text-[8px] font-black uppercase tracking-[0.2em] ${isDark ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-zinc-950 text-zinc-100 border-zinc-800'} px-2 py-0.5 rounded-full border`}>Staff</span>
+                        <p className={`text-[10px] font-black ${isDark ? 'text-zinc-500' : 'text-zinc-400'} uppercase tracking-widest`}>{isTreasury ? 'SCHOOL TREASURY v1.2' : 'STAFF DASHBOARD v5.1'}</p>
+                        <span className={`text-[8px] font-black uppercase tracking-[0.2em] ${isDark ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-zinc-950 text-zinc-100 border-zinc-800'} px-2 py-0.5 rounded-full border`}>{isTreasury ? 'Tesorero' : 'Staff'}</span>
                     </div>
                 </div>
             </div>
 
             {/* GESTIÓN DE NEGOCIO */}
             <div className="grid gap-3 pt-2">
-                <p className={`text-[10px] font-black ${isDark ? 'text-zinc-500' : 'text-zinc-400'} uppercase tracking-[0.4em] ml-3 mb-1 opaciy-60`}>ADMINISTRACIÓN</p>
+                <p className={`text-[10px] font-black ${isDark ? 'text-zinc-500' : 'text-zinc-400'} uppercase tracking-[0.4em] ml-3 mb-1 opacity-60`}>ADMINISTRACIÓN</p>
                 
-                {!isTreasury && (
+                {branding?.industry === 'martial_arts' && (
                     <ActionCard 
                         icon={CreditCard} 
                         title="Planes y Precios" 
-                        description="Gestiona las cuotas mensuales"
+                        description="Gestiona las cuotas y membresías"
                         onClick={() => setShowPricingModal(true)}
                         color="indigo"
                     />
@@ -531,7 +531,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
 
                 <ActionCard 
                     icon={Calendar} 
-                    title={isTreasury ? "Horarios / Talleres" : "Horarios Dojo"} 
+                    title={vocab.scheduleTitle} 
                     description={isTreasury ? "Configura los bloques de clases" : "Configura las clases semanales"}
                     onClick={() => {
                         loadSchedules();
@@ -550,8 +550,8 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
 
                 <ActionCard 
                     icon={ShieldCheck} 
-                    title="Términos Legales" 
-                    description={isTreasury ? "Reglamento y términos" : "Contrato de membrecía digital"}
+                    title={isTreasury ? "Reglamento Interno" : "Términos Legales"} 
+                    description={isTreasury ? "Reglamento y normativas" : "Contrato de membrecía digital"}
                     onClick={() => {
                         loadTenantTerms();
                         setShowTermsModal(true);
@@ -559,7 +559,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                     color="blue"
                 />
 
-                {!isTreasury && (
+                {branding?.industry === 'martial_arts' && (
                     <ActionCard 
                         icon={QrCode} 
                         title="Punto de Marcación" 
@@ -572,7 +572,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
 
             {/* LINK DE REGISTRO */}
             <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100 shadow-zinc-950/5'} rounded-[28px] px-6 py-5 shadow-xl border mt-4`}>
-                <p className={`text-[10px] font-black ${isDark ? 'text-zinc-500' : 'text-zinc-400'} uppercase tracking-widest mb-3`}>Página de Registro Público</p>
+                <p className={`text-[10px] font-black ${isDark ? 'text-zinc-500' : 'text-zinc-400'} uppercase tracking-widest mb-3`}>{vocab.registrationLinkTitle}</p>
                 {regPageCode ? (
                     <div className="space-y-3">
                         <div className="flex items-center gap-2">
