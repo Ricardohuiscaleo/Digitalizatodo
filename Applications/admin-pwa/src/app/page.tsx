@@ -1199,13 +1199,13 @@ export default function DeepAdminDashboard() {
                                 onChange={e => setNewTenantUser({...newTenantUser, email: e.target.value})}
                                 className={`bg-black border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-300 placeholder:text-zinc-600 focus:border-primary outline-none transition-colors ${isEditingUser ? 'opacity-50 cursor-not-allowed' : ''}`}
                               />
-                              <div className="relative flex items-center">
+                              <div className="relative flex items-center col-span-2">
                                 <input 
                                   type="text" 
                                   placeholder={isEditingUser ? "NUEVA CLAVE (OPCIONAL)" : "CLAVE"}
                                   value={newTenantUser.password}
                                   onChange={e => setNewTenantUser({...newTenantUser, password: e.target.value})}
-                                  className="w-full bg-black border border-zinc-800 rounded-xl pl-3 pr-20 py-2.5 text-[10px] font-bold text-zinc-300 placeholder:text-zinc-600 focus:border-primary outline-none transition-colors"
+                                  className="w-full bg-black border border-zinc-800 rounded-xl pl-3 pr-12 py-2.5 text-[10px] font-bold text-zinc-300 placeholder:text-zinc-600 focus:border-primary outline-none transition-colors"
                                 />
                                 <button
                                   type="button"
@@ -1219,7 +1219,7 @@ export default function DeepAdminDashboard() {
                                     const pass = `${gen(6)}-${gen(6)}-${gen(6)}`;
                                     setNewTenantUser(prev => ({ ...prev, password: pass }));
                                   }}
-                                  className="absolute right-1 w-8 h-8 rounded-full bg-primary/10 hover:bg-primary text-primary hover:text-black flex items-center justify-center transition-all border border-primary/20"
+                                  className="absolute right-1.5 w-8 h-8 rounded-full bg-primary/10 hover:bg-primary text-primary hover:text-black flex items-center justify-center transition-all border border-primary/20"
                                   title="Sugerir Clave Segura"
                                 >
                                   <Zap size={14} className="fill-current" />
@@ -1228,7 +1228,7 @@ export default function DeepAdminDashboard() {
                               <select 
                                 value={newTenantUser.role}
                                 onChange={e => setNewTenantUser({...newTenantUser, role: e.target.value})}
-                                className="bg-black border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-300 focus:border-primary outline-none transition-colors appearance-none"
+                                className="col-span-2 bg-black border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-300 focus:border-primary outline-none transition-colors appearance-none"
                               >
                                 <option value="owner">Dueño</option>
                                 <option value="admin">Administrador</option>
