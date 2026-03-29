@@ -28,8 +28,8 @@ export default function OverviewTreasury({ branding, schedulesList, feesSummary 
 
     return (
         <div className="space-y-6 text-zinc-950">
-            {/* Grid de Métricas Financieras */}
-            <div className="grid grid-cols-4 gap-1.5 sm:gap-4">
+            {/* Grid de Métricas Financieras (Hidden on PC, moved to sidebar) */}
+            <div className="grid grid-cols-4 md:hidden gap-1.5 sm:gap-4">
                 {cards.map((card, i) => (
                     <div 
                         key={i} 

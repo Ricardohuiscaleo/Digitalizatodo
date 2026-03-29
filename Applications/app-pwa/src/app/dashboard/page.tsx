@@ -421,6 +421,33 @@ export default function App() {
                                     {activeTab === 'dashboard' ? 'Resumen General' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? (branding?.industry === 'school_treasury' ? 'Cuotas' : 'Estado de Pagos') : activeTab === 'settings' ? 'Configuración' : 'Mi Perfil'}
                                 </h2>
                                 <div className="flex items-center gap-4">
+                                    {/* Controles PC: Dark Mode y Notificaciones */}
+                                    <div className="flex items-center gap-3">
+                                        {isMartialArts && (
+                                            <button onClick={() => setIsDark(d => !d)}
+                                                className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-95 border ${
+                                                    isDark ? 'bg-zinc-900 border-zinc-800 text-[#c9a84c]' : 'bg-white border-zinc-100 text-zinc-400'
+                                                } shadow-sm group hover:scale-105`}>
+                                                {isDark
+                                                    ? <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                                                    : <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                                                }
+                                            </button>
+                                        )}
+
+                                        <button 
+                                            onClick={() => setShowNotifications(!showNotifications)}
+                                            className={`relative w-10 h-10 flex items-center justify-center rounded-2xl border transition-all active:scale-95 shadow-sm hover:scale-105 ${
+                                                isDark ? 'bg-zinc-900 border-zinc-800 text-zinc-400' : 'bg-white border-zinc-100 text-zinc-600'
+                                            }`}
+                                        >
+                                            <Bell size={20} strokeWidth={2.5} />
+                                            {unreadCount > 0 && (
+                                                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                                            )}
+                                        </button>
+                                    </div>
+
                                     {isDemo && <span className="bg-emerald-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg shadow-emerald-500/20">Modo Demo Activo</span>}
                                     <div className="hidden xl:flex items-center gap-2 px-4 py-2 bg-zinc-50 dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800">
                                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -462,6 +489,26 @@ export default function App() {
                                     </div>
                                     <div className="xl:col-span-4 space-y-8">
                                         <div className="sticky top-0 space-y-8">
+                                            {/* Indicadores Estilo Gris 2x2 - Solo para PC Dashboard */}
+                                            {activeTab === 'dashboard' && (
+                                                <div className="hidden md:grid grid-cols-2 gap-4">
+                                                    {[
+                                                        { label: 'Inscritos', value: isTreasury ? (feesSummary?.total || 0) : allStudents.length, show: true },
+                                                        { label: 'Mensualidad OK', value: isTreasury ? (feesSummary?.al_dia || 0) : allStudents.filter(s => s.payerStatus === 'paid').length, show: hasPermission?.('payments') ?? true },
+                                                        { label: 'Por Validar', value: isTreasury ? (feesSummary?.en_revision || 0) : allStudents.filter(s => s.payerStatus === 'review').length, show: hasPermission?.('payments') ?? true },
+                                                        { label: 'En Deuda', value: isTreasury ? (feesSummary?.morosos || 0) : allStudents.filter(s => s.payerStatus === 'pending').length, show: hasPermission?.('payments') ?? true }
+                                                    ].map((stat, i) => stat.show && (
+                                                        <div key={i} className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'} p-4 rounded-3xl border shadow-sm flex flex-col justify-between aspect-square group hover:scale-[1.02] transition-all`}>
+                                                            <p className={`text-[8px] font-black uppercase tracking-widest leading-none ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>{stat.label}</p>
+                                                            <div className="flex flex-col">
+                                                                <h4 className={`text-3xl font-black tracking-tighter leading-none ${isDark ? 'text-white' : 'text-zinc-950'}`}>{stat.value}</h4>
+                                                                <span className="text-[6px] font-black uppercase tracking-widest text-zinc-300 mt-1">Actualizado ahora</span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
                                             {/* Today's Schedule for PC - Only for Martial Arts or if they have schedules */}
                                             {isMartialArts && (
                                                 <TodaySchedule schedules={schedulesList} primaryColor={branding?.primaryColor} isDark={isDark} />

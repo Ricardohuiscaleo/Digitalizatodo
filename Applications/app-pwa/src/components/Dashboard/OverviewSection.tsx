@@ -94,8 +94,8 @@ export default function OverviewSection(props: OverviewSectionProps) {
 
     return (
         <div className={`space-y-6 transition-colors duration-500 ${ isDark ? 'text-zinc-100' : 'text-zinc-950' }`}>
-            {/* Dashboard Summary Horizontal Grid — 4 Columns on Mobile */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            {/* Dashboard Summary Horizontal Grid — 4 Columns on Mobile (Hidden on PC, moved to sidebar) */}
+            <div className="grid grid-cols-2 md:hidden gap-4">
                 {(feesSummary ? [
                     { icon: <Users size={24} />, label: 'Total Estudiantes', value: feesSummary.total, colorClass: 'text-indigo-500', bgClass: 'bg-indigo-500/5', borderClass: 'border-indigo-500/10' },
                     { icon: <CheckCircle2 size={24} />, label: 'Pagos Al Día', value: feesSummary.al_dia, colorClass: 'text-emerald-500', bgClass: 'bg-emerald-500/5', borderClass: 'border-emerald-500/10' },
