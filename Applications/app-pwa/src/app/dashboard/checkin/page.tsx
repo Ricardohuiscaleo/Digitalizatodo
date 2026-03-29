@@ -206,7 +206,6 @@ export default function CheckinPage() {
         return () => clearTimeout(t);
     }, [timeLeft, qrData, fetchToken, detectedStudent]);
 
-    // WebSocket 
     useEffect(() => {
         if (!branding?.slug) return;
         const echo = getEcho();
@@ -269,7 +268,6 @@ export default function CheckinPage() {
     const isDebtor = detectedStudent?.payerStatus === 'pending';
     const primaryColor = branding?.primaryColor || '#6366f1';
     const BELT_LABELS: Record<string, string> = { white: 'Blanco', blue: 'Azul', purple: 'Morado', brown: 'Café', black: 'Negro' };
-    const MODALITY_LABELS: Record<string, string> = { gi: 'Gi', nogi: 'No-Gi', both: 'Ambos' };
     const CATEGORY_LABELS: Record<string, string> = { adults: 'Adulto', kids: 'Infantil' };
 
     const getBeltStyles = (belt: string) => {
@@ -411,7 +409,7 @@ export default function CheckinPage() {
                         </div>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center w-full max-w-7xl">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full max-w-7xl">
                         <div className="space-y-10">
                             <div>
                                 <div className="flex items-center gap-3 mb-6">
@@ -445,7 +443,6 @@ export default function CheckinPage() {
                                 <h3 className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em] flex items-center gap-2">
                                     <Users size={12} /> {activeSchedule ? 'PARTICIPANTES EN CLASE' : 'PARTICIPANTES PROGRAMADOS'} — {checkedInIds.size} PRESENTES
                                 </h3>
-                                <div className="grid grid-cols-10 gap-x-2 gap-y-6">
                                 {(() => {
                                     const sched = activeSchedule || nextSchedule;
                                     let displayList = sched?.students || sched?.enrolled_students || [];
@@ -458,31 +455,41 @@ export default function CheckinPage() {
                                             displayList = allStudents.filter(s => !(s.category || '').toLowerCase().includes('kids'));
                                         }
                                     }
-                                    return displayList.slice(0, 50).map((student: any) => {
-                                        const fullInfo = allStudents.find(s => String(s.id) === String(student.id)) || student;
-                                        const isCheckedIn = checkedInIds.has(String(fullInfo.id));
-                                        return (
-                                            <div key={student.id} className="flex flex-col items-center">
-                                                <StudentAvatar 
-                                                    photo={fullInfo.photo}
-                                                    name={fullInfo.name}
-                                                    size={44}
-                                                    beltRank={fullInfo.belt_rank}
-                                                    degrees={fullInfo.degrees}
-                                                    classesCount={(fullInfo.previous_classes || 0) + Math.max(0, (fullInfo.total_attendances || 0) - (fullInfo.previous_classes || 0))}
-                                                    payerStatus={fullInfo.payerStatus}
-                                                    showPayerDot={true}
-                                                    isDark={true}
-                                                    checkedIn={isCheckedIn}
-                                                />
-                                                <p className={`mt-2 text-[6px] font-black uppercase tracking-tighter text-center line-clamp-1 max-w-[44px] ${isCheckedIn ? 'text-emerald-400' : 'text-zinc-600'}`}>
-                                                    {fullInfo.name.split(' ')[0]}
-                                                </p>
-                                            </div>
-                                        );
-                                    });
+                                    const avatarSize = displayList.length > 20 ? 48 : 64;
+                                    const nameSizeClass = displayList.length > 20 ? 'text-[7px]' : 'text-[9px]';
+                                    const gapClass = displayList.length > 20 ? 'gap-x-2 gap-y-6' : 'gap-x-4 gap-y-10';
+
+                                    return (
+                                        <div className={`grid grid-cols-10 ${gapClass}`}>
+                                            {displayList.slice(0, 50).map((student: any) => {
+                                                const fullInfo = allStudents.find(s => String(s.id) === String(student.id)) || student;
+                                                const isCheckedIn = checkedInIds.has(String(fullInfo.id));
+                                                return (
+                                                    <div key={student.id} className="flex flex-col items-center">
+                                                        <StudentAvatar 
+                                                            photo={fullInfo.photo}
+                                                            name={fullInfo.name}
+                                                            size={avatarSize}
+                                                            beltRank={fullInfo.belt_rank}
+                                                            degrees={fullInfo.degrees}
+                                                            classesCount={(fullInfo.previous_classes || 0) + Math.max(0, (fullInfo.total_attendances || 0) - (fullInfo.previous_classes || 0))}
+                                                            payerStatus={fullInfo.payerStatus}
+                                                            showPayerDot={true}
+                                                            isDark={true}
+                                                            checkedIn={isCheckedIn}
+                                                        />
+                                                        <p 
+                                                            className={`mt-2 ${nameSizeClass} font-black uppercase tracking-tighter text-center line-clamp-1 ${isCheckedIn ? 'text-emerald-400 font-black' : 'text-zinc-600'}`}
+                                                            style={{ maxWidth: avatarSize }}
+                                                        >
+                                                            {fullInfo.name.split(' ')[0]}
+                                                        </p>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    );
                                 })()}
-                                </div>
                             </div>
                         </div>
                         <div className="flex flex-col items-center">
