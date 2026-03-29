@@ -35,7 +35,7 @@
 
             @php
                 $slug = $tenant->slug ?? $tenant->id;
-                $resetUrl = "https://app.digitalizatodo.cl/{$slug}/auth/reset-password?token={$token}&email=" . urlencode($user->email) . "&tenant={$slug}";
+                $resetUrl = "https://app.digitalizatodo.cl/auth/reset-password?token={$token}&email=" . urlencode($user->email) . "&tenant={$slug}";
             @endphp
             <a href="{{ $resetUrl }}" class="btn">Restablecer Contraseña →</a>
 
