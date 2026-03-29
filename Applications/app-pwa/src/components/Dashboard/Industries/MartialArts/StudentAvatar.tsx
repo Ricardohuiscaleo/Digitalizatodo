@@ -63,8 +63,10 @@ export function StudentAvatar({
                     {photo ? (
                         <img src={photo} className="w-full h-full object-cover" alt={name} />
                     ) : (
-                        <div className={`w-full h-full flex items-center justify-center ${isDark ? 'text-zinc-500' : 'text-zinc-300'}`}>
-                            <User size={size * 0.36} />
+                        <div className={`w-full h-full flex items-center justify-center font-black uppercase tracking-tighter ${isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-zinc-200 text-zinc-500'}`}
+                             style={{ fontSize: size * 0.4 }}
+                        >
+                            {name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                         </div>
                     )}
                 </div>
