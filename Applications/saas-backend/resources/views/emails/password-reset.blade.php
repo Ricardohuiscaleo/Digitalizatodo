@@ -34,7 +34,8 @@
             </div>
 
             @php
-                $resetUrl = "https://{$tenant->slug ?? $tenant->id}.digitalizatodo.cl/auth/reset-password?token={$token}&email=" . urlencode($user->email) . "&tenant={$tenant->slug ?? $tenant->id}";
+                $slug = $tenant->slug ?? $tenant->id;
+                $resetUrl = "https://{$slug}.digitalizatodo.cl/auth/reset-password?token={$token}&email=" . urlencode($user->email) . "&tenant={$slug}";
             @endphp
             <a href="{{ $resetUrl }}" class="btn">Restablecer Contraseña →</a>
 

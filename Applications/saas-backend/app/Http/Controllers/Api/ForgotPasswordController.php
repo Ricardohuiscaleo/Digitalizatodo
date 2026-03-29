@@ -62,10 +62,7 @@ class ForgotPasswordController extends Controller
             Mail::to($email)->send(new PasswordResetMail($user, $token, $tenant));
         } catch (\Exception $e) {
             \Log::error("Error sending password reset email to {$email}: " . $e->getMessage());
-            return response()->json([
-                'message' => 'Error al enviar el correo. Por favor intenta más tarde.',
-                'debug' => $e->getMessage()
-            ], 500);
+            return response()->json(['message' => 'Error al enviar el correo. Por favor intenta más tarde.'], 500);
         }
 
         return response()->json(['message' => 'Si el correo existe en nuestro sistema, recibirás un link de recuperación en breve.']);
