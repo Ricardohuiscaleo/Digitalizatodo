@@ -33,14 +33,16 @@ import {
   ChevronRight,
   Loader2,
   Trash2,
-  Edit2
+  Edit2,
+  Send,
+  Sparkles
 } from 'lucide-react';
 
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
-import { getAllTenants, updateTenant, createTenant, getAllUsers, resetTenantPassword, getAllSaasPlans, updateSaasPlan, syncSaasPlanWithMP } from '@/lib/api';
+import { getAllTenants, updateTenant, createTenant, getAllUsers, resetTenantPassword, getAllSaasPlans, updateSaasPlan, syncSaasPlanWithMP, sendCustomEmail } from '@/lib/api';
 import { Toaster, toast } from "sonner";
 import { useRealtimeChannel } from '@/hooks/useRealtimeChannel';
 
@@ -68,7 +70,7 @@ export default function DeepAdminDashboard() {
   const router = useRouter();
   const [filter, setFilter] = useState('all');
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const [view, setView] = useState<'tenants' | 'users' | 'plans'>('tenants');
+  const [view, setView] = useState<'tenants' | 'users' | 'plans' | 'mensajeria'>('tenants');
   const [tenants, setTenants] = useState<any[]>([]);
   const [globalUsers, setGlobalUsers] = useState<any[]>([]);
   const [saasPlans, setSaasPlans] = useState<any[]>([]);
@@ -110,6 +112,49 @@ export default function DeepAdminDashboard() {
       document.documentElement.classList.remove('dark');
     }
   }, []);
+
+  // Email Center State
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailContent, setEmailContent] = useState('');
+  const [selectedTenantForEmail, setSelectedTenantForEmail] = useState<string>('all');
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+
+  const handleSendEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem('super_admin_token');
+    if (!token) return;
+
+    if (!emailSubject || !emailContent) {
+      toast.error("Campos incompletos", { description: "Asunto y contenido son obligatorios." });
+      return;
+    }
+
+    setIsSendingEmail(true);
+    const loadingToast = toast.loading("Enviando correos...");
+
+    try {
+      const res = await sendCustomEmail(token, {
+        tenant_id: selectedTenantForEmail === 'all' ? null : selectedTenantForEmail,
+        subject: emailSubject,
+        content: emailContent
+      });
+
+      toast.dismiss(loadingToast);
+
+      if (res?.message) {
+        toast.success("Enviado con éxito", { description: `${res.count} correos encolados.` });
+        setEmailSubject('');
+        setEmailContent('');
+      } else {
+        toast.error("Error al enviar", { description: "Revisa la consola para más detalles." });
+      }
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      toast.error("Fallo de red");
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
 
 
   React.useEffect(() => {
@@ -416,6 +461,12 @@ export default function DeepAdminDashboard() {
                 active={view === 'plans'} 
                 onClick={() => setView('plans')} 
               />
+              <SidebarItem 
+                icon={Mail} 
+                label="Mensajería" 
+                active={view === 'mensajeria'} 
+                onClick={() => setView('mensajeria')} 
+              />
 
               <div className="pt-8 pb-4">
                 <p className="px-4 text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-2">Preferencia</p>
@@ -454,6 +505,114 @@ export default function DeepAdminDashboard() {
             ref={scrollContainerRef}
             className="flex-1 overflow-y-auto custom-scrollbar relative pb-32 md:pb-10"
 >
+            {view === 'mensajeria' && (
+              <div className="px-4 md:px-10 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="pt-10 pb-4">
+                  <Badge variant="outline" className="mb-4 border-primary/20 text-primary bg-primary/5 px-4 py-1 rounded-full text-[10px] font-black tracking-[0.2em] uppercase">
+                    Centro de Comunicaciones
+                  </Badge>
+                  <h1 className="text-4xl md:text-6xl font-black tracking-tighter italic uppercase text-foreground leading-[0.8]">
+                    Digitaliza <span className="text-primary drop-shadow-[0_0_15px_rgba(var(--primary),0.3)]">Mail</span>
+                  </h1>
+                  <p className="mt-4 text-muted-foreground font-medium text-sm md:text-base max-w-xl">
+                    Envía comunicados oficiales, actualizaciones de plataforma o soporte directo a tus academias vinculadas.
+                  </p>
+                </div>
+
+                <Card className="bg-zinc-900/50 border-white/5 backdrop-blur-xl rounded-[32px] overflow-hidden shadow-2xl">
+                  <form onSubmit={handleSendEmail} className="p-6 md:p-10 space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 px-1">Destinatarios</label>
+                        <div className="relative group">
+                          <select 
+                            value={selectedTenantForEmail}
+                            onChange={(e) => setSelectedTenantForEmail(e.target.value)}
+                            className="w-full bg-black/40 border border-white/10 rounded-2xl h-14 px-5 text-sm font-bold appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer group-hover:bg-black/60"
+                          >
+                            <option value="all">TODOS LOS ADMINISTRADORES (GLOBAL)</option>
+                            <optgroup label="Academias Individuales">
+                              {tenants.map(t => (
+                                <option key={t.id} value={t.id}>{t.name.toUpperCase()}</option>
+                              ))}
+                            </optgroup>
+                          </select>
+                          <ChevronRight className="absolute right-5 top-1/2 -translate-y-1/2 rotate-90 text-zinc-500 pointer-events-none" size={16} />
+                        </div>
+                        <p className="text-[10px] text-zinc-600 font-medium px-1 italic">
+                          {selectedTenantForEmail === 'all' 
+                            ? "Se enviará un correo a cada Administrador principal de todas las academias activas."
+                            : `Correo directo al staff administrativo de ${tenants.find(t => t.id === selectedTenantForEmail)?.name}.`}
+                        </p>
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 px-1">Asunto del Mensaje</label>
+                        <input 
+                          type="text"
+                          value={emailSubject}
+                          onChange={(e) => setEmailSubject(e.target.value)}
+                          placeholder="ej: Actualización de Términos y Condiciones"
+                          className="w-full bg-black/40 border border-white/10 rounded-2xl h-14 px-5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-zinc-700"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between px-1">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Contenido del Correo</label>
+                        <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest bg-zinc-800 border-none opacity-50">Soporta HTML básico</Badge>
+                      </div>
+                      <textarea 
+                        value={emailContent}
+                        onChange={(e) => setEmailContent(e.target.value)}
+                        placeholder="Escribe tu mensaje aquí..."
+                        rows={10}
+                        className="w-full bg-black/40 border border-white/10 rounded-[24px] p-6 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-zinc-700 resize-none min-h-[300px]"
+                      />
+                    </div>
+
+                    <div className="pt-4 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden">
+                      <div className="flex items-center gap-4 bg-white/5 border border-white/5 px-6 py-3 rounded-2xl">
+                         <div className="h-8 w-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                            <ShieldCheck className="text-emerald-500" size={16} />
+                         </div>
+                         <p className="text-[10px] font-black uppercase tracking-tighter text-zinc-400">
+                           Envío seguro vía <span className="text-white">Resend Infrastructure</span>
+                         </p>
+                      </div>
+
+                      <Button 
+                        disabled={isSendingEmail}
+                        className="w-full md:w-auto min-w-[240px] h-14 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-[0.2em] text-xs shadow-[0_20px_40px_rgba(var(--primary),0.3)] hover:scale-105 active:scale-95 transition-all group shrink-0"
+                      >
+                        {isSendingEmail ? (
+                          <Loader2 className="animate-spin" size={18} />
+                        ) : (
+                          <>
+                            Enviar Mensaje <Send className="ml-3 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" size={16} />
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </Card>
+
+                {/* Info Tip */}
+                <div className="bg-primary/5 border border-primary/10 rounded-3xl p-6 flex gap-4">
+                  <div className="h-10 w-10 shrink-0 bg-primary/20 rounded-2xl flex items-center justify-center text-primary">
+                    <Sparkles size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black uppercase tracking-tight text-foreground">Tip Pro: Personalización</h4>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Este sistema utiliza el transporte de <b>Resend</b>. Los correos se envían de forma asíncrona garantizando que lleguen a la inbox principal sin caer en spam.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {view === 'tenants' && (
               <div className="px-4 md:px-10 space-y-6 md:space-y-10">
                 <div className={`sticky top-0 z-50 -mx-4 md:-mx-10 transition-all duration-500 ease-in-out ${isScrolled ? 'mb-4 bg-background/95 backdrop-blur-md shadow-xl border-b border-border pb-2' : 'mb-6 bg-transparent'}`}>
@@ -1317,6 +1476,14 @@ export default function DeepAdminDashboard() {
           >
             <CreditCard size={16} />
             <span className="text-[7px] font-black uppercase tracking-widest">Planes</span>
+          </button>
+
+          <button 
+            onClick={() => setView('mensajeria')}
+            className={`flex flex-col items-center justify-center gap-0.5 w-12 h-10 rounded-2xl transition-all ${view === 'mensajeria' ? 'bg-muted/80 text-foreground ring-1 ring-border shadow-sm' : 'text-muted-foreground hover:bg-muted/50'}`}
+          >
+            <Mail size={16} />
+            <span className="text-[7px] font-black uppercase tracking-widest">Mail</span>
           </button>
 
           <button 

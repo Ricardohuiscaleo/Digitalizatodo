@@ -255,3 +255,22 @@ export async function removeTenantUser(token: string, tenantId: string | number,
         return null;
     }
 }
+
+// ─── Messaging Center ──────────────────────────────────────────────────
+
+export async function sendCustomEmail(token: string, data: { tenant_id: string | null, subject: string, content: string }) {
+    try {
+        const response = await fetch(`${API_URL}/admin/send-email`, {
+            method: 'POST',
+            headers: {
+                ...defaultHeaders,
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(data),
+        });
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error sending custom email:', error);
+        return null;
+    }
+}
