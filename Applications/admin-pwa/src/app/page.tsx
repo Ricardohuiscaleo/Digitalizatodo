@@ -1164,67 +1164,87 @@ export default function DeepAdminDashboard() {
                       </div>
 
                       {/* Formulario Añadir/Editar Usuario */}
-                      <div className="bg-zinc-950/50 rounded-3xl p-4 border border-zinc-900 space-y-4">
-                        <div className="flex items-center justify-between px-1">
-                          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-                            {isEditingUser ? 'Editar Usuario' : 'Invitar Usuario Nuevo'}
-                          </p>
-                          {isEditingUser && (
-                            <button 
-                              onClick={() => {
-                                setIsEditingUser(null);
-                                setNewTenantUser({ name: '', email: '', password: '', role: 'admin' });
-                              }}
-                              className="text-[8px] font-black text-rose-500 uppercase tracking-widest hover:underline"
+                      {(() => {
+                        const generateSecurePassword = () => {
+                          const iChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                          const gen = (len: number) => Array.from({length: len}, () => iChars.charAt(Math.floor(Math.random() * iChars.length))).join('');
+                          const pass = `${gen(6)}-${gen(6)}-${gen(6)}`;
+                          setNewTenantUser(prev => ({ ...prev, password: pass }));
+                        };
+
+                        return (
+                          <div className="bg-zinc-950/50 rounded-3xl p-4 border border-zinc-900 space-y-4">
+                            <div className="flex items-center justify-between px-1">
+                              <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                                {isEditingUser ? 'Editar Usuario' : 'Invitar Usuario Nuevo'}
+                              </p>
+                              {isEditingUser && (
+                                <button 
+                                  onClick={() => {
+                                    setIsEditingUser(null);
+                                    setNewTenantUser({ name: '', email: '', password: '', role: 'admin' });
+                                  }}
+                                  className="text-[8px] font-black text-rose-500 uppercase tracking-widest hover:underline"
+                                >
+                                  Cancelar
+                                </button>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <input 
+                                type="text" 
+                                placeholder="NOMBRE"
+                                value={newTenantUser.name}
+                                onChange={e => setNewTenantUser({...newTenantUser, name: e.target.value})}
+                                className="bg-black border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-300 placeholder:text-zinc-600 focus:border-primary outline-none transition-colors"
+                              />
+                              <input 
+                                type="email" 
+                                placeholder="EMAIL"
+                                disabled={!!isEditingUser}
+                                value={newTenantUser.email}
+                                onChange={e => setNewTenantUser({...newTenantUser, email: e.target.value})}
+                                className={`bg-black border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-300 placeholder:text-zinc-600 focus:border-primary outline-none transition-colors ${isEditingUser ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              />
+                              <div className="relative group/pass">
+                                <input 
+                                  type="text" 
+                                  placeholder={isEditingUser ? "NUEVA CLAVE (OPCIONAL)" : "CLAVE"}
+                                  value={newTenantUser.password}
+                                  onChange={e => setNewTenantUser({...newTenantUser, password: e.target.value})}
+                                  className="w-full bg-black border border-zinc-800 rounded-xl pl-3 pr-16 py-2 text-[10px] font-bold text-zinc-300 placeholder:text-zinc-600 focus:border-primary outline-none transition-colors"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={generateSecurePassword}
+                                  className="absolute right-1 top-1 bottom-1 px-2 rounded-lg bg-zinc-900 hover:bg-primary/20 text-zinc-500 hover:text-primary border border-zinc-800 hover:border-primary/30 text-[7px] font-black uppercase tracking-widest transition-all"
+                                >
+                                  Generar
+                                </button>
+                              </div>
+                              <select 
+                                value={newTenantUser.role}
+                                onChange={e => setNewTenantUser({...newTenantUser, role: e.target.value})}
+                                className="bg-black border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-300 focus:border-primary outline-none transition-colors appearance-none"
+                              >
+                                <option value="owner">Dueño</option>
+                                <option value="admin">Administrador</option>
+                                <option value="coach">Coach / Instructor</option>
+                                <option value="instructor">Instructor</option>
+                                <option value="receptionist">Recepcionista</option>
+                              </select>
+                            </div>
+                            <Button 
+                              type="button"
+                              onClick={handleAddTenantUser}
+                              disabled={!newTenantUser.name || (!isEditingUser && (!newTenantUser.email || !newTenantUser.password))}
+                              className="w-full h-10 rounded-2xl text-[9px] font-black uppercase tracking-widest"
                             >
-                              Cancelar
-                            </button>
-                          )}
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <input 
-                            type="text" 
-                            placeholder="NOMBRE"
-                            value={newTenantUser.name}
-                            onChange={e => setNewTenantUser({...newTenantUser, name: e.target.value})}
-                            className="bg-black border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-300 placeholder:text-zinc-600 focus:border-primary outline-none transition-colors"
-                          />
-                          <input 
-                            type="email" 
-                            placeholder="EMAIL"
-                            disabled={!!isEditingUser}
-                            value={newTenantUser.email}
-                            onChange={e => setNewTenantUser({...newTenantUser, email: e.target.value})}
-                            className={`bg-black border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-300 placeholder:text-zinc-600 focus:border-primary outline-none transition-colors ${isEditingUser ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          />
-                          <input 
-                            type="password" 
-                            placeholder={isEditingUser ? "NUEVA CLAVE (OPCIONAL)" : "CLAVE"}
-                            value={newTenantUser.password}
-                            onChange={e => setNewTenantUser({...newTenantUser, password: e.target.value})}
-                            className="bg-black border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-300 placeholder:text-zinc-600 focus:border-primary outline-none transition-colors"
-                          />
-                          <select 
-                            value={newTenantUser.role}
-                            onChange={e => setNewTenantUser({...newTenantUser, role: e.target.value})}
-                            className="bg-black border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-300 focus:border-primary outline-none transition-colors appearance-none"
-                          >
-                            <option value="owner">Dueño</option>
-                            <option value="admin">Administrador</option>
-                            <option value="coach">Coach / Instructor</option>
-                            <option value="instructor">Instructor</option>
-                            <option value="receptionist">Recepcionista</option>
-                          </select>
-                        </div>
-                        <Button 
-                          type="button"
-                          onClick={handleAddTenantUser}
-                          disabled={!newTenantUser.name || (!isEditingUser && (!newTenantUser.email || !newTenantUser.password))}
-                          className="w-full h-10 rounded-2xl text-[9px] font-black uppercase tracking-widest"
-                        >
-                          {isEditingUser ? 'Guardar Cambios' : 'Crear e Invitar'}
-                        </Button>
-                      </div>
+                              {isEditingUser ? 'Guardar Cambios' : 'Crear e Invitar'}
+                            </Button>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
