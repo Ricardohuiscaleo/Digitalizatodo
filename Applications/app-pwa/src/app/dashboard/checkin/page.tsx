@@ -147,17 +147,18 @@ export default function CheckinPage() {
     }, [timeLeft, qrData, fetchToken, detectedStudent]);
 
     // Active & Next Schedule Logic
+    const [timeToNextFormatted, setTimeToNextFormatted] = useState<string | null>(null);
+
     useEffect(() => {
         if (schedules.length === 0) return;
         const findSchedules = () => {
             const now = nowCL();
-            const dow = now.getDay(); // 0-6
+            const dow = now.getDay(); // 0-6 (Dom-Sab)
             const curH = now.getHours();
             const curM = now.getMinutes();
             const curTime = curH.toString().padStart(2, '0') + ':' + curM.toString().padStart(2, '0');
-            const totalMins = curH * 60 + curM;
             
-            // Current Active
+            // 1. Current Active (Today only)
             const active = schedules.find(s => 
                 s.day_of_week === dow && 
                 curTime >= s.start_time.slice(0, 5) && 
@@ -165,23 +166,67 @@ export default function CheckinPage() {
             );
             setActiveSchedule(active || null);
 
-            // Find Next
-            const upcoming = schedules
+            // 2. Find Next (Global search up to 7 days ahead)
+            let foundNext: any = null;
+            let diffMs = 0;
+
+            // Check today first (clases remaining today)
+            const todayUpcoming = schedules
                 .filter(s => s.day_of_week === dow && s.start_time.slice(0, 5) > curTime)
                 .sort((a, b) => a.start_time.localeCompare(b.start_time))[0];
-            
-            if (upcoming) {
-                setNextSchedule(upcoming);
-                const [h, m] = upcoming.start_time.split(':').map(Number);
-                const startMins = h * 60 + m;
-                setMinsToNext(startMins - totalMins);
+
+            if (todayUpcoming) {
+                foundNext = todayUpcoming;
+                const [h, m] = todayUpcoming.start_time.split(':').map(Number);
+                const startToday = new Date(now);
+                startToday.setHours(h, m, 0, 0);
+                diffMs = startToday.getTime() - now.getTime();
+            } else {
+                // Check next 6 days
+                for (let i = 1; i <= 6; i++) {
+                    const nextDay = (dow + i) % 7;
+                    const dayMatch = schedules
+                        .filter(s => s.day_of_week === nextDay)
+                        .sort((a, b) => a.start_time.localeCompare(b.start_time))[0];
+                    
+                    if (dayMatch) {
+                        foundNext = dayMatch;
+                        const targetDate = new Date(now);
+                        targetDate.setDate(now.getDate() + i);
+                        const [h, m] = dayMatch.start_time.split(':').map(Number);
+                        targetDate.setHours(h, m, 0, 0);
+                        diffMs = targetDate.getTime() - now.getTime();
+                        break;
+                    }
+                }
+            }
+
+            if (foundNext) {
+                setNextSchedule(foundNext);
+                const totalMins = Math.floor(diffMs / 60000);
+                setMinsToNext(totalMins);
+
+                // Format friendly string
+                if (totalMins < 60) {
+                    setTimeToNextFormatted(`${totalMins} MIN`);
+                } else if (totalMins < 1440) {
+                    const hours = Math.floor(totalMins / 60);
+                    const mins = totalMins % 60;
+                    setTimeToNextFormatted(`${hours}H ${mins > 0 ? mins + 'M' : ''}`);
+                } else {
+                    const days = Math.floor(totalMins / 1440);
+                    const remainingMins = totalMins % 1440;
+                    const hours = Math.floor(remainingMins / 60);
+                    setTimeToNextFormatted(`${days} ${days === 1 ? 'DÍA' : 'DÍAS'}${hours > 0 ? ' y ' + hours + 'H' : ''}`);
+                }
             } else {
                 setNextSchedule(null);
                 setMinsToNext(null);
+                setTimeToNextFormatted(null);
             }
         };
         findSchedules();
-        const t = setInterval(findSchedules, 60000); // Check every minute
+        const t = setInterval(findSchedules, 30000); // Check every 30s
         return () => clearInterval(t);
     }, [schedules]);
 
@@ -461,12 +506,12 @@ export default function CheckinPage() {
                                     ) : nextSchedule ? (
                                         <div className="px-4 py-2 rounded-2xl bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-black uppercase tracking-widest flex items-center gap-3 shadow-[0_0_30px_rgba(245,158,11,0.1)]">
                                             <Clock size={16} className="animate-pulse" />
-                                            PRÓXIMA CLASE EN {minsToNext} MIN
+                                            PRÓXIMA CLASE EN {timeToNextFormatted}
                                         </div>
                                     ) : (
                                         <div className="px-4 py-2 rounded-2xl bg-zinc-900/50 border border-zinc-800 text-zinc-500 text-xs font-black uppercase tracking-widest flex items-center gap-3">
                                             <ShieldAlert size={16} />
-                                            FUERA DE HORARIO
+                                            SIN CLASES PROGRAMADAS
                                         </div>
                                     )}
                                 </div>
@@ -485,7 +530,7 @@ export default function CheckinPage() {
                                         : nextSchedule 
                                             ? <>
                                                 <Clock size={24} className="text-amber-500" />
-                                                INICIA A LAS {nextSchedule.start_time.slice(0, 5)}
+                                                {['DOMINGO', 'LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'][nextSchedule.day_of_week]} A LAS {nextSchedule.start_time.slice(0, 5)}
                                               </>
                                             : 'Abre tu app para marcar ingreso al dojo'}
                                 </p>
@@ -493,7 +538,7 @@ export default function CheckinPage() {
 
                             <div className="space-y-4">
                                 <h3 className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em] flex items-center gap-2">
-                                    <Users size={12} /> PARTICIPANTES PROGRAMADOS
+                                    <Users size={12} /> {activeSchedule ? 'PARTICIPANTES EN CLASE' : 'PARTICIPANTES PROGRAMADOS'}
                                 </h3>
                                 <div className="grid grid-cols-5 gap-y-8 gap-x-2">
                                 {(() => {
