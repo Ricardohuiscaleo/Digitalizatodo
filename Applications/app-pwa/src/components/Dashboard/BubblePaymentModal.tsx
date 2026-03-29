@@ -88,9 +88,13 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
                 <div className={`px-6 pb-4 border-b ${isDark ? 'border-zinc-800/50' : 'border-zinc-100'}`}>
                     <p className={`text-[9px] font-black uppercase tracking-[0.2em] mb-3 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Desglose del Pago</p>
                     <div className="flex items-center gap-3">
-                        <img src={payer.photo} className={`w-12 h-12 rounded-full object-cover border-2 shadow-sm ${
-                            isDark ? 'border-zinc-800' : 'border-zinc-100'
-                        }`} />
+                        <StudentAvatar 
+                            photo={payer.photo} 
+                            name={payer.name} 
+                            size={48} 
+                            isDark={isDark} 
+                            industry={industry}
+                        />
                         <div>
                             <p className={`text-base font-black uppercase leading-none ${isDark ? 'text-white' : 'text-zinc-900'}`}>{payer.name}</p>
                             <p className={`text-[10px] font-bold mt-0.5 ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>

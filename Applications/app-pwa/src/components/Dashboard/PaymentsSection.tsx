@@ -186,7 +186,13 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                                 <tr key={payer.id} className={`transition-colors ${isDark ? 'hover:bg-zinc-800/40' : 'hover:bg-zinc-50/50'}`}>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <img src={payer.photo} className="w-10 h-10 rounded-full object-cover" />
+                                            <StudentAvatar 
+                                                photo={payer.photo} 
+                                                name={payer.name} 
+                                                size={40} 
+                                                isDark={isDark} 
+                                                industry={branding?.industry}
+                                            />
                                             <span className={`text-sm font-black uppercase ${isDark ? 'text-white' : 'text-zinc-900'}`}>{payer.name}</span>
                                         </div>
                                     </td>
