@@ -393,6 +393,7 @@ export default function App() {
                             />
                         )}
                         {hasPermission('settings') && <SidebarButton icon={Settings} label="Ajustes" active={activeTab === 'settings'} onClick={() => changeTab('settings')} primaryColor={branding?.primaryColor} isDark={isDark} />}
+                        {hasPermission('attendance') && branding?.industry === 'school_treasury' && <SidebarButton icon={Calendar} label="Horario" active={activeTab === 'schedule'} onClick={() => changeTab('schedule')} primaryColor={branding?.primaryColor} isDark={isDark} />}
                     </nav>
 
                     <div className={`mt-auto pt-6 border-t flex items-center gap-3 ${isDark ? 'border-zinc-800' : 'border-zinc-50'}`}>
@@ -646,6 +647,7 @@ export default function App() {
                                     termsLoading={termsLoading}
                                     loadTenantTerms={loadTenantTerms}
                                     handleUpdateTenantTerms={handleUpdateTenantTerms}
+                                    hasPermission={hasPermission}
                                 />
                             )}
                             {activeTab === 'profile' && (
@@ -898,8 +900,8 @@ export default function App() {
                 {hasPermission('expenses') && branding?.industry === 'school_treasury' && (
                     <TabButton icon={ShoppingCart} label="Compras" active={activeTab === 'expenses'} onClick={() => changeTab('expenses')} primaryColor={branding?.primaryColor} isDark={isDark} />
                 )}
-                {/* Horario - Ahora siempre visible para school_treasury con nombre apropiado si tiene permiso */}
-                {hasPermission('attendance') && (
+                {/* Horario - Solo para school_treasury en Navbar */}
+                {hasPermission('attendance') && branding?.industry === 'school_treasury' && (
                     <TabButton 
                         icon={Calendar} 
                         label="Horario" 

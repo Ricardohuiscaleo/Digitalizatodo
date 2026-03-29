@@ -1051,7 +1051,10 @@ export default function DeepAdminDashboard() {
                     
                     {(['admin', 'coach', 'receptionist', 'instructor'] as const).map(role => {
                       const rolePermissions = editingTenant.role_permissions?.[role] || [];
-                      const modules = ['attendance', 'students', 'payments', 'expenses', 'reports', 'settings'];
+                      const modules = [
+                        'attendance', 'students', 'payments', 'expenses', 'reports', 'settings',
+                        'settings.plans', 'settings.schedules', 'settings.payments', 'settings.terms', 'settings.checkin', 'settings.registration'
+                      ];
                       const roleLabels: Record<string, string> = { admin: 'Administrador', coach: 'Coach / Sensei', receptionist: 'Recepcionista', instructor: 'Instructor' };
                       
                       return (
@@ -1060,7 +1063,20 @@ export default function DeepAdminDashboard() {
                           <div className="flex flex-wrap gap-2">
                             {modules.map(mod => {
                               const isGranted = rolePermissions.includes(mod) || rolePermissions.includes('*');
-                              const modLabels: Record<string, string> = { attendance: 'Asistencia', students: 'Directorio', payments: 'Pagos', expenses: 'Gastos', reports: 'Reportes', settings: 'Ajustes' };
+                              const modLabels: Record<string, string> = { 
+                                attendance: 'Asistencia', 
+                                students: 'Directorio', 
+                                payments: 'Pagos', 
+                                expenses: 'Gastos', 
+                                reports: 'Reportes', 
+                                settings: 'Ajustes (Gral)',
+                                'settings.plans': 'Planes',
+                                'settings.schedules': 'Horarios',
+                                'settings.payments': 'Datos Pago',
+                                'settings.terms': 'Términos',
+                                'settings.checkin': 'Marcación',
+                                'settings.registration': 'Pág. Registro'
+                              };
                               return (
                                 <button
                                   key={mod}

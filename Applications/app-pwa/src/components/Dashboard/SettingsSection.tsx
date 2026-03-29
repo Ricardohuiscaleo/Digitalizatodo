@@ -51,6 +51,7 @@ interface SettingsSectionProps {
     termsLoading: boolean;
     loadTenantTerms: () => void;
     handleUpdateTenantTerms: (content: string) => Promise<any>;
+    hasPermission: (module: string) => boolean;
 }
 
 const SettingsSection: React.FC<SettingsSectionProps> = ({
@@ -92,7 +93,8 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
     tenantTerms,
     termsLoading,
     loadTenantTerms,
-    handleUpdateTenantTerms
+    handleUpdateTenantTerms,
+    hasPermission
 }) => {
     const [copied, setCopied] = useState(false);
     
@@ -519,7 +521,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
             <div className="grid gap-3 pt-2">
                 <p className={`text-[10px] font-black ${isDark ? 'text-zinc-500' : 'text-zinc-400'} uppercase tracking-[0.4em] ml-3 mb-1 opacity-60`}>ADMINISTRACIÓN</p>
                 
-                {branding?.industry === 'martial_arts' && (
+                {((branding?.industry === 'martial_arts' && hasPermission('settings.plans')) || (branding?.industry === 'school_treasury' && hasPermission('settings.plans'))) && (
                     <ActionCard 
                         icon={CreditCard} 
                         title="Planes y Precios" 
@@ -528,38 +530,44 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                         color="indigo"
                     />
                 )}
+                
+                {hasPermission('settings.schedules') && (
+                    <ActionCard 
+                        icon={Calendar} 
+                        title={vocab.scheduleTitle} 
+                        description={isTreasury ? "Configura los bloques de clases" : "Configura las clases semanales"}
+                        onClick={() => {
+                            loadSchedules();
+                            setShowSchedulesModal(true);
+                        }}
+                        color="emerald"
+                    />
+                )}
 
-                <ActionCard 
-                    icon={Calendar} 
-                    title={vocab.scheduleTitle} 
-                    description={isTreasury ? "Configura los bloques de clases" : "Configura las clases semanales"}
-                    onClick={() => {
-                        loadSchedules();
-                        setShowSchedulesModal(true);
-                    }}
-                    color="emerald"
-                />
+                {hasPermission('settings.payments') && (
+                    <ActionCard 
+                        icon={Banknote} 
+                        title="Datos de Pago" 
+                        description="Información para transferencias"
+                        onClick={() => setShowBankModal(true)}
+                        color="amber"
+                    />
+                )}
 
-                <ActionCard 
-                    icon={Banknote} 
-                    title="Datos de Pago" 
-                    description="Información para transferencias"
-                    onClick={() => setShowBankModal(true)}
-                    color="amber"
-                />
+                {hasPermission('settings.terms') && (
+                    <ActionCard 
+                        icon={ShieldCheck} 
+                        title={isTreasury ? "Reglamento Interno" : "Términos Legales"} 
+                        description={isTreasury ? "Reglamento y normativas" : "Contrato de membrecía digital"}
+                        onClick={() => {
+                            loadTenantTerms();
+                            setShowTermsModal(true);
+                        }}
+                        color="blue"
+                    />
+                )}
 
-                <ActionCard 
-                    icon={ShieldCheck} 
-                    title={isTreasury ? "Reglamento Interno" : "Términos Legales"} 
-                    description={isTreasury ? "Reglamento y normativas" : "Contrato de membrecía digital"}
-                    onClick={() => {
-                        loadTenantTerms();
-                        setShowTermsModal(true);
-                    }}
-                    color="blue"
-                />
-
-                {branding?.industry === 'martial_arts' && (
+                {branding?.industry === 'martial_arts' && hasPermission('settings.checkin') && (
                     <ActionCard 
                         icon={QrCode} 
                         title="Punto de Marcación" 
@@ -571,36 +579,38 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
             </div>
 
             {/* LINK DE REGISTRO */}
-            <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100 shadow-zinc-950/5'} rounded-[28px] px-6 py-5 shadow-xl border mt-4`}>
-                <p className={`text-[10px] font-black ${isDark ? 'text-zinc-500' : 'text-zinc-400'} uppercase tracking-widest mb-3`}>{vocab.registrationLinkTitle}</p>
-                {regPageCode ? (
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                            <p className={`flex-1 text-[11px] font-bold ${isDark ? 'text-zinc-300 bg-zinc-950 border-zinc-800/50' : 'text-zinc-700 bg-zinc-50 border-zinc-100'} truncate rounded-2xl px-5 py-4 border shadow-inner`}>
-                                {`app.digitalizatodo.cl/r/${regPageCode}`}
-                            </p>
-                            <button onClick={() => handleCopyClipboard(`https://app.digitalizatodo.cl/r/${regPageCode}`)}
-                                className={`shrink-0 text-[10px] font-black uppercase px-5 py-4 rounded-2xl border transition-all active:scale-95 ${copied ? 'bg-emerald-500 text-white border-emerald-400' : isDark ? 'bg-zinc-800 text-zinc-100 border-zinc-700' : 'bg-zinc-100 text-zinc-900 border-zinc-200'}`}>
-                                {copied ? '✓' : 'COPIAR'}
-                            </button>
+            {hasPermission('settings.registration') && (
+                <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100 shadow-zinc-950/5'} rounded-[28px] px-6 py-5 shadow-xl border mt-4`}>
+                    <p className={`text-[10px] font-black ${isDark ? 'text-zinc-500' : 'text-zinc-400'} uppercase tracking-widest mb-3`}>{vocab.registrationLinkTitle}</p>
+                    {regPageCode ? (
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                                <p className={`flex-1 text-[11px] font-bold ${isDark ? 'text-zinc-300 bg-zinc-950 border-zinc-800/50' : 'text-zinc-700 bg-zinc-50 border-zinc-100'} truncate rounded-2xl px-5 py-4 border shadow-inner`}>
+                                    {`app.digitalizatodo.cl/r/${regPageCode}`}
+                                </p>
+                                <button onClick={() => handleCopyClipboard(`https://app.digitalizatodo.cl/r/${regPageCode}`)}
+                                    className={`shrink-0 text-[10px] font-black uppercase px-5 py-4 rounded-2xl border transition-all active:scale-95 ${copied ? 'bg-emerald-500 text-white border-emerald-400' : isDark ? 'bg-zinc-800 text-zinc-100 border-zinc-700' : 'bg-zinc-100 text-zinc-900 border-zinc-200'}`}>
+                                    {copied ? '✓' : 'COPIAR'}
+                                </button>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={async () => { setGeneratingPage(true); const r = await generateRegistrationPage(user.tenant_slug || user.tenant_id, token ?? ''); setGeneratingPage(false); if (r?.code) setRegPageCode(r.code); loadPlans(); }}
+                                    disabled={generatingPage}
+                                    className={`flex-1 h-12 ${isDark ? 'bg-zinc-950 border-zinc-800/50 text-zinc-500' : 'bg-zinc-50 border-zinc-100 text-zinc-400'} border rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-all text-[10px] font-black uppercase tracking-widest`}>
+                                    {generatingPage ? <Loader2 className="animate-spin" size={12} /> : <><RefreshCw size={14} /> Regenerar Link</>}
+                                </button>
+                            </div>
                         </div>
-                        <div className="flex gap-2">
-                            <button onClick={async () => { setGeneratingPage(true); const r = await generateRegistrationPage(user.tenant_slug || user.tenant_id, token ?? ''); setGeneratingPage(false); if (r?.code) setRegPageCode(r.code); loadPlans(); }}
-                                disabled={generatingPage}
-                                className={`flex-1 h-12 ${isDark ? 'bg-zinc-950 border-zinc-800/50 text-zinc-500' : 'bg-zinc-50 border-zinc-100 text-zinc-400'} border rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-all text-[10px] font-black uppercase tracking-widest`}>
-                                {generatingPage ? <Loader2 className="animate-spin" size={12} /> : <><RefreshCw size={14} /> Regenerar Link</>}
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    <button onClick={async () => { setGeneratingPage(true); const r = await generateRegistrationPage(user.tenant_slug || user.tenant_id, token ?? ''); setGeneratingPage(false); if (r?.code) setRegPageCode(r.code); }}
-                        disabled={generatingPage}
-                        style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
-                        className="w-full h-14 text-white text-[11px] font-black uppercase tracking-[0.15em] rounded-[22px] flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 active:scale-95 transition-all disabled:opacity-40">
-                        {generatingPage ? <Loader2 className="animate-spin" size={14} /> : <><Sparkles size={16} /> Crear Página de Registro</>}
-                    </button>
-                )}
-            </div>
+                    ) : (
+                        <button onClick={async () => { setGeneratingPage(true); const r = await generateRegistrationPage(user.tenant_slug || user.tenant_id, token ?? ''); setGeneratingPage(false); if (r?.code) setRegPageCode(r.code); }}
+                            disabled={generatingPage}
+                            style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
+                            className="w-full h-14 text-white text-[11px] font-black uppercase tracking-[0.15em] rounded-[22px] flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 active:scale-95 transition-all disabled:opacity-40">
+                            {generatingPage ? <Loader2 className="animate-spin" size={14} /> : <><Sparkles size={16} /> Crear Página de Registro</>}
+                        </button>
+                    )}
+                </div>
+            )}
 
             {/* MODAL: PRECIOS */}
             {showPricingModal && (

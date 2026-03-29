@@ -244,12 +244,12 @@ export default function StudentDashboard() {
                                 }`} />
                             </button>
                         </div>
-                        <span className="text-[9px] font-black uppercase tracking-widest mt-0.5" style={{ color: primaryColor }}>
-                            {activeSection === 'home' ? 'Inicio' :
-                             activeSection === 'calendar' ? (isSchoolTreasury ? 'Horario' : 'Asistencia') :
-                             activeSection === 'payments' ? (isSchoolTreasury ? 'Cuotas' : 'Pagos') :
-                             activeSection === 'rendicion' ? 'Rendición' : 'Perfil'}
-                        </span>
+                    <span className="text-[9px] font-black uppercase tracking-widest mt-0.5" style={{ color: primaryColor }}>
+                        {activeSection === 'home' ? 'Inicio' :
+                         activeSection === 'calendar' ? (isSchoolTreasury ? 'Horario' : 'Clases') :
+                         activeSection === 'payments' ? (isSchoolTreasury ? 'Cuotas' : 'Pagos') :
+                         activeSection === 'rendicion' ? 'Rendición' : 'Perfil'}
+                    </span>
                     </div>
                 </div>
                 <button onClick={() => common.setShowNotifications(!common.showNotifications)} className="relative w-10 h-10 flex items-center justify-center rounded-full border border-zinc-100 shadow-sm bg-white">
