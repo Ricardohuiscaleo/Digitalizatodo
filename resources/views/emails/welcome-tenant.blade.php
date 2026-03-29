@@ -5,56 +5,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bienvenido a Digitaliza Todo</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-        .wrapper { max-width: 560px; margin: 0 auto; padding: 2rem 1rem; }
-        .card { background: #1e293b; border-radius: 1rem; overflow: hidden; border: 1px solid #334155; }
-        .header { background: #f59e0b; padding: 2rem; text-align: center; }
-        .header h1 { color: #0f172a; font-size: 1.4rem; font-weight: 800; }
-        .body { padding: 2rem 2.5rem; }
-        .body p { color: #cbd5e1; line-height: 1.7; margin-bottom: 1rem; font-size: 0.95rem; }
-        .body strong { color: #f8fafc; }
-        .highlight { background: #0f172a; border-radius: 0.5rem; padding: 1rem 1.25rem; margin: 1.5rem 0; border-left: 3px solid #f59e0b; }
-        .highlight p { margin: 0; color: #94a3b8; font-size: 0.85rem; }
-        .highlight span { color: #f59e0b; font-weight: 700; font-size: 1rem; }
-        .btn-wrap { text-align: center; margin: 2rem 0; }
-        .btn { display: inline-block; background: #f59e0b; color: #0f172a; font-weight: 800; padding: 0.875rem 2.5rem; border-radius: 0.5rem; text-decoration: none; font-size: 1rem; }
-        .footer { padding: 1.5rem; text-align: center; color: #475569; font-size: 0.75rem; border-top: 1px solid #334155; }
+        body { background: #f4f4f5; font-family: system-ui, -apple-system, sans-serif; padding: 40px 20px; margin: 0; }
+        .email-wrapper { background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e4e4e7; box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08); color: #27272a; max-width: 560px; margin: 0 auto; }
+        .email-header { padding: 40px 40px 0 40px; }
+        .badge { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 12px; border-radius: 99px; margin-bottom: 20px; background: #fef3c7; color: #b45309; }
+        .email-title { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: #18181b; }
+        .email-body { padding: 30px 40px 40px 40px; }
+        .greeting { font-size: 16px; font-weight: 700; color: #18181b; margin-bottom: 8px; }
+        .email-text { font-size: 15px; line-height: 1.6; color: #52525b; margin-top: 0; margin-bottom: 20px; }
+        .cred-section { background: #fffbeb; border: 1px solid #fef3c7; border-radius: 12px; padding: 24px; margin: 30px 0; }
+        .cred-row { margin-bottom: 16px; }
+        .cred-row.spaced { margin-top: 24px; }
+        .cred-label { font-size: 12px; color: #b45309; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 6px; display: block; }
+        .cred-value { font-size: 15px; font-weight: 500; color: #18181b; }
+        .password-box { background-color: #ffffff; border: 1px dashed #fde68a; padding: 12px 16px; border-radius: 8px; font-family: monospace; font-size: 15px; color: #18181b; text-align: center; letter-spacing: 1px; margin-top: 8px; }
+        .btn { display: block; text-align: center; font-weight: 600; padding: 14px 24px; border-radius: 8px; text-decoration: none; margin-top: 30px; font-size: 15px; background: #18181b; color: #ffffff !important; }
+        .email-footer { padding: 32px 40px; text-align: center; color: #71717a; font-size: 13px; border-top: 1px solid #f4f4f5; background: #fafafa; line-height: 1.6; }
+        .footer-brand { font-weight: 800; color: #18181b; letter-spacing: 0.05em; margin-bottom: 4px; }
+        .contact-link { color: #ea580c; text-decoration: none; font-weight: 700; }
     </style>
 </head>
 <body>
-    <div class="wrapper">
-        <div class="card">
-            <div class="header">
-                <h1>🎉 ¡Bienvenido a Digitaliza Todo!</h1>
-            </div>
-            <div class="body">
-                <p>Hola <strong>{{ $user->name }}</strong>,</p>
-                <p>
-                    Tu empresa <strong>{{ $tenant->name }}</strong> ya está activa en nuestra plataforma.
-                    Tienes <strong>7 días de prueba gratuita</strong> para explorar todo lo que podemos hacer por ti.
-                </p>
+    <div class="email-wrapper">
+        <div class="email-header">
+            <span class="badge">Socio Estratégico</span>
+            <h1 class="email-title">Tu academia está lista ✨</h1>
+        </div>
+        <div class="email-body">
+            <p class="greeting">Hola {{ $user->name }},</p>
+            <p class="email-text">Tu institución <strong>{{ $tenant->name }}</strong> ya se encuentra activa en nuestra infraestructura. Tienes un periodo promocional listo para usar.</p>
 
-                <div class="highlight">
-                    <p>Tu panel de control</p>
-                    <span>{{ config('app.url') }}/{{ $tenant->id }}</span>
+            <div class="cred-section">
+                <div class="cred-row">
+                    <span class="cred-label">Correo Electrónico</span>
+                    <div class="cred-value">{{ $user->email }}</div>
                 </div>
 
-                <p>Dentro encontrarás alumnos de demo, pagos y asistencias ya cargados para que veas el sistema funcionando desde el primer segundo.</p>
-
-                <div class="btn-wrap">
-                    <a href="{{ config('app.url') }}/{{ $tenant->id }}" class="btn">
-                        Ir a mi Panel →
-                    </a>
+                <div class="cred-row spaced">
+                    <span class="cred-label">Contraseña Temporal</span>
+                    <div class="password-box">
+                        {{ $password }}
+                    </div>
                 </div>
+            </div>
 
-                <p style="font-size:0.85rem; color:#64748b;">
-                    Si tienes dudas, responde este correo o escríbenos por WhatsApp. Estamos para ayudarte.
-                </p>
+            <p class="email-text" style="font-size: 14px; color: #71717a;">
+                Como dueño de la institución, tienes acceso total al Panel de Control para configurar planes, staff y reportes.
+            </p>
+
+            <a href="https://{{ $tenant->slug ?? $tenant->id }}.digitalizatodo.cl" class="btn">Ir a mi Panel de Control →</a>
+
+            <p style="font-size: 13px; color: #a1a1aa; text-align: center; margin-top: 24px; margin-bottom: 0;">
+                Para soporte técnico, consultas de ventas o desarrollo a medida<br>
+                <a href="https://wa.me/56945392581" target="_blank" class="contact-link">contacto directo</a>
+            </p>
+        </div>
+        <div class="email-footer">
+            <div class="footer-brand">DIGITALIZA TODO</div>
+            <div>Somos una empresa de desarrollo de software a la medida</div>
+            <div style="margin: 12px 0;">
+                <a href="https://digitalizatodo.cl/" target="_blank" style="color: #4f46e5; text-decoration: none; font-weight: 600;">¿Necesitas nuestros servicios? Haz click aquí</a>
             </div>
-            <div class="footer">
-                © {{ date('Y') }} Digitaliza Todo — Todos los derechos reservados
-            </div>
+            <div style="font-size: 11px; color: #a1a1aa; margin-top: 20px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">DIGITALIZANDO EN ARICA, CHILE 🇨🇱</div>
         </div>
     </div>
 </body>

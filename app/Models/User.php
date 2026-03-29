@@ -82,7 +82,8 @@ class User extends Authenticatable implements FilamentUser, HasTenants
 
     public function hasAccessToTenant(int $tenantId): bool
     {
-        return $this->tenant_id === $tenantId
+        return is_null($this->tenant_id)
+            || (int)$this->tenant_id === (int)$tenantId
             || $this->tenantUsers()->where('tenant_id', $tenantId)->exists();
     }
 
