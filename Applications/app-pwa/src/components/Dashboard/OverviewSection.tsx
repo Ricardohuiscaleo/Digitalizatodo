@@ -206,7 +206,13 @@ export default function OverviewSection(props: OverviewSectionProps) {
                         isDark ? 'bg-zinc-900/50 border-zinc-800' : 'bg-white border-zinc-100'
                     }`}>
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className={`text-[10px] font-black uppercase tracking-[0.2em] ${ isDark ? 'text-white' : 'text-zinc-900' }`}>Historial Mensual</h3>
+                            <h3 className={`text-[10px] font-black uppercase tracking-[0.2em] ${ isDark ? 'text-white' : 'text-zinc-900' }`}>
+                                Historial Mensual
+                                <span className="hidden md:inline-flex ml-2 items-center gap-2 opacity-40">
+                                    <ArrowRight size={10} />
+                                    {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][historyMonth - 1]} {historyYear}
+                                </span>
+                            </h3>
                             <div className={`flex items-center gap-2 rounded-full px-3 py-1 border ${ isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-50 border-zinc-100' }`}>
                                 <button onClick={() => setHistoryMonth(prev => prev === 1 ? 12 : prev - 1)} className={`transition-colors ${ isDark ? 'text-zinc-400 hover:text-white' : 'text-zinc-400 hover:text-zinc-900' }`}>
                                     <ChevronLeft size={16} />
@@ -222,9 +228,14 @@ export default function OverviewSection(props: OverviewSectionProps) {
 
                             <div 
                                 ref={scrollRef}
-                                className="flex gap-3 overflow-x-auto py-2 no-scrollbar -mx-2 px-2 snap-x"
+                                className="flex md:grid md:grid-cols-7 gap-2 md:gap-3 overflow-x-auto md:overflow-visible py-2 no-scrollbar -mx-2 md:mx-0 px-2 md:px-0 snap-x"
                             >
                                 {(() => {
+                                    const firstDayDate = new Date(historyYear, historyMonth - 1, 1);
+                                    // getDay() retorna 0 para Domingo. Queremos Lunes (1) como primer día.
+                                    // Ajuste: (day + 6) % 7 -> Lunes=0, Martes=1... Domingo=6
+                                    const firstDayIdx = (firstDayDate.getDay() + 6) % 7;
+                                    
                                     const lastDay = new Date(historyYear, historyMonth, 0).getDate();
                                     const todayNum = now.getDate();
                                     const currentYear = nowCL().getFullYear();
@@ -232,6 +243,14 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                     const isCurrentMonth = historyMonth === currentMonth && historyYear === currentYear;
                                     const endDay = isCurrentMonth ? todayNum : lastDay;
                                     const days = [];
+
+                                    // Renderizar nombres de días solo en PC
+                                    const DAY_NAMES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+                                    
+                                    // Empty spaces for grid alignment on PC
+                                    for (let x = 0; x < firstDayIdx; x++) {
+                                        days.push(<div key={`empty-${x}`} className="hidden md:block w-full aspect-square" />);
+                                    }
                                     
                                     for (let i = 1; i <= endDay; i++) {
                                         const dStr = `${historyYear}-${String(historyMonth).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
@@ -249,7 +268,6 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                         let labelColor: string;
 
                                         if (isActive && isToday) {
-                                            // Hoy seleccionado: dorado más intenso
                                             cardBg = isDark
                                                 ? 'bg-[#c9a84c]/20 border-[#c9a84c] ring-2 ring-[#c9a84c]/50'
                                                 : 'bg-amber-100 border-amber-500 ring-2 ring-amber-200';
@@ -258,7 +276,6 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                             countColor = isDark ? 'text-[#c9a84c]' : 'text-amber-700';
                                             labelColor = isDark ? 'text-[#c9a84c]/60' : 'text-amber-500';
                                         } else if (isActive) {
-                                            // Otro día seleccionado
                                             cardBg = isDark
                                                 ? 'bg-zinc-700 border-zinc-500 ring-2 ring-zinc-500'
                                                 : 'bg-zinc-800 border-zinc-700 ring-2 ring-zinc-600';
@@ -267,7 +284,6 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                             countColor = 'text-emerald-400';
                                             labelColor = 'text-zinc-400';
                                         } else if (isToday) {
-                                            // Hoy no seleccionado
                                             cardBg = isDark
                                                 ? 'bg-[#c9a84c]/10 border-[#c9a84c] ring-2 ring-[#c9a84c]/30'
                                                 : 'bg-amber-50 border-amber-400 ring-2 ring-amber-100';
@@ -276,7 +292,6 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                             countColor = isDark ? 'text-[#c9a84c]' : 'text-amber-600';
                                             labelColor = isDark ? 'text-[#c9a84c]/60' : 'text-amber-400';
                                         } else {
-                                            // Día normal
                                             cardBg = isDark
                                                 ? 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-500'
                                                 : 'bg-white border-zinc-100 hover:border-zinc-300';
@@ -290,22 +305,22 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                             <button
                                                 key={dStr}
                                                 onClick={() => setActivePreviewDate(dStr)}
-                                                className={`flex-shrink-0 w-20 aspect-[3/4] rounded-3xl p-3 flex flex-col items-center justify-between transition-all active:scale-95 snap-start shadow-sm border-2 ${cardBg}`}
+                                                className={`flex-shrink-0 w-20 md:w-full aspect-[3/4] md:aspect-square rounded-2xl md:rounded-3xl p-2 md:p-3 flex flex-col items-center justify-between transition-all active:scale-95 snap-start shadow-sm border-2 ${cardBg}`}
                                             >
-                                                <span className={`text-[9px] font-black uppercase tracking-widest ${dayNameColor}`}>
+                                                <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest ${dayNameColor}`}>
                                                     {dayName}
                                                 </span>
-                                                <span className={`text-2xl font-black tracking-tighter ${dayNumColor}`}>
+                                                <span className={`text-xl md:text-2xl font-black tracking-tighter ${dayNumColor}`}>
                                                     {i}
                                                 </span>
                                                 <div className="flex flex-col items-center">
                                                     {stats ? (
                                                         <div className="flex flex-col items-center">
-                                                            <span className={`text-[12px] font-black leading-none ${countColor}`}>{stats.count}</span>
-                                                            <span className={`text-[6px] font-black uppercase tracking-tighter ${labelColor}`}>Total</span>
+                                                            <span className={`text-[10px] md:text-[12px] font-black leading-none ${countColor}`}>{stats.count}</span>
+                                                            <span className={`text-[5px] md:text-[6px] font-black uppercase tracking-tighter ${labelColor}`}>Vieron</span>
                                                         </div>
                                                     ) : (
-                                                        <span className={`text-[7px] font-black uppercase tracking-tighter leading-tight text-center ${labelColor}`}>Sin<br/>asistencia</span>
+                                                        <span className={`text-[6px] md:text-[7px] font-black uppercase tracking-tighter leading-tight text-center ${labelColor}`}>—</span>
                                                     )}
                                                 </div>
                                             </button>
