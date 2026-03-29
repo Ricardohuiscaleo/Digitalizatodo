@@ -409,7 +409,7 @@ export default function CheckinPage() {
                         </div>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full max-w-7xl">
+                    <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_0.6fr] gap-12 items-center w-full max-w-[1400px]">
                         <div className="space-y-10">
                             <div>
                                 <div className="flex items-center gap-3 mb-6">
@@ -455,9 +455,9 @@ export default function CheckinPage() {
                                             displayList = allStudents.filter(s => !(s.category || '').toLowerCase().includes('kids'));
                                         }
                                     }
-                                    const avatarSize = displayList.length > 20 ? 48 : 64;
-                                    const nameSizeClass = displayList.length > 20 ? 'text-[7px]' : 'text-[9px]';
-                                    const gapClass = displayList.length > 20 ? 'gap-x-2 gap-y-6' : 'gap-x-4 gap-y-10';
+                                    const avatarSize = displayList.length > 20 ? 48 : 72;
+                                    const nameSizeClass = displayList.length > 20 ? 'text-[7px]' : 'text-[10px]';
+                                    const gapClass = displayList.length > 20 ? 'gap-x-4 gap-y-12' : 'gap-x-8 gap-y-14';
 
                                     return (
                                         <div className={`grid grid-cols-10 ${gapClass}`}>
@@ -479,8 +479,8 @@ export default function CheckinPage() {
                                                             checkedIn={isCheckedIn}
                                                         />
                                                         <p 
-                                                            className={`mt-2 ${nameSizeClass} font-black uppercase tracking-tighter text-center line-clamp-1 ${isCheckedIn ? 'text-emerald-400 font-black' : 'text-zinc-600'}`}
-                                                            style={{ maxWidth: avatarSize }}
+                                                            className={`mt-3 ${nameSizeClass} font-black uppercase tracking-tighter text-center line-clamp-1 ${isCheckedIn ? 'text-emerald-400 font-black' : 'text-zinc-600'}`}
+                                                            style={{ maxWidth: avatarSize + 10 }}
                                                         >
                                                             {fullInfo.name.split(' ')[0]}
                                                         </p>
