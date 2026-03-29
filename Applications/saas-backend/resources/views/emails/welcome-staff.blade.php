@@ -42,7 +42,7 @@
                 </div>
 
                 <div class="cred-row spaced">
-                    <span class="cred-label">Contraseña Temporal</span>
+                    <span class="cred-label">Contraseña</span>
                     <div class="password-box">
                         {{ $password }}
                     </div>
