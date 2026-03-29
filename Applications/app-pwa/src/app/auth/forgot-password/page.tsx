@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { sendResetLink } from "@/lib/api";
 import { Loader2, ArrowLeft, Send, CheckCircle2 } from "lucide-react";
 import "../../landing.css";
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordForm() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const tenantSlug = searchParams.get("tenant");
@@ -122,5 +122,17 @@ export default function ForgotPasswordPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function ForgotPasswordPage() {
+    return (
+        <Suspense fallback={
+            <div className="landing-scope min-h-screen bg-white flex items-center justify-center">
+                <Loader2 className="animate-spin text-zinc-200" size={32} />
+            </div>
+        }>
+            <ForgotPasswordForm />
+        </Suspense>
     );
 }

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { resetPassword } from "@/lib/api";
 import { Loader2, CheckCircle2, Lock, ShieldAlert, Eye, EyeOff } from "lucide-react";
 import "../../landing.css";
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const token = searchParams.get("token");
@@ -183,5 +183,17 @@ export default function ResetPasswordPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function ResetPasswordPage() {
+    return (
+        <Suspense fallback={
+            <div className="landing-scope min-h-screen bg-white flex items-center justify-center">
+                <Loader2 className="animate-spin text-zinc-200" size={32} />
+            </div>
+        }>
+            <ResetPasswordForm />
+        </Suspense>
     );
 }
