@@ -445,7 +445,7 @@ export default function CheckinPage() {
                                 <h3 className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em] flex items-center gap-2">
                                     <Users size={12} /> {activeSchedule ? 'PARTICIPANTES EN CLASE' : 'PARTICIPANTES PROGRAMADOS'} — {checkedInIds.size} PRESENTES
                                 </h3>
-                                <div className="grid grid-cols-10 gap-x-8 gap-y-12">
+                                <div className="grid grid-cols-10 gap-x-2 gap-y-6">
                                 {(() => {
                                     const sched = activeSchedule || nextSchedule;
                                     let displayList = sched?.students || sched?.enrolled_students || [];
@@ -466,7 +466,7 @@ export default function CheckinPage() {
                                                 <StudentAvatar 
                                                     photo={fullInfo.photo}
                                                     name={fullInfo.name}
-                                                    size={80}
+                                                    size={44}
                                                     beltRank={fullInfo.belt_rank}
                                                     degrees={fullInfo.degrees}
                                                     classesCount={(fullInfo.previous_classes || 0) + Math.max(0, (fullInfo.total_attendances || 0) - (fullInfo.previous_classes || 0))}
@@ -475,7 +475,7 @@ export default function CheckinPage() {
                                                     isDark={true}
                                                     checkedIn={isCheckedIn}
                                                 />
-                                                <p className={`mt-4 text-[10px] font-black uppercase tracking-tighter text-center line-clamp-1 max-w-[80px] ${isCheckedIn ? 'text-emerald-400' : 'text-zinc-600'}`}>
+                                                <p className={`mt-2 text-[6px] font-black uppercase tracking-tighter text-center line-clamp-1 max-w-[44px] ${isCheckedIn ? 'text-emerald-400' : 'text-zinc-600'}`}>
                                                     {fullInfo.name.split(' ')[0]}
                                                 </p>
                                             </div>
