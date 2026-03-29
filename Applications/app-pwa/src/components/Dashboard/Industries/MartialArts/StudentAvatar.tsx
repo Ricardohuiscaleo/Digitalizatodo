@@ -60,7 +60,7 @@ export function StudentAvatar({
                 style={{ width: size, height: size }}
             >
                 <div className="w-full h-full rounded-full overflow-hidden">
-                    {photo ? (
+                    {photo && !photo.includes('unsplash.com') ? (
                         <img src={photo} className="w-full h-full object-cover" alt={name} />
                     ) : (
                         <div className={`w-full h-full flex items-center justify-center font-black uppercase tracking-tighter ${isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-zinc-200 text-zinc-500'}`}
