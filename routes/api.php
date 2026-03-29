@@ -82,6 +82,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('admin/plans', [\App\Http\Controllers\Api\SuperAdminController::class, 'plans']);
     Route::put('admin/plans/{id}', [\App\Http\Controllers\Api\SuperAdminController::class, 'updatePlan']);
     Route::post('admin/plans/{id}/sync-mp', [\App\Http\Controllers\Api\SuperAdminController::class, 'syncPlanWithMP']);
+
+    // Messaging Center
+    Route::post('admin/send-email', [\App\Http\Controllers\Api\SuperAdminController::class, 'sendCustomEmail']);
 });
 
 // ── Rutas por Tenant ────────────────────────────────────────────────────

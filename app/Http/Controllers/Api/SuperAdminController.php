@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\WelcomeTenantMail;
+use App\Mail\CustomAdminMail;
 use Illuminate\Support\Str;
 
 class SuperAdminController extends Controller
@@ -432,6 +433,48 @@ class SuperAdminController extends Controller
                 'email' => $user->email,
                 'role' => $user->getRoleForTenant($tenant->id) ?? 'staff'
             ]
+        ]);
+    }
+
+    /**
+     * Send a custom email to a tenant or all tenants.
+     */
+    public function sendCustomEmail(Request $request)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'tenant_id' => 'nullable|string', // Null means all tenants
+            'subject' => 'required|string|max:255',
+            'content' => 'required|string',
+        ]);
+
+        $emailsSent = 0;
+
+        if ($validated['tenant_id']) {
+            // Send to a specific tenant's admin(s)
+            $tenant = Tenant::findOrFail($validated['tenant_id']);
+            $users = $tenant->users()->where('active', true)->get();
+            
+            foreach ($users as $user) {
+                Mail::to($user->email)->queue(new CustomAdminMail($validated['subject'], $validated['content']));
+                $emailsSent++;
+            }
+        } else {
+            // Send to ALL active admins of ALL tenants
+            $users = User::whereNotNull('tenant_id')->where('active', true)->get();
+            
+            foreach ($users as $user) {
+                Mail::to($user->email)->queue(new CustomAdminMail($validated['subject'], $validated['content']));
+                $emailsSent++;
+            }
+        }
+
+        return response()->json([
+            'message' => 'Emails encolados exitosamente',
+            'count' => $emailsSent
         ]);
     }
 }
