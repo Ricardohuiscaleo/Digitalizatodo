@@ -1165,13 +1165,6 @@ export default function DeepAdminDashboard() {
 
                       {/* Formulario Añadir/Editar Usuario */}
                       {(() => {
-                        const generateSecurePassword = () => {
-                          const iChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-                          const gen = (len: number) => Array.from({length: len}, () => iChars.charAt(Math.floor(Math.random() * iChars.length))).join('');
-                          const pass = `${gen(6)}-${gen(6)}-${gen(6)}`;
-                          setNewTenantUser(prev => ({ ...prev, password: pass }));
-                        };
-
                         return (
                           <div className="bg-zinc-950/50 rounded-3xl p-4 border border-zinc-900 space-y-4">
                             <div className="flex items-center justify-between px-1">
@@ -1206,20 +1199,30 @@ export default function DeepAdminDashboard() {
                                 onChange={e => setNewTenantUser({...newTenantUser, email: e.target.value})}
                                 className={`bg-black border border-zinc-800 rounded-xl px-3 py-2 text-[10px] font-bold text-zinc-300 placeholder:text-zinc-600 focus:border-primary outline-none transition-colors ${isEditingUser ? 'opacity-50 cursor-not-allowed' : ''}`}
                               />
-                              <div className="relative group/pass">
+                              <div className="relative flex items-center">
                                 <input 
                                   type="text" 
                                   placeholder={isEditingUser ? "NUEVA CLAVE (OPCIONAL)" : "CLAVE"}
                                   value={newTenantUser.password}
                                   onChange={e => setNewTenantUser({...newTenantUser, password: e.target.value})}
-                                  className="w-full bg-black border border-zinc-800 rounded-xl pl-3 pr-16 py-2 text-[10px] font-bold text-zinc-300 placeholder:text-zinc-600 focus:border-primary outline-none transition-colors"
+                                  className="w-full bg-black border border-zinc-800 rounded-xl pl-3 pr-20 py-2.5 text-[10px] font-bold text-zinc-300 placeholder:text-zinc-600 focus:border-primary outline-none transition-colors"
                                 />
                                 <button
                                   type="button"
-                                  onClick={generateSecurePassword}
-                                  className="absolute right-1 top-1 bottom-1 px-2 rounded-lg bg-zinc-900 hover:bg-primary/20 text-zinc-500 hover:text-primary border border-zinc-800 hover:border-primary/30 text-[7px] font-black uppercase tracking-widest transition-all"
+                                  onClick={() => {
+                                    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+                                    const gen = (len: number) => {
+                                      const array = new Uint8Array(len);
+                                      window.crypto.getRandomValues(array);
+                                      return Array.from(array, (byte) => chars[byte % chars.length]).join('');
+                                    };
+                                    const pass = `${gen(6)}-${gen(6)}-${gen(6)}`;
+                                    setNewTenantUser(prev => ({ ...prev, password: pass }));
+                                  }}
+                                  className="absolute right-1 w-8 h-8 rounded-full bg-primary/10 hover:bg-primary text-primary hover:text-black flex items-center justify-center transition-all border border-primary/20"
+                                  title="Sugerir Clave Segura"
                                 >
-                                  Generar
+                                  <Zap size={14} className="fill-current" />
                                 </button>
                               </div>
                               <select 
