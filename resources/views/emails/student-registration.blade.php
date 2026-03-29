@@ -83,7 +83,7 @@
                 <p class="email-text" style="font-size: 14px; color: #71717a;">
                     Ya puedes acceder a tu panel para gestionar tus pagos y asistencias.
                 </p>
-                <a href="https://{{ $tenant->slug ?? $tenant->id }}.digitalizatodo.cl" class="btn">Entrar a mi Academia →</a>
+                <a href="https://app.digitalizatodo.cl/{{ $tenant->slug ?? $tenant->id }}" class="btn">Entrar a mi Academia →</a>
             @endif
 
             <p style="font-size: 13px; color: #a1a1aa; text-align: center; margin-top: 24px; margin-bottom: 0;">

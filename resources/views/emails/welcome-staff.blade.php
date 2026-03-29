@@ -53,7 +53,7 @@
                 Desde tu panel podrás gestionar alumnos, asistencias y pagos según los permisos asignados a tu rol.
             </p>
 
-            <a href="https://{{ $tenant->slug ?? $tenant->id }}.digitalizatodo.cl" class="btn">Entrar a mi Panel →</a>
+            <a href="https://app.digitalizatodo.cl/{{ $tenant->slug ?? $tenant->id }}" class="btn">Entrar a mi Panel →</a>
 
             <p style="font-size: 13px; color: #a1a1aa; text-align: center; margin-top: 24px; margin-bottom: 0;">
                 Para soporte técnico, consultas de ventas o desarrollo a medida<br>

@@ -53,7 +53,7 @@
                 Como dueño de la institución, tienes acceso total al Panel de Control para configurar planes, staff y reportes.
             </p>
 
-            <a href="https://{{ $tenant->slug ?? $tenant->id }}.digitalizatodo.cl" class="btn">Ir a mi Panel de Control →</a>
+            <a href="https://app.digitalizatodo.cl/{{ $tenant->slug ?? $tenant->id }}" class="btn">Ir a mi Panel de Control →</a>
 
             <p style="font-size: 13px; color: #a1a1aa; text-align: center; margin-top: 24px; margin-bottom: 0;">
                 Para soporte técnico, consultas de ventas o desarrollo a medida<br>
