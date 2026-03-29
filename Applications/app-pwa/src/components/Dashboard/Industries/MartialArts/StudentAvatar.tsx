@@ -17,6 +17,7 @@ interface StudentAvatarProps {
     isDark?: boolean;
     modality?: string | null; // 'gi' | 'nogi' | 'both'
     industry?: string;       // 'martial_arts' | 'school_treasury'
+    checkedIn?: boolean;
 }
 
 export function StudentAvatar({
@@ -32,6 +33,7 @@ export function StudentAvatar({
     isDark = true,
     modality,
     industry = 'martial_arts',
+    checkedIn = false,
 }: StudentAvatarProps) {
     const payerDot = payerStatus === 'paid'
         ? 'bg-emerald-500'
@@ -39,7 +41,9 @@ export function StudentAvatar({
         ? 'bg-amber-400'
         : 'bg-rose-500';
 
-    const defaultRing = isDark ? 'ring-[#c9a84c] bg-zinc-700' : 'ring-amber-400 bg-zinc-100';
+    const defaultRing = checkedIn 
+        ? 'ring-emerald-500 bg-emerald-500/10' 
+        : isDark ? 'ring-[#c9a84c] bg-zinc-700' : 'ring-amber-400 bg-zinc-100';
     const ringClass = ring ?? defaultRing;
 
     // El globito (16px) centrado sobre el borde del círculo:
