@@ -60,15 +60,33 @@ export function StudentAvatar({
                 style={{ width: size, height: size }}
             >
                 <div className="w-full h-full rounded-full overflow-hidden">
-                    {photo && !photo.includes('unsplash.com') ? (
-                        <img src={photo} className="w-full h-full object-cover" alt={name} />
-                    ) : (
-                        <div className={`w-full h-full flex items-center justify-center font-black uppercase tracking-tighter ${isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-zinc-200 text-zinc-500'}`}
-                             style={{ fontSize: size * 0.4 }}
-                        >
-                            {name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                        </div>
-                    )}
+                    {(() => {
+                        const isPlaceholder = (url: string) => {
+                            const placeholders = [
+                                'unsplash.com',
+                                'pexels.com',
+                                'pixabay.com',
+                                'pravatar.cc',
+                                'avatar.iran.liara.run',
+                                'placeholder.com',
+                                'via.placeholder',
+                                'gravatar.com'
+                            ];
+                            return placeholders.some(p => url.toLowerCase().includes(p));
+                        };
+
+                        if (photo && !isPlaceholder(photo)) {
+                            return <img src={photo} className="w-full h-full object-cover" alt={name} />;
+                        }
+                        
+                        return (
+                            <div className={`w-full h-full flex items-center justify-center font-black uppercase tracking-tighter ${isDark ? 'bg-zinc-800 text-zinc-400' : 'bg-zinc-200 text-zinc-500'}`}
+                                 style={{ fontSize: size * 0.4 }}
+                            >
+                                {name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                            </div>
+                        );
+                    })()}
                 </div>
             </div>
 
