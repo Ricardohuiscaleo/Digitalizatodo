@@ -106,11 +106,13 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
     // Registro público de alumnos
     Route::post('register-student', [StudentRegistrationController::class , 'register']);
 
-    Route::group(['prefix' => 'auth'], function () {
+        Route::group(['prefix' => 'auth'], function () {
             // ── Autenticación (pública) ────────────────────────────────────────
             Route::post('login', [AuthController::class , 'login']);
             Route::post('register', [AuthController::class , 'register']);
             Route::post('resume', [AuthController::class , 'resume']);
+            Route::post('forgot-password', [\App\Http\Controllers\Api\ForgotPasswordController::class, 'sendResetLink']);
+            Route::post('reset-password', [\App\Http\Controllers\Api\ForgotPasswordController::class, 'reset']);
         }
         );
 

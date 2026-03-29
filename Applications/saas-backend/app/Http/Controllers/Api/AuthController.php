@@ -67,11 +67,7 @@ class AuthController extends Controller
             // Buscar staff por email (sin filtrar tenant — soporta multi-tenant)
             $user = User::where('email', $credentials['email'])->first();
 
-            if ($user && Hash::check($credentials['password'], $user->password)) {
-                // Verificar que tiene acceso a este tenant
-                if (!$user->hasAccessToTenant($tenant->id)) {
-                    return response()->json(['message' => 'No tienes acceso a esta organización.'], 403);
-                }
+            if ($user && Hash::check($credentials['password'], $user->password) && $user->hasAccessToTenant($tenant->id)) {
                 $passwordValidated = true;
             } else {
                 // Intentar como Guardian del tenant
@@ -84,6 +80,9 @@ class AuthController extends Controller
                     $user = $guardian;
                     $userType = 'guardian';
                     $passwordValidated = true;
+                } elseif ($user && Hash::check($credentials['password'], $user->password) && !$user->hasAccessToTenant($tenant->id)) {
+                    // Si el staff no tiene acceso y tampoco es un guardián válido, damos el 403
+                    return response()->json(['message' => 'No tienes acceso a esta organización.'], 403);
                 }
             }
 

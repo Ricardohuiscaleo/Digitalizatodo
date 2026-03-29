@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Redesign - Premium Minimalist</title>
+    <style>
+        /* Estilos del entorno de previsualización (No van en el email final) */
+        body {
+            background: #f4f4f5;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            padding: 60px 20px;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 60px;
+        }
+
+        .preview-container {
+            width: 100%;
+            max-width: 560px;
+        }
+
+        .label {
+            color: #a1a1aa;
+            text-transform: uppercase;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        /* ESTILOS DEL CORREO */
+        .email-wrapper {
+            background-color: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid #e4e4e7;
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+            color: #27272a;
+        }
+
+        .email-header {
+            padding: 40px 40px 0 40px;
+        }
+
+        .brand-logo {
+            margin-bottom: 24px;
+        }
+
+        .brand-logo img {
+            max-height: 48px;
+            border-radius: 8px;
+        }
+
+        .badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 6px 12px;
+            border-radius: 99px;
+            margin-bottom: 20px;
+        }
+
+        .badge.indigo {
+            background: #e0e7ff;
+            color: #4338ca;
+        }
+
+        .badge.amber {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .badge.emerald {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        /* Nuevo color para éxito */
+
+        .email-title {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: #18181b;
+        }
+
+        .email-body {
+            padding: 30px 40px 40px 40px;
+        }
+
+        .email-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #52525b;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        .greeting {
+            font-size: 16px;
+            font-weight: 700;
+            color: #18181b;
+            margin-bottom: 8px;
+        }
+
+        /* Cajas de credenciales e información premium */
+        .cred-section {
+            background: #fafafa;
+            border: 1px solid #f4f4f5;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 30px 0;
+        }
+
+        .cred-row {
+            margin-bottom: 16px;
+        }
+
+        .cred-row.spaced {
+            margin-top: 24px;
+        }
+
+        .cred-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .cred-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .cred-label {
+            font-size: 12px;
+            color: #71717a;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .cred-value {
+            font-size: 15px;
+            font-weight: 500;
+            color: #18181b;
+        }
+
+        /* BLOQUE DE CONTRASEÑA FÁCIL DE COPIAR */
+        .password-box {
+            background-color: #ffffff;
+            border: 1px dashed #d4d4d8;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 15px;
+            color: #18181b;
+            text-align: center;
+            letter-spacing: 1px;
+            margin-top: 8px;
+            user-select: all;
+            -webkit-user-select: all;
+            cursor: copy;
+            transition: background 0.2s ease;
+        }
+
+        .password-box:hover {
+            background-color: #f4f4f5;
+        }
+
+        .btn {
+            display: block;
+            text-align: center;
+            font-weight: 600;
+            padding: 14px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            margin-top: 30px;
+            font-size: 15px;
+            transition: opacity 0.2s ease;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-indigo {
+            background: #4f46e5;
+            color: #ffffff !important;
+        }
+
+        .btn-black {
+            background: #18181b;
+            color: #ffffff !important;
+        }
+
+        /* Pie de firma personalizado */
+        .email-footer {
+            padding: 32px 40px;
+            text-align: center;
+            color: #71717a;
+            font-size: 13px;
+            border-top: 1px solid #f4f4f5;
+            background: #fafafa;
+            line-height: 1.6;
+        }
+
+        .footer-brand {
+            font-weight: 800;
+            color: #18181b;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .footer-link {
+            margin: 12px 0;
+        }
+
+        .footer-link a {
+            color: #4f46e5;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .footer-link a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-location {
+            font-size: 11px;
+            color: #a1a1aa;
+            margin-top: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        /* Estilo para el enlace de contacto directo con efecto hover */
+        .contact-link {
+            color: #ea580c;
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+
+        .contact-link:hover {
+            color: #c2410c;
+            /* Naranja más oscuro al pasar el mouse */
+            text-decoration: underline;
+        }
+
+        /* Optimizaciones para Teléfonos Móviles */
+        @media only screen and (max-width: 600px) {
+            .email-header {
+                padding: 30px 24px 0 24px !important;
+            }
+
+            .email-body {
+                padding: 24px 24px 30px 24px !important;
+            }
+
+            .email-footer {
+                padding: 24px !important;
+            }
+
+            .email-title {
+                font-size: 21px !important;
+            }
+
+            .cred-section {
+                padding: 16px !important;
+            }
+
+            .password-box {
+                font-size: 14px !important;
+            }
+
+            .cred-grid {
+                grid-template-columns: 1fr !important;
+                gap: 16px !important;
+            }
+
+            .cred-row.spaced {
+                margin-top: 16px !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 1. Staff Welcome Email -->
+    <div class="preview-container">
+        <div class="label">1. Staff Welcome (Minimalist Indigo)</div>
+        <div class="email-wrapper">
+            <div class="email-header">
+                <span class="badge indigo">Acceso Administrativo</span>
+                <h1 class="email-title">Bienvenido al equipo 🎉</h1>
+            </div>
+            <div class="email-body">
+                <p class="greeting">Hola Ricardo,</p>
+                <p class="email-text">Te han invitado a formar parte del equipo administrativo de <strong>Integração
+                        Arica</strong> en nuestra plataforma. Tus accesos están listos.</p>
+
+                <div class="cred-section">
+                    <div class="cred-row">
+                        <span class="cred-label">Correo Electrónico</span>
+                        <div class="cred-value">ricardo.huiscaleo@gmail.com</div>
+                    </div>
+
+                    <div class="cred-row spaced">
+                        <span class="cred-label">Contraseña</span>
+                        <div class="password-box" title="Haz doble clic para copiar">
+                            CCoonn22kk11@
+                        </div>
+                    </div>
+                </div>
+
+                <p class="email-text" style="font-size: 14px; color: #71717a;">
+                    Desde tu panel podrás gestionar alumnos, asistencias y pagos según los permisos asignados a tu rol.
+                </p>
+
+                <a href="#" class="btn btn-indigo">Entrar a mi Panel →</a>
+
+                <!-- Bloque de contacto para Staff -->
+                <p style="font-size: 13px; color: #a1a1aa; text-align: center; margin-top: 24px; margin-bottom: 0;">
+                    Para soporte técnico, consultas de ventas o desarrollo a medida<br>
+                    <a href="https://wa.me/56945392581" target="_blank" class="contact-link">contacto directo</a>
+                </p>
+            </div>
+            <div class="email-footer">
+                <div class="footer-brand">DIGITALIZA TODO</div>
+                <div>Somos una empresa de desarrollo de software a la medida</div>
+                <div class="footer-link">
+                    <a href="https://digitalizatodo.cl/" target="_blank">¿Necesitas nuestros servicios? Haz click
+                        aquí</a>
+                </div>
+                <div class="footer-location">DIGITALIZANDO EN ARICA, CHILE 🇨🇱</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Tenant Welcome Email -->
+    <div class="preview-container">
+        <div class="label">2. Tenant Welcome (Minimalist Dark Accent)</div>
+        <div class="email-wrapper">
+            <div class="email-header">
+                <span class="badge amber">Socio Estratégico</span>
+                <h1 class="email-title">Tu academia está lista ✨</h1>
+            </div>
+            <div class="email-body">
+                <p class="greeting">Hola Mauricio,</p>
+                <p class="email-text">Tu institución <strong>Dojo Samurai</strong> ya se encuentra activa en nuestra
+                    infraestructura. Tienes un periodo promocional listo para usar.</p>
+
+                <div class="cred-section" style="background: #fffbeb; border-color: #fef3c7;">
+                    <div class="cred-row">
+                        <span class="cred-label" style="color: #b45309;">Correo Electrónico</span>
+                        <div class="cred-value">ricardo.huiscaleo@gmail.com</div>
+                    </div>
+
+                    <div class="cred-row spaced">
+                        <span class="cred-label" style="color: #b45309;">Contraseña</span>
+                        <div class="password-box" style="border-color: #fde68a; background: #ffffff;"
+                            title="Haz doble clic para copiar">
+                            CCoonn22kk11@
+                        </div>
+                    </div>
+                </div>
+
+                <a href="#" class="btn btn-black">Ir a mi Panel de Control →</a>
+
+                <!-- Bloque de contacto para Tenant -->
+                <p style="font-size: 13px; color: #a1a1aa; text-align: center; margin-top: 24px; margin-bottom: 0;">
+                    Para soporte técnico, consultas de ventas o desarrollo a medida<br>
+                    <a href="https://wa.me/56945392581" target="_blank" class="contact-link">contacto directo</a>
+                </p>
+            </div>
+            <div class="email-footer">
+                <div class="footer-brand">DIGITALIZA TODO</div>
+                <div>Somos una empresa de desarrollo de software a la medida</div>
+                <div class="footer-link">
+                    <a href="https://digitalizatodo.cl/" target="_blank">¿Necesitas nuestros servicios? Haz click
+                        aquí</a>
+                </div>
+                <div class="footer-location">DIGITALIZANDO EN ARICA, CHILE 🇨🇱</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Student Registration Email -->
+    <div class="preview-container">
+        <div class="label">3. Student Registration (Minimalist Success)</div>
+        <div class="email-wrapper">
+            <div class="email-header">
+                <div class="brand-logo">
+                    <img src="https://digitalizatodo-media.s3.us-east-1.amazonaws.com/digitalizatodo/1/logo/ae9b98e2-66fa-4954-899b-a8ecbd7cb3cb.webp"
+                        alt="Integração Arica">
+                </div>
+                <span class="badge emerald">Inscripción Confirmada</span>
+                <h1 class="email-title">Registro Exitoso ✅</h1>
+            </div>
+            <div class="email-body">
+                <p class="greeting">Hola Susana Cortez Alcayaga,</p>
+                <p class="email-text">¡Bienvenido(a) a <strong>Integração Arica</strong>! Tu registro se ha completado
+                    correctamente en nuestra plataforma.</p>
+
+                <div class="cred-section">
+                    <!-- Usamos la nueva grilla para mantener "Academia" y "Plan" juntos en PC -->
+                    <div class="cred-grid">
+                        <div class="cred-row">
+                            <span class="cred-label">Academia</span>
+                            <div class="cred-value">Integração Arica</div>
+                        </div>
+                        <div class="cred-row">
+                            <span class="cred-label">Plan</span>
+                            <div class="cred-value">Dojo Kids - Mensual</div>
+                        </div>
+                    </div>
+
+                    <div class="cred-row spaced">
+                        <span class="cred-label">Titular de Cuenta</span>
+                        <div class="cred-value">Susana Cortez Alcayaga</div>
+                    </div>
+
+                    <div class="cred-row spaced">
+                        <span class="cred-label">Total Alumnos Inscritos</span>
+                        <div class="cred-value">1 Alumno</div>
+                    </div>
+                </div>
+
+                <p class="email-text" style="font-size: 14px; color: #71717a;">
+                    Ya puedes acceder a tu panel para gestionar tus pagos y asistencias.
+                </p>
+
+                <a href="https://admin.digitalizatodo.cl/concentracao-arica" class="btn btn-indigo">Entrar a mi APP
+                    →</a>
+
+                <!-- Bloque de contacto para Alumno -->
+                <p style="font-size: 13px; color: #a1a1aa; text-align: center; margin-top: 24px; margin-bottom: 0;">
+                    Para soporte técnico, consultas de ventas o desarrollo a medida<br>
+                    <a href="https://wa.me/56945392581" target="_blank" class="contact-link">contacto directo</a>
+                </p>
+            </div>
+            <div class="email-footer">
+                <div class="footer-brand">DIGITALIZA TODO</div>
+                <div>Somos una empresa de desarrollo de software a la medida</div>
+                <div class="footer-link">
+                    <a href="https://digitalizatodo.cl/" target="_blank">¿Necesitas nuestros servicios? Haz click
+                        aquí</a>
+                </div>
+                <div class="footer-location">DIGITALIZANDO EN ARICA, CHILE 🇨🇱</div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

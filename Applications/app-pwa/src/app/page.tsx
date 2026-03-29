@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useBranding } from "@/context/BrandingContext";
 import { identifyTenant, login, resumeSession } from "@/lib/api";
 import { Loader2, RefreshCw, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
 import "./landing.css";
 
 export default function LoginPage() {
@@ -164,6 +165,17 @@ export default function LoginPage() {
 
         {/* Formularios */}
         <div className="relative">
+          {/* Botón flotante para volver (Fuera de la tarjeta) */}
+          {(step === "tenant" || step === "password") && (
+            <div className="flex justify-center mb-4 animate-in fade-in slide-in-from-top-2 duration-500">
+              <button
+                onClick={() => { setStep("email"); setError(null); setPassword(""); }}
+                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-all px-4 py-2 bg-zinc-50/50 hover:bg-zinc-50 rounded-full border border-zinc-100 shadow-sm"
+              >
+                <ArrowLeft size={10} /> Usar otro correo
+              </button>
+            </div>
+          )}
           {/* Paso 1: Email */}
           {step === "email" && (
             <div className="border border-zinc-100 rounded-[2.5rem] p-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300 shadow-sm">
@@ -220,12 +232,6 @@ export default function LoginPage() {
                   </div>
                 </button>
               ))}
-              <button
-                onClick={() => { setStep("email"); setError(null); }}
-                className="w-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-all py-1"
-              >
-                <ArrowLeft size={12} /> Usar otro correo
-              </button>
             </div>
           )}
 
@@ -237,7 +243,7 @@ export default function LoginPage() {
                   {error}
                 </div>
               )}
-              <form onSubmit={handlePasswordSubmit} className="space-y-5">
+              <form onSubmit={handlePasswordSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Tu Contraseña</label>
                   <div className="relative">
@@ -258,9 +264,19 @@ export default function LoginPage() {
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
+                  
+                  <div className="flex justify-end px-1">
+                    <Link 
+                      href={`/auth/forgot-password?tenant=${tenant.slug}&email=${email}`}
+                      className="text-[11px] font-bold text-indigo-500 hover:text-indigo-600 transition-colors"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </Link>
+                  </div>
                 </div>
                 
-                <div className="flex items-center justify-between px-1">
+                {/* Bloque de sesión destacada */}
+                <div className="bg-zinc-50 border border-zinc-100 rounded-2xl p-4 transition-all hover:bg-zinc-100/50">
                   <label className="flex items-center gap-3 cursor-pointer select-none group">
                     <div className="relative flex items-center">
                       <input
@@ -269,30 +285,28 @@ export default function LoginPage() {
                         onChange={e => setRemember(e.target.checked)}
                         className="peer h-5 w-5 opacity-0 absolute cursor-pointer"
                       />
-                      <div className="h-5 w-5 bg-zinc-100 border border-zinc-200 rounded-lg peer-checked:bg-zinc-900 peer-checked:border-zinc-900 transition-all" />
+                      <div className="h-5 w-5 bg-white border border-zinc-200 rounded-lg peer-checked:bg-zinc-950 peer-checked:border-zinc-950 transition-all" />
                       <div className="absolute text-white scale-0 peer-checked:scale-100 transition-transform left-1 top-1">
                         <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M0 11l2-2 5 5L18 3l2 2L7 18z"/></svg>
                       </div>
                     </div>
-                    <span className="text-[11px] font-bold text-zinc-500 group-hover:text-zinc-800 transition-colors">Mantener sesión activa</span>
+                    <div className="flex flex-col">
+                       <span className="text-[10px] font-black uppercase tracking-tight text-zinc-900">Mantener sesión activa</span>
+                       <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest pt-0.5">Recomendado para uso frecuente</span>
+                    </div>
                   </label>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isLoggingIn}
-                  className="w-full h-14 bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-zinc-200 transition-all active:scale-[0.98] disabled:opacity-40"
-                >
-                  {isLoggingIn ? <Loader2 className="animate-spin" size={16} /> : "Iniciar Sesión"}
-                </button>
+                <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={isLoggingIn}
+                      className="w-full h-14 bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-black uppercase tracking-widest rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-zinc-200 transition-all active:scale-[0.98] disabled:opacity-40"
+                    >
+                      {isLoggingIn ? <Loader2 className="animate-spin" size={16} /> : "Iniciar Sesión"}
+                    </button>
+                </div>
               </form>
-              
-              <button
-                onClick={() => { setStep("email"); setError(null); setPassword(""); }}
-                className="w-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-all py-1"
-              >
-                <ArrowLeft size={12} /> Usar otro correo
-              </button>
             </div>
           )}
         </div>

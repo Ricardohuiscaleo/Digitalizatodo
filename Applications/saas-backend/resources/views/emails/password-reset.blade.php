@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bienvenido al Equipo</title>
+    <title>Recuperar Contraseña</title>
     <style>
         body { background: #f4f4f5; font-family: system-ui, -apple-system, sans-serif; padding: 40px 20px; margin: 0; }
         .email-wrapper { background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e4e4e7; box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08); color: #27272a; max-width: 560px; margin: 0 auto; }
@@ -13,12 +13,6 @@
         .email-body { padding: 30px 40px 40px 40px; }
         .greeting { font-size: 16px; font-weight: 700; color: #18181b; margin-bottom: 8px; }
         .email-text { font-size: 15px; line-height: 1.6; color: #52525b; margin-top: 0; margin-bottom: 20px; }
-        .cred-section { background: #fafafa; border: 1px solid #f4f4f5; border-radius: 12px; padding: 24px; margin: 30px 0; }
-        .cred-row { margin-bottom: 16px; }
-        .cred-row.spaced { margin-top: 24px; }
-        .cred-label { font-size: 12px; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 6px; display: block; }
-        .cred-value { font-size: 15px; font-weight: 500; color: #18181b; }
-        .password-box { background-color: #ffffff; border: 1px dashed #d4d4d8; padding: 12px 16px; border-radius: 8px; font-family: monospace; font-size: 15px; color: #18181b; text-align: center; letter-spacing: 1px; margin-top: 8px; }
         .btn { display: block; text-align: center; font-weight: 600; padding: 14px 24px; border-radius: 8px; text-decoration: none; margin-top: 30px; font-size: 15px; background: #4f46e5; color: #ffffff !important; }
         .email-footer { padding: 32px 40px; text-align: center; color: #71717a; font-size: 13px; border-top: 1px solid #f4f4f5; background: #fafafa; line-height: 1.6; }
         .footer-brand { font-weight: 800; color: #18181b; letter-spacing: 0.05em; margin-bottom: 4px; }
@@ -28,32 +22,25 @@
 <body>
     <div class="email-wrapper">
         <div class="email-header">
-            <span class="badge">Acceso Administrativo</span>
-            <h1 class="email-title">Bienvenido al equipo 🎉</h1>
+            <span class="badge">Acceso y Seguridad</span>
+            <h1 class="email-title">Recuperar tu acceso 🛡️</h1>
         </div>
         <div class="email-body">
             <p class="greeting">Hola {{ $user->name }},</p>
-            <p class="email-text">Te han invitado a formar parte del equipo administrativo de <strong>{{ $tenant->name }}</strong> en nuestra plataforma. Tus accesos están listos.</p>
+            <p class="email-text">Has solicitado un enlace para restablecer tu contraseña en <strong>{{ $tenant->name }}</strong>. Si no has sido tú, puedes ignorar este correo con seguridad.</p>
 
-            <div class="cred-section">
-                <div class="cred-row">
-                    <span class="cred-label">Correo Electrónico</span>
-                    <div class="cred-value">{{ $user->email }}</div>
-                </div>
-
-                <div class="cred-row spaced">
-                    <span class="cred-label">Contraseña Temporal</span>
-                    <div class="password-box">
-                        {{ $password }}
-                    </div>
-                </div>
+            <div style="background: #fafafa; border: 1px solid #f4f4f5; border-radius: 12px; padding: 20px; text-align: center; margin: 30px 0;">
+                <p style="font-size: 13px; color: #71717a; margin-bottom: 0;">Presiona el botón de abajo para continuar con el proceso:</p>
             </div>
 
-            <p class="email-text" style="font-size: 14px; color: #71717a;">
-                Desde tu panel podrás gestionar alumnos, asistencias y pagos según los permisos asignados a tu rol.
-            </p>
+            @php
+                $resetUrl = "https://{$tenant->slug ?? $tenant->id}.digitalizatodo.cl/auth/reset-password?token={$token}&email=" . urlencode($user->email) . "&tenant={$tenant->slug ?? $tenant->id}";
+            @endphp
+            <a href="{{ $resetUrl }}" class="btn">Restablecer Contraseña →</a>
 
-            <a href="https://{{ $tenant->slug ?? $tenant->id }}.digitalizatodo.cl" class="btn">Entrar a mi Panel →</a>
+            <p style="font-size: 12px; color: #a1a1aa; text-align: center; margin-top: 30px;">
+                Este enlace expirará en 60 minutos por motivos de seguridad.
+            </p>
 
             <p style="font-size: 13px; color: #a1a1aa; text-align: center; margin-top: 24px; margin-bottom: 0;">
                 Para soporte técnico, consultas de ventas o desarrollo a medida<br>

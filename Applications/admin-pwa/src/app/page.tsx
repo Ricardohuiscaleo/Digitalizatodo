@@ -1049,10 +1049,10 @@ export default function DeepAdminDashboard() {
                       <p className="text-[8px] text-muted-foreground uppercase tracking-widest px-1 mb-2">Habilite módulos por rol (Owner tiene acceso total)</p>
                     </div>
                     
-                    {(['admin', 'coach', 'receptionist'] as const).map(role => {
+                    {(['admin', 'coach', 'receptionist', 'instructor'] as const).map(role => {
                       const rolePermissions = editingTenant.role_permissions?.[role] || [];
                       const modules = ['attendance', 'students', 'payments', 'expenses', 'reports', 'settings'];
-                      const roleLabels: Record<string, string> = { admin: 'Administrador', coach: 'Coach / Sensei', receptionist: 'Recepcionista' };
+                      const roleLabels: Record<string, string> = { admin: 'Administrador', coach: 'Coach / Sensei', receptionist: 'Recepcionista', instructor: 'Instructor' };
                       
                       return (
                         <div key={role} className="bg-zinc-900 border border-border rounded-2xl p-4 space-y-3">
@@ -1196,6 +1196,7 @@ export default function DeepAdminDashboard() {
                             <option value="owner">Dueño</option>
                             <option value="admin">Administrador</option>
                             <option value="coach">Coach / Instructor</option>
+                            <option value="instructor">Instructor</option>
                             <option value="receptionist">Recepcionista</option>
                           </select>
                         </div>

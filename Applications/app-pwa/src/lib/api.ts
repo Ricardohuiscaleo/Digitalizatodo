@@ -1028,3 +1028,28 @@ export async function deleteStudents(tenantId: string, token: string, ids: (stri
     }
 }
 
+export async function sendResetLink(tenantId: string, email: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/auth/forgot-password`, {
+            method: 'POST',
+            headers: defaultHeaders,
+            body: JSON.stringify({ email }),
+        });
+        return await safeJson(response);
+    } catch {
+        return { message: 'Error de conexión' };
+    }
+}
+
+export async function resetPassword(tenantId: string, data: any) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/auth/reset-password`, {
+            method: 'POST',
+            headers: defaultHeaders,
+            body: JSON.stringify(data),
+        });
+        return await safeJson(response);
+    } catch {
+        return { message: 'Error de conexión' };
+    }
+}
