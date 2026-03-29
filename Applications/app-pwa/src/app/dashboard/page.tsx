@@ -469,7 +469,7 @@ export default function App() {
                                             
                                             {/* Quick Actions / Terminal Access - Only for Martial Arts */}
                                             {isMartialArts && (
-                                                <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-950 border-zinc-800'} p-8 rounded-[3rem] shadow-2xl relative overflow-hidden group`}>
+                                                <div className={`hidden md:block ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-950 border-zinc-800'} p-8 rounded-[3rem] shadow-2xl relative overflow-hidden group`}>
                                                     <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl group-hover:bg-indigo-500/20 transition-all duration-700" />
                                                     <div className="relative z-10">
                                                         <div className="w-14 h-14 bg-indigo-500 rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-indigo-500/20">

@@ -568,13 +568,15 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                 )}
 
                 {branding?.industry === 'martial_arts' && hasPermission('settings.checkin') && (
-                    <ActionCard 
-                        icon={QrCode} 
-                        title="Punto de Marcación" 
-                        description="Cámara / Escáner para el Dojo"
-                        onClick={() => window.location.href = '/dashboard/checkin'}
-                        color="rose"
-                    />
+                    <div className="hidden md:block">
+                        <ActionCard 
+                            icon={QrCode} 
+                            title="Punto de Marcación" 
+                            description="Cámara / Escáner para el Dojo"
+                            onClick={() => window.location.href = '/dashboard/checkin'}
+                            color="rose"
+                        />
+                    </div>
                 )}
             </div>
 
