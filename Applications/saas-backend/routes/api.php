@@ -32,6 +32,19 @@ Route::post('register-tenant', [RegisterTenantController::class , 'store']);
 Route::post('identify-tenant', [TenantDiscoveryController::class , 'identify']);
 Route::get('r/{code}', [RegistrationPageController::class , 'show']);
 Route::get('debug', [DebugController::class , 'index']);
+Route::get('debug-resend', function() {
+    try {
+        $client = Resend::getFacadeRoot() ?? 'null';
+        $received = Resend::receivedEmails();
+        dd([
+            'facade_root' => get_class(Resend::getFacadeRoot()),
+            'receivedEmails_result' => is_null($received) ? 'null' : get_class($received),
+            'emails_result' => get_class(Resend::emails()),
+        ]);
+    } catch (\Exception $e) {
+        return $e->getMessage();
+    }
+});
 Route::get('app-updates', [\App\Http\Controllers\Api\AppUpdateController::class , 'index']);
 
 Route::get('industries', [\App\Http\Controllers\Api\IndustryController::class , 'index']);
