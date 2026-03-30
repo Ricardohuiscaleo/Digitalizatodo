@@ -564,12 +564,15 @@ class SuperAdminController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
+        // Evitar Timeout de PHP debido al throttling (delay) de peticiones al API
+        set_time_limit(150);
+
         try {
             $syncedCount = 0;
 
             // --- FASE 1: Sincronizar ENVIADOS (Outbound) ---
-            // Aumentamos el límite a 100 (máximo de Resend)
-            $sentEmails = Resend::emails()->list(['limit' => 100]);
+            // Reducimos el lote a 40 para asegurar que termine antes del Timeout del servidor (Nginx)
+            $sentEmails = Resend::emails()->list(['limit' => 40]);
             Log::info('Resend Sync: Sent emails found', ['count' => count($sentEmails->data ?? [])]);
 
             foreach ($sentEmails->data as $resendEmail) {
@@ -594,7 +597,7 @@ class SuperAdminController extends Controller
             }
 
             // --- FASE 2: Sincronizar RECIBIDOS (Inbound) ---
-            $receivedEmails = Resend::receivedEmails()->list(['limit' => 100]);
+            $receivedEmails = Resend::receivedEmails()->list(['limit' => 40]);
             Log::info('Resend Sync: Received emails call', ['raw_count' => count($receivedEmails->data ?? [])]);
 
             foreach ($receivedEmails->data as $resendInbound) {
