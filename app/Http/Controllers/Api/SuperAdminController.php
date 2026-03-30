@@ -576,6 +576,8 @@ class SuperAdminController extends Controller
                 $exists = AdminEmail::where('resend_id', $resendEmail->id)->exists();
                 if (!$exists) {
                     $detail = Resend::emails()->get($resendEmail->id);
+                    usleep(250000); // Throttling: 4 reqs/sec para respetar límite de Resend (5/sec)
+                    
                     AdminEmail::create([
                         'direction' => 'outbound',
                         'from_email' => 'info@digitalizatodo.cl', // Asumimos origen fijo para enviados
@@ -599,6 +601,8 @@ class SuperAdminController extends Controller
                 $exists = AdminEmail::where('resend_id', $resendInbound->id)->exists();
                 if (!$exists) {
                     $detail = Resend::receivedEmails()->get($resendInbound->id);
+                    usleep(250000); // Throttling: 4 reqs/sec
+                    
                     Log::info('Resend Sync: Processing inbound', ['id' => $detail->id, 'from' => $detail->from]);
 
                     AdminEmail::create([
