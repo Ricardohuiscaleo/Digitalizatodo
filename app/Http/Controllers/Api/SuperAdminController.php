@@ -14,9 +14,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\WelcomeTenantMail;
-use App\Models\AdminEmail;
-use App\Models\Tenant;
-use App\Models\User;
+use Illuminate\Support\Str;
 
 class SuperAdminController extends Controller
 {
