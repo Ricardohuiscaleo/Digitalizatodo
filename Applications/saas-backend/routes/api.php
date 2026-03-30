@@ -193,6 +193,10 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
                     Route::post('students/bulk-delete', [StudentController::class, 'bulkDelete']);
 
                     Route::post('plans', [PlanController::class, 'store']);
+                    Route::get('emails/{id}', [\App\Http\Controllers\Api\SuperAdminController::class, 'showEmail']);
+                    Route::delete('emails/{id}', [\App\Http\Controllers\Api\SuperAdminController::class, 'deleteEmail']);
+                    Route::post('emails/sync', [\App\Http\Controllers\Api\SuperAdminController::class, 'syncEmailsFromResend']);
+                    Route::post('emails/{id}/reply', [\App\Http\Controllers\Api\SuperAdminController::class, 'replyToEmail']);
                     Route::put('plans/{id}', [PlanController::class, 'update']);
                     Route::delete('plans/{id}', [PlanController::class, 'destroy']);
                     Route::post('schedules/{id}/students', [\App\Http\Controllers\Api\ScheduleController::class, 'assignStudents']);

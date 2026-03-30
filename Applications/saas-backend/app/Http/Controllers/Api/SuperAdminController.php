@@ -6,13 +6,17 @@ use App\Events\TenantUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Models\AdminEmail;
+use App\Mail\CustomAdminMail;
+use Resend\Laravel\Facades\Resend;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\WelcomeTenantMail;
-use App\Mail\CustomAdminMail;
-use Illuminate\Support\Str;
+use App\Models\AdminEmail;
+use App\Models\Tenant;
+use App\Models\User;
 
 class SuperAdminController extends Controller
 {
@@ -460,6 +464,17 @@ class SuperAdminController extends Controller
             
             foreach ($users as $user) {
                 Mail::to($user->email)->queue(new CustomAdminMail($validated['subject'], $validated['content']));
+                
+                // PERSISTENCIA EN GMAIL ADMIN
+                AdminEmail::create([
+                    'direction' => 'outbound',
+                    'from_email' => 'info@digitalizatodo.cl',
+                    'to_email' => $user->email,
+                    'subject' => $validated['subject'],
+                    'content_html' => $validated['content'],
+                    'is_read' => true, // Lo enviamos nosotros, ya lo "leímos"
+                ]);
+
                 $emailsSent++;
             }
         } else {
@@ -468,6 +483,17 @@ class SuperAdminController extends Controller
             
             foreach ($users as $user) {
                 Mail::to($user->email)->queue(new CustomAdminMail($validated['subject'], $validated['content']));
+
+                // PERSISTENCIA EN GMAIL ADMIN
+                AdminEmail::create([
+                    'direction' => 'outbound',
+                    'from_email' => 'info@digitalizatodo.cl',
+                    'to_email' => $user->email,
+                    'subject' => $validated['subject'],
+                    'content_html' => $validated['content'],
+                    'is_read' => true,
+                ]);
+
                 $emailsSent++;
             }
         }
@@ -476,5 +502,164 @@ class SuperAdminController extends Controller
             'message' => 'Emails encolados exitosamente',
             'count' => $emailsSent
         ]);
+    }
+
+    /**
+     * List all emails for the Super Admin Gmail-like client.
+     */
+    public function indexEmails(Request $request)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $query = AdminEmail::query();
+
+        if ($request->has('direction')) {
+            $query->where('direction', $request->direction);
+        }
+
+        $emails = $query->orderBy('created_at', 'desc')->paginate(50);
+
+        return response()->json($emails);
+    }
+
+    /**
+     * Show a single email detail.
+     */
+    public function showEmail($id)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $email = AdminEmail::with(['replies', 'parent'])->findOrFail($id);
+        
+        // Mark as read if it was inbound
+        if ($email->direction === 'inbound' && !$email->is_read) {
+            $email->update(['is_read' => true]);
+        }
+
+        return response()->json($email);
+    }
+
+    /**
+     * Delete an email.
+     */
+    public function deleteEmail($id)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $email = AdminEmail::findOrFail($id);
+        $email->delete();
+
+        return response()->json(['message' => 'Email eliminado']);
+    }
+
+    public function syncEmailsFromResend()
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        try {
+            $syncedCount = 0;
+
+            // --- FASE 1: Sincronizar ENVIADOS (Outbound) ---
+            $sentEmails = Resend::emails()->list();
+            foreach ($sentEmails->data as $resendEmail) {
+                $exists = AdminEmail::where('resend_id', $resendEmail->id)->exists();
+                if (!$exists) {
+                    $detail = Resend::emails()->get($resendEmail->id);
+                    AdminEmail::create([
+                        'direction' => 'outbound',
+                        'from_email' => 'info@digitalizatodo.cl',
+                        'to_email' => $detail->to[0] ?? '',
+                        'subject' => $detail->subject,
+                        'content_html' => $detail->html,
+                        'content_text' => strip_tags($detail->html ?? ''),
+                        'is_read' => true,
+                        'resend_id' => $detail->id,
+                        'created_at' => $detail->created_at,
+                    ]);
+                    $syncedCount++;
+                }
+            }
+
+            // --- FASE 2: Sincronizar RECIBIDOS (Inbound) ---
+            $receivedEmails = Resend::receivedEmails()->list();
+            foreach ($receivedEmails->data as $resendInbound) {
+                $exists = AdminEmail::where('resend_id', $resendInbound->id)->exists();
+                if (!$exists) {
+                    $detail = Resend::receivedEmails()->get($resendInbound->id);
+                    
+                    AdminEmail::create([
+                        'direction' => 'inbound',
+                        'from_email' => $detail->from,
+                        'to_email' => $detail->to[0] ?? 'info@digitalizatodo.cl',
+                        'subject' => $detail->subject,
+                        'content_html' => $detail->html,
+                        'content_text' => $detail->text ?: strip_tags($detail->html ?? ''),
+                        'is_read' => true, // Historico se marca como leido
+                        'resend_id' => $detail->id,
+                        'created_at' => $detail->created_at,
+                    ]);
+                    $syncedCount++;
+                }
+            }
+
+            return response()->json([
+                'message' => "Sincronización dual completada: {$syncedCount} nuevos correos.",
+                'synced' => $syncedCount
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error syncing from Resend', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'API Error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Reply to a specific email from UI.
+     */
+    public function replyToEmail(Request $request, $id)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'content' => 'required|string',
+        ]);
+
+        $originalEmail = AdminEmail::findOrFail($id);
+
+        try {
+            // Real send via Resend Facade for more control
+            Resend::emails()->send([
+                'from' => 'Digitaliza Todo <info@digitalizatodo.cl>',
+                'to' => [$originalEmail->from_email],
+                'subject' => "Re: " . $originalEmail->subject,
+                'html' => $validated['content'],
+            ]);
+
+            // Register locally
+            $reply = AdminEmail::create([
+                'direction' => 'outbound',
+                'from_email' => 'info@digitalizatodo.cl',
+                'to_email' => $originalEmail->from_email,
+                'subject' => "Re: " . $originalEmail->subject,
+                'content_html' => $validated['content'],
+                'content_text' => strip_tags($validated['content']),
+                'is_read' => true,
+                'parent_id' => $originalEmail->id
+            ]);
+
+            return response()->json($reply);
+        } catch (\Exception $e) {
+            Log::error('Error sending reply via Resend', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Send Error', 'message' => $e->getMessage()], 500);
+        }
     }
 }

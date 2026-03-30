@@ -35,14 +35,17 @@ import {
   Trash2,
   Edit2,
   Send,
-  Sparkles
+  Sparkles,
+  Inbox,
+  History,
+  Check
 } from 'lucide-react';
 
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
-import { getAllTenants, updateTenant, createTenant, getAllUsers, resetTenantPassword, getAllSaasPlans, updateSaasPlan, syncSaasPlanWithMP, sendCustomEmail } from '@/lib/api';
+import { getAllTenants, updateTenant, createTenant, getAllUsers, resetTenantPassword, getAllSaasPlans, updateSaasPlan, syncSaasPlanWithMP, sendCustomEmail, getEmails, getEmailDetail, deleteEmail, syncEmails, postEmailReply } from '@/lib/api';
 import { Toaster, toast } from "sonner";
 import { useRealtimeChannel } from '@/hooks/useRealtimeChannel';
 
@@ -118,6 +121,51 @@ export default function DeepAdminDashboard() {
   const [emailContent, setEmailContent] = useState('');
   const [selectedTenantForEmail, setSelectedTenantForEmail] = useState<string>('all');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+
+  // Advanced Email Center State (Gmail-like)
+  const [emailFolder, setEmailFolder] = useState<'inbox' | 'sent' | 'compose'>('inbox');
+  const [emailsList, setEmailsList] = useState<any[]>([]);
+  const [selectedEmail, setSelectedEmail] = useState<any>(null);
+  const [isEmailsLoading, setIsEmailsLoading] = useState(false);
+
+  const fetchEmails = async (folder: 'inbox' | 'sent') => {
+    const token = localStorage.getItem('super_admin_token');
+    if (!token) return;
+    
+    setIsEmailsLoading(true);
+    try {
+      const res = await getEmails(token, folder === 'inbox' ? 'inbound' : 'outbound');
+      if (res?.data) {
+        setEmailsList(res.data);
+      }
+    } catch (error) {
+      toast.error("Error al cargar correos");
+    } finally {
+      setIsEmailsLoading(false);
+    }
+  };
+
+  const handleOpenEmail = async (emailId: number) => {
+    const token = localStorage.getItem('super_admin_token');
+    if (!token) return;
+
+    try {
+      const detail = await getEmailDetail(token, emailId);
+      if (detail) {
+        setSelectedEmail(detail);
+        // Actualizar el estado local para marcarlo como leído sin re-fetch completo
+        setEmailsList(prev => prev.map(e => e.id === emailId ? { ...e, is_read: true } : e));
+      }
+    } catch (error) {
+      toast.error("No se pudo abrir el correo");
+    }
+  };
+
+  React.useEffect(() => {
+    if (view === 'mensajeria' && (emailFolder === 'inbox' || emailFolder === 'sent')) {
+      fetchEmails(emailFolder);
+    }
+  }, [view, emailFolder]);
 
   const handleSendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -506,114 +554,307 @@ export default function DeepAdminDashboard() {
             className="flex-1 overflow-y-auto custom-scrollbar relative pb-32 md:pb-10"
 >
             {view === 'mensajeria' && (
-              <div className="px-4 md:px-10 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="pt-10 pb-4">
-                  <Badge variant="outline" className="mb-4 border-primary/20 text-primary bg-primary/5 px-4 py-1 rounded-full text-[10px] font-black tracking-[0.2em] uppercase">
-                    Centro de Comunicaciones
-                  </Badge>
-                  <h1 className="text-4xl md:text-6xl font-black tracking-tighter italic uppercase text-foreground leading-[0.8]">
-                    Digitaliza <span className="text-primary drop-shadow-[0_0_15px_rgba(var(--primary),0.3)]">Mail</span>
-                  </h1>
-                  <p className="mt-4 text-muted-foreground font-medium text-sm md:text-base max-w-xl">
-                    Envía comunicados oficiales, actualizaciones de plataforma o soporte directo a tus academias vinculadas.
-                  </p>
+              <div className="h-[calc(100vh-80px)] md:h-screen flex flex-col md:flex-row overflow-hidden animate-in fade-in duration-500">
+                {/* Mail Sidebar (Folders) */}
+                <div className="w-full md:w-64 bg-zinc-950/30 border-r border-white/5 p-4 flex flex-row md:flex-col gap-2 shrink-0 overflow-x-auto md:overflow-x-visible custom-scrollbar">
+                  <button 
+                    onClick={() => { setEmailFolder('compose'); setSelectedEmail(null); }}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shrink-0 ${emailFolder === 'compose' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-white/5 text-muted-foreground hover:bg-white/10'}`}
+                  >
+                    <Plus size={16} /> Redactar
+                  </button>
+                  
+                  <div className="hidden md:block h-px bg-white/5 my-4" />
+
+                  <button 
+                    onClick={() => { setEmailFolder('inbox'); setSelectedEmail(null); }}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all shrink-0 ${emailFolder === 'inbox' ? 'bg-white/10 text-foreground' : 'text-zinc-500 hover:text-foreground'}`}
+                  >
+                    <Inbox size={18} /> Recibidos
+                    {emailsList.filter(e => e.direction === 'inbound' && !e.is_read).length > 0 && (
+                      <Badge className="ml-auto bg-primary text-[10px] h-5 min-w-[20px] px-1 flex items-center justify-center">
+                        {emailsList.filter(e => e.direction === 'inbound' && !e.is_read).length}
+                      </Badge>
+                    )}
+                  </button>
+
+                  <button 
+                    onClick={async () => {
+                      const token = localStorage.getItem('super_admin_token');
+                      if (token) {
+                        toast.loading('Sincronizando con Resend...', { id: 'sync' });
+                        await syncEmails(token);
+                        toast.success('Sincronización completada', { id: 'sync' });
+                        fetchEmails(emailFolder === 'compose' ? 'inbox' : emailFolder);
+                      }
+                    }}
+                    className="flex items-center gap-3 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-primary transition-all shrink-0 mt-auto"
+                  >
+                    <RefreshCcw size={14} /> Sincronizar
+                  </button>
+
+                  <button 
+                    onClick={() => { setEmailFolder('sent'); setSelectedEmail(null); }}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all shrink-0 ${emailFolder === 'sent' ? 'bg-white/10 text-foreground' : 'text-zinc-500 hover:text-foreground'}`}
+                  >
+                    <History size={18} /> Enviados
+                  </button>
                 </div>
 
-                <Card className="bg-zinc-900/50 border-white/5 backdrop-blur-xl rounded-[32px] overflow-hidden shadow-2xl">
-                  <form onSubmit={handleSendEmail} className="p-6 md:p-10 space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="space-y-3">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 px-1">Destinatarios</label>
-                        <div className="relative group">
-                          <select 
-                            value={selectedTenantForEmail}
-                            onChange={(e) => setSelectedTenantForEmail(e.target.value)}
-                            className="w-full bg-black/40 border border-white/10 rounded-2xl h-14 px-5 text-sm font-bold appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer group-hover:bg-black/60"
-                          >
-                            <option value="all">TODOS LOS ADMINISTRADORES (GLOBAL)</option>
-                            <optgroup label="Academias Individuales">
-                              {tenants.map(t => (
-                                <option key={t.id} value={t.id}>{t.name.toUpperCase()}</option>
-                              ))}
-                            </optgroup>
-                          </select>
-                          <ChevronRight className="absolute right-5 top-1/2 -translate-y-1/2 rotate-90 text-zinc-500 pointer-events-none" size={16} />
+                {/* Mail List / Detail Container */}
+                <div className="flex-1 flex flex-col overflow-hidden bg-black/20">
+                  {emailFolder === 'compose' ? (
+                    /* COMPOSER VIEW */
+                    <div className="flex-1 overflow-y-auto p-4 md:p-10 custom-scrollbar">
+                      <div className="max-w-4xl mx-auto space-y-8">
+                        <div>
+                          <Badge variant="outline" className="mb-4 border-primary/20 text-primary bg-primary/5 px-4 py-1 rounded-full text-[10px] font-black tracking-[0.2em] uppercase">
+                            Nueva Comunicación
+                          </Badge>
+                          <h1 className="text-4xl font-black tracking-tighter italic uppercase text-foreground leading-[0.8]">
+                            Redactar <span className="text-primary">Mensaje</span>
+                          </h1>
                         </div>
-                        <p className="text-[10px] text-zinc-600 font-medium px-1 italic">
-                          {selectedTenantForEmail === 'all' 
-                            ? "Se enviará un correo a cada Administrador principal de todas las academias activas."
-                            : `Correo directo al staff administrativo de ${tenants.find(t => t.id === selectedTenantForEmail)?.name}.`}
-                        </p>
-                      </div>
 
-                      <div className="space-y-3">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 px-1">Asunto del Mensaje</label>
-                        <input 
-                          type="text"
-                          value={emailSubject}
-                          onChange={(e) => setEmailSubject(e.target.value)}
-                          placeholder="ej: Actualización de Términos y Condiciones"
-                          className="w-full bg-black/40 border border-white/10 rounded-2xl h-14 px-5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-zinc-700"
-                        />
+                        <Card className="bg-zinc-900/50 border-white/5 backdrop-blur-xl rounded-[32px] overflow-hidden shadow-2xl">
+                          <form onSubmit={handleSendEmail} className="p-6 md:p-8 space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 px-1">Destinatario</label>
+                                <select 
+                                  value={selectedTenantForEmail}
+                                  onChange={(e) => setSelectedTenantForEmail(e.target.value)}
+                                  className="w-full bg-black/40 border border-white/10 rounded-2xl h-12 px-4 text-sm font-bold appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                                >
+                                  <option value="all">TODOS LOS ADMINS (GLOBAL)</option>
+                                  {tenants.map(t => (
+                                    <option key={t.id} value={t.id}>{t.name.toUpperCase()}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 px-1">Asunto</label>
+                                <input 
+                                  type="text"
+                                  value={emailSubject}
+                                  onChange={(e) => setEmailSubject(e.target.value)}
+                                  placeholder="Asunto del correo..."
+                                  className="w-full bg-black/40 border border-white/10 rounded-2xl h-12 px-5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 px-1">Mensaje</label>
+                              <textarea 
+                                value={emailContent}
+                                onChange={(e) => setEmailContent(e.target.value)}
+                                placeholder="Escribe tu mensaje aquí..."
+                                rows={8}
+                                className="w-full bg-black/40 border border-white/10 rounded-[24px] p-6 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none min-h-[250px]"
+                              />
+                            </div>
+                            <div className="flex items-center justify-end">
+                              <Button 
+                                disabled={isSendingEmail}
+                                className="h-12 px-8 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-[0.2em] text-[10px] shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all group"
+                              >
+                                {isSendingEmail ? <Loader2 size={16} className="animate-spin" /> : <>Enviar Mensaje <Send className="ml-2" size={14} /></>}
+                              </Button>
+                            </div>
+                          </form>
+                        </Card>
                       </div>
                     </div>
-
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between px-1">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Contenido del Correo</label>
-                        <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest bg-zinc-800 border-none opacity-50">Soporta HTML básico</Badge>
+                  ) : (
+                    /* LIST / DETAIL VIEW */
+                    <div className="flex-1 flex overflow-hidden">
+                      {/* List */}
+                      <div className={`w-full md:w-[400px] border-r border-white/5 flex flex-col bg-zinc-950/20 ${selectedEmail ? 'hidden md:flex' : 'flex'}`}>
+                        <div className="p-4 border-b border-white/5 flex items-center justify-between">
+                          <h2 className="text-sm font-black uppercase tracking-widest">{emailFolder === 'inbox' ? 'Bandeja de Entrada' : 'Enviados'}</h2>
+                          <Button variant="ghost" size="icon" onClick={() => fetchEmails(emailFolder)} className="h-8 w-8 rounded-xl">
+                            <RefreshCcw size={14} className={isEmailsLoading ? 'animate-spin' : ''} />
+                          </Button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto custom-scrollbar">
+                          {isEmailsLoading ? (
+                            <div className="flex flex-col items-center justify-center h-64 opacity-20">
+                              <Loader2 size={32} className="animate-spin mb-4" />
+                              <p className="text-[10px] font-black uppercase tracking-widest">Sincronizando...</p>
+                            </div>
+                          ) : emailsList.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-64 opacity-20">
+                              <Mail size={32} className="mb-4" />
+                              <p className="text-[10px] font-black uppercase tracking-widest">No hay correos</p>
+                            </div>
+                          ) : (
+                            emailsList.map((email) => (
+                              <button 
+                                key={email.id}
+                                onClick={() => handleOpenEmail(email.id)}
+                                className={`w-full p-4 border-b border-white/5 flex flex-col gap-1 text-left transition-all hover:bg-white/5 relative ${selectedEmail?.id === email.id ? 'bg-white/10' : ''} ${!email.is_read && email.direction === 'inbound' ? 'bg-primary/5' : ''}`}
+                              >
+                                {!email.is_read && email.direction === 'inbound' && (
+                                  <div className="absolute left-1 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-full" />
+                                )}
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] font-black text-primary uppercase truncate max-w-[150px]">
+                                    {email.direction === 'inbound' ? email.from_email : `A: ${email.to_email}`}
+                                  </span>
+                                  <span className="text-[9px] text-zinc-600 font-bold">
+                                    {new Date(email.created_at).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                <h3 className={`text-sm truncate ${!email.is_read && email.direction === 'inbound' ? 'font-black' : 'font-medium'}`}>
+                                  {email.subject}
+                                </h3>
+                                <p className="text-xs text-zinc-500 truncate font-medium">
+                                  {email.content_text || "Sin vista previa de texto"}
+                                </p>
+                              </button>
+                            ))
+                          )}
+                        </div>
                       </div>
-                      <textarea 
-                        value={emailContent}
-                        onChange={(e) => setEmailContent(e.target.value)}
-                        placeholder="Escribe tu mensaje aquí..."
-                        rows={10}
-                        className="w-full bg-black/40 border border-white/10 rounded-[24px] p-6 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-zinc-700 resize-none min-h-[300px]"
-                      />
-                    </div>
 
-                    <div className="pt-4 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden">
-                      <div className="flex items-center gap-4 bg-white/5 border border-white/5 px-6 py-3 rounded-2xl">
-                         <div className="h-8 w-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                            <ShieldCheck className="text-emerald-500" size={16} />
-                         </div>
-                         <p className="text-[10px] font-black uppercase tracking-tighter text-zinc-400">
-                           Envío seguro vía <span className="text-white">Resend Infrastructure</span>
-                         </p>
-                      </div>
-
-                      <Button 
-                        disabled={isSendingEmail}
-                        className="w-full md:w-auto min-w-[240px] h-14 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-[0.2em] text-xs shadow-[0_20px_40px_rgba(var(--primary),0.3)] hover:scale-105 active:scale-95 transition-all group shrink-0"
-                      >
-                        {isSendingEmail ? (
-                          <Loader2 className="animate-spin" size={18} />
-                        ) : (
+                      {/* Detail */}
+                      <div className={`flex-1 flex flex-col bg-zinc-950/40 relative ${!selectedEmail ? 'hidden md:flex items-center justify-center' : 'flex'}`}>
+                        {selectedEmail ? (
                           <>
-                            Enviar Mensaje <Send className="ml-3 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" size={16} />
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                </Card>
+                            {/* Detail Header */}
+                            <div className="p-4 border-b border-white/5 flex items-center gap-4 bg-black/40 backdrop-blur-md sticky top-0 z-10">
+                              <Button variant="ghost" size="icon" onClick={() => setSelectedEmail(null)} className="md:hidden h-9 w-9 bg-white/5 rounded-xl">
+                                <ChevronRight className="rotate-180" size={18} />
+                              </Button>
+                              <div className="flex-1 min-w-0">
+                                <h2 className="text-base font-black tracking-tight uppercase truncate">{selectedEmail.subject}</h2>
+                                <p className="text-[10px] text-zinc-500 font-bold uppercase truncate">
+                                  {selectedEmail.direction === 'inbound' ? `De: ${selectedEmail.from_email}` : `Para: ${selectedEmail.to_email}`}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button 
+                                  onClick={() => {
+                                    setEmailFolder('compose');
+                                    setSelectedTenantForEmail('all');
+                                    setEmailSubject(`Re: ${selectedEmail.subject}`);
+                                    setEmailContent(`\n\n--- El ${new Date(selectedEmail.created_at).toLocaleString()}, ${selectedEmail.from_email} escribió: ---\n${selectedEmail.content_text || ''}`);
+                                    setSelectedEmail(null);
+                                  }}
+                                  className="h-10 px-5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-black uppercase tracking-widest border border-white/5"
+                                >
+                                  Responder
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-10 w-10 text-destructive hover:bg-destructive/10 rounded-xl"
+                                  onClick={async () => {
+                                    const token = localStorage.getItem('super_admin_token');
+                                    if (!token) return;
+                                    await deleteEmail(token, selectedEmail.id);
+                                    toast.success("Eliminado");
+                                    setSelectedEmail(null);
+                                    fetchEmails(emailFolder);
+                                  }}
+                                >
+                                  <Trash2 size={18} />
+                                </Button>
+                              </div>
+                            </div>
 
-                {/* Info Tip */}
-                <div className="bg-primary/5 border border-primary/10 rounded-3xl p-6 flex gap-4">
-                  <div className="h-10 w-10 shrink-0 bg-primary/20 rounded-2xl flex items-center justify-center text-primary">
-                    <Sparkles size={20} />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-black uppercase tracking-tight text-foreground">Tip Pro: Personalización</h4>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                      Este sistema utiliza el transporte de <b>Resend</b>. Los correos se envían de forma asíncrona garantizando que lleguen a la inbox principal sin caer en spam.
-                    </p>
-                  </div>
+                            {/* Detail Content */}
+                            <div className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar">
+                              <Card className="bg-zinc-900/30 border-white/5 p-6 md:p-10 rounded-[32px]">
+                                {selectedEmail.content_html ? (
+                                  <div 
+                                    className="prose prose-invert max-w-none text-zinc-300 font-medium leading-relaxed"
+                                    dangerouslySetInnerHTML={{ __html: selectedEmail.content_html }}
+                                  />
+                                ) : (
+                                  <pre className="whitespace-pre-wrap text-zinc-300 font-medium font-sans leading-relaxed">
+                                    {selectedEmail.content_text}
+                                  </pre>
+                                )}
+                              </Card>
+
+                              {/* Replies history if exist */}
+                              {selectedEmail.replies?.length > 0 && (
+                                <div className="mt-10 space-y-6">
+                                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 px-1">Respuestas en este hilo</h4>
+                                  {selectedEmail.replies.map((reply: any) => (
+                                    <Card key={reply.id} className="bg-primary/5 border-primary/10 p-6 rounded-[24px]">
+                                      <div className="flex items-center justify-between mb-2">
+                                        <span className="text-[10px] font-black text-primary uppercase">Tú (Admin)</span>
+                                        <span className="text-[9px] text-zinc-600 font-bold">{new Date(reply.created_at).toLocaleString()}</span>
+                                      </div>
+                                      <p className="text-sm text-zinc-400 font-medium">{reply.content_text}</p>
+                                    </Card>
+                                  ))}
+                                </div>
+                              )}
+
+                                {/* Reply Input Area */}
+                                <div className="mt-10 pt-10 border-t border-white/5 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                  <div className="flex items-start gap-4">
+                                    <Avatar className="h-10 w-10 border border-white/10 shrink-0 bg-primary/10" />
+                                    <div className="flex-1 space-y-4">
+                                      <textarea 
+                                        placeholder={`Escribe una respuesta para ${selectedEmail.from_email}...`}
+                                        rows={4}
+                                        value={emailContent}
+                                        onChange={(e) => setEmailContent(e.target.value)}
+                                        className="w-full bg-black/40 border border-white/5 rounded-[24px] p-6 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none shadow-inner"
+                                      />
+                                      <div className="flex justify-end gap-3">
+                                        <Button 
+                                          variant="ghost"
+                                          onClick={() => setEmailContent('')}
+                                          className="text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white"
+                                        >
+                                          Descartar
+                                        </Button>
+                                        <Button 
+                                          disabled={isSendingEmail || !emailContent.trim()}
+                                          onClick={async () => {
+                                            const token = localStorage.getItem('super_admin_token');
+                                            if (token) {
+                                              setIsSendingEmail(true);
+                                              const res = await postEmailReply(token, selectedEmail.id, emailContent);
+                                              setIsSendingEmail(false);
+                                              if (res) {
+                                                toast.success('Respuesta enviada con éxito');
+                                                setEmailContent('');
+                                                const detail = await getEmailDetail(token, selectedEmail.id);
+                                                if (detail) setSelectedEmail(detail);
+                                              }
+                                            }
+                                          }}
+                                          className="bg-primary text-primary-foreground rounded-2xl px-8 h-12 text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                                        >
+                                  <Send size={14} className="mr-3" /> Responder
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center opacity-10">
+                              <Mail size={64} strokeWidth={1} />
+                              <p className="text-xs font-black uppercase tracking-[0.4em] mt-6">Selecciona un correo para leer</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  }
                 </div>
               </div>
             )}
 
-            {view === 'tenants' && (
+              {view === 'tenants' && (
               <div className="px-4 md:px-10 space-y-6 md:space-y-10">
                 <div className={`sticky top-0 z-50 -mx-4 md:-mx-10 transition-all duration-500 ease-in-out ${isScrolled ? 'mb-4 bg-background/95 backdrop-blur-md shadow-xl border-b border-border pb-2' : 'mb-6 bg-transparent'}`}>
                   <Card className={`bg-blue-600 border-none shadow-2xl relative overflow-hidden group transition-all duration-700 ease-in-out rounded-t-none ${isScrolled ? 'rounded-b-2xl p-3 md:p-3' : 'rounded-b-[40px] p-4 md:p-8 space-y-4 md:space-y-6 mt-0'}`}>

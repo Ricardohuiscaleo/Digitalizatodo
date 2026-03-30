@@ -274,3 +274,88 @@ export async function sendCustomEmail(token: string, data: { tenant_id: string |
         return null;
     }
 }
+
+export async function getEmails(token: string, direction?: 'inbound' | 'outbound', page: number = 1) {
+    try {
+        const url = new URL(`${API_URL}/admin/emails`);
+        if (direction) url.searchParams.append('direction', direction);
+        url.searchParams.append('page', page.toString());
+
+        const response = await fetch(url.toString(), {
+            method: 'GET',
+            headers: {
+                ...defaultHeaders,
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error fetching emails:', error);
+        return null;
+    }
+}
+
+export async function getEmailDetail(token: string, id: number | string) {
+    try {
+        const response = await fetch(`${API_URL}/admin/emails/${id}`, {
+            method: 'GET',
+            headers: {
+                ...defaultHeaders,
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error fetching email detail:', error);
+        return null;
+    }
+}
+
+export async function deleteEmail(token: string, id: number | string) {
+    try {
+        const response = await fetch(`${API_URL}/admin/emails/${id}`, {
+            method: 'DELETE',
+            headers: {
+                ...defaultHeaders,
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error deleting email:', error);
+        return null;
+    }
+}
+
+export async function syncEmails(token: string) {
+    try {
+        const response = await fetch(`${API_URL}/admin/emails/sync`, {
+            method: 'POST',
+            headers: {
+                ...defaultHeaders,
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error syncing emails:', error);
+        return null;
+    }
+}
+
+export async function postEmailReply(token: string, id: number | string, content: string) {
+    try {
+        const response = await fetch(`${API_URL}/admin/emails/${id}/reply`, {
+            method: 'POST',
+            headers: {
+                ...defaultHeaders,
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ content }),
+        });
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error replying to email:', error);
+        return null;
+    }
+}
