@@ -17,6 +17,7 @@ use App\Mail\WelcomeTenantMail;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 class SuperAdminController extends Controller
 {
@@ -564,71 +565,74 @@ class SuperAdminController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        // Evitar Timeout de PHP debido al throttling (delay) de peticiones al API
         set_time_limit(150);
+        $apiKey = config('services.resend.key');
 
         try {
             $syncedCount = 0;
 
             // --- FASE 1: Sincronizar ENVIADOS (Outbound) ---
-            // Reducimos el lote a 40 para asegurar que termine antes del Timeout del servidor (Nginx)
-            $sentEmails = Resend::emails()->list(['limit' => 40]);
-            Log::info('Resend Sync: Sent emails found', ['count' => count($sentEmails->data ?? [])]);
+            $response = Http::withToken($apiKey)->get('https://api.resend.com/emails', ['limit' => 40]);
+            $sentData = $response->json();
+            Log::info('Resend Sync HTTP: Sent emails found', ['count' => count($sentData['data'] ?? [])]);
 
-            foreach ($sentEmails->data as $resendEmail) {
-                $exists = AdminEmail::where('resend_id', $resendEmail->id)->exists();
+            foreach ($sentData['data'] ?? [] as $resendEmail) {
+                $resendId = $resendEmail['id'];
+                $exists = AdminEmail::where('resend_id', $resendId)->exists();
                 if (!$exists) {
-                    $detail = Resend::emails()->get($resendEmail->id);
-                    usleep(250000); // Throttling: 4 reqs/sec para respetar límite de Resend (5/sec)
+                    $detailResp = Http::withToken($apiKey)->get("https://api.resend.com/emails/$resendId");
+                    $detail = $detailResp->json();
+                    usleep(250000); // Throttling
                     
                     AdminEmail::create([
                         'direction' => 'outbound',
-                        'from_email' => 'info@digitalizatodo.cl', // Asumimos origen fijo para enviados
-                        'to_email' => $detail->to[0] ?? '',
-                        'subject' => $detail->subject,
-                        'content_html' => $detail->html,
-                        'content_text' => strip_tags($detail->html ?? ''),
+                        'from_email' => 'info@digitalizatodo.cl',
+                        'to_email' => $detail['to'][0] ?? '',
+                        'subject' => $detail['subject'],
+                        'content_html' => $detail['html'],
+                        'content_text' => strip_tags($detail['html'] ?? ''),
                         'is_read' => true,
-                        'resend_id' => $detail->id,
-                        'created_at' => Carbon::parse($detail->created_at),
+                        'resend_id' => $detail['id'],
+                        'created_at' => Carbon::parse($detail['created_at']),
                     ]);
                     $syncedCount++;
                 }
             }
 
             // --- FASE 2: Sincronizar RECIBIDOS (Inbound) ---
-            $receivedEmails = Resend::receivedEmails()->list(['limit' => 40]);
-            Log::info('Resend Sync: Received emails call', ['raw_count' => count($receivedEmails->data ?? [])]);
+            $responseIn = Http::withToken($apiKey)->get('https://api.resend.com/emails/receiving', ['limit' => 40]);
+            $receivedData = $responseIn->json();
+            Log::info('Resend Sync HTTP: Received emails call', ['raw_count' => count($receivedData['data'] ?? [])]);
 
-            foreach ($receivedEmails->data as $resendInbound) {
-                $exists = AdminEmail::where('resend_id', $resendInbound->id)->exists();
+            foreach ($receivedData['data'] ?? [] as $resendInbound) {
+                $resendId = $resendInbound['id'];
+                $exists = AdminEmail::where('resend_id', $resendId)->exists();
                 if (!$exists) {
-                    $detail = Resend::receivedEmails()->get($resendInbound->id);
-                    usleep(250000); // Throttling: 4 reqs/sec
+                    $detailResp = Http::withToken($apiKey)->get("https://api.resend.com/emails/receiving/$resendId");
+                    $detail = $detailResp->json();
+                    usleep(250000); // Throttling
                     
-                    Log::info('Resend Sync: Processing inbound', ['id' => $detail->id, 'from' => $detail->from]);
-
                     AdminEmail::create([
                         'direction' => 'inbound',
-                        'from_email' => $detail->from,
-                        'to_email' => $detail->to[0] ?? 'info@digitalizatodo.cl',
-                        'subject' => $detail->subject,
-                        'content_html' => $detail->html,
-                        'content_text' => $detail->text ?: strip_tags($detail->html ?? ''),
+                        'from_email' => $detail['from'],
+                        'to_email' => $detail['to'][0] ?? 'info@digitalizatodo.cl',
+                        'subject' => $detail['subject'],
+                        'content_html' => $detail['html'],
+                        'content_text' => $detail['text'] ?: strip_tags($detail['html'] ?? ''),
                         'is_read' => true,
-                        'resend_id' => $detail->id,
-                        'created_at' => Carbon::parse($detail->created_at),
+                        'resend_id' => $detail['id'],
+                        'created_at' => Carbon::parse($detail['created_at']),
                     ]);
                     $syncedCount++;
                 }
             }
 
             return response()->json([
-                'message' => "Sincronización dual completada: {$syncedCount} nuevos correos.",
+                'message' => "Sincronización dual (HTTP) completada: {$syncedCount} nuevos correos.",
                 'synced' => $syncedCount
             ]);
         } catch (\Exception $e) {
-            Log::error('Error syncing from Resend', [
+            Log::error('Error syncing from Resend via HTTP', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
