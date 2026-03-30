@@ -15,7 +15,8 @@ class AdminEmail extends Model
         'content_text',
         'is_read',
         'resend_id',
-        'parent_id'
+        'parent_id',
+        'created_at'
     ];
 
     public function parent()

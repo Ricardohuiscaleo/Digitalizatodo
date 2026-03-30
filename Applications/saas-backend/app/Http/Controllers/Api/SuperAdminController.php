@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\WelcomeTenantMail;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class SuperAdminController extends Controller
 {
@@ -566,33 +568,39 @@ class SuperAdminController extends Controller
             $syncedCount = 0;
 
             // --- FASE 1: Sincronizar ENVIADOS (Outbound) ---
-            $sentEmails = Resend::emails()->list();
+            // Aumentamos el límite a 100 (máximo de Resend)
+            $sentEmails = Resend::emails()->list(['limit' => 100]);
+            Log::info('Resend Sync: Sent emails found', ['count' => count($sentEmails->data ?? [])]);
+
             foreach ($sentEmails->data as $resendEmail) {
                 $exists = AdminEmail::where('resend_id', $resendEmail->id)->exists();
                 if (!$exists) {
                     $detail = Resend::emails()->get($resendEmail->id);
                     AdminEmail::create([
                         'direction' => 'outbound',
-                        'from_email' => 'info@digitalizatodo.cl',
+                        'from_email' => 'info@digitalizatodo.cl', // Asumimos origen fijo para enviados
                         'to_email' => $detail->to[0] ?? '',
                         'subject' => $detail->subject,
                         'content_html' => $detail->html,
                         'content_text' => strip_tags($detail->html ?? ''),
                         'is_read' => true,
                         'resend_id' => $detail->id,
-                        'created_at' => $detail->created_at,
+                        'created_at' => Carbon::parse($detail->created_at),
                     ]);
                     $syncedCount++;
                 }
             }
 
             // --- FASE 2: Sincronizar RECIBIDOS (Inbound) ---
-            $receivedEmails = Resend::receivedEmails()->list();
+            $receivedEmails = Resend::receivedEmails()->list(['limit' => 100]);
+            Log::info('Resend Sync: Received emails call', ['raw_count' => count($receivedEmails->data ?? [])]);
+
             foreach ($receivedEmails->data as $resendInbound) {
                 $exists = AdminEmail::where('resend_id', $resendInbound->id)->exists();
                 if (!$exists) {
                     $detail = Resend::receivedEmails()->get($resendInbound->id);
-                    
+                    Log::info('Resend Sync: Processing inbound', ['id' => $detail->id, 'from' => $detail->from]);
+
                     AdminEmail::create([
                         'direction' => 'inbound',
                         'from_email' => $detail->from,
@@ -600,9 +608,9 @@ class SuperAdminController extends Controller
                         'subject' => $detail->subject,
                         'content_html' => $detail->html,
                         'content_text' => $detail->text ?: strip_tags($detail->html ?? ''),
-                        'is_read' => true, // Historico se marca como leido
+                        'is_read' => true,
                         'resend_id' => $detail->id,
-                        'created_at' => $detail->created_at,
+                        'created_at' => Carbon::parse($detail->created_at),
                     ]);
                     $syncedCount++;
                 }
@@ -613,7 +621,10 @@ class SuperAdminController extends Controller
                 'synced' => $syncedCount
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error syncing from Resend', ['error' => $e->getMessage()]);
+            Log::error('Error syncing from Resend', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json(['error' => 'API Error', 'message' => $e->getMessage()], 500);
         }
     }
