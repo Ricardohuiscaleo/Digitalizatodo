@@ -85,6 +85,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Messaging Center
     Route::post('admin/send-email', [\App\Http\Controllers\Api\SuperAdminController::class, 'sendCustomEmail']);
+    
+    Route::get('admin/emails', [\App\Http\Controllers\Api\SuperAdminController::class, 'indexEmails']);
+    Route::get('admin/emails/{id}', [\App\Http\Controllers\Api\SuperAdminController::class, 'showEmail']);
+    Route::delete('admin/emails/{id}', [\App\Http\Controllers\Api\SuperAdminController::class, 'deleteEmail']);
+    Route::post('admin/emails/sync', [\App\Http\Controllers\Api\SuperAdminController::class, 'syncEmailsFromResend']);
+    Route::post('admin/emails/{id}/reply', [\App\Http\Controllers\Api\SuperAdminController::class, 'replyToEmail']);
 });
 
 // ── Rutas por Tenant ────────────────────────────────────────────────────
@@ -193,10 +199,6 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
                     Route::post('students/bulk-delete', [StudentController::class, 'bulkDelete']);
 
                     Route::post('plans', [PlanController::class, 'store']);
-                    Route::get('emails/{id}', [\App\Http\Controllers\Api\SuperAdminController::class, 'showEmail']);
-                    Route::delete('emails/{id}', [\App\Http\Controllers\Api\SuperAdminController::class, 'deleteEmail']);
-                    Route::post('emails/sync', [\App\Http\Controllers\Api\SuperAdminController::class, 'syncEmailsFromResend']);
-                    Route::post('emails/{id}/reply', [\App\Http\Controllers\Api\SuperAdminController::class, 'replyToEmail']);
                     Route::put('plans/{id}', [PlanController::class, 'update']);
                     Route::delete('plans/{id}', [PlanController::class, 'destroy']);
                     Route::post('schedules/{id}/students', [\App\Http\Controllers\Api\ScheduleController::class, 'assignStudents']);
