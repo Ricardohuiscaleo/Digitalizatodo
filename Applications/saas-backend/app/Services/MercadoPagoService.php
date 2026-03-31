@@ -6,6 +6,8 @@ use MercadoPago\MercadoPagoConfig;
 use MercadoPago\Client\PreApprovalPlan\PreApprovalPlanClient;
 use MercadoPago\Client\PreApproval\PreApprovalClient;
 use MercadoPago\Exceptions\MPApiException;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 use Exception;
 
 class MercadoPagoService
@@ -68,9 +70,9 @@ class MercadoPagoService
 
     /**
      * Inicia una suscripción para un alumno específico
-     * Retorna el init_point para redirigir al usuario
+     * @param int $feePaymentId ID de la cuota local para rastrear
      */
-    public function createSubscription($studentEmail, $planId, $amount, $feeAmount = 0)
+    public function createSubscription($studentEmail, $planId, $amount, $feePaymentId, $feeAmount = 0)
     {
         $client = new PreApprovalClient();
 
@@ -84,17 +86,15 @@ class MercadoPagoService
                 "preapproval_plan_id" => $planId,
                 "payer_email" => $studentEmail,
                 "status" => "pending",
-                "external_reference" => "SUBS-" . time(),
-                // Nota: Para split payments avanzado en suscripciones se suele usar Checkout Pro 
-                // o capturar el payment_id en el webhook y realizar el split.
+                "external_reference" => "FP_" . $feePaymentId, // 🛡️ Vinculación crucial
+                "back_url" => "https://admin.digitalizatodo.cl/dashboard?payment=success",
             ];
 
-            // En modo Sandbox, Mercado Pago usa usuarios de prueba
             $subscription = $client->create($subscriptionRequest);
-            
             return $subscription;
 
         } catch (MPApiException $e) {
+            Log::error("Error MP Subscription (FP: $feePaymentId): " . $e->getApiResponse()->getContent());
             throw new Exception("Error al crear suscripción: " . $e->getApiResponse()->getContent());
         }
     }
