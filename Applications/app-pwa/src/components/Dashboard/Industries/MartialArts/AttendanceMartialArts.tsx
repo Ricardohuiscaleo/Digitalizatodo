@@ -5,7 +5,7 @@ import { Search, CheckCircle2, QrCode, Edit2, X, Save, Loader2, User, MoreHorizo
 import { BeltDisplay } from './BeltDisplay';
 import { BeltBadge } from './BeltBadge';
 import { StudentAvatar } from './StudentAvatar';
-import { updateStudentBjj, updateStudentProfile, getStudent, deleteStudents } from '@/lib/api';
+import { updateStudentBjj, updateStudentProfile, getStudent, deleteStudents, updateStudentPlan, deleteStudentEnrollment } from '@/lib/api';
 import { ALLIANCE_BJJ_GRADUATION, calcBeltProgress } from '@/lib/industryUtils';
 import { nowCL } from '@/lib/utils';
 
@@ -104,6 +104,8 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
     const [isDeleting, setIsDeleting] = useState(false);
     const [filter, setFilter] = useState<'all' | 'present' | 'absent'>('all');
     const [loadingStudent, setLoadingStudent] = useState(false);
+    const [availablePlans, setAvailablePlans] = useState<any[]>([]);
+    const [currentEnrollment, setCurrentEnrollment] = useState<any>(null);
     const [showOptions, setShowOptions] = useState(false);
     const optionsRef = useRef<HTMLDivElement>(null);
     const promoteRef = useRef(false);
@@ -195,6 +197,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
             category: student.category || 'adults',
             weight: student.weight || '',
             height: student.height || '',
+            plan_id: student.enrollment?.plan_id || '',
             previous_classes: student.previous_classes ?? 0,
             total_attendances: student.total_attendances ?? 0,
         });
@@ -203,6 +206,8 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
             const response = await getStudent(branding.slug, token, student.id);
             if (response && response.student) {
                 const s = response.student;
+                setAvailablePlans(s.available_plans || []);
+                setCurrentEnrollment(s.enrollment || null);
                 setBjjForm({
                     name: s.name || '',
                     phone: s.phone || '',
@@ -213,6 +218,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                     weight: s.weight || '',
                     height: s.height || '',
                     birth_date: s.birth_date ? s.birth_date.split('T')[0] : '',
+                    plan_id: s.enrollment?.plan_id || '',
                     modality: s.modality || 'gi',
                     category: s.category || 'adults',
                     previous_classes: s.previous_classes ?? 0,
@@ -243,9 +249,18 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
             ['weight', 'Peso (kg)', v => v ? `${v} kg` : '—'],
             ['height', 'Altura (m)', v => v ? `${v} m` : '—'],
             ['birth_date', 'Fecha Nacimiento', v => v || '—'],
+            ['plan_id', 'Plan Entrenamiento', v => {
+                const p = availablePlans.find(pl => String(pl.id) === String(v));
+                return p ? p.name : 'Sin plan';
+            }],
         ];
         for (const [key, label, fmt] of fields) {
-            const from = fmt(editingStudent[key] ?? '');
+            let from;
+            if (key === 'plan_id') {
+                from = fmt(currentEnrollment?.plan_id ?? '');
+            } else {
+                from = fmt(editingStudent[key] ?? '');
+            }
             const to = fmt(bjjForm[key] ?? '');
             if (from !== to) changes.push({ label, from, to });
         }
@@ -271,13 +286,32 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
         if (!editingStudent || !branding?.slug || !token) return;
         const promote = promoteRef.current;
         setSaving(true);
-        const { name, phone, email, previous_classes, ...bjjData } = bjjForm;
-        await Promise.all([
+        const { name, phone, email, previous_classes, plan_id, ...bjjData } = bjjForm;
+        
+        const tasks: Promise<any>[] = [
             updateStudentProfile(branding.slug, token, editingStudent.id, { name, phone, email }),
             updateStudentBjj(branding.slug, token, editingStudent.id, { ...bjjData, previous_classes, promote }),
-        ]);
+        ];
+
+        // Solo si el plan cambió
+        if (String(plan_id) !== String(currentEnrollment?.plan_id ?? '')) {
+            tasks.push(updateStudentPlan(branding.slug, token, editingStudent.id, plan_id));
+        }
+
+        await Promise.all(tasks);
         setSaving(false);
+        setEditingStudent(null);
         setPendingChanges(null);
+        onStudentUpdatedInternal();
+    };
+
+    const handleDeleteEnrollment = async () => {
+        if (!editingStudent || !branding?.slug || !token) return;
+        if (!confirm('¿Estás seguro de eliminar el plan de este alumno? Esto desactivará su suscripción actual.')) return;
+        
+        setSaving(true);
+        await deleteStudentEnrollment(branding.slug, token, editingStudent.id);
+        setSaving(false);
         setEditingStudent(null);
         onStudentUpdatedInternal();
     };
@@ -822,6 +856,54 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                             {(bjjForm.total_attendances || 0) + (bjjForm.previous_classes || 0)}
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+
+                            {/* Plan de Entrenamiento */}
+                            <div>
+                                <p className={`text-[8px] font-black uppercase tracking-[0.2em] mb-2 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Plan de Entrenamiento</p>
+                                <div className={`p-4 rounded-2xl border transition-all ${
+                                    isDark ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-emerald-50 border-emerald-100'
+                                }`}>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <div className={`p-1.5 rounded-lg ${isDark ? 'bg-zinc-800' : 'bg-white shadow-sm'}`}>
+                                                <Users size={14} className="text-emerald-500" />
+                                            </div>
+                                            <div>
+                                                <p className={`text-[9px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>Plan Actual</p>
+                                                <p className={`text-xs font-black ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+                                                    {currentEnrollment ? currentEnrollment.plan?.name : 'Sin plan activo'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {currentEnrollment && (
+                                            <button 
+                                                type="button"
+                                                onClick={(e) => { e.stopPropagation(); handleDeleteEnrollment(); }}
+                                                className={`p-2 rounded-xl border border-rose-500/20 text-rose-500 hover:bg-rose-500/10 transition-colors`}
+                                                title="Eliminar Plan"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
+                                    </div>
+                                    
+                                    <label className={`text-[8px] font-black uppercase tracking-widest block mb-1 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Cambiar Plan</label>
+                                    <select
+                                        value={bjjForm.plan_id || ''}
+                                        onChange={e => setBjjForm((f: any) => ({ ...f, plan_id: e.target.value }))}
+                                        className={`w-full border rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none transition-colors ${
+                                            isDark ? 'bg-zinc-900 border-zinc-800 text-white focus:border-emerald-500/50' : 'bg-white border-zinc-200 text-zinc-900 focus:border-emerald-500/50'
+                                        }`}
+                                    >
+                                        <option value="">-- Sin plan / Inactivo --</option>
+                                        {availablePlans.map(p => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.name} - ${Number(p.price).toLocaleString('es-CL')}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
 

@@ -978,6 +978,27 @@ export async function updateStudentBjj(tenantId: string, token: string, studentI
     } catch { return null; }
 }
 
+export async function updateStudentPlan(tenantId: string, token: string, studentId: string | number, planId: number | string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/students/${studentId}/plan`, {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ plan_id: planId }),
+        });
+        return await safeJson(response);
+    } catch { return null; }
+}
+
+export async function deleteStudentEnrollment(tenantId: string, token: string, studentId: string | number) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/students/${studentId}/enrollment`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+        });
+        return await safeJson(response);
+    } catch { return null; }
+}
+
 export async function deleteGuardian(tenantId: string, token: string, guardianId: number | string, data: FormData) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/payers/${guardianId}`, {

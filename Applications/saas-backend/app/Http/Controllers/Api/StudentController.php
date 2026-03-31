@@ -223,7 +223,7 @@ class StudentController extends Controller
     {
         $tenantModel = app('currentTenant');
         $student = Student::where('tenant_id', $tenantModel->id)
-            ->with(['course', 'enrollments.payments', 'guardians'])
+            ->with(['course', 'enrollments.plan', 'enrollments.payments', 'guardians'])
             ->findOrFail($id);
         
         $primaryGuardian = $student->guardians->where('pivot.primary', true)->first() ?? $student->guardians->first();
@@ -237,6 +237,9 @@ class StudentController extends Controller
 
         $bp = $student->belt_progress;
         
+        // Obtener todos los planes disponibles para este tenant
+        $availablePlans = Plan::where('tenant_id', $tenantModel->id)->where('active', true)->get();
+
         $data = [
             'id' => $student->id,
             'name' => $student->name,
@@ -259,9 +262,44 @@ class StudentController extends Controller
             'height' => $student->height,
             'birth_date' => $student->birth_date,
             'belt_progress' => $bp,
+            'enrollment' => $student->enrollments()->where('status', 'active')->with('plan')->first(),
+            'available_plans' => $availablePlans
         ];
 
         return response()->json(['student' => $data]);
+    }
+
+    public function updatePlan(Request $request, $tenant, $id)
+    {
+        $tenantModel = app('currentTenant');
+        $student = Student::where('tenant_id', $tenantModel->id)->findOrFail($id);
+
+        $validated = $request->validate([
+            'plan_id' => 'required|exists:plans,id',
+        ]);
+
+        // Desactivar planes anteriores
+        $student->enrollments()->where('status', 'active')->update(['status' => 'inactive']);
+
+        // Crear nueva inscripción
+        $student->enrollments()->create([
+            'tenant_id' => $tenantModel->id,
+            'plan_id' => $validated['plan_id'],
+            'start_date' => now(),
+            'status' => 'active',
+        ]);
+
+        return response()->json(['message' => 'Plan actualizado correctamente']);
+    }
+
+    public function deleteEnrollment($tenant, $id)
+    {
+        $tenantModel = app('currentTenant');
+        $student = Student::where('tenant_id', $tenantModel->id)->findOrFail($id);
+
+        $student->enrollments()->where('status', 'active')->delete();
+
+        return response()->json(['message' => 'Inscripción eliminada correctamente']);
     }
 
     public function updateName(Request $request, $tenant, $id)

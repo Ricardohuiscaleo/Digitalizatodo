@@ -138,6 +138,8 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
             Route::post('students/{id}/photo', [StudentController::class , 'uploadPhoto']);
             Route::patch('students/{id}', [StudentController::class, 'update']);
             Route::patch('students/{id}/bjj', [StudentController::class, 'updateBjj']);
+            Route::patch('students/{id}/plan', [StudentController::class, 'updatePlan']);
+            Route::delete('students/{id}/enrollment', [StudentController::class, 'deleteEnrollment']);
             Route::patch('students/{id}/name', [StudentController::class , 'updateName']);
             Route::patch('students/{id}/course', [StudentController::class, 'updateCourse']);
             Route::get('attendance', [AttendanceController::class , 'index']);
