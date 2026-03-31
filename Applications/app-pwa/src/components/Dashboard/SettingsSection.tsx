@@ -483,23 +483,23 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
 
     const ActionCard = ({ icon: Icon, title, description, onClick, color = "indigo", solid = false }: any) => (
         <button onClick={onClick}
-            className={`w-full ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'} rounded-[24px] p-5 shadow-xl border flex items-center gap-4 active:scale-[0.98] transition-all ${isDark ? 'hover:bg-zinc-800' : 'hover:bg-zinc-50'} group shadow-zinc-950/5`}>
+            className={`w-full ${solid && color === 'blue' ? 'bg-blue-600 border-blue-500 shadow-blue-500/20' : (isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100')} rounded-[24px] p-5 shadow-xl border flex items-center gap-4 active:scale-[0.98] transition-all ${!solid && (isDark ? 'hover:bg-zinc-800' : 'hover:bg-zinc-50')} group shadow-zinc-950/5`}>
             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all shadow-inner ${
                 solid && color === 'blue' 
-                    ? 'bg-blue-600 border-blue-500 shadow-lg shadow-blue-500/20' 
+                    ? 'bg-white/20 border-white/30' 
                     : `bg-${color}-500/10 border-${color}-500/20 group-hover:bg-${color}-500/20`
             }`}>
                 <Icon className={solid && color === 'blue' ? 'text-white' : `text-${color}-500`} size={24} />
             </div>
             <div className="flex-1 text-left">
-                <h4 className={`text-[14px] font-black uppercase tracking-tighter ${isDark ? 'text-zinc-100' : 'text-zinc-950'} leading-none mb-1`}>
+                <h4 className={`text-[14px] font-black uppercase tracking-tighter ${solid && color === 'blue' ? 'text-white' : (isDark ? 'text-zinc-100' : 'text-zinc-950')} leading-none mb-1`}>
                     {title}
                 </h4>
-                <p className={`text-[10px] font-black ${isDark ? 'text-zinc-500' : 'text-zinc-400'} uppercase tracking-widest leading-snug`}>
+                <p className={`text-[10px] font-black ${solid && color === 'blue' ? 'text-blue-100' : (isDark ? 'text-zinc-500' : 'text-zinc-400')} uppercase tracking-widest leading-snug`}>
                     {description}
                 </p>
             </div>
-            <ChevronRight className={`${isDark ? 'text-zinc-700' : 'text-zinc-300'} group-hover:text-zinc-500 transition-colors`} size={20} />
+            <ChevronRight className={`${solid && color === 'blue' ? 'text-white/50' : (isDark ? 'text-zinc-700' : 'text-zinc-300')} group-hover:text-zinc-500 transition-colors`} size={20} />
         </button>
     );
 
