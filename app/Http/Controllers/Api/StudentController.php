@@ -276,18 +276,29 @@ class StudentController extends Controller
 
         $validated = $request->validate([
             'plan_id' => 'required|exists:plans,id',
+            'custom_price' => 'nullable|numeric|min:0',
         ]);
 
-        // Desactivar planes anteriores
-        $student->enrollments()->where('status', 'active')->update(['status' => 'inactive']);
+        $activeEnrollment = $student->enrollments()->where('status', 'active')->first();
 
-        // Crear nueva inscripción
-        $student->enrollments()->create([
-            'tenant_id' => $tenantModel->id,
-            'plan_id' => $validated['plan_id'],
-            'start_date' => now(),
-            'status' => 'active',
-        ]);
+        // Si es el mismo plan, solo actualizamos el precio (conservar fecha inicio)
+        if ($activeEnrollment && (int)$activeEnrollment->plan_id === (int)$validated['plan_id']) {
+            $activeEnrollment->update([
+                'custom_price' => $validated['custom_price']
+            ]);
+        } else {
+            // Plan distinto: Desactivar planes anteriores
+            $student->enrollments()->where('status', 'active')->update(['status' => 'inactive']);
+
+            // Crear nueva inscripción
+            $student->enrollments()->create([
+                'tenant_id' => $tenantModel->id,
+                'plan_id' => $validated['plan_id'],
+                'custom_price' => $validated['custom_price'],
+                'start_date' => now(),
+                'status' => 'active',
+            ]);
+        }
 
         return response()->json(['message' => 'Plan actualizado correctamente']);
     }
