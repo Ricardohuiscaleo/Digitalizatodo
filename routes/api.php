@@ -81,6 +81,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('admin/tenants/{id}/users/{userId}', [\App\Http\Controllers\Api\SuperAdminController::class, 'removeTenantUser']);
 
     // SaaS Plan Management
+    Route::get('/mercadopago/auth/url', [App\Http\Controllers\Api\MercadoPagoAuthController::class, 'getAuthUrl']);
+    Route::get('/mercadopago/auth/callback', [App\Http\Controllers\Api\MercadoPagoAuthController::class, 'handleCallback'])->withoutMiddleware(['auth:sanctum']); // Público para que MP pueda avisarnos
     Route::get('admin/plans', [\App\Http\Controllers\Api\SuperAdminController::class, 'plans']);
     Route::put('admin/plans/{id}', [\App\Http\Controllers\Api\SuperAdminController::class, 'updatePlan']);
     Route::post('admin/plans/{id}/sync-mp', [\App\Http\Controllers\Api\SuperAdminController::class, 'syncPlanWithMP']);
