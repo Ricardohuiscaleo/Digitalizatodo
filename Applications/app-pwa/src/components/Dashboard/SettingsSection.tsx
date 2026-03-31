@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { 
     Camera, Save, ClipboardPaste, CreditCard, Edit2, Loader2, Sparkles, 
     Trash2, LogOut, RefreshCw, Users, X, FileText, ChevronRight, 
@@ -131,6 +132,20 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
     const [savingPlans, setSavingPlans] = useState(false);
     const [pricingCategory, setPricingCategory] = useState<'dojo' | 'vip'>('dojo');
     const [dojoType, setDojoType] = useState<'adulto' | 'kids'>('adulto');
+
+    const searchParams = useSearchParams();
+    const router = useRouter();
+
+    useEffect(() => {
+        const mpStatus = searchParams.get('mp_status');
+        if (mpStatus === 'success') {
+            alert("¡Conexión con Digitalizatodo Pay exitosa! 🥋🚀\n\nTu academia ya puede recibir pagos automáticos.");
+            router.replace('/dashboard'); // Limpiar la URL
+        } else if (mpStatus === 'error' || mpStatus === 'exception' || mpStatus === 'exchange_failed') {
+            alert("Hubo un problema al vincular tu cuenta. Por favor, intenta nuevamente.");
+            router.replace('/dashboard');
+        }
+    }, [searchParams, router]);
 
     const billingCycleLabels: Record<string, string> = {
         'monthly_from_enrollment': 'MENSUAL',
