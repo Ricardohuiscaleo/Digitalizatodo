@@ -69,7 +69,7 @@ export const MPConnectModal: React.FC<MPConnectModalProps> = ({
                             <div>
                                 <h5 className={`text-[13px] font-black uppercase tracking-tight mb-2 ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>Transparencia en Comisiones</h5>
                                 <p className={`text-[11px] font-medium leading-relaxed ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                                    Al activar los pagos automáticos, se aplicará un descuento total del **5%** por cada transacción procesada con éxito.
+                                    Al activar los pagos automáticos, se aplicará un descuento total del <strong className={`font-black ${isDark ? 'text-white' : 'text-zinc-950'}`}>5%</strong> por cada transacción procesada con éxito.
                                 </p>
                             </div>
                         </div>
