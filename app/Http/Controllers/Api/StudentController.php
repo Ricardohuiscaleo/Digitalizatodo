@@ -63,6 +63,9 @@ class StudentController extends Controller
                     'gender' => $student->gender,
                     'weight' => $student->weight,
                     'height' => $student->height,
+                    'birth_date' => $student->birth_date,
+                    'phone' => $student->phone,
+                    'email' => $student->email,
                     'today_status' => $bp['today_status'],
                     'belt_progress' => $bp,
                 ];
