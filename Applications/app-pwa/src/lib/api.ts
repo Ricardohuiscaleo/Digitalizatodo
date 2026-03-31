@@ -207,6 +207,29 @@ export async function initiatePayment(tenantId: string, paymentId: string, token
     }
 }
 
+export async function createSubscription(tenantId: string, token: string, data: { studentId: string, planId: string, email: string, amount: number }) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/mercadopago/subscribe`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ 
+                student_id: data.studentId, 
+                plan_id: data.planId,
+                email: data.email,
+                amount: data.amount
+            }),
+        });
+
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error creating subscription:', error);
+        return { success: false, message: 'Error de conexión' };
+    }
+}
+
 export async function updateBankInfo(tenantId: string, token: string, bankData: any) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/settings/bank-info`, {

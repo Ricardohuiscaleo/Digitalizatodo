@@ -537,17 +537,22 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                         </div>
                                     )}
                                 </div>
-                                <div className="flex items-center justify-center gap-1 mt-1.5 px-0.5">
-                                    <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                                        student.payment_status === 'overdue' ? 'bg-rose-500 shadow-[0_0_5px_rgba(244,63,94,0.5)]' :
-                                        student.payment_status === 'pending' ? 'bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.5)]' :
-                                        'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]'
-                                    }`} />
-                                    <p className={`font-black text-[9px] text-center leading-none line-clamp-1 uppercase ${
-                                        isPresent ? 'text-emerald-500' : isDark ? 'text-zinc-300' : 'text-zinc-700'
-                                    }`}>
-                                        {student.name.split(' ')[0]}
-                                    </p>
+                                <div className="flex flex-col items-center justify-center gap-0.5 mt-1.5 px-0.5">
+                                    <div className="flex items-center justify-center gap-1">
+                                        <div className={`w-1 h-1 rounded-full flex-shrink-0 ${
+                                            student.payment_status === 'overdue' ? 'bg-rose-500 shadow-[0_0_5px_rgba(244,63,94,0.5)]' :
+                                            student.payment_status === 'pending' ? 'bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.5)]' :
+                                            'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]'
+                                        }`} />
+                                        <p className={`font-black text-[9px] text-center leading-none line-clamp-1 uppercase ${
+                                            isPresent ? 'text-emerald-500' : isDark ? 'text-zinc-300' : 'text-zinc-700'
+                                        }`}>
+                                            {student.name.split(' ')[0]}
+                                        </p>
+                                    </div>
+                                    {student.category?.toLowerCase() === 'kids' && (
+                                        <span className="text-[7px] font-black uppercase text-fuchsia-500 tracking-[0.2em] -mt-0.5 animate-pulse">KID</span>
+                                    )}
                                 </div>
                             </button>
                         </div>
@@ -579,7 +584,12 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                     size={48}
                                 />
                                 <div>
-                                    <p className={`text-[9px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Editar perfil BJJ</p>
+                                    <div className="flex items-center gap-2">
+                                        <p className={`text-[9px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Editar perfil BJJ</p>
+                                        {bjjForm.category?.toLowerCase() === 'kids' && (
+                                            <span className="text-[8px] font-black uppercase px-1.5 py-0.5 bg-fuchsia-500 text-white rounded-md tracking-widest animate-pulse">KID</span>
+                                        )}
+                                    </div>
                                     <h3 className={`text-base font-black leading-tight ${isDark ? 'text-white' : 'text-zinc-900'}`}>{bjjForm.name || editingStudent.name}</h3>
                                 </div>
                             </div>

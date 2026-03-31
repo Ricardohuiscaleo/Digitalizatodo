@@ -16,6 +16,7 @@ use App\Http\Middleware\ResolveTenantFromPath;
 use App\Http\Controllers\TelegramBotController;
 use App\Http\Controllers\Api\AttendanceQRController;
 use App\Http\Controllers\Api\CourseController;
+use App\Http\Controllers\Api\MercadoPagoController;
 use Illuminate\Support\Facades\Artisan;
 
 /*
@@ -39,6 +40,7 @@ Route::get('saas-plans', [\App\Http\Controllers\Api\SuperAdminController::class 
 
 // SaaS Webhooks
 Route::post('webhooks/mercadopago-saas', [\App\Http\Controllers\Api\SaaSWebhookController::class, 'handle']);
+Route::post('webhooks/mercadopago', [MercadoPagoController::class, 'handleWebhook']);
 Route::post('w/resend-inbound', [TelegramBotController::class , 'handleResendInbound']);
 Route::post('webhooks/resend-inbound', [TelegramBotController::class , 'handleResendInbound']);
 Route::post('w/telegram', [TelegramBotController::class , 'handleTelegramWebhook']);
@@ -137,7 +139,7 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
             Route::get('students/{id}', [StudentController::class , 'show']);
             Route::post('students/{id}/photo', [StudentController::class , 'uploadPhoto']);
             Route::patch('students/{id}', [StudentController::class, 'update']);
-            Route::patch('students/{id}/bjj', [StudentController::class, 'updateBjj']);
+            Route::patch('students/{id}/bjj', [StudentController::class , 'updateBjj']);
             Route::patch('students/{id}/plan', [StudentController::class, 'updatePlan']);
             Route::delete('students/{id}/enrollment', [StudentController::class, 'deleteEnrollment']);
             Route::patch('students/{id}/name', [StudentController::class , 'updateName']);
@@ -156,6 +158,7 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
             Route::post('payments/consumable', [PaymentController::class , 'storeConsumable']);
             Route::post('payments/plan-purchase', [PaymentController::class , 'storePlanPurchase']);
             Route::post('payments/{payment}/pay', [PaymentController::class , 'initiatePayment']);
+            Route::post('mercadopago/subscribe', [MercadoPagoController::class, 'initiateSubscription']);
             Route::post('payments/{payment}/upload-proof', [PaymentController::class , 'uploadProof']);
             Route::delete('payments/{payment}/proof', [PaymentController::class , 'deleteProof']);
 

@@ -62,9 +62,9 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
     const [isBulkApproving, setIsBulkApproving] = React.useState(false);
     const [viewMode, setViewMode] = React.useState<'table' | 'cards'>('cards');
     const getPayerRealStats = (payer: any) => {
-        const reviewAmount = payer.payments?.filter((p: any) => p.status === 'review').reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
-        const pendingAmount = payer.payments?.filter((p: any) => p.status === 'pending' || p.status === 'overdue').reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
-        const approvedAmount = payer.payments?.filter((p: any) => p.status === 'approved').reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
+        const reviewAmount = payer.payments?.filter((p: any) => p.status === 'review' && !p.deleted_at).reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
+        const pendingAmount = payer.payments?.filter((p: any) => (p.status === 'pending' || p.status === 'overdue') && !p.deleted_at).reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
+        const approvedAmount = payer.payments?.filter((p: any) => p.status === 'approved' && !p.deleted_at).reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
         
         const hasReview = reviewAmount > 0;
         const numEnrollments = (payer.enrolledStudents || payer.students || []).filter((s: any) => !s.deleted_at).length;
@@ -79,6 +79,10 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
         if (p.deleted_at) return false;
         
         const stats = getPayerRealStats(p);
+        
+        // Hide orphaned payers (no active students) unless in history mode
+        if (stats.numEnrollments === 0 && paymentFilter !== 'history') return false;
+
         if (paymentFilter === 'pending') return stats.pendingAmount > 0;
         if (paymentFilter === 'review') return stats.reviewAmount > 0;
         if (paymentFilter === 'paid') return stats.approvedAmount > 0 && stats.pendingAmount === 0 && stats.reviewAmount === 0;
@@ -299,11 +303,16 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                                                 <span className={`text-sm font-black uppercase ${isDark ? 'text-white' : 'text-zinc-900'}`}>{payer.name}</span>
                                                 <div className="flex flex-wrap gap-1 mt-0.5">
                                                     {students.map((s: any) => (
-                                                        <span key={s.id} className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md ${
-                                                            isDark ? 'bg-zinc-800 text-zinc-500' : 'bg-zinc-100 text-zinc-400'
-                                                        }`}>
-                                                            {s.name.split(' ')[0]}: {s.enrollment?.plan?.name || s.plan_name || s.course_name || 'Sin plan'}
-                                                        </span>
+                                                        <div key={s.id} className="flex items-center gap-1">
+                                                            <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md ${
+                                                                isDark ? 'bg-zinc-800 text-zinc-500' : 'bg-zinc-100 text-zinc-400'
+                                                            }`}>
+                                                                {s.name.split(' ')[0]}: {s.enrollment?.plan?.name || s.plan_name || s.course_name || 'Sin plan'}
+                                                            </span>
+                                                            {s.category?.toLowerCase() === 'kids' && (
+                                                                <span className="text-[7px] font-black uppercase bg-fuchsia-500 text-white px-1 rounded-[4px] tracking-tighter shadow-sm animate-pulse">KID</span>
+                                                            )}
+                                                        </div>
                                                     ))}
                                                 </div>
                                             </div>
@@ -420,6 +429,9 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                                                     <span className={`text-[8px] font-black uppercase tracking-tighter text-center max-w-[50px] truncate ${isDark ? 'text-zinc-500' : 'text-zinc-900/60'}`}>
                                                         {student.name.split(' ')[0]}
                                                     </span>
+                                                    {student.category?.toLowerCase() === 'kids' && (
+                                                        <span className="text-[6px] font-black uppercase text-fuchsia-500 tracking-[0.15em] -mt-0.5 animate-pulse">KID</span>
+                                                    )}
                                                     <div className={`mt-0.5 px-1.5 py-0.5 rounded-md text-[7px] font-black uppercase tracking-wider text-center max-w-[65px] truncate border shadow-sm ${
                                                         isDark 
                                                             ? 'bg-zinc-800 border-white/5 text-zinc-500' 
