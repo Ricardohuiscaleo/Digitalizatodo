@@ -602,10 +602,10 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                         });
                         const data = await response.json();
                         if (data.url) {
-                            window.location.href = data.url; // Redirigir a Mercado Pago
+                            window.location.href = data.url; 
                         }
                     } catch (error) {
-                        alert("Error al iniciar la conexión con Mercado Pago.");
+                        alert("Error al iniciar la conexión con Digitalizatodo Pay.");
                     } finally {
                         setMpLoading(false);
                     }
