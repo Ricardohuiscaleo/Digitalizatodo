@@ -198,6 +198,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
             weight: student.weight || '',
             height: student.height || '',
             plan_id: student.enrollment?.plan_id || '',
+            custom_price: student.enrollment?.custom_price || '',
             previous_classes: student.previous_classes ?? 0,
             total_attendances: student.total_attendances ?? 0,
         });
@@ -219,6 +220,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                     height: s.height || '',
                     birth_date: s.birth_date ? s.birth_date.split('T')[0] : '',
                     plan_id: s.enrollment?.plan_id || '',
+                    custom_price: s.enrollment?.custom_price || '',
                     modality: s.modality || 'gi',
                     category: s.category || 'adults',
                     previous_classes: s.previous_classes ?? 0,
@@ -253,11 +255,14 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                 const p = availablePlans.find(pl => String(pl.id) === String(v));
                 return p ? p.name : 'Sin plan';
             }],
+            ['custom_price', 'Precio Pesonalizado', v => v ? `$${Number(v).toLocaleString('es-CL')}` : 'Precio Base'],
         ];
         for (const [key, label, fmt] of fields) {
             let from;
             if (key === 'plan_id') {
                 from = fmt(currentEnrollment?.plan_id ?? '');
+            } else if (key === 'custom_price') {
+                from = fmt(currentEnrollment?.custom_price ?? '');
             } else {
                 from = fmt(editingStudent[key] ?? '');
             }
@@ -286,16 +291,16 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
         if (!editingStudent || !branding?.slug || !token) return;
         const promote = promoteRef.current;
         setSaving(true);
-        const { name, phone, email, previous_classes, plan_id, ...bjjData } = bjjForm;
+        const { name, phone, email, previous_classes, plan_id, custom_price, ...bjjData } = bjjForm;
         
         const tasks: Promise<any>[] = [
             updateStudentProfile(branding.slug, token, editingStudent.id, { name, phone, email }),
             updateStudentBjj(branding.slug, token, editingStudent.id, { ...bjjData, previous_classes, promote }),
         ];
 
-        // Solo si el plan cambió
-        if (String(plan_id) !== String(currentEnrollment?.plan_id ?? '')) {
-            tasks.push(updateStudentPlan(branding.slug, token, editingStudent.id, plan_id));
+        // Solo si el plan o el precio cambió
+        if (String(plan_id) !== String(currentEnrollment?.plan_id ?? '') || custom_price !== (currentEnrollment?.custom_price ?? '')) {
+            tasks.push(updateStudentPlan(branding.slug, token, editingStudent.id, plan_id, custom_price));
         }
 
         await Promise.all(tasks);
@@ -904,6 +909,23 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                             </option>
                                         ))}
                                     </select>
+
+                                    <div className="mt-3">
+                                        <label className={`text-[8px] font-black uppercase tracking-widest block mb-1 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Precio Personalizado (opcional)</label>
+                                        <div className="relative">
+                                            <span className={`absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>$</span>
+                                            <input
+                                                type="number"
+                                                value={bjjForm.custom_price || ''}
+                                                onChange={e => setBjjForm((f: any) => ({ ...f, custom_price: e.target.value }))}
+                                                placeholder="Usar precio base del plan"
+                                                className={`w-full border rounded-xl pl-8 pr-4 py-2.5 text-xs font-bold focus:outline-none transition-colors ${
+                                                    isDark ? 'bg-zinc-900 border-zinc-700 text-white focus:border-emerald-500' : 'bg-white border-zinc-100 text-zinc-900 focus:border-emerald-500'
+                                                }`}
+                                            />
+                                        </div>
+                                        <p className={`text-[7px] mt-1 italic ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>* Deja en blanco para cobrar el precio normal del plan.</p>
+                                    </div>
                                 </div>
                             </div>
 

@@ -978,12 +978,12 @@ export async function updateStudentBjj(tenantId: string, token: string, studentI
     } catch { return null; }
 }
 
-export async function updateStudentPlan(tenantId: string, token: string, studentId: string | number, planId: number | string) {
+export async function updateStudentPlan(tenantId: string, token: string, studentId: string | number, planId: number | string, customPrice?: number | string | null) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/students/${studentId}/plan`, {
             method: 'PATCH',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({ plan_id: planId }),
+            body: JSON.stringify({ plan_id: planId, custom_price: customPrice }),
         });
         return await safeJson(response);
     } catch { return null; }
