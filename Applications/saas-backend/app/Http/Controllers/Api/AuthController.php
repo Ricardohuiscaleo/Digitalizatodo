@@ -118,6 +118,7 @@ class AuthController extends Controller
                     'name' => $tenant->name,
                     'primary_color' => $tenant->primary_color,
                     'logo' => $tenant->logo,
+                    'saas_plan' => $tenant->saas_plan,
                     'force_terms_acceptance' => false,
                 ],
             ]);
@@ -164,6 +165,7 @@ class AuthController extends Controller
                     'bank_account_number' => $tenant->bank_account_number,
                     'bank_account_holder' => $tenant->bank_account_holder,
                     'bank_rut'      => $tenant->bank_rut,
+                    'saas_plan'     => $tenant->saas_plan,
                     'force_terms_acceptance' => false,
                 ],
             ]);

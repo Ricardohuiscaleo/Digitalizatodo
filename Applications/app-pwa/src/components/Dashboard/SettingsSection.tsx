@@ -14,7 +14,9 @@ import {
     generateRegistrationPage, 
     getRegistrationPageCode, 
     deleteRegistrationPage,
-    getMercadoPagoAuthUrl
+    getMercadoPagoAuthUrl,
+    getSaasPlans,
+    initiateSaasSubscription
 } from '@/lib/api';
 import { MPConnectModal } from './Admin/MPConnectModal';
 
@@ -115,6 +117,12 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
     const [showTermsModal, setShowTermsModal] = useState(false);
     const [showSchedulesModal, setShowSchedulesModal] = useState(false);
     
+    // SaaS Subscription State
+    const [saasPlans, setSaasPlans] = useState<any[]>([]);
+    const [showSaaSModal, setShowSaaSModal] = useState(false);
+    const [saasLoading, setSaasLoading] = useState(false);
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
+
     // Mercado Pago OAuth State
     const [showMPConnectModal, setShowMPConnectModal] = useState(false);
     const [mpLoading, setMpLoading] = useState(false);
@@ -135,6 +143,14 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
 
     const searchParams = useSearchParams();
     const router = useRouter();
+
+    useEffect(() => {
+        const fetchSaaS = async () => {
+            const plans = await getSaasPlans();
+            if (plans) setSaasPlans(plans);
+        };
+        fetchSaaS();
+    }, []);
 
     useEffect(() => {
         const mpStatus = searchParams.get('mp_status');
@@ -608,6 +624,16 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                         solid={true}
                     />
                 )}
+
+                {user?.role === 'owner' && (
+                    <ActionCard 
+                        icon={Sparkles} 
+                        title="PLAN DIGITALIZA TODO" 
+                        description={branding?.saas_plan ? `Plan Actual: ${branding.saas_plan.toUpperCase()}` : "Ver planes de suscripción"}
+                        onClick={() => setShowSaaSModal(true)}
+                        color="purple"
+                    />
+                )}
             </div>
 
             {/* MODAL: CONEXIÓN MERCADO PAGO OAUTH */}
@@ -631,6 +657,124 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                     }
                 }}
             />
+
+            {/* MODAL: PLAN DIGITALIZA TODO */}
+            {showSaaSModal && (
+                <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-300">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowSaaSModal(false)} />
+                    <div className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'} w-full sm:max-w-xl rounded-t-[36px] sm:rounded-[40px] border shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[90vh]`}>
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-purple-500 to-indigo-500" />
+                        
+                        <div className="px-6 pt-10 pb-6 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20 shadow-inner">
+                                    <Sparkles className="text-purple-500" size={24} />
+                                </div>
+                                <div className="flex flex-col">
+                                    <h4 className={`text-lg font-black uppercase tracking-tighter ${isDark ? 'text-zinc-100' : 'text-zinc-950'} leading-none mb-1`}>
+                                        Elegir Plan
+                                    </h4>
+                                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none">
+                                        Escalado Digital para tu Academia
+                                    </p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowSaaSModal(false)} 
+                                className={`p-2.5 ${isDark ? 'text-zinc-500 hover:text-zinc-300 bg-black/40' : 'text-zinc-400 hover:text-zinc-600 bg-zinc-50'} rounded-full transition-all active:scale-90 border ${isDark ? 'border-zinc-800' : 'border-zinc-200'}`}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto px-6 pb-12 space-y-4 hide-scrollbar">
+                            {saasPlans.length === 0 ? (
+                                <div className="p-12 text-center opacity-50 flex flex-col items-center gap-3">
+                                    <Loader2 className="animate-spin text-purple-500" size={32} />
+                                    <p className="text-[11px] font-black uppercase tracking-widest">Cargando planes...</p>
+                                </div>
+                            ) : (
+                                saasPlans.map((plan: any) => (
+                                    <div key={plan.id} 
+                                        className={`p-6 rounded-[32px] border-2 transition-all relative overflow-hidden ${
+                                            plan.slug === (branding?.saas_plan || 'free') 
+                                            ? 'bg-purple-500/10 border-purple-500 shadow-xl' 
+                                            : isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-zinc-50 border-zinc-100'
+                                        }`}>
+                                        
+                                        {plan.slug === (branding?.saas_plan || 'free') && (
+                                            <div className="absolute top-4 right-6 bg-purple-500 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-tighter shadow-lg shadow-purple-500/30">
+                                                Plan Actual
+                                            </div>
+                                        )}
+
+                                        <div className="flex flex-col mb-6">
+                                            <h5 className={`text-xl font-black uppercase tracking-tighter mb-1 ${isDark ? 'text-zinc-100' : 'text-zinc-950'}`}>
+                                                {plan.name}
+                                            </h5>
+                                            <div className="flex items-baseline gap-1.5">
+                                                <span className={`text-2xl font-black tracking-tighter ${isDark ? 'text-white' : 'text-zinc-950'}`}>
+                                                    {formatCLP(parseFloat(plan.price_monthly))}
+                                                </span>
+                                                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">/ Mes</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3 mb-6">
+                                            {Array.isArray(plan.features) && plan.features.map((f: string, i: number) => (
+                                                <div key={i} className="flex items-center gap-2">
+                                                    <div className="w-5 h-5 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                                                        <Check size={12} className="text-emerald-500" />
+                                                    </div>
+                                                    <p className={`text-[11px] font-bold uppercase tracking-tight ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>{f}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* ACEPTAR TÉRMINOS */}
+                                        {plan.slug !== (branding?.saas_plan || 'free') && (
+                                            <div className="flex items-start gap-2 mb-6 group cursor-pointer" onClick={() => setAcceptedTerms(!acceptedTerms)}>
+                                                <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-all ${
+                                                    acceptedTerms ? 'bg-purple-600 border-purple-600' : (isDark ? 'border-zinc-700 bg-zinc-800' : 'border-zinc-200 bg-zinc-50')
+                                                }`}>
+                                                    {acceptedTerms && <Check size={10} className="text-white" />}
+                                                </div>
+                                                <p className={`text-[9px] font-bold uppercase tracking-tight leading-relaxed ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                                                    Acepto los <a href="https://digitalizatodo.cl/terminos/" target="_blank" rel="noopener noreferrer" className="underline text-purple-500 hover:text-purple-400" onClick={(e) => e.stopPropagation()}>términos</a>, <a href="https://digitalizatodo.cl/legal/" target="_blank" rel="noopener noreferrer" className="underline text-purple-500 hover:text-purple-400" onClick={(e) => e.stopPropagation()}>legal</a> y <a href="https://digitalizatodo.cl/privacidad/" target="_blank" rel="noopener noreferrer" className="underline text-purple-500 hover:text-purple-400" onClick={(e) => e.stopPropagation()}>privacidad</a> de Digitaliza Todo
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        <button 
+                                            onClick={async () => {
+                                                if (plan.slug === (branding?.saas_plan || 'free')) return;
+                                                setSaasLoading(true);
+                                                try {
+                                                    const res = await initiateSaasSubscription(user.tenant_slug, token || '', plan.id, 'monthly');
+                                                    if (res?.init_point) {
+                                                        window.location.href = res.init_point;
+                                                    } else {
+                                                        alert("No se pudo iniciar la suscripción: " + (res?.message || 'Error desconocido'));
+                                                    }
+                                                } catch (err) {
+                                                    alert("Error de conexión");
+                                                } finally {
+                                                    setSaasLoading(false);
+                                                }
+                                            }}
+                                            disabled={saasLoading || plan.slug === (branding?.saas_plan || 'free') || !acceptedTerms}
+                                            className={`w-full h-14 rounded-2xl flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-widest transition-all ${
+                                                (plan.slug === (branding?.saas_plan || 'free') || !acceptedTerms)
+                                                ? 'bg-zinc-500/10 text-zinc-500 cursor-default opacity-50'
+                                                : (isDark ? 'bg-white text-zinc-950' : 'bg-zinc-950 text-white') + ' shadow-xl hover:scale-[1.02] active:scale-95'
+                                            }`}>
+                                            {saasLoading ? <Loader2 className="animate-spin" size={16} /> : (plan.slug === (branding?.saas_plan || 'free') ? 'TU PLAN' : 'SUSCRIBIRSE')}
+                                        </button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* LINK DE REGISTRO */}
             {hasPermission('settings.registration') && (

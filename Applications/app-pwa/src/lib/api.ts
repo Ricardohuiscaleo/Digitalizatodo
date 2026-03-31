@@ -231,6 +231,24 @@ export async function createSubscription(tenantId: string, token: string, data: 
     }
 }
 
+export async function initiateSaasSubscription(tenantSlug: string, token: string, planId: number | string, interval: 'monthly' | 'yearly') {
+    try {
+        const response = await fetch(`${API_URL}/${tenantSlug}/saas/subscribe`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ plan_id: planId, interval }),
+        });
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error initiating SaaS subscription:', error);
+        return { success: false, message: 'Error de conexión' };
+    }
+}
+
 export async function updateBankInfo(tenantId: string, token: string, bankData: any) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/settings/bank-info`, {
