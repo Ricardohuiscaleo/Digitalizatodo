@@ -181,7 +181,23 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
         if (!branding?.slug || !token) return;
         
         setLoadingStudent(true);
-        setEditingStudent(student); // Abrimos con datos locales primero para feedback visual instantáneo
+        // Abrimos con datos locales formateando la fecha a YYYY-MM-DD
+        const initialDate = student.birth_date ? student.birth_date.split('T')[0] : '';
+        setEditingStudent(student); 
+        setBjjForm({
+            name: student.name || '',
+            phone: student.phone || '',
+            email: student.email || '',
+            birth_date: initialDate,
+            belt_rank: normalizeBelt(student.belt_rank),
+            degrees: student.degrees ?? 0,
+            modality: student.modality || 'gi',
+            category: student.category || 'adults',
+            weight: student.weight || '',
+            height: student.height || '',
+            previous_classes: student.previous_classes ?? 0,
+            total_attendances: student.total_attendances ?? 0,
+        });
         
         try {
             const response = await getStudent(branding.slug, token, student.id);
@@ -196,7 +212,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                     gender: s.gender || '',
                     weight: s.weight || '',
                     height: s.height || '',
-                    birth_date: s.birth_date || '',
+                    birth_date: s.birth_date ? s.birth_date.split('T')[0] : '',
                     modality: s.modality || 'gi',
                     category: s.category || 'adults',
                     previous_classes: s.previous_classes ?? 0,
