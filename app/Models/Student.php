@@ -72,17 +72,17 @@ class Student extends Model
     const BJJ_GRADUATION_CONFIG = [
         'adults' => [
             'Blanco' => ['total_for_belt' => 150, 'classes_per_stripe' => 30, 'next_belt' => 'Azul', 'min_age' => 16],
-            'Azul'   => ['total_for_belt' => 350, 'classes_per_stripe' => 70, 'next_belt' => 'Morado', 'min_age' => 16],
-            'Morado' => ['total_for_belt' => 350, 'classes_per_stripe' => 70, 'next_belt' => 'Marrón', 'min_age' => 16],
-            'Marrón' => ['total_for_belt' => 350, 'classes_per_stripe' => 70, 'next_belt' => 'Negro', 'min_age' => 18],
+            'Azul'   => ['total_for_belt' => 325, 'classes_per_stripe' => 65, 'next_belt' => 'Morado', 'min_age' => 16],
+            'Morado' => ['total_for_belt' => 375, 'classes_per_stripe' => 75, 'next_belt' => 'Marrón', 'min_age' => 16],
+            'Marrón' => ['total_for_belt' => 375, 'classes_per_stripe' => 75, 'next_belt' => 'Negro', 'min_age' => 18],
             'Negro'  => ['total_for_belt' => 1000, 'classes_per_stripe' => 100, 'next_belt' => 'Rojo-Negro', 'min_age' => 19],
         ],
         'kids' => [
-            'Blanco'   => ['total_for_belt' => 50,  'classes_per_stripe' => 10, 'next_belt' => 'Gris', 'min_age' => 4],
-            'Gris'     => ['total_for_belt' => 100, 'classes_per_stripe' => 20, 'next_belt' => 'Amarillo', 'min_age' => 4],
-            'Amarillo' => ['total_for_belt' => 100, 'classes_per_stripe' => 20, 'next_belt' => 'Naranja', 'min_age' => 7],
-            'Naranja'  => ['total_for_belt' => 100, 'classes_per_stripe' => 20, 'next_belt' => 'Verde', 'min_age' => 10],
-            'Verde'    => ['total_for_belt' => 100, 'classes_per_stripe' => 20, 'next_belt' => 'Azul', 'min_age' => 13],
+            'Blanco'   => ['total_for_belt' => 75,  'classes_per_stripe' => 15, 'next_belt' => 'Gris', 'min_age' => 4],
+            'Gris'     => ['total_for_belt' => 80,  'classes_per_stripe' => 20, 'next_belt' => 'Amarillo', 'min_age' => 4],
+            'Amarillo' => ['total_for_belt' => 100, 'classes_per_stripe' => 25, 'next_belt' => 'Naranja', 'min_age' => 7],
+            'Naranja'  => ['total_for_belt' => 120, 'classes_per_stripe' => 30, 'next_belt' => 'Verde', 'min_age' => 10],
+            'Verde'    => ['total_for_belt' => 140, 'classes_per_stripe' => 35, 'next_belt' => 'Azul', 'min_age' => 13],
         ],
     ];
 
