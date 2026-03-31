@@ -46,7 +46,9 @@ import {
     Package,
     ShoppingCart,
     UserPlus,
-    ClipboardCheck
+    ClipboardCheck,
+    Zap,
+    ArrowRight
 } from 'lucide-react';
 import { useBranding } from "@/context/BrandingContext";
 import NotificationToast from "@/components/Notifications/NotificationToast";
@@ -80,7 +82,8 @@ import {
     getSchedules,
     createSchedule,
     updateSchedule,
-    deleteSchedule
+    deleteSchedule,
+    getMercadoPagoAuthUrl
 } from "@/lib/api";
 import WeeklySchedule from "@/components/Schedule/WeeklySchedule";
 import { ExpenseCard } from "@/app/dashboard/expenses/page";
@@ -149,7 +152,7 @@ export default function App() {
         approvingFeePayment, setApprovingFeePayment, feeApproveMethod, setFeeApproveMethod,
         feeApproveNotes, setFeeApproveNotes, feeApprovingLoading, setFeeApprovingLoading,
         feesGuardians, setFeesGuardians, feesGuardiansLoading, setFeesGuardiansLoading,
-        feesGuardianFilter, setFeesGuardianFilter, 
+        feesGuardianFilter, setFeesGuardianFilter,
         feesGuardianDropdown, setFeesGuardianDropdown, feesBubbleModal, setFeesBubbleModal,
         feesSearch, setFeesSearch, filteredFees, feesView, setFeesView,
         lastCheckedInStudent, setLastCheckedInStudent, showPushBanner, setShowPushBanner,
@@ -178,9 +181,8 @@ export default function App() {
     } = useAdminDashboard(branding, setBranding);
 
     if (loading) return (
-        <div className={`min-h-screen px-4 pt-6 pb-32 max-w-lg mx-auto space-y-4 animate-pulse ${
-            isMartialArts && isDark ? 'bg-[#09090b]' : 'bg-stone-50'
-        }`}>
+        <div className={`min-h-screen px-4 pt-6 pb-32 max-w-lg mx-auto space-y-4 animate-pulse ${isMartialArts && isDark ? 'bg-[#09090b]' : 'bg-stone-50'
+            }`}>
             <div className="flex items-center justify-between mb-2">
                 <div className="space-y-2">
                     <div className={`h-7 w-36 rounded-xl ${isMartialArts && isDark ? 'bg-zinc-800' : 'bg-zinc-200'}`} />
@@ -197,9 +199,8 @@ export default function App() {
     );
 
     return (
-        <div className={`flex flex-col h-screen font-sans relative overflow-hidden text-zinc-950 transition-colors duration-500 ${
-            isMartialArts && isDark ? 'bg-[#09090b]' : 'bg-white'
-        }`}>
+        <div className={`flex flex-col h-screen font-sans relative overflow-hidden text-zinc-950 transition-colors duration-500 ${isMartialArts && isDark ? 'bg-[#09090b]' : 'bg-white'
+            }`}>
             {/* Banner Web Push — aparece una sola vez si nunca ha dado permiso */}
             {showPushBanner && (
                 <div className="fixed bottom-24 left-3 right-3 z-[200] animate-in slide-in-from-bottom-4 duration-300">
@@ -245,9 +246,8 @@ export default function App() {
                 }}
             />
             {/* HEADER DINÁMICO - Oculto en Desktop ya que se integra en el Content */}
-            <header className={`px-2 py-3 flex items-center justify-between sticky top-0 z-50 border-b shrink-0 md:hidden transition-colors duration-500 ${
-                isMartialArts && isDark ? 'bg-zinc-950/90 border-zinc-800' : 'bg-white border-zinc-50'
-            }`}>
+            <header className={`px-2 py-3 flex items-center justify-between sticky top-0 z-50 border-b shrink-0 md:hidden transition-colors duration-500 ${isMartialArts && isDark ? 'bg-zinc-950/90 border-zinc-800' : 'bg-white border-zinc-50'
+                }`}>
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full overflow-hidden border border-zinc-100 shadow-sm">
                         {branding?.logo ? (
@@ -258,13 +258,12 @@ export default function App() {
                     </div>
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                            <h1 className={`text-lg font-black uppercase tracking-tighter leading-none ${ isDark ? 'text-white' : 'text-zinc-950' }`}>{branding?.name || 'Academy'}</h1>
+                            <h1 className={`text-lg font-black uppercase tracking-tighter leading-none ${isDark ? 'text-white' : 'text-zinc-950'}`}>{branding?.name || 'Academy'}</h1>
                             <button onClick={() => setShowPushModal(true)} className="shrink-0 mt-0.5">
-                                <div className={`w-3 h-3 rounded-full border-2 border-white shadow-sm transition-colors duration-500 ${
-                                    pushPermission === 'granted' ? 'bg-emerald-500 animate-pulse' :
-                                    pushPermission === 'denied'  ? 'bg-red-500' :
-                                    'bg-amber-400'
-                                }`} />
+                                <div className={`w-3 h-3 rounded-full border-2 border-white shadow-sm transition-colors duration-500 ${pushPermission === 'granted' ? 'bg-emerald-500 animate-pulse' :
+                                        pushPermission === 'denied' ? 'bg-red-500' :
+                                            'bg-amber-400'
+                                    }`} />
                             </button>
                         </div>
                         <div className="flex items-center gap-1.5 mt-0.5">
@@ -277,16 +276,15 @@ export default function App() {
                 <div className="flex items-center gap-2">
                     {isMartialArts && (
                         <button onClick={() => setIsDark(d => !d)}
-                            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 border ${
-                                isDark ? 'bg-zinc-900 border-zinc-700 text-[#c9a84c]' : 'bg-zinc-50 border-zinc-100 text-zinc-400'
-                            }`}>
+                            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 border ${isDark ? 'bg-zinc-900 border-zinc-700 text-[#c9a84c]' : 'bg-zinc-50 border-zinc-100 text-zinc-400'
+                                }`}>
                             {isDark
-                                ? <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-                                : <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                                ? <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
+                                : <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg>
                             }
                         </button>
                     )}
-                    <button 
+                    <button
                         onClick={() => setShowNotifications(!showNotifications)}
                         className="relative w-10 h-10 flex items-center justify-center rounded-full border border-zinc-100 shadow-sm bg-white"
                     >
@@ -301,9 +299,8 @@ export default function App() {
             {/* Notification Dropdown */}
             {showNotifications && (
                 <div className="fixed inset-0 z-[100]" onClick={() => setShowNotifications(false)}>
-                    <div className={`absolute top-20 right-2 md:right-8 w-80 max-h-[80vh] rounded-3xl shadow-2xl border overflow-hidden animate-in slide-in-from-top-2 fade-in duration-200 ${
-                        isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100 shadow-2xl'
-                    }`} onClick={e => e.stopPropagation()}>
+                    <div className={`absolute top-20 right-2 md:right-8 w-80 max-h-[80vh] rounded-3xl shadow-2xl border overflow-hidden animate-in slide-in-from-top-2 fade-in duration-200 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100 shadow-2xl'
+                        }`} onClick={e => e.stopPropagation()}>
                         <div className={`p-5 border-b flex items-center justify-between ${isDark ? 'border-zinc-800' : 'border-zinc-50'}`}>
                             <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Notificaciones</span>
                             {unreadCount > 0 && (
@@ -330,11 +327,10 @@ export default function App() {
                                         else if (n.type === 'payment') setActiveTab('payments');
                                         setShowNotifications(false);
                                     }}
-                                    className={`p-5 border-b cursor-pointer transition-colors ${
-                                        isDark 
-                                            ? `border-zinc-800/50 hover:bg-zinc-800/40 ${!n.read ? 'bg-indigo-500/5' : ''}` 
+                                    className={`p-5 border-b cursor-pointer transition-colors ${isDark
+                                            ? `border-zinc-800/50 hover:bg-zinc-800/40 ${!n.read ? 'bg-indigo-500/5' : ''}`
                                             : `border-zinc-50 hover:bg-zinc-50 ${!n.read ? 'bg-indigo-50/50' : ''}`
-                                    }`}
+                                        }`}
                                 >
                                     <div className="flex items-start gap-4">
                                         <div className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${!n.read ? (isDark ? 'bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.4)]' : 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.3)]') : (isDark ? 'bg-zinc-800' : 'bg-zinc-200')}`} />
@@ -360,9 +356,8 @@ export default function App() {
 
             <div className="flex flex-1 overflow-hidden">
                 {/* SIDEBAR DESKTOP */}
-                <aside className={`hidden md:flex flex-col w-64 border-r p-6 gap-8 transition-colors duration-500 ${
-                    isMartialArts && isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-zinc-100'
-                }`}>
+                <aside className={`hidden md:flex flex-col w-64 border-r p-6 gap-8 transition-colors duration-500 ${isMartialArts && isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-zinc-100'
+                    }`}>
                     <div className="flex items-center gap-3 px-2">
                         <div className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full overflow-hidden border-2 border-zinc-100">
                             {branding?.logo ? (
@@ -373,13 +368,12 @@ export default function App() {
                         </div>
                         <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                                <h2 className={`text-sm font-black uppercase tracking-tighter text-zinc-950 truncate leading-none ${ isDark ? 'text-white' : 'text-zinc-950' }`}>{branding?.name || 'Academy'}</h2>
+                                <h2 className={`text-sm font-black uppercase tracking-tighter text-zinc-950 truncate leading-none ${isDark ? 'text-white' : 'text-zinc-950'}`}>{branding?.name || 'Academy'}</h2>
                                 <button onClick={() => setShowPushModal(true)} className="shrink-0">
-                                    <div className={`w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm transition-colors duration-500 ${
-                                        pushPermission === 'granted' ? 'bg-emerald-500 animate-pulse' :
-                                        pushPermission === 'denied'  ? 'bg-red-500' :
-                                        'bg-amber-400'
-                                    }`} />
+                                    <div className={`w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm transition-colors duration-500 ${pushPermission === 'granted' ? 'bg-emerald-500 animate-pulse' :
+                                            pushPermission === 'denied' ? 'bg-red-500' :
+                                                'bg-amber-400'
+                                        }`} />
                                 </button>
                             </div>
                             <p className="text-[8px] font-black uppercase tracking-widest mt-1" style={{ color: branding?.primaryColor || '#6366f1' }}>Software de Gestión</p>
@@ -390,13 +384,13 @@ export default function App() {
                         <SidebarButton icon={LayoutDashboard} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} primaryColor={branding?.primaryColor} isDark={isDark} />
                         {hasPermission('attendance') && branding?.industry !== 'school_treasury' && <SidebarButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} isDark={isDark} />}
                         {hasPermission('payments') && (
-                            <SidebarButton 
-                                icon={CreditCard} 
-                                label={branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos'} 
-                                active={activeTab === 'payments'} 
-                                onClick={() => changeTab('payments')} 
-                                primaryColor={branding?.primaryColor} 
-                                isDark={isDark} 
+                            <SidebarButton
+                                icon={CreditCard}
+                                label={branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos'}
+                                active={activeTab === 'payments'}
+                                onClick={() => changeTab('payments')}
+                                primaryColor={branding?.primaryColor}
+                                isDark={isDark}
                                 badge={branding?.industry === 'school_treasury' ? feesSummary?.metrics?.en_revision : undefined}
                             />
                         )}
@@ -419,13 +413,12 @@ export default function App() {
                 </aside>
 
                 {/* CONTENIDO PRINCIPAL */}
-                <main className={`flex-1 overflow-y-auto pb-28 md:pb-8 hide-scrollbar relative transition-colors duration-500 ${
-                    isMartialArts && isDark ? 'bg-[#09090b]' : 'bg-white'
-                }`}>
+                <main className={`flex-1 overflow-y-auto pb-28 md:pb-8 hide-scrollbar relative transition-colors duration-500 ${isMartialArts && isDark ? 'bg-[#09090b]' : 'bg-white'
+                    }`}>
                     <div className="max-w-[1600px] mx-auto py-2 md:py-8 px-2 md:px-8">
                         <div key={activeTab} className="w-full animate-in fade-in duration-300">
                             <div className="hidden md:flex justify-between items-center mb-8">
-                                <h2 className={`text-3xl font-black uppercase tracking-tighter ${ isDark ? 'text-white' : 'text-zinc-950' }`}>
+                                <h2 className={`text-3xl font-black uppercase tracking-tighter ${isDark ? 'text-white' : 'text-zinc-950'}`}>
                                     {activeTab === 'dashboard' ? 'Resumen General' : activeTab === 'attendance' ? vocab.attendance : activeTab === 'payments' ? (branding?.industry === 'school_treasury' ? 'Cuotas' : 'Estado de Pagos') : activeTab === 'settings' ? 'Configuración' : 'Mi Perfil'}
                                 </h2>
                                 <div className="flex items-center gap-4">
@@ -433,21 +426,19 @@ export default function App() {
                                     <div className="flex items-center gap-3">
                                         {isMartialArts && (
                                             <button onClick={() => setIsDark(d => !d)}
-                                                className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-95 border ${
-                                                    isDark ? 'bg-zinc-900 border-zinc-800 text-[#c9a84c]' : 'bg-white border-zinc-100 text-zinc-400'
-                                                } shadow-sm group hover:scale-105`}>
+                                                className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-95 border ${isDark ? 'bg-zinc-900 border-zinc-800 text-[#c9a84c]' : 'bg-white border-zinc-100 text-zinc-400'
+                                                    } shadow-sm group hover:scale-105`}>
                                                 {isDark
-                                                    ? <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-                                                    : <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                                                    ? <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
+                                                    : <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg>
                                                 }
                                             </button>
                                         )}
 
-                                        <button 
+                                        <button
                                             onClick={() => setShowNotifications(!showNotifications)}
-                                            className={`relative w-10 h-10 flex items-center justify-center rounded-2xl border transition-all active:scale-95 shadow-sm hover:scale-105 ${
-                                                isDark ? 'bg-zinc-900 border-zinc-800 text-zinc-400' : 'bg-white border-zinc-100 text-zinc-600'
-                                            }`}
+                                            className={`relative w-10 h-10 flex items-center justify-center rounded-2xl border transition-all active:scale-95 shadow-sm hover:scale-105 ${isDark ? 'bg-zinc-900 border-zinc-800 text-zinc-400' : 'bg-white border-zinc-100 text-zinc-600'
+                                                }`}
                                         >
                                             <Bell size={20} strokeWidth={2.5} />
                                             {unreadCount > 0 && (
@@ -483,69 +474,87 @@ export default function App() {
                                         ))}
                                     </div>
                                     <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 mt-8">
-                                         {/* Main Content Area (Calendar) - Spans 2 columns */}
-                                         <div className="xl:col-span-2 space-y-4">
-                                             {branding?.industry === 'school_treasury' ? (
-                                                 <OverviewTreasury 
-                                                     branding={branding} 
-                                                     feesSummary={feesSummary}
-                                                     isDark={isDark}
-                                                     schedulesList={schedulesList}
-                                                 />
-                                             ) : (
-                                                 <OverviewSection 
-                                                     allStudents={allStudents}
-                                                     attendance={attendance}
-                                                     attendanceHistory={attendanceHistory}
-                                                     historyMonth={historyMonth}
-                                                     setHistoryMonth={setHistoryMonth}
-                                                     historyYear={historyYear}
-                                                     setHistoryYear={setHistoryYear}
-                                                     historyPage={historyPage}
-                                                     setHistoryPage={setHistoryPage}
-                                                     branding={branding}
-                                                     now={now}
-                                                     setSelectedHistoryDate={setSelectedHistoryDate}
-                                                     schedulesList={schedulesList}
-                                                     feesSummary={feesSummary}
-                                                     vocab={vocab}
-                                                     setActiveTab={setActiveTab}
-                                                     isDark={isDark}
-                                                     isDemo={isDemo}
-                                                     hasPermission={hasPermission}
-                                                 />
-                                             )}
-                                         </div>
+                                        {/* Main Content Area (Calendar) - Spans 2 columns */}
+                                        <div className="xl:col-span-2 space-y-4">
+                                            {branding?.industry === 'school_treasury' ? (
+                                                <OverviewTreasury
+                                                    branding={branding}
+                                                    feesSummary={feesSummary}
+                                                    isDark={isDark}
+                                                    schedulesList={schedulesList}
+                                                />
+                                            ) : (
+                                                <OverviewSection
+                                                    allStudents={allStudents}
+                                                    attendance={attendance}
+                                                    attendanceHistory={attendanceHistory}
+                                                    historyMonth={historyMonth}
+                                                    setHistoryMonth={setHistoryMonth}
+                                                    historyYear={historyYear}
+                                                    setHistoryYear={setHistoryYear}
+                                                    historyPage={historyPage}
+                                                    setHistoryPage={setHistoryPage}
+                                                    branding={branding}
+                                                    now={now}
+                                                    setSelectedHistoryDate={setSelectedHistoryDate}
+                                                    schedulesList={schedulesList}
+                                                    feesSummary={feesSummary}
+                                                    vocab={vocab}
+                                                    setActiveTab={setActiveTab}
+                                                    isDark={isDark}
+                                                    isDemo={isDemo}
+                                                    hasPermission={hasPermission}
+                                                />
+                                            )}
+                                        </div>
 
-                                         {/* Right Column - Schedule (Spans 1 column) */}
-                                         <div className="xl:col-span-1 space-y-4">
-                                             {isMartialArts && (
-                                                 <TodaySchedule schedules={schedulesList} primaryColor={branding?.primaryColor} isDark={isDark} />
-                                             )}
-                                         </div>
+                                        {/* Right Column - Schedule (Spans 1 column) */}
+                                        <div className="xl:col-span-1 space-y-4">
+                                            {isMartialArts && (
+                                                <TodaySchedule schedules={schedulesList} primaryColor={branding?.primaryColor} isDark={isDark} />
+                                            )}
+                                        </div>
 
-                                         {/* Fourth Column - Check-in JJB (Spans 1 column) */}
-                                         <div className="xl:col-span-1 space-y-4">
-                                             {isMartialArts && (
-                                                 <div className={`hidden md:block ${isDark ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-zinc-950 border-zinc-800 text-white shadow-2xl shadow-zinc-300'} p-5 rounded-3xl relative overflow-hidden group border`}>
-                                                     <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-all duration-700" />
-                                                     <div className="relative z-10 flex flex-col items-center text-center">
-                                                         <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm border border-white/10">
-                                                             <QrCode size={24} className="text-white" />
-                                                         </div>
-                                                         <h3 className="text-xs font-black uppercase tracking-widest mb-1">Check-in JJB</h3>
-                                                         <p className="text-[8px] font-bold opacity-50 uppercase tracking-tighter mb-4">Acceso rápido para alumnos</p>
-                                                         <button 
-                                                             onClick={() => window.location.href = '/dashboard/checkin'}
-                                                             className="w-full py-2.5 bg-white text-zinc-950 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-zinc-100 transition-all active:scale-95 flex items-center justify-center gap-2"
-                                                         >
-                                                             Abrir Terminal
-                                                         </button>
-                                                     </div>
-                                                 </div>
-                                             )}
-                                             
-                                             <div 
+                                        {/* Fourth Column - Check-in JJB (Spans 1 column) */}
+                                        <div className="xl:col-span-1 space-y-4">
+                                            {isMartialArts && !(branding as any)?.mp_active && (
+                                                <button
+                                                    onClick={() => setActiveTab('settings')}
+                                                    className="w-full hidden md:flex items-center justify-between p-4 bg-white border border-dashed border-zinc-200 rounded-3xl shadow-sm transition-all hover:border-blue-300 hover:bg-blue-50/50 active:scale-95 group"
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 bg-blue-50 rounded-2xl flex items-center justify-center">
+                                                            <Zap size={20} className="text-blue-600 fill-blue-600" />
+                                                        </div>
+                                                        <div className="text-left">
+                                                            <p className="text-[8px] font-black uppercase text-blue-600 leading-none mb-1">Acceso Rápido Administrador</p>
+                                                            <h4 className="text-xs font-black uppercase text-zinc-900 tracking-tighter">Activar Pagos Automáticos</h4>
+                                                        </div>
+                                                    </div>
+                                                    <ArrowRight size={16} className="text-zinc-300 group-hover:translate-x-1 transition-transform" />
+                                                </button>
+                                            )}
+
+                                            {isMartialArts && (
+                                                <div className={`hidden md:block ${isDark ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-zinc-950 border-zinc-800 text-white shadow-2xl shadow-zinc-300'} p-5 rounded-3xl relative overflow-hidden group border`}>
+                                                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-all duration-700" />
+                                                    <div className="relative z-10 flex flex-col items-center text-center">
+                                                        <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm border border-white/10">
+                                                            <QrCode size={24} className="text-white" />
+                                                        </div>
+                                                        <h3 className="text-xs font-black uppercase tracking-widest mb-1">Check-in JJB</h3>
+                                                        <p className="text-[8px] font-bold opacity-50 uppercase tracking-tighter mb-4">Acceso rápido para alumnos</p>
+                                                        <button
+                                                            onClick={() => window.location.href = '/dashboard/checkin'}
+                                                            className="w-full py-2.5 bg-white text-zinc-950 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-zinc-100 transition-all active:scale-95 flex items-center justify-center gap-2"
+                                                        >
+                                                            Abrir Terminal
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <div
                                                 onClick={() => window.open('https://wa.me/56945392581', '_blank')}
                                                 className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'} p-4 rounded-2xl border shadow-sm flex items-center gap-3 cursor-pointer hover:scale-[1.02] transition-all active:scale-95`}
                                             >
@@ -557,8 +566,8 @@ export default function App() {
                                                     <p className={`text-[10px] font-bold truncate ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>+56 9 4539 2581</p>
                                                 </div>
                                             </div>
-                                         </div>
-                                     </div>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                             {activeTab === 'attendance' && (
@@ -581,25 +590,25 @@ export default function App() {
                                         schedulesList={schedulesList}
                                     />
                                 ) : (
-                                <AttendanceSection 
-                                    allStudents={allStudents}
-                                    attendance={attendance}
-                                    searchTerm={searchTerm}
-                                    setSearchTerm={setSearchTerm}
-                                    attendanceHistory={attendanceHistory}
-                                    formatMoney={formatMoney}
-                                    toggleAttendance={toggleAttendance}
-                                    setSelectedHistoryDate={setSelectedHistoryDate}
-                                    setShowQRModal={setShowQRModal}
-                                    branding={branding}
-                                    vocab={vocab}
-                                    activeSchedule={activeSchedule}
-                                />
+                                    <AttendanceSection
+                                        allStudents={allStudents}
+                                        attendance={attendance}
+                                        searchTerm={searchTerm}
+                                        setSearchTerm={setSearchTerm}
+                                        attendanceHistory={attendanceHistory}
+                                        formatMoney={formatMoney}
+                                        toggleAttendance={toggleAttendance}
+                                        setSelectedHistoryDate={setSelectedHistoryDate}
+                                        setShowQRModal={setShowQRModal}
+                                        branding={branding}
+                                        vocab={vocab}
+                                        activeSchedule={activeSchedule}
+                                    />
                                 )
                             )}
                             {activeTab === 'payments' && (
                                 branding?.industry === 'school_treasury' ? (
-                                    <FeesGuardiansSection 
+                                    <FeesGuardiansSection
                                         payers={feesGuardians}
                                         feesSearch={feesSearch}
                                         setFeesSearch={setFeesSearch}
@@ -631,7 +640,7 @@ export default function App() {
                                         openGuardianPayments={openGuardianPayments}
                                     />
                                 ) : (
-                                    <PaymentsSection 
+                                    <PaymentsSection
                                         payers={payers}
                                         searchTerm={searchTerm}
                                         setSearchTerm={setSearchTerm}
@@ -660,7 +669,7 @@ export default function App() {
                                 )
                             )}
                             {activeTab === 'settings' && (
-                                <SettingsSection 
+                                <SettingsSection
                                     branding={branding}
                                     isDark={isDark}
                                     user={user}
@@ -706,7 +715,7 @@ export default function App() {
                                 />
                             )}
                             {activeTab === 'profile' && (
-                                <ProfileSection 
+                                <ProfileSection
                                     user={user}
                                     branding={branding}
                                     appUpdates={appUpdates}
@@ -715,7 +724,7 @@ export default function App() {
                                 />
                             )}
                             {activeTab === 'fees' && (
-                                <FeesSection 
+                                <FeesSection
                                     feesList={filteredFees}
                                     feesLoading={feesLoading}
                                     feeSubmitting={feeSubmitting}
@@ -758,7 +767,7 @@ export default function App() {
                                 />
                             )}
                             {activeTab === 'expenses' && (
-                                <ExpensesSection 
+                                <ExpensesSection
                                     feesList={feesList}
                                     expensesTotal={expensesTotal}
                                     expensesSummary={expensesSummary}
@@ -783,7 +792,7 @@ export default function App() {
                                 />
                             )}
                             {activeTab === 'schedule' && (
-                                <ScheduleSection 
+                                <ScheduleSection
                                     schedulesLoading={schedulesLoading}
                                     schedulesList={schedulesList}
                                     branding={branding}
@@ -798,15 +807,14 @@ export default function App() {
 
             {/* QR DINAMICO MODAL */}
             {showQRModal && (
-                <DynamicQRModal 
-                    tenantSlug={branding?.slug ?? ''} 
-                    authToken={token ?? ''} 
+                <DynamicQRModal
+                    tenantSlug={branding?.slug ?? ''}
+                    authToken={token ?? ''}
                     onClose={() => { setShowQRModal(false); setLastCheckedInStudent(null); }}
                     primaryColor={branding?.primaryColor || '#a855f7'}
                     payers={payers}
                     checkedInStudent={lastCheckedInStudent}
                     onStudentAcknowledged={() => setLastCheckedInStudent(null)}
-                    industry={branding?.industry}
                 />
             )}
 
@@ -820,26 +828,24 @@ export default function App() {
                             <button onClick={() => setShowPushModal(false)} className="absolute top-4 right-4 w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center">
                                 <X size={14} className="text-zinc-400" />
                             </button>
-                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-sm ${
-                                pushPermission === 'granted' ? 'bg-emerald-100' :
-                                pushPermission === 'denied'  ? 'bg-red-100' : ''
-                            }`} style={pushPermission === 'default' ? { backgroundColor: `${branding?.primaryColor || '#6366f1'}20` } : {}}>
-                                <Bell size={26} className={`${
-                                    pushPermission === 'granted' ? 'text-emerald-500' :
-                                    pushPermission === 'denied'  ? 'text-red-400' : ''
-                                }`} style={pushPermission === 'default' ? { color: branding?.primaryColor || '#6366f1' } : {}} />
+                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-sm ${pushPermission === 'granted' ? 'bg-emerald-100' :
+                                    pushPermission === 'denied' ? 'bg-red-100' : ''
+                                }`} style={pushPermission === 'default' ? { backgroundColor: `${branding?.primaryColor || '#6366f1'}20` } : {}}>
+                                <Bell size={26} className={`${pushPermission === 'granted' ? 'text-emerald-500' :
+                                        pushPermission === 'denied' ? 'text-red-400' : ''
+                                    }`} style={pushPermission === 'default' ? { color: branding?.primaryColor || '#6366f1' } : {}} />
                             </div>
                             <h3 className="text-base font-black text-zinc-900 leading-tight">
                                 {pushPermission === 'granted' ? 'Notificaciones activas ✓' :
-                                 pushPermission === 'denied'  ? 'Notificaciones bloqueadas' :
-                                 'Activa las alertas del panel'}
+                                    pushPermission === 'denied' ? 'Notificaciones bloqueadas' :
+                                        'Activa las alertas del panel'}
                             </h3>
                             <p className="text-xs text-zinc-400 mt-1 font-medium">
                                 {pushPermission === 'granted'
                                     ? 'Recibirás alertas aunque la app esté cerrada.'
                                     : pushPermission === 'denied'
-                                    ? 'Ve a Ajustes → Safari → Notificaciones para activarlas.'
-                                    : 'Entérate al instante de lo que pasa en tu academia.'}
+                                        ? 'Ve a Ajustes → Safari → Notificaciones para activarlas.'
+                                        : 'Entérate al instante de lo que pasa en tu academia.'}
                             </p>
                         </div>
 
@@ -890,24 +896,24 @@ export default function App() {
             )}
 
             {/* MODAL TERMINOS Y CONDICIONES (BLOQUEANTE) */}
-            <TermsModal 
-                isOpen={showTermsModal} 
-                onAccept={handleAcceptTerms} 
-                primaryColor={branding?.primaryColor} 
+            <TermsModal
+                isOpen={showTermsModal}
+                onAccept={handleAcceptTerms}
+                primaryColor={branding?.primaryColor}
             />
 
             {/* MODAL DE COMPROBANTE */}
 
             {proofModalUrl && (
-                <ProofModal 
-                    url={proofModalUrl} 
-                    onClose={() => setProofModalUrl(null)} 
+                <ProofModal
+                    url={proofModalUrl}
+                    onClose={() => setProofModalUrl(null)}
                 />
             )}
 
             {/* Modal de Detalle de Historial */}
             {selectedHistoryDate && (
-<HistoryDetailModal 
+                <HistoryDetailModal
                     date={selectedHistoryDate}
                     records={attendanceHistory.filter((r: any) => (r.date || r.created_at?.split('T')[0]) === selectedHistoryDate)}
                     allStudents={allStudents}
@@ -934,21 +940,20 @@ export default function App() {
             )}
 
             {/* NAV CON ESTILO PREMIUM - Solo visible en Mobile */}
-            <nav className={`fixed bottom-0 left-0 right-0 pt-3 pb-8 px-6 flex justify-between items-center h-22 z-50 md:hidden transition-colors duration-500 ${
-                isMartialArts && isDark ? 'bg-zinc-950/95 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-50 text-zinc-950'
-            } border-t`}>
+            <nav className={`fixed bottom-0 left-0 right-0 pt-3 pb-8 px-6 flex justify-between items-center h-22 z-50 md:hidden transition-colors duration-500 ${isMartialArts && isDark ? 'bg-zinc-950/95 border-zinc-800 text-zinc-100' : 'bg-white border-zinc-50 text-zinc-950'
+                } border-t`}>
                 <TabButton icon={LayoutDashboard} label="Inicio" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} primaryColor={branding?.primaryColor} isDark={isDark} />
                 {hasPermission('attendance') && branding?.industry !== 'school_treasury' && (
                     <TabButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} isDark={isDark} />
                 )}
                 {hasPermission('payments') && (
-                    <TabButton 
-                        icon={CreditCard} 
-                        label={branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos'} 
-                        active={activeTab === 'payments'} 
-                        onClick={() => changeTab('payments')} 
-                        primaryColor={branding?.primaryColor} 
-                        isDark={isDark} 
+                    <TabButton
+                        icon={CreditCard}
+                        label={branding?.industry === 'school_treasury' ? 'Cuotas' : 'Pagos'}
+                        active={activeTab === 'payments'}
+                        onClick={() => changeTab('payments')}
+                        primaryColor={branding?.primaryColor}
+                        isDark={isDark}
                         badge={branding?.industry === 'school_treasury' ? feesSummary?.metrics?.en_revision : undefined}
                     />
                 )}
@@ -957,13 +962,13 @@ export default function App() {
                 )}
                 {/* Horario - Solo para school_treasury en Navbar */}
                 {hasPermission('attendance') && branding?.industry === 'school_treasury' && (
-                    <TabButton 
-                        icon={Calendar} 
-                        label="Horario" 
-                        active={activeTab === 'schedule'} 
-                        onClick={() => changeTab('schedule')} 
-                        primaryColor={branding?.primaryColor} 
-                        isDark={isDark} 
+                    <TabButton
+                        icon={Calendar}
+                        label="Horario"
+                        active={activeTab === 'schedule'}
+                        onClick={() => changeTab('schedule')}
+                        primaryColor={branding?.primaryColor}
+                        isDark={isDark}
                     />
                 )}
                 {/* Profile tab con foto */}
@@ -992,15 +997,14 @@ export default function App() {
 
 function SidebarButton({ icon: Icon, label, active, onClick, primaryColor, isDark, badge }: { icon: any, label: string, active: boolean, onClick: () => void, primaryColor?: string, isDark?: boolean, badge?: number }) {
     return (
-        <button onClick={onClick} 
+        <button onClick={onClick}
             style={active ? { backgroundColor: primaryColor || '#6366f1' } : {}}
-            className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 w-full group relative ${
-                active 
-                    ? 'text-white shadow-lg' 
-                    : isDark 
-                        ? 'text-zinc-500 hover:bg-zinc-800 hover:text-white' 
+            className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 w-full group relative ${active
+                    ? 'text-white shadow-lg'
+                    : isDark
+                        ? 'text-zinc-500 hover:bg-zinc-800 hover:text-white'
                         : 'text-zinc-400 hover:bg-zinc-50 hover:text-zinc-600'
-            }`}>
+                }`}>
             <Icon size={20} strokeWidth={active ? 3 : 2} className={`transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`} />
             <span className="text-[11px] font-black uppercase tracking-widest">{label}</span>
             {badge && badge > 0 && (
@@ -1014,16 +1018,15 @@ function SidebarButton({ icon: Icon, label, active, onClick, primaryColor, isDar
 
 function TabButton({ icon: Icon, label, active, onClick, primaryColor = '#000', isDark, badge }: { icon: any, label: string, active: boolean, onClick: () => void, primaryColor?: string, isDark?: boolean, badge?: number }) {
     return (
-        <button 
-            onClick={onClick} 
-            className={`flex flex-col items-center gap-1 transition-all duration-200 relative ${
-                active 
-                    ? '' 
+        <button
+            onClick={onClick}
+            className={`flex flex-col items-center gap-1 transition-all duration-200 relative ${active
+                    ? ''
                     : isDark ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-400 hover:text-zinc-600'
-            }`}
+                }`}
             style={active ? { color: primaryColor } : {}}
         >
-            <div 
+            <div
                 className={`p-2 transition-all duration-300 ${active ? 'rounded-2xl shadow-sm' : 'bg-transparent'}`}
                 style={active ? { backgroundColor: `${primaryColor}20` } : {}}
             >

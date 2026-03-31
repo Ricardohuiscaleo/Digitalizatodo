@@ -1,15 +1,16 @@
 "use client";
 
 import React from 'react';
-import { 
-    Users, CheckCircle2, RefreshCw, XCircle, 
+import {
+    Users, CheckCircle2, RefreshCw, XCircle,
     ChevronLeft, ChevronRight, Clock, User,
-    ArrowRight
+    ArrowRight, Zap, Check
 } from 'lucide-react';
 import TodaySchedule from './TodaySchedule';
 import { nowCL } from '@/lib/utils';
 import { getClassesSinceLastStripe } from '@/lib/industryUtils';
 import { StudentAvatar } from './Industries/MartialArts/StudentAvatar';
+import { getMercadoPagoAuthUrl } from '@/lib/api';
 
 interface OverviewSectionProps {
     allStudents: any[];
@@ -37,9 +38,9 @@ export default function OverviewSection(props: OverviewSectionProps) {
     const {
         allStudents, attendance, attendanceHistory,
         historyMonth, setHistoryMonth, historyYear, setHistoryYear,
-        historyPage, setHistoryPage, branding, now, 
-        setSelectedHistoryDate, schedulesList, feesSummary,
-        vocab, setActiveTab, isDark = false, hasPermission
+        historyPage, setHistoryPage, branding, now,
+        setSelectedHistoryDate, schedulesList, feesSummary, vocab,
+        setActiveTab, isDark = false, isDemo, hasPermission
     } = props;
 
     const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -93,7 +94,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
     const hasPending = pendingStudents.length > 0;
 
     return (
-        <div className={`space-y-6 transition-colors duration-500 ${ isDark ? 'text-zinc-100' : 'text-zinc-950' }`}>
+        <div className={`space-y-6 transition-colors duration-500 ${isDark ? 'text-zinc-100' : 'text-zinc-950'}`}>
             {/* Dashboard Summary Horizontal Grid — 4 Columns on Mobile (Hidden on PC, moved to sidebar) */}
             <div className="grid grid-cols-2 md:hidden gap-4">
                 {(feesSummary ? [
@@ -107,37 +108,33 @@ export default function OverviewSection(props: OverviewSectionProps) {
                     { icon: <RefreshCw size={24} />, label: 'Por Validar', value: allStudents.filter(s => s.payerStatus === 'review').length, colorClass: 'text-amber-500', bgClass: 'bg-amber-500/5', borderClass: 'border-amber-500/10', spin: true },
                     { icon: <XCircle size={24} />, label: 'En Deuda', value: allStudents.filter(s => s.payerStatus === 'pending').length, colorClass: 'text-rose-500', bgClass: 'bg-rose-500/5', borderClass: 'border-rose-500/10' }
                 ]).filter((_, i) => i === 0 || (hasPermission?.('payments') ?? true)).map((card, i) => (
-                    <div 
-                        key={i} 
-                        className={`group relative rounded-[2.5rem] p-6 md:p-8 border shadow-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl overflow-hidden ${
-                            isDark ? `bg-zinc-900 ${card.borderClass}` : `bg-white ${card.borderClass}`
-                        }`}
+                    <div
+                        key={i}
+                        className={`group relative rounded-[2.5rem] p-6 md:p-8 border shadow-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl overflow-hidden ${isDark ? `bg-zinc-900 ${card.borderClass}` : `bg-white ${card.borderClass}`
+                            }`}
                     >
                         {/* Decorative Background Glow */}
                         <div className={`absolute -right-8 -bottom-8 w-24 h-24 rounded-full blur-3xl opacity-20 transition-all duration-500 group-hover:scale-150 ${card.bgClass}`} />
-                        
+
                         <div className="relative z-10 flex flex-col h-full justify-between">
                             <div className="flex items-center justify-between mb-6">
-                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform duration-500 group-hover:rotate-12 ${
-                                    isDark ? 'bg-white/5 border border-white/10' : 'bg-zinc-50 border border-zinc-100'
-                                }`}>
+                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform duration-500 group-hover:rotate-12 ${isDark ? 'bg-white/5 border border-white/10' : 'bg-zinc-50 border border-zinc-100'
+                                    }`}>
                                     <div className={`${card.colorClass} ${card.spin ? 'animate-spin-slow' : ''}`}>
                                         {card.icon}
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className={`text-3xl md:text-5xl font-black tracking-tighter leading-none ${ 
-                                        isDark ? 'text-white' : 'text-zinc-950' 
-                                    }`}>
+                                    <p className={`text-3xl md:text-5xl font-black tracking-tighter leading-none ${isDark ? 'text-white' : 'text-zinc-950'
+                                        }`}>
                                         {card.value}
                                     </p>
                                 </div>
                             </div>
-                            
+
                             <div>
-                                <p className={`text-[10px] md:text-xs font-black uppercase tracking-[0.2em] opacity-60 mb-1 ${ 
-                                    isDark ? 'text-zinc-500' : 'text-zinc-400' 
-                                }`}>
+                                <p className={`text-[10px] md:text-xs font-black uppercase tracking-[0.2em] opacity-60 mb-1 ${isDark ? 'text-zinc-500' : 'text-zinc-400'
+                                    }`}>
                                     {card.label}
                                 </p>
                                 <div className="flex items-center gap-1">
@@ -155,7 +152,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
                 <div className="bg-zinc-950 rounded-[2.5rem] p-6 shadow-xl border border-zinc-800 shadow-zinc-200 animate-in slide-in-from-top-2 duration-700 relative overflow-hidden group">
                     {/* Background Glow */}
                     <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl group-hover:bg-amber-500/20 transition-all duration-700"></div>
-                    
+
                     <div className="flex items-center justify-between relative z-10">
                         <div className="flex items-center gap-4">
                             <div className="relative">
@@ -171,7 +168,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                 <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-1">Hay {pendingStudents.length} {pendingStudents.length === 1 ? 'nuevo atleta' : 'nuevos atletas'} por validar</p>
                             </div>
                         </div>
-                        <button 
+                        <button
                             onClick={() => setActiveTab?.('attendance')}
                             className="bg-zinc-800 hover:bg-zinc-700 text-amber-500 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 border border-zinc-700"
                         >
@@ -201,139 +198,157 @@ export default function OverviewSection(props: OverviewSectionProps) {
                 <div className="space-y-4">
 
 
+                    {/* Botón AutoPay — Tira Móvil (Arriba de Historial Mensual) */}
+                    {branding?.industry === 'martial_arts' && !(branding as any)?.mp_active && (
+                        <button
+                            onClick={() => setActiveTab?.('settings')}
+                            className="w-full md:hidden flex items-center justify-between p-4 bg-white border border-dashed border-zinc-200 rounded-[2rem] shadow-sm transition-all active:scale-95 group mb-4"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center">
+                                    <Zap size={16} className="text-blue-600 fill-blue-600" />
+                                </div>
+                                <div className="text-left">
+                                    <p className="text-[7px] font-black uppercase text-blue-600 leading-none mb-0.5">Acceso Rápido Administrador</p>
+                                    <h4 className="text-[10px] font-black uppercase text-zinc-950 tracking-tighter">Activar Pagos Automáticos</h4>
+                                </div>
+                            </div>
+                            <ArrowRight size={14} className="text-zinc-300" />
+                        </button>
+                    )}
+
                     {/* Historial Mensual — Tarjetas Horizontales */}
-                    <div className={`rounded-[2.5rem] p-6 shadow-sm border mt-4 animate-in slide-in-from-bottom-2 duration-500 ${
-                        isDark ? 'bg-zinc-900/50 border-zinc-800' : 'bg-white border-zinc-100'
-                    }`}>
+                    <div className={`rounded-[2.5rem] p-6 shadow-sm border mt-4 animate-in slide-in-from-bottom-2 duration-500 ${isDark ? 'bg-zinc-900/50 border-zinc-800' : 'bg-white border-zinc-100'
+                        }`}>
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className={`text-[10px] font-black uppercase tracking-[0.2em] ${ isDark ? 'text-white' : 'text-zinc-900' }`}>
+                            <h3 className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-white' : 'text-zinc-900'}`}>
                                 Historial Mensual
                                 <span className="hidden md:inline-flex ml-2 items-center gap-2 opacity-40">
                                     <ArrowRight size={10} />
                                     {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][historyMonth - 1]} {historyYear}
                                 </span>
                             </h3>
-                            <div className={`flex items-center gap-2 rounded-full px-3 py-1 border ${ isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-50 border-zinc-100' }`}>
-                                <button onClick={() => setHistoryMonth(prev => prev === 1 ? 12 : prev - 1)} className={`transition-colors ${ isDark ? 'text-zinc-400 hover:text-white' : 'text-zinc-400 hover:text-zinc-900' }`}>
+                            <div className={`flex items-center gap-2 rounded-full px-3 py-1 border ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-50 border-zinc-100'}`}>
+                                <button onClick={() => setHistoryMonth(prev => prev === 1 ? 12 : prev - 1)} className={`transition-colors ${isDark ? 'text-zinc-400 hover:text-white' : 'text-zinc-400 hover:text-zinc-900'}`}>
                                     <ChevronLeft size={16} />
                                 </button>
-                                <span className={`text-[10px] font-black uppercase tracking-widest min-w-[60px] text-center ${ isDark ? 'text-white' : 'text-zinc-900' }`}>
+                                <span className={`text-[10px] font-black uppercase tracking-widest min-w-[60px] text-center ${isDark ? 'text-white' : 'text-zinc-900'}`}>
                                     {["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"][historyMonth - 1]} {historyYear}
                                 </span>
-                                <button onClick={() => setHistoryMonth(prev => prev === 12 ? 1 : prev + 1)} className={`transition-colors ${ isDark ? 'text-zinc-400 hover:text-white' : 'text-zinc-400 hover:text-zinc-900' }`}>
+                                <button onClick={() => setHistoryMonth(prev => prev === 12 ? 1 : prev + 1)} className={`transition-colors ${isDark ? 'text-zinc-400 hover:text-white' : 'text-zinc-400 hover:text-zinc-900'}`}>
                                     <ChevronRight size={16} />
                                 </button>
                             </div>
                         </div>
 
-                            <div 
-                                ref={scrollRef}
-                                className="flex md:grid md:grid-cols-7 gap-1 md:gap-1.5 overflow-x-auto md:overflow-visible py-2 no-scrollbar -mx-2 md:mx-0 px-2 md:px-0 snap-x max-w-2xl"
-                            >
-                                {(() => {
-                                    const firstDayDate = new Date(historyYear, historyMonth - 1, 1);
-                                    // getDay() retorna 0 para Domingo. Queremos Lunes (1) como primer día.
-                                    // Ajuste: (day + 6) % 7 -> Lunes=0, Martes=1... Domingo=6
-                                    const firstDayIdx = (firstDayDate.getDay() + 6) % 7;
-                                    
-                                    const lastDay = new Date(historyYear, historyMonth, 0).getDate();
-                                    const todayNum = now.getDate();
-                                    const currentYear = nowCL().getFullYear();
-                                    const currentMonth = nowCL().getMonth() + 1;
-                                    const isCurrentMonth = historyMonth === currentMonth && historyYear === currentYear;
-                                    const endDay = isCurrentMonth ? todayNum : lastDay;
-                                    const days = [];
+                        <div
+                            ref={scrollRef}
+                            className="flex md:grid md:grid-cols-7 gap-1 md:gap-1.5 overflow-x-auto md:overflow-visible py-2 no-scrollbar -mx-2 md:mx-0 px-2 md:px-0 snap-x max-w-2xl"
+                        >
+                            {(() => {
+                                const firstDayDate = new Date(historyYear, historyMonth - 1, 1);
+                                // getDay() retorna 0 para Domingo. Queremos Lunes (1) como primer día.
+                                // Ajuste: (day + 6) % 7 -> Lunes=0, Martes=1... Domingo=6
+                                const firstDayIdx = (firstDayDate.getDay() + 6) % 7;
 
-                                    // Renderizar nombres de días solo en PC
-                                    const DAY_NAMES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
-                                    
-                                    // Empty spaces for grid alignment on PC
-                                    for (let x = 0; x < firstDayIdx; x++) {
-                                        days.push(<div key={`empty-${x}`} className="hidden md:block w-full aspect-square" />);
+                                const lastDay = new Date(historyYear, historyMonth, 0).getDate();
+                                const todayNum = now.getDate();
+                                const currentYear = nowCL().getFullYear();
+                                const currentMonth = nowCL().getMonth() + 1;
+                                const isCurrentMonth = historyMonth === currentMonth && historyYear === currentYear;
+                                const endDay = isCurrentMonth ? todayNum : lastDay;
+                                const days = [];
+
+                                // Renderizar nombres de días solo en PC
+                                const DAY_NAMES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+
+                                // Empty spaces for grid alignment on PC
+                                for (let x = 0; x < firstDayIdx; x++) {
+                                    days.push(<div key={`empty-${x}`} className="hidden md:block w-full aspect-square" />);
+                                }
+
+                                for (let i = 1; i <= endDay; i++) {
+                                    const dStr = `${historyYear}-${String(historyMonth).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                                    const dateObj = new Date(historyYear, historyMonth - 1, i);
+                                    const dayName = dateObj.toLocaleDateString('es-CL', { weekday: 'short' });
+                                    const stats = groupedHistory[dStr];
+                                    const isToday = isCurrentMonth && i === todayNum;
+                                    const isActive = activePreviewDate === dStr;
+
+                                    // Estilos por estado
+                                    let cardBg: string;
+                                    let dayNameColor: string;
+                                    let dayNumColor: string;
+                                    let countColor: string;
+                                    let labelColor: string;
+
+                                    if (isActive && isToday) {
+                                        cardBg = isDark
+                                            ? 'bg-[#c9a84c]/20 border-[#c9a84c] ring-2 ring-[#c9a84c]/50'
+                                            : 'bg-amber-100 border-amber-500 ring-2 ring-amber-200';
+                                        dayNameColor = isDark ? 'text-[#c9a84c]' : 'text-amber-700';
+                                        dayNumColor = isDark ? 'text-[#c9a84c]' : 'text-amber-800';
+                                        countColor = isDark ? 'text-[#c9a84c]' : 'text-amber-700';
+                                        labelColor = isDark ? 'text-[#c9a84c]/60' : 'text-amber-500';
+                                    } else if (isActive) {
+                                        cardBg = isDark
+                                            ? 'bg-zinc-700 border-zinc-500 ring-2 ring-zinc-500'
+                                            : 'bg-zinc-800 border-zinc-700 ring-2 ring-zinc-600';
+                                        dayNameColor = 'text-zinc-300';
+                                        dayNumColor = 'text-white';
+                                        countColor = 'text-emerald-400';
+                                        labelColor = 'text-zinc-400';
+                                    } else if (isToday) {
+                                        cardBg = isDark
+                                            ? 'bg-[#c9a84c]/10 border-[#c9a84c] ring-2 ring-[#c9a84c]/30'
+                                            : 'bg-amber-50 border-amber-400 ring-2 ring-amber-100';
+                                        dayNameColor = isDark ? 'text-[#c9a84c]' : 'text-amber-600';
+                                        dayNumColor = isDark ? 'text-[#c9a84c]' : 'text-amber-700';
+                                        countColor = isDark ? 'text-[#c9a84c]' : 'text-amber-600';
+                                        labelColor = isDark ? 'text-[#c9a84c]/60' : 'text-amber-400';
+                                    } else {
+                                        cardBg = isDark
+                                            ? 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-500'
+                                            : 'bg-white border-zinc-100 hover:border-zinc-300';
+                                        dayNameColor = isDark ? 'text-zinc-500' : 'text-zinc-400';
+                                        dayNumColor = isDark ? 'text-zinc-200' : 'text-zinc-900';
+                                        countColor = isDark ? 'text-emerald-500' : 'text-emerald-600';
+                                        labelColor = isDark ? 'text-zinc-500' : 'text-zinc-400';
                                     }
-                                    
-                                    for (let i = 1; i <= endDay; i++) {
-                                        const dStr = `${historyYear}-${String(historyMonth).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                                        const dateObj = new Date(historyYear, historyMonth - 1, i);
-                                        const dayName = dateObj.toLocaleDateString('es-CL', { weekday: 'short' });
-                                        const stats = groupedHistory[dStr];
-                                        const isToday = isCurrentMonth && i === todayNum;
-                                        const isActive = activePreviewDate === dStr;
 
-                                        // Estilos por estado
-                                        let cardBg: string;
-                                        let dayNameColor: string;
-                                        let dayNumColor: string;
-                                        let countColor: string;
-                                        let labelColor: string;
-
-                                        if (isActive && isToday) {
-                                            cardBg = isDark
-                                                ? 'bg-[#c9a84c]/20 border-[#c9a84c] ring-2 ring-[#c9a84c]/50'
-                                                : 'bg-amber-100 border-amber-500 ring-2 ring-amber-200';
-                                            dayNameColor = isDark ? 'text-[#c9a84c]' : 'text-amber-700';
-                                            dayNumColor = isDark ? 'text-[#c9a84c]' : 'text-amber-800';
-                                            countColor = isDark ? 'text-[#c9a84c]' : 'text-amber-700';
-                                            labelColor = isDark ? 'text-[#c9a84c]/60' : 'text-amber-500';
-                                        } else if (isActive) {
-                                            cardBg = isDark
-                                                ? 'bg-zinc-700 border-zinc-500 ring-2 ring-zinc-500'
-                                                : 'bg-zinc-800 border-zinc-700 ring-2 ring-zinc-600';
-                                            dayNameColor = 'text-zinc-300';
-                                            dayNumColor = 'text-white';
-                                            countColor = 'text-emerald-400';
-                                            labelColor = 'text-zinc-400';
-                                        } else if (isToday) {
-                                            cardBg = isDark
-                                                ? 'bg-[#c9a84c]/10 border-[#c9a84c] ring-2 ring-[#c9a84c]/30'
-                                                : 'bg-amber-50 border-amber-400 ring-2 ring-amber-100';
-                                            dayNameColor = isDark ? 'text-[#c9a84c]' : 'text-amber-600';
-                                            dayNumColor = isDark ? 'text-[#c9a84c]' : 'text-amber-700';
-                                            countColor = isDark ? 'text-[#c9a84c]' : 'text-amber-600';
-                                            labelColor = isDark ? 'text-[#c9a84c]/60' : 'text-amber-400';
-                                        } else {
-                                            cardBg = isDark
-                                                ? 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-500'
-                                                : 'bg-white border-zinc-100 hover:border-zinc-300';
-                                            dayNameColor = isDark ? 'text-zinc-500' : 'text-zinc-400';
-                                            dayNumColor = isDark ? 'text-zinc-200' : 'text-zinc-900';
-                                            countColor = isDark ? 'text-emerald-500' : 'text-emerald-600';
-                                            labelColor = isDark ? 'text-zinc-500' : 'text-zinc-400';
-                                        }
-                                        
-                                        days.push(
-                                            <button
-                                                key={dStr}
-                                                onClick={() => setActivePreviewDate(dStr)}
-                                                className={`flex-shrink-0 w-16 md:w-full aspect-[3/4] md:aspect-[5/4] rounded-xl md:rounded-2xl p-1.5 md:p-1.5 flex flex-col items-center justify-between transition-all active:scale-95 snap-start shadow-sm border-2 ${cardBg}`}
-                                            >
-                                                <span className={`text-[7px] md:text-[8px] font-black uppercase tracking-widest ${dayNameColor}`}>
-                                                    {dayName}
-                                                </span>
-                                                <span className={`text-lg md:text-xl font-black tracking-tighter ${dayNumColor}`}>
-                                                    {i}
-                                                </span>
-                                                <div className="flex flex-col items-center">
-                                                    {stats ? (
-                                                        <div className="flex flex-col items-center">
-                                                            <span className={`text-[9px] md:text-[11px] font-black leading-none ${countColor}`}>{stats.count}</span>
-                                                            <span className={`text-[5px] md:text-[6.5px] font-black uppercase tracking-tighter ${labelColor}`}>
-                                                                {isToday ? 'Dojo' : 'Vino'}
-                                                            </span>
-                                                        </div>
-                                                    ) : (
-                                                        <span className={`text-[5px] md:text-[7px] font-black uppercase tracking-tighter leading-tight text-center ${labelColor}`}>—</span>
-                                                    )}
-                                                </div>
-                                            </button>
-                                        );
-                                    }
-                                    return days;
-                                })()}
-                            </div>
+                                    days.push(
+                                        <button
+                                            key={dStr}
+                                            onClick={() => setActivePreviewDate(dStr)}
+                                            className={`flex-shrink-0 w-16 md:w-full aspect-[3/4] md:aspect-[5/4] rounded-xl md:rounded-2xl p-1.5 md:p-1.5 flex flex-col items-center justify-between transition-all active:scale-95 snap-start shadow-sm border-2 ${cardBg}`}
+                                        >
+                                            <span className={`text-[7px] md:text-[8px] font-black uppercase tracking-widest ${dayNameColor}`}>
+                                                {dayName}
+                                            </span>
+                                            <span className={`text-lg md:text-xl font-black tracking-tighter ${dayNumColor}`}>
+                                                {i}
+                                            </span>
+                                            <div className="flex flex-col items-center">
+                                                {stats ? (
+                                                    <div className="flex flex-col items-center">
+                                                        <span className={`text-[9px] md:text-[11px] font-black leading-none ${countColor}`}>{stats.count}</span>
+                                                        <span className={`text-[5px] md:text-[6.5px] font-black uppercase tracking-tighter ${labelColor}`}>
+                                                            {isToday ? 'Dojo' : 'Vino'}
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <span className={`text-[5px] md:text-[7px] font-black uppercase tracking-tighter leading-tight text-center ${labelColor}`}>—</span>
+                                                )}
+                                            </div>
+                                        </button>
+                                    );
+                                }
+                                return days;
+                            })()}
+                        </div>
 
                         {/* Visor Dinámico de Asistentes */}
-                        <div className={`mt-4 pt-4 border-t ${ isDark ? 'border-zinc-800' : 'border-zinc-100' }`}>
+                        <div className={`mt-4 pt-4 border-t ${isDark ? 'border-zinc-800' : 'border-zinc-100'}`}>
                             {(() => {
                                 const todayStr = nowCL().toISOString().split('T')[0];
                                 const isToday = activePreviewDate === todayStr;
@@ -349,7 +364,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                 return (
                                     <>
                                         <div className="flex justify-between items-center mb-3">
-                                            <h3 className={`text-[10px] font-black uppercase tracking-tighter flex items-center gap-2 ${ isDark ? 'text-white' : 'text-zinc-900' }`}>
+                                            <h3 className={`text-[10px] font-black uppercase tracking-tighter flex items-center gap-2 ${isDark ? 'text-white' : 'text-zinc-900'}`}>
                                                 {isToday && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
                                                 {isToday ? 'Hoy están entrenando en el dojo:' : 'Este día entrenaron:'}
                                             </h3>
@@ -367,35 +382,35 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                                     const payerDot = student.payerStatus === 'paid'
                                                         ? 'bg-emerald-500'
                                                         : student.payerStatus === 'review'
-                                                        ? 'bg-amber-400'
-                                                        : 'bg-rose-500';
+                                                            ? 'bg-amber-400'
+                                                            : 'bg-rose-500';
                                                     return (
-                                                    <div key={idx} className="flex flex-col items-center gap-1.5 flex-shrink-0 snap-start">
-                                                        <StudentAvatar
-                                                            photo={student.photo}
-                                                            name={student.name}
-                                                            size={56}
-                                                            beltRank={student.belt_rank}
-                                                            degrees={student.degrees ?? 0}
-                                                            classesCount={classesSinceStripe ?? undefined}
-                                                            payerStatus={student.payerStatus}
-                                                            modality={student.modality}
-                                                            isDark={isDark}
-                                                            industry={branding?.industry}
-                                                        />
-                                                        <div className="flex items-center gap-1 mt-1">
-                                                            <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${payerDot}`} />
-                                                            <span className={`text-[9px] font-black uppercase tracking-tighter truncate max-w-[56px] ${ isDark ? 'text-zinc-300' : 'text-zinc-600' }`}>
-                                                                {student.name.split(' ')[0]}
-                                                            </span>
+                                                        <div key={idx} className="flex flex-col items-center gap-1.5 flex-shrink-0 snap-start">
+                                                            <StudentAvatar
+                                                                photo={student.photo}
+                                                                name={student.name}
+                                                                size={56}
+                                                                beltRank={student.belt_rank}
+                                                                degrees={student.degrees ?? 0}
+                                                                classesCount={classesSinceStripe ?? undefined}
+                                                                payerStatus={student.payerStatus}
+                                                                modality={student.modality}
+                                                                isDark={isDark}
+                                                                industry={branding?.industry}
+                                                            />
+                                                            <div className="flex items-center gap-1 mt-1">
+                                                                <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${payerDot}`} />
+                                                                <span className={`text-[9px] font-black uppercase tracking-tighter truncate max-w-[56px] ${isDark ? 'text-zinc-300' : 'text-zinc-600'}`}>
+                                                                    {student.name.split(' ')[0]}
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                    </div>
                                                     );
                                                 })}
                                             </div>
                                         ) : (
-                                            <div className={`py-6 px-6 rounded-[2rem] border-2 border-dashed flex items-center justify-center ${ isDark ? 'bg-zinc-800/30 border-zinc-700' : 'bg-zinc-50 border-zinc-100' }`}>
-                                                <p className={`text-[10px] font-black uppercase tracking-widest ${ isDark ? 'text-zinc-500' : 'text-zinc-300' }`}>
+                                            <div className={`py-6 px-6 rounded-[2rem] border-2 border-dashed flex items-center justify-center ${isDark ? 'bg-zinc-800/30 border-zinc-700' : 'bg-zinc-50 border-zinc-100'}`}>
+                                                <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-300'}`}>
                                                     {isToday ? 'Nadie en el dojo aún' : 'Sin asistentes registrados'}
                                                 </p>
                                             </div>
@@ -405,7 +420,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                             <div className="mt-3 flex justify-center">
                                                 <button
                                                     onClick={() => setSelectedHistoryDate(activePreviewDate)}
-                                                    className={`text-[9px] font-black uppercase tracking-[0.2em] active:scale-90 transition-all py-2 px-4 rounded-full border ${ isDark ? 'text-zinc-300 hover:text-white bg-zinc-800 border-zinc-700' : 'text-zinc-500 hover:text-zinc-900 bg-zinc-50 border-zinc-100' }`}
+                                                    className={`text-[9px] font-black uppercase tracking-[0.2em] active:scale-90 transition-all py-2 px-4 rounded-full border ${isDark ? 'text-zinc-300 hover:text-white bg-zinc-800 border-zinc-700' : 'text-zinc-500 hover:text-zinc-900 bg-zinc-50 border-zinc-100'}`}
                                                 >
                                                     Ver listado
                                                 </button>
