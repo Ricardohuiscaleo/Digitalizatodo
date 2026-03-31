@@ -7,7 +7,14 @@ import {
     Banknote, Settings as SettingsIcon, ShieldCheck, Calendar, Wallet, Plus, 
     Home, Star, Baby, AlertCircle, Copy, Check, User, Info, Smartphone, Lock, CheckCircle2, QrCode
 } from 'lucide-react';
-import { deleteRegistrationPage, generateRegistrationPage } from "@/lib/api";
+import { 
+    updatePricing, 
+    updateLogo, 
+    generateRegistrationPage, 
+    getRegistrationPageCode, 
+    deleteRegistrationPage,
+    getMercadoPagoAuthUrl
+} from '@/lib/api';
 import { MPConnectModal } from './Admin/MPConnectModal';
 
 interface SettingsSectionProps {
@@ -597,11 +604,9 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                 onConnect={async () => {
                     setMpLoading(true);
                     try {
-                        const response = await fetch('/api/mercadopago/auth/url', {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                        const data = await response.json();
-                        if (data.url) {
+                        if (!token) throw new Error("Falta token de sesión");
+                        const data = await getMercadoPagoAuthUrl(user.id, token);
+                        if (data?.url) {
                             window.location.href = data.url; 
                         }
                     } catch (error) {

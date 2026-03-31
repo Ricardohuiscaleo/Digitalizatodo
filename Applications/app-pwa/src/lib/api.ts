@@ -783,18 +783,22 @@ export async function rejectFeePayment(tenantId: string, token: string, feeId: n
     }
 }
 
-export async function uploadFeeProof(tenantId: string, token: string, feeId: number, file: File) {
+// ─── Digitalizatodo Pay (Mercado Pago OAuth) ──────────────────────────────────
+
+export async function getMercadoPagoAuthUrl(tenantId: string, token: string) {
     try {
-        const formData = new FormData();
-        formData.append('proof', file);
-        const response = await fetch(`${API_URL}/${tenantId}/fees/${feeId}/upload-proof`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
-            body: formData,
+        const response = await fetch(`${API_URL}/mercadopago/auth/url`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'X-Tenant-Id': tenantId,
+                'Accept': 'application/json'
+            },
         });
         return await safeJson(response);
-    } catch {
-        return { message: 'Error de conexión' };
+    } catch (error) {
+        console.error('Error fetching MP auth URL:', error);
+        return null;
     }
 }
 
