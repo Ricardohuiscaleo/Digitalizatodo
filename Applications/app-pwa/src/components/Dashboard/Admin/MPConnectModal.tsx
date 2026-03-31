@@ -100,29 +100,23 @@ export const MPConnectModal: React.FC<MPConnectModalProps> = ({
 
                     {/* TERMS */}
                     <div className="pt-2">
-                        <label className={`flex items-start gap-4 p-5 rounded-[28px] cursor-pointer transition-all border group ${
-                            accepted ? (isDark ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-indigo-50 border-indigo-200') 
+                        <div className={`flex gap-4 items-start p-6 rounded-[32px] border transition-all ${
+                            accepted ? (isDark ? 'bg-indigo-500/10 border-indigo-500/30 shadow-lg shadow-indigo-500/5' : 'bg-indigo-50 border-indigo-200') 
                                      : (isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-zinc-50 border-zinc-100')
                         }`}>
-                            <div className="relative flex items-center h-5 mt-0.5">
+                            <div className="relative mt-0.5">
                                 <input 
+                                    id="terms_checkbox"
                                     type="checkbox" 
-                                    className="sr-only" 
                                     checked={accepted} 
-                                    onChange={() => setAccepted(!accepted)}
+                                    onChange={(e) => setAccepted(e.target.checked)}
+                                    className="w-6 h-6 rounded-lg border-zinc-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer shadow-sm transition-all"
                                 />
-                                <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                                    accepted ? 'border-indigo-500 bg-indigo-500 shadow-lg shadow-indigo-500/20' : isDark ? 'border-zinc-700 bg-zinc-900 group-hover:border-zinc-500' : 'border-zinc-300 bg-white group-hover:border-indigo-400'
-                                }`}>
-                                    {accepted && <CheckCircle2 className="text-white" size={14} />}
-                                </div>
                             </div>
-                            <div className="flex-1">
-                                <p className={`text-[12px] font-bold leading-tight ${isDark ? 'text-zinc-200' : 'text-zinc-800'}`}>
-                                    Acepto la <a href="https://digitalizatodo.cl/terminos/" target="_blank" rel="noopener noreferrer" className="text-indigo-500 underline decoration-indigo-500/30 underline-offset-4">Comisión</a>, <a href="https://digitalizatodo.cl/legal/" target="_blank" rel="noopener noreferrer" className="text-indigo-500 underline decoration-indigo-500/30 underline-offset-4">Legal</a> y <a href="https://digitalizatodo.cl/privacidad/" target="_blank" rel="noopener noreferrer" className="text-indigo-500 underline decoration-indigo-500/30 underline-offset-4">Privacidad</a> de Digitaliza Todo.
-                                </p>
-                            </div>
-                        </label>
+                            <label htmlFor="terms_checkbox" className={`text-[12px] leading-relaxed cursor-pointer font-bold ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>
+                                Acepto la <a href="https://digitalizatodo.cl/terminos/" target="_blank" className="text-indigo-500 underline decoration-indigo-500/30 underline-offset-4">comisión</a>, <a href="https://digitalizatodo.cl/terminos/" target="_blank" className="text-indigo-500 underline decoration-indigo-500/30 underline-offset-4">términos</a>, <a href="https://digitalizatodo.cl/legal/" target="_blank" className="text-indigo-500 underline decoration-indigo-500/30 underline-offset-4">legal</a> y <a href="https://digitalizatodo.cl/privacidad/" target="_blank" className="text-indigo-500 underline decoration-indigo-500/30 underline-offset-4">privacidad</a> de Digitaliza Todo.
+                            </label>
+                        </div>
                     </div>
                 </div>
 
