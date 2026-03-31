@@ -456,100 +456,93 @@ export default function App() {
                                 </div>
                             </div>
                             {activeTab === 'dashboard' && (
-                                <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-                                    <div className="xl:col-span-8 space-y-8">
-                                        {branding?.industry === 'school_treasury' ? (
-                                            <OverviewTreasury 
-                                                branding={branding} 
-                                                schedulesList={schedulesList} 
-                                                feesSummary={feesSummary} 
-                                            />
-                                        ) : (
-                                            <OverviewSection 
-                                                allStudents={allStudents}
-                                                attendance={attendance}
-                                                attendanceHistory={attendanceHistory}
-                                                historyMonth={historyMonth}
-                                                setHistoryMonth={setHistoryMonth}
-                                                historyYear={historyYear}
-                                                setHistoryYear={setHistoryYear}
-                                                historyPage={historyPage}
-                                                setHistoryPage={setHistoryPage}
-                                                branding={branding}
-                                                now={now}
-                                                setSelectedHistoryDate={setSelectedHistoryDate}
-                                                schedulesList={schedulesList}
-                                                feesSummary={feesSummary}
-                                                vocab={vocab}
-                                                setActiveTab={setActiveTab}
-                                                isDark={isDark}
-                                                hasPermission={hasPermission}
-                                            />
-                                        )}
-                                    </div>
-                                    <div className="xl:col-span-4 space-y-8">
-                                        <div className="sticky top-0 space-y-8">
-                                            {/* Indicadores Estilo Gris 2x2 - Solo para PC Dashboard */}
-                                            {activeTab === 'dashboard' && (
-                                                <div className="hidden md:grid grid-cols-2 gap-4">
-                                                    {[
-                                                        { label: 'Inscritos', value: isTreasury ? (feesSummary?.total || 0) : allStudents.length, show: true },
-                                                        { label: 'Mensualidad OK', value: isTreasury ? (feesSummary?.al_dia || 0) : allStudents.filter(s => s.payerStatus === 'paid').length, show: hasPermission?.('payments') ?? true },
-                                                        { label: 'Por Validar', value: isTreasury ? (feesSummary?.en_revision || 0) : allStudents.filter(s => s.payerStatus === 'review').length, show: hasPermission?.('payments') ?? true },
-                                                        { label: 'En Deuda', value: isTreasury ? (feesSummary?.morosos || 0) : allStudents.filter(s => s.payerStatus === 'pending').length, show: hasPermission?.('payments') ?? true }
-                                                    ].map((stat, i) => stat.show && (
-                                                        <div key={i} className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'} p-4 rounded-3xl border shadow-sm flex flex-col justify-between aspect-square group hover:scale-[1.02] transition-all`}>
-                                                            <p className={`text-[8px] font-black uppercase tracking-widest leading-none ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>{stat.label}</p>
-                                                            <div className="flex flex-col">
-                                                                <h4 className={`text-3xl font-black tracking-tighter leading-none ${isDark ? 'text-white' : 'text-zinc-950'}`}>{stat.value}</h4>
-                                                                <span className="text-[6px] font-black uppercase tracking-widest text-zinc-300 mt-1">Actualizado ahora</span>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-
-                                            {/* Today's Schedule for PC - Only for Martial Arts or if they have schedules */}
-                                            {isMartialArts && (
-                                                <TodaySchedule schedules={schedulesList} primaryColor={branding?.primaryColor} isDark={isDark} />
-                                            )}
-                                            
-                                            {/* Quick Actions / Terminal Access - Only for Martial Arts */}
-                                            {isMartialArts && (
-                                                <div className={`hidden md:block ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-950 border-zinc-800'} p-8 rounded-[3rem] shadow-2xl relative overflow-hidden group`}>
-                                                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl group-hover:bg-indigo-500/20 transition-all duration-700" />
-                                                    <div className="relative z-10">
-                                                        <div className="w-14 h-14 bg-indigo-500 rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-indigo-500/20">
-                                                            <QrCode size={28} className="text-white" />
-                                                        </div>
-                                                        <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-2">Punto de Marcación</h3>
-                                                        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-relaxed mb-6">Inicia la terminal de entrada para escaneo de alumnos en tiempo real.</p>
-                                                        <button 
-                                                            onClick={() => window.location.href = '/dashboard/checkin'}
-                                                            className="w-full py-4 bg-white text-zinc-950 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-100 transition-all active:scale-95 flex items-center justify-center gap-2"
-                                                        >
-                                                            Abrir Terminal <LayoutDashboard size={14} />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-
-
-                                            {/* Support / Help Mini Card */}
-                                            <div 
-                                                onClick={() => window.open('https://wa.me/56945392581', '_blank')}
-                                                className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'} p-6 rounded-[2.5rem] border shadow-sm flex items-center gap-4 cursor-pointer hover:scale-[1.02] transition-all active:scale-95`}
-                                            >
-                                                <div className="w-12 h-12 bg-zinc-50 dark:bg-zinc-800 rounded-2xl flex items-center justify-center text-zinc-400">
-                                                    <Users size={20} />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Digitalizatodo Support</p>
-                                                    <p className={`text-[12px] font-bold ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>WhatsApp: +56 9 4539 2581</p>
-                                                    <p className={`text-[9px] font-bold text-emerald-500 uppercase tracking-tighter`}>Pulsa para asistencia técnica</p>
+                                <div className="space-y-8">
+                                    {/* Indicadores Estilo Gris Top Bar - Solo para PC Dashboard */}
+                                    <div className="hidden md:grid grid-cols-4 gap-4">
+                                        {[
+                                            { label: 'Inscritos', value: isTreasury ? (feesSummary?.total || 0) : allStudents.length, show: true, color: 'text-indigo-500' },
+                                            { label: 'Mensualidad OK', value: isTreasury ? (feesSummary?.al_dia || 0) : allStudents.filter(s => s.payerStatus === 'paid').length, show: hasPermission?.('payments') ?? true, color: 'text-emerald-500' },
+                                            { label: 'Por Validar', value: isTreasury ? (feesSummary?.en_revision || 0) : allStudents.filter(s => s.payerStatus === 'review').length, show: hasPermission?.('payments') ?? true, color: 'text-amber-500' },
+                                            { label: 'En Deuda', value: isTreasury ? (feesSummary?.morosos || 0) : allStudents.filter(s => s.payerStatus === 'pending').length, show: hasPermission?.('payments') ?? true, color: 'text-rose-500' }
+                                        ].map((stat, i) => stat.show && (
+                                            <div key={i} className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100 shadow-sm'} p-5 rounded-3xl border flex flex-col justify-between group hover:scale-[1.02] transition-all`}>
+                                                <p className={`text-[8px] font-black uppercase tracking-widest leading-none ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>{stat.label}</p>
+                                                <div className="flex items-baseline justify-between mt-2">
+                                                    <h4 className={`text-2xl font-black tracking-tighter leading-none ${isDark ? 'text-white' : 'text-zinc-950'}`}>{stat.value}</h4>
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${stat.color} animate-pulse`} />
                                                 </div>
                                             </div>
+                                        ))}
+                                    </div>
 
+                                    <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                                        <div className="xl:col-span-9 space-y-6">
+                                            {branding?.industry === 'school_treasury' ? (
+                                                <OverviewTreasury 
+                                                    branding={branding} 
+                                                    schedulesList={schedulesList} 
+                                                    feesSummary={feesSummary} 
+                                                />
+                                            ) : (
+                                                <OverviewSection 
+                                                    allStudents={allStudents}
+                                                    attendance={attendance}
+                                                    attendanceHistory={attendanceHistory}
+                                                    historyMonth={historyMonth}
+                                                    setHistoryMonth={setHistoryMonth}
+                                                    historyYear={historyYear}
+                                                    setHistoryYear={setHistoryYear}
+                                                    historyPage={historyPage}
+                                                    setHistoryPage={setHistoryPage}
+                                                    branding={branding}
+                                                    now={now}
+                                                    setSelectedHistoryDate={setSelectedHistoryDate}
+                                                    schedulesList={schedulesList}
+                                                    feesSummary={feesSummary}
+                                                    vocab={vocab}
+                                                    setActiveTab={setActiveTab}
+                                                    isDark={isDark}
+                                                    hasPermission={hasPermission}
+                                                />
+                                            )}
+                                        </div>
+                                        <div className="xl:col-span-3 space-y-6">
+                                            <div className="sticky top-0 space-y-6">
+                                                {/* Today's Schedule for PC */}
+                                                {isMartialArts && (
+                                                    <TodaySchedule schedules={schedulesList} primaryColor={branding?.primaryColor} isDark={isDark} />
+                                                )}
+                                                
+                                                {/* Quick Actions / Terminal Access */}
+                                                {isMartialArts && (
+                                                    <div className={`hidden md:block ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-950 border-zinc-800'} p-6 rounded-[2.5rem] shadow-xl relative overflow-hidden group`}>
+                                                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-all duration-700" />
+                                                        <div className="relative z-10">
+                                                            <h3 className="text-sm font-black text-white uppercase tracking-tighter mb-4">Check-in PWA</h3>
+                                                            <button 
+                                                                onClick={() => window.location.href = '/dashboard/checkin'}
+                                                                className="w-full py-3 bg-white text-zinc-950 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-zinc-100 transition-all active:scale-95 flex items-center justify-center gap-2"
+                                                            >
+                                                                Abrir Terminal <QrCode size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Support Mini Card */}
+                                                <div 
+                                                    onClick={() => window.open('https://wa.me/56945392581', '_blank')}
+                                                    className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'} p-4 rounded-2xl border shadow-sm flex items-center gap-3 cursor-pointer hover:scale-[1.02] transition-all active:scale-95`}
+                                                >
+                                                    <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500">
+                                                        <Users size={18} />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className={`text-[8px] font-black uppercase tracking-widest truncate ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>SOPORTE</p>
+                                                        <p className={`text-[10px] font-bold truncate ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>+56 9 4539 2581</p>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

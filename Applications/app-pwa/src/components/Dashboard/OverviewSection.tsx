@@ -228,7 +228,7 @@ export default function OverviewSection(props: OverviewSectionProps) {
 
                             <div 
                                 ref={scrollRef}
-                                className="flex md:grid md:grid-cols-7 gap-2 md:gap-3 overflow-x-auto md:overflow-visible py-2 no-scrollbar -mx-2 md:mx-0 px-2 md:px-0 snap-x"
+                                className="flex md:grid md:grid-cols-7 gap-1 md:gap-2 overflow-x-auto md:overflow-visible py-2 no-scrollbar -mx-2 md:mx-0 px-2 md:px-0 snap-x"
                             >
                                 {(() => {
                                     const firstDayDate = new Date(historyYear, historyMonth - 1, 1);
@@ -305,22 +305,22 @@ export default function OverviewSection(props: OverviewSectionProps) {
                                             <button
                                                 key={dStr}
                                                 onClick={() => setActivePreviewDate(dStr)}
-                                                className={`flex-shrink-0 w-20 md:w-full aspect-[3/4] md:aspect-square rounded-2xl md:rounded-3xl p-2 md:p-3 flex flex-col items-center justify-between transition-all active:scale-95 snap-start shadow-sm border-2 ${cardBg}`}
+                                                className={`flex-shrink-0 w-16 md:w-full aspect-[3/4] md:aspect-square rounded-xl md:rounded-2xl p-1.5 md:p-2 flex flex-col items-center justify-between transition-all active:scale-95 snap-start shadow-sm border-2 ${cardBg}`}
                                             >
-                                                <span className={`text-[8px] md:text-[9px] font-black uppercase tracking-widest ${dayNameColor}`}>
+                                                <span className={`text-[7px] md:text-[8px] font-black uppercase tracking-widest ${dayNameColor}`}>
                                                     {dayName}
                                                 </span>
-                                                <span className={`text-xl md:text-2xl font-black tracking-tighter ${dayNumColor}`}>
+                                                <span className={`text-lg md:text-xl font-black tracking-tighter ${dayNumColor}`}>
                                                     {i}
                                                 </span>
                                                 <div className="flex flex-col items-center">
                                                     {stats ? (
                                                         <div className="flex flex-col items-center">
-                                                            <span className={`text-[10px] md:text-[12px] font-black leading-none ${countColor}`}>{stats.count}</span>
-                                                            <span className={`text-[5px] md:text-[6px] font-black uppercase tracking-tighter ${labelColor}`}>Vieron</span>
+                                                            <span className={`text-[9px] md:text-[10px] font-black leading-none ${countColor}`}>{stats.count}</span>
+                                                            <span className={`text-[4px] md:text-[5px] font-black uppercase tracking-tighter ${labelColor}`}>Vieron</span>
                                                         </div>
                                                     ) : (
-                                                        <span className={`text-[6px] md:text-[7px] font-black uppercase tracking-tighter leading-tight text-center ${labelColor}`}>—</span>
+                                                        <span className={`text-[5px] md:text-[6px] font-black uppercase tracking-tighter leading-tight text-center ${labelColor}`}>—</span>
                                                     )}
                                                 </div>
                                             </button>
