@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\DebugController;
 use App\Http\Middleware\ResolveTenantFromPath;
 use App\Http\Controllers\TelegramBotController;
 use App\Http\Controllers\Api\AttendanceQRController;
+use App\Http\Controllers\Api\SaaSManagementController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\MercadoPagoController;
 use Illuminate\Support\Facades\Artisan;
@@ -129,8 +130,11 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
         }
         );
 
-        // ── Rutas protegidas (requieren token Sanctum) ─────────────────────
-        Route::middleware('auth:sanctum,guardian-api')->group(function () {
+    // SaaS — Mover fuera del grupo de auth solo para descartar errores de router
+    Route::post('saas/subscribe', [SaaSManagementController::class, 'initiate']);
+
+    // ── Rutas protegidas (requieren token Sanctum) ─────────────────────
+    Route::middleware('auth:sanctum,guardian-api')->group(function () {
             // Perfil
             Route::get('me', [AuthController::class , 'me']);
             Route::post('me/photo', [GuardianController::class, 'updatePhoto']);
