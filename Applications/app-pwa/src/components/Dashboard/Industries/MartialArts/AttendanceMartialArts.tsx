@@ -90,6 +90,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
     const [editingStudent, setEditingStudent] = useState<any | null>(null);
     const [bjjForm, setBjjForm] = useState<any>({
         name: '', phone: '', email: '', 
+        birth_date: '',
         belt_rank: 'white', degrees: 0, 
         modality: 'gi', category: 'adults', 
         weight: '', height: '',
@@ -105,10 +106,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
     const [loadingStudent, setLoadingStudent] = useState(false);
     const [showOptions, setShowOptions] = useState(false);
     const optionsRef = useRef<HTMLDivElement>(null);
-    const sheetRef = useRef<HTMLDivElement>(null);
     const promoteRef = useRef(false);
-    const dragStartY = useRef<number | null>(null);
-    const dragDelta = useRef(0);
 
     useEffect(() => {
         const handler = (e: MouseEvent) => {
@@ -198,6 +196,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                     gender: s.gender || '',
                     weight: s.weight || '',
                     height: s.height || '',
+                    birth_date: s.birth_date || '',
                     modality: s.modality || 'gi',
                     category: s.category || 'adults',
                     previous_classes: s.previous_classes ?? 0,
@@ -227,6 +226,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
             ['previous_classes', 'Clases anteriores', v => String(v ?? 0)],
             ['weight', 'Peso (kg)', v => v ? `${v} kg` : '—'],
             ['height', 'Altura (m)', v => v ? `${v} m` : '—'],
+            ['birth_date', 'Fecha Nacimiento', v => v || '—'],
         ];
         for (const [key, label, fmt] of fields) {
             const from = fmt(editingStudent[key] ?? '');
@@ -297,22 +297,6 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
         } finally {
             setIsDeleting(false);
         }
-    };
-
-    // Swipe to close
-    const onTouchStart = (e: React.TouchEvent) => { dragStartY.current = e.touches[0].clientY; dragDelta.current = 0; };
-    const onTouchMove = (e: React.TouchEvent) => {
-        if (dragStartY.current === null) return;
-        dragDelta.current = e.touches[0].clientY - dragStartY.current;
-        if (dragDelta.current > 0 && sheetRef.current) {
-            sheetRef.current.style.transform = `translateY(${dragDelta.current}px)`;
-        }
-    };
-    const onTouchEnd = () => {
-        if (dragDelta.current > 100) { setEditingStudent(null); setPendingChanges(null); }
-        else if (sheetRef.current) sheetRef.current.style.transform = '';
-        dragStartY.current = null;
-        dragDelta.current = 0;
     };
 
     const primary = branding?.primaryColor || '#6366f1';
@@ -712,19 +696,12 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                     onClick={() => { setEditingStudent(null); setPendingChanges(null); }}
                 >
                     <div
-                        ref={sheetRef}
                         className={`w-full max-w-lg rounded-t-[2rem] shadow-2xl overflow-hidden transition-transform duration-200 ${
                             isDark ? 'bg-zinc-900 border-t border-zinc-800' : 'bg-white'
                         }`}
                         onClick={e => e.stopPropagation()}
-                        onTouchStart={onTouchStart}
-                        onTouchMove={onTouchMove}
-                        onTouchEnd={onTouchEnd}
                     >
-                        {/* Drag handle */}
-                        <div className="flex justify-center pt-3 pb-1">
-                            <div className={`w-10 h-1 rounded-full ${isDark ? 'bg-zinc-700' : 'bg-zinc-200'}`} />
-                        </div>
+                        {/* Header */}
 
                         {/* Header */}
                         <div className={`flex items-center justify-between px-6 pt-3 pb-4 border-b ${isDark ? 'border-zinc-800' : 'border-zinc-100'}`}>
@@ -773,6 +750,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
                                         { label: 'Nombre completo', key: 'name', type: 'text' },
                                         { label: 'Teléfono', key: 'phone', type: 'tel' },
                                         { label: 'Correo', key: 'email', type: 'email' },
+                                        { label: 'Fecha Nacimiento', key: 'birth_date', type: 'date' },
                                     ] as const).map(({ label, key, type }) => (
                                         <div key={key}>
                                             <label className={`text-[8px] font-black uppercase tracking-widest block mb-1 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>{label}</label>
