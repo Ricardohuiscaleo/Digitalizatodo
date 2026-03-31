@@ -136,7 +136,7 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
         verde: 'Verde', green: 'Verde',
         blue: 'Azul', 
         purple: 'Morado', 
-        brown: 'Café', 
+        brown: 'Marrón', marron: 'Marrón', 'marrón': 'Marrón', cafe: 'Marrón', 'café': 'Marrón',
         black: 'Negro',
         'rojo-negro': 'Rojo-Negro'
     };

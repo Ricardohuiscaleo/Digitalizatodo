@@ -275,25 +275,37 @@ export default function CheckinPage() {
         verde: 'Verde', green: 'Verde',
         blue: 'Azul', 
         purple: 'Morado', 
-        brown: 'Café', 
+        brown: 'Marrón', marron: 'Marrón', 'marrón': 'Marrón', café: 'Marrón', cafe: 'Marrón',
         black: 'Negro',
         'rojo-negro': 'Rojo-Negro'
     };
     const CATEGORY_LABELS: Record<string, string> = { adults: 'Adulto', kids: 'Infantil' };
 
     const getBeltStyles = (belt: string) => {
+        const lower = (belt || '').toLowerCase();
         const styles: Record<string, { bg: string, text: string, bar: string }> = {
             white: { bg: 'bg-white', text: 'text-zinc-900', bar: 'bg-black' },
+            blanco: { bg: 'bg-white', text: 'text-zinc-900', bar: 'bg-black' },
             gris: { bg: 'bg-zinc-400', text: 'text-white', bar: 'bg-black' },
+            grey: { bg: 'bg-zinc-400', text: 'text-white', bar: 'bg-black' },
             amarillo: { bg: 'bg-yellow-400', text: 'text-zinc-900', bar: 'bg-black' },
+            yellow: { bg: 'bg-yellow-400', text: 'text-zinc-900', bar: 'bg-black' },
             naranja: { bg: 'bg-orange-500', text: 'text-white', bar: 'bg-black' },
+            orange: { bg: 'bg-orange-500', text: 'text-white', bar: 'bg-black' },
             verde: { bg: 'bg-emerald-600', text: 'text-white', bar: 'bg-black' },
+            green: { bg: 'bg-emerald-600', text: 'text-white', bar: 'bg-black' },
+            azul: { bg: 'bg-blue-600', text: 'text-white', bar: 'bg-black' },
             blue: { bg: 'bg-blue-600', text: 'text-white', bar: 'bg-black' },
+            morado: { bg: 'bg-purple-700', text: 'text-white', bar: 'bg-black' },
             purple: { bg: 'bg-purple-700', text: 'text-white', bar: 'bg-black' },
             brown: { bg: 'bg-amber-900', text: 'text-white', bar: 'bg-black' },
-            black: { bg: 'bg-zinc-950', text: 'text-white', bar: 'bg-red-600' }
+            marron: { bg: 'bg-amber-900', text: 'text-white', bar: 'bg-black' },
+            'marrón': { bg: 'bg-amber-900', text: 'text-white', bar: 'bg-black' },
+            'café': { bg: 'bg-amber-900', text: 'text-white', bar: 'bg-black' },
+            black: { bg: 'bg-zinc-950', text: 'text-white', bar: 'bg-red-600' },
+            negro: { bg: 'bg-zinc-950', text: 'text-white', bar: 'bg-red-600' }
         };
-        return styles[belt] || styles.white;
+        return styles[lower] || styles.white;
     };
 
     return (

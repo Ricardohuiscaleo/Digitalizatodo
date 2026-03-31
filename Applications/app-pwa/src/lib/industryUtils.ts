@@ -26,7 +26,7 @@ const BELT_LABELS: Record<string, string> = {
     green: 'Verde',
     blue: 'Azul', 
     purple: 'Morado', 
-    brown: 'Café', 
+    brown: 'Marrón', marron: 'Marrón', 'marrón': 'Marrón', café: 'Marrón', cafe: 'Marrón',
     black: 'Negro',
     red: 'Rojo',
 };
@@ -47,7 +47,7 @@ export const getBeltHex = (beltRank: string): string => {
     if (lower.includes('verde')) return '#059669';
     if (lower === 'blue' || lower.includes('azul')) return '#2563eb';
     if (lower === 'purple' || lower.includes('morado')) return '#9333ea';
-    if (lower === 'brown' || lower.includes('marron') || lower.includes('café')) return '#78350f';
+    if (lower === 'brown' || lower.includes('marron') || lower.includes('marrón') || lower.includes('café')) return '#78350f';
     if (lower === 'black' || lower.includes('negro')) return '#18181b';
     if (lower.includes('rojo')) return '#e11d48';
     return '#e4e4e7';
