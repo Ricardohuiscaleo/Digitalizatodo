@@ -6,6 +6,7 @@
 export const getBeltColor = (label: string) => {
     const lower = (label || '').toLowerCase();
     if (lower === 'white' || lower.includes('blanco')) return 'bg-zinc-100 text-zinc-900 border-zinc-200';
+    if (lower === 'grey' || lower === 'gray' || lower.includes('gris')) return 'bg-zinc-400 text-white';
     if (lower === 'blue' || lower.includes('azul')) return 'bg-blue-600 text-white';
     if (lower === 'purple' || lower.includes('morado')) return 'bg-purple-600 text-white';
     if (lower === 'brown' || lower.includes('marron') || lower.includes('marrón') || lower.includes('café')) return 'bg-amber-900 text-white';
@@ -18,7 +19,16 @@ export const getBeltColor = (label: string) => {
 };
 
 const BELT_LABELS: Record<string, string> = {
-    white: 'Blanco', blue: 'Azul', purple: 'Morado', brown: 'Café', black: 'Negro',
+    white: 'Blanco', 
+    grey: 'Gris', gray: 'Gris',
+    yellow: 'Amarillo',
+    orange: 'Naranja',
+    green: 'Verde',
+    blue: 'Azul', 
+    purple: 'Morado', 
+    brown: 'Café', 
+    black: 'Negro',
+    red: 'Rojo',
 };
 
 // Devuelve el label en español dado belt_rank en inglés o ya en español
@@ -31,10 +41,15 @@ export const getBeltLabel = (beltRank: string): string => {
 export const getBeltHex = (beltRank: string): string => {
     const lower = (beltRank || '').toLowerCase();
     if (lower === 'white' || lower.includes('blanco')) return '#e4e4e7';
+    if (lower === 'grey' || lower === 'gray' || lower.includes('gris')) return '#9ca3af';
+    if (lower.includes('amarillo')) return '#facc15';
+    if (lower.includes('naranja')) return '#f97316';
+    if (lower.includes('verde')) return '#059669';
     if (lower === 'blue' || lower.includes('azul')) return '#2563eb';
     if (lower === 'purple' || lower.includes('morado')) return '#9333ea';
     if (lower === 'brown' || lower.includes('marron') || lower.includes('café')) return '#78350f';
     if (lower === 'black' || lower.includes('negro')) return '#18181b';
+    if (lower.includes('rojo')) return '#e11d48';
     return '#e4e4e7';
 };
 
@@ -56,7 +71,8 @@ const BELT_ORDER_ADULTS = ['Blanco', 'Azul', 'Morado', 'Marrón', 'Negro'];
 
 /** Calcula el progreso de un alumno hacia el siguiente nivel */
 export function calcBeltProgress(beltRank: string, degrees: number, beltClassesAtPromotion: number, totalAttendances: number, category: string = 'adults') {
-    const beltData = ALLIANCE_BJJ_GRADUATION.find(b => b.id === beltRank);
+    const normalizedRank = getBeltLabel(beltRank);
+    const beltData = ALLIANCE_BJJ_GRADUATION.find(b => b.id === normalizedRank);
     if (!beltData || beltData.totalClasses === null) return null;
     const belt = beltData as { id: string; name: string; totalClasses: number; classesPerStripe: number | null; stripes: number | null };
 
@@ -137,8 +153,8 @@ export function getClassesSinceLastStripe(student: {
     previous_classes?: number;
     degrees?: number;
 }, totalHistoryClasses: number): number | null {
-    const belt = (student.belt_rank || '').toLowerCase();
-    const beltData = ALLIANCE_BJJ_GRADUATION.find(b => b.id === belt);
+    const normalizedRank = getBeltLabel(student.belt_rank || '');
+    const beltData = ALLIANCE_BJJ_GRADUATION.find(b => b.id === normalizedRank);
     if (!beltData || beltData.classesPerStripe === null) return null;
     // previous_classes = clases desde la última raya (ingresadas por el profe)
     // totalHistoryClasses = clases registradas en el sistema

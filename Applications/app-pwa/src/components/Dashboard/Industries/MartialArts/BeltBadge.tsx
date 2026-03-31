@@ -16,7 +16,7 @@ export function BeltBadge({ beltRank, degrees = 0 }: BeltBadgeProps) {
     if (!beltRank) return null;
 
     const hex = getBeltHex(beltRank);
-    const isWhite = beltRank === "white";
+    const isWhite = beltRank.toLowerCase().includes("blanco") || beltRank.toLowerCase() === "white";
     const beltStroke = isWhite ? "#d4d4d8" : "transparent";
 
     // Ancho total del SVG: 44px, alto: 14px

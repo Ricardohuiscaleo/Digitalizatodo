@@ -128,7 +128,18 @@ const AttendanceMartialArts: React.FC<AttendanceMartialArtsProps> = ({
         return true;
     });
 
-    const BELT_LABELS: Record<string, string> = { white: 'Blanco', blue: 'Azul', purple: 'Morado', brown: 'Café', black: 'Negro' };
+    const BELT_LABELS: Record<string, string> = { 
+        white: 'Blanco', 
+        gris: 'Gris', grey: 'Gris', gray: 'Gris',
+        amarillo: 'Amarillo', yellow: 'Amarillo',
+        naranja: 'Naranja', orange: 'Naranja',
+        verde: 'Verde', green: 'Verde',
+        blue: 'Azul', 
+        purple: 'Morado', 
+        brown: 'Café', 
+        black: 'Negro',
+        'rojo-negro': 'Rojo-Negro'
+    };
     const MODALITY_LABELS: Record<string, string> = { gi: 'Gi', nogi: 'No-Gi', both: 'Ambos' };
     const CATEGORY_LABELS: Record<string, string> = { adults: 'Adulto', kids: 'Infantil' };
 
