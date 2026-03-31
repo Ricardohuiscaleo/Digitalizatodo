@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { getTenantInfo, registerStudent } from "@/lib/api";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { getTenantInfo, registerStudent, getPlans } from "@/lib/api";
+import { Loader2, CheckCircle2, Crown, Baby } from "lucide-react";
 
 export default function TenantRegisterPage() {
   const { slug } = useParams();
@@ -12,12 +12,17 @@ export default function TenantRegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [form, setForm] = useState({
+  const [plans, setPlans] = useState<any[]>([]);
+  const isMartialArts = tenant?.industry === 'martial_arts';
+
+  const [form, setForm] = useState<any>({
     guardian_name: "", guardian_email: "", guardian_phone: "",
     password: "", password_confirmation: "",
     is_self_register: true,
-    students: [{ name: "", category: "kids" }],
+    students: [], // Empezar vacío, el apoderado se marca por defecto
     plan_id: null,
+    adult_plan_id: null,
+    kid_plan_id: null,
   });
 
   useEffect(() => {
@@ -25,11 +30,43 @@ export default function TenantRegisterPage() {
       if (t && !t.message) setTenant(t);
       setIdentifying(false);
     });
+    getPlans(slug as string, "").then(p => {
+      if (Array.isArray(p)) setPlans(p);
+    });
   }, [slug]);
+
+  const calculateAge = (date: string) => {
+    if (!date) return 0;
+    const diff = Date.now() - new Date(date).getTime();
+    return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+  };
+
+  const hasAdults = form.is_self_register || form.students.some((s: any) => {
+    if (isMartialArts) return calculateAge(s.birth_date) >= 14;
+    return s.category === 'adults';
+  });
+  const hasKids = form.students.some((s: any) => {
+    if (isMartialArts) return s.birth_date && calculateAge(s.birth_date) < 14;
+    return s.category === 'kids';
+  });
+
+  const adultPlans = plans.filter((p: any) => p.target_audience === 'adults' || p.target_audience === 'all');
+  const kidPlans = plans.filter((p: any) => p.target_audience === 'kids' || p.target_audience === 'all');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.password !== form.password_confirmation) { setError("Las contraseñas no coinciden."); return; }
+    
+    // Validaciones de planes obligatorios
+    if (hasAdults && !form.adult_plan_id && !form.plan_id) {
+      setError("Debes seleccionar un plan para adultos.");
+      return;
+    }
+    if (hasKids && !form.kid_plan_id && !form.plan_id) {
+      setError("Debes seleccionar un plan para niños.");
+      return;
+    }
+
     setLoading(true); setError("");
     const result = await registerStudent(slug as string, form);
     setLoading(false);
@@ -115,24 +152,130 @@ export default function TenantRegisterPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-xs font-medium text-zinc-500">Alumnos a inscribir</label>
-              <button type="button" onClick={() => setForm({...form, students: [...form.students, {name:"",category:"kids"}]})}
-                className="text-xs font-semibold text-zinc-600 hover:text-zinc-900">+ Agregar</button>
+              <button type="button" onClick={() => setForm({...form, students: [...form.students, {name:"",category:"kids", birth_date: ""}]})}
+                className="text-xs font-semibold text-zinc-600 hover:text-zinc-900">+ Agregar familiar</button>
             </div>
-            {form.students.map((s, i) => (
-              <div key={i} className="flex gap-2">
-                <input required placeholder="Nombre del alumno" value={s.name}
-                  onChange={e => { const st=[...form.students]; st[i].name=e.target.value; setForm({...form,students:st}); }}
-                  className="flex-1 h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 focus:ring-2 ring-zinc-900 outline-none" />
-                <select value={s.category}
-                  onChange={e => { const st=[...form.students]; st[i].category=e.target.value; setForm({...form,students:st}); }}
-                  className="h-11 bg-zinc-50 rounded-xl px-3 text-xs text-zinc-600 focus:ring-2 ring-zinc-900 outline-none">
-                  <option value="kids">Kids</option>
-                  <option value="adults">Adulto</option>
-                </select>
+            
+            <div className="flex items-center gap-3 p-4 bg-zinc-50 rounded-2xl border border-zinc-100 transition-all">
+                <input 
+                    type="checkbox" 
+                    id="self_register"
+                    checked={form.is_self_register}
+                    onChange={e => setForm({...form, is_self_register: e.target.checked})}
+                    className="h-5 w-5 bg-white border-zinc-200 rounded-lg text-zinc-950 focus:ring-zinc-950"
+                />
+                <label htmlFor="self_register" className="flex-1 cursor-pointer">
+                    <p className="text-[11px] font-black text-zinc-900 uppercase tracking-tight">Yo también voy a entrenar</p>
+                    <p className="text-[10px] text-zinc-400">Inscribirte como alumno titular</p>
+                </label>
+            </div>
+
+            {form.students.map((s: any, i: number) => (
+              <div key={i} className="group relative space-y-3 p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
+                <div className="flex gap-2">
+                    <div className="flex-1 space-y-2">
+                        <input required placeholder="Nombre del familiar" value={s.name}
+                            onChange={e => { const st=[...form.students]; st[i].name=e.target.value; setForm({...form,students:st}); }}
+                            className="w-full h-10 bg-white border border-zinc-200 rounded-xl px-3 text-xs text-zinc-900 placeholder:text-zinc-300 focus:ring-1 ring-zinc-950 outline-none" 
+                        />
+                        <div className="flex gap-2">
+                            <div className="flex-1">
+                                <label className="text-[8px] font-black text-zinc-400 uppercase ml-1">Fecha de Nacimiento</label>
+                                <input required type="date" value={s.birth_date}
+                                    onChange={e => { 
+                                        const st=[...form.students]; 
+                                        st[i].birth_date=e.target.value;
+                                        if (isMartialArts) st[i].category = calculateAge(e.target.value) >= 14 ? 'adults' : 'kids';
+                                        setForm({...form,students:st}); 
+                                    }}
+                                    className="w-full h-10 bg-white border border-zinc-200 rounded-xl px-3 text-xs text-zinc-900 focus:ring-1 ring-zinc-950 outline-none" 
+                                />
+                            </div>
+                            {!isMartialArts && (
+                                <div className="w-1/3">
+                                    <label className="text-[8px] font-black text-zinc-400 uppercase ml-1">Categoría</label>
+                                    <select value={s.category}
+                                        onChange={e => { const st=[...form.students]; st[i].category=e.target.value; setForm({...form,students:st}); }}
+                                        className="w-full h-10 bg-white border border-zinc-200 rounded-xl px-2 text-[10px] font-bold text-zinc-600 focus:ring-1 ring-zinc-950 outline-none">
+                                        <option value="kids">Niño</option>
+                                        <option value="adults">Adulto</option>
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    <button type="button" onClick={() => { const st=form.students.filter((_: any, idx: number)=>idx!==i); setForm({...form, students:st}); }}
+                        className="h-10 w-10 flex items-center justify-center text-zinc-300 hover:text-rose-500 transition-colors mt-auto">
+                        <Loader2 size={16} className="rotate-45" />
+                    </button>
+                </div>
               </div>
             ))}
           </div>
 
+          {/* Plan Selection - Martial Arts Specific mandatory logic */}
+          {isMartialArts && (hasAdults || hasKids) && (
+            <div className="space-y-4 pt-4 border-t border-zinc-100">
+              <label className="text-xs font-black text-zinc-900 uppercase tracking-widest">Planes de Membresía</label>
+              
+              {hasAdults && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Crown size={12} className="text-amber-500" />
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-tight text-zinc-400">Plan para Adultos</span>
+                  </div>
+                  <select 
+                    required 
+                    value={form.adult_plan_id || ""}
+                    onChange={e => setForm({...form, adult_plan_id: e.target.value})}
+                    className="w-full h-11 bg-zinc-50 border border-zinc-100 rounded-xl px-4 text-sm text-zinc-900 focus:ring-2 ring-zinc-900 outline-none"
+                  >
+                    <option value="">Selecciona un plan...</option>
+                    {adultPlans.map(p => (
+                      <option key={p.id} value={p.id}>{p.name} - ${parseFloat(p.price).toLocaleString('es-CL')}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {hasKids && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Baby size={12} className="text-indigo-500" />
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-tight text-zinc-400">Plan para Niños (Kids)</span>
+                  </div>
+                  <select 
+                    required 
+                    value={form.kid_plan_id || ""}
+                    onChange={e => setForm({...form, kid_plan_id: e.target.value})}
+                    className="w-full h-11 bg-zinc-50 border border-zinc-100 rounded-xl px-4 text-sm text-zinc-900 focus:ring-2 ring-zinc-900 outline-none"
+                  >
+                    <option value="">Selecciona un plan...</option>
+                    {kidPlans.map(p => (
+                      <option key={p.id} value={p.id}>{p.name} - ${parseFloat(p.price).toLocaleString('es-CL')}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
+          {/* Plan Selection for other industries - Just show one plan selector if exists */}
+          {!isMartialArts && plans.length > 0 && (
+            <div className="space-y-3">
+              <label className="text-xs font-medium text-zinc-500">Selecciona tu plan</label>
+              <select 
+                required 
+                value={form.plan_id || ""}
+                onChange={e => setForm({...form, plan_id: e.target.value})}
+                className="w-full h-11 bg-zinc-50 rounded-xl px-4 text-sm text-zinc-900 placeholder:text-zinc-300 focus:ring-2 ring-zinc-900 outline-none"
+              >
+                <option value="">Seleccionar plan...</option>
+                {plans.map(p => (
+                  <option key={p.id} value={p.id}>{p.name} - ${parseFloat(p.price).toLocaleString('es-CL')}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <button type="submit" disabled={loading}
             className="w-full h-11 bg-zinc-950 hover:bg-zinc-800 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-40">
             {loading ? <Loader2 className="animate-spin" size={16} /> : "Completar registro"}

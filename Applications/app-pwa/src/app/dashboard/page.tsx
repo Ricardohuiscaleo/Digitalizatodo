@@ -166,7 +166,7 @@ export default function App() {
         guardianPayments, guardianPaymentsLoading, openGuardianPayments,
         handleSaveBankInfo, handleLogoUpload, openFee, markAllNotificationsRead, markNotificationRead,
         loadExpenses, loadSchedules, loadPlans, loadFees,
-        formatMoney, formatCLP, parseCLP, handlePaymentApprove, handleActivatePush,
+        formatMoney, formatCLP, parseCLP, handlePaymentApprove, handleBulkApprove, handleActivatePush,
         handleDeleteFee, handleLongPressStart, handleLongPressEnd, handleLoadDemo,
         handleCreatePlan, handleUpdatePlan, handleDeletePlan,
         handleCreateSchedule, handleUpdateSchedule, handleDeleteSchedule,
@@ -300,10 +300,12 @@ export default function App() {
 
             {/* Notification Dropdown */}
             {showNotifications && (
-                <div className="fixed inset-0 z-[100] md:hidden" onClick={() => setShowNotifications(false)}>
-                    <div className="absolute top-16 right-2 w-80 max-h-96 bg-white rounded-2xl shadow-2xl border border-zinc-100 overflow-hidden animate-in slide-in-from-top-2 fade-in duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="p-4 border-b border-zinc-50 flex items-center justify-between">
-                            <span className="text-xs font-black uppercase tracking-widest text-zinc-400">Notificaciones</span>
+                <div className="fixed inset-0 z-[100]" onClick={() => setShowNotifications(false)}>
+                    <div className={`absolute top-20 right-2 md:right-8 w-80 max-h-[80vh] rounded-3xl shadow-2xl border overflow-hidden animate-in slide-in-from-top-2 fade-in duration-200 ${
+                        isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100 shadow-2xl'
+                    }`} onClick={e => e.stopPropagation()}>
+                        <div className={`p-5 border-b flex items-center justify-between ${isDark ? 'border-zinc-800' : 'border-zinc-50'}`}>
+                            <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Notificaciones</span>
                             {unreadCount > 0 && (
                                 <button onClick={async () => {
                                     if (branding?.slug && token) {
@@ -311,10 +313,10 @@ export default function App() {
                                         setUnreadCount(0);
                                         setNotifications(n => n.map(x => ({ ...x, read: true })));
                                     }
-                                }} className="text-[9px] font-black text-zinc-400 hover:text-zinc-600">Marcar leídas</button>
+                                }} className={`text-[9px] font-black uppercase hover:opacity-75 ${isDark ? 'text-indigo-400' : 'text-indigo-500'}`}>Marcar leídas</button>
                             )}
                         </div>
-                        <div className="max-h-72 overflow-y-auto">
+                        <div className="max-h-[60vh] overflow-y-auto hide-scrollbar">
                             {notifications.length > 0 ? notifications.map((n: any) => (
                                 <div
                                     key={n.id}
@@ -328,21 +330,27 @@ export default function App() {
                                         else if (n.type === 'payment') setActiveTab('payments');
                                         setShowNotifications(false);
                                     }}
-                                    className={`p-4 border-b border-zinc-50 cursor-pointer hover:bg-zinc-50 transition-colors ${!n.read ? 'bg-blue-50/50' : ''}`}
+                                    className={`p-5 border-b cursor-pointer transition-colors ${
+                                        isDark 
+                                            ? `border-zinc-800/50 hover:bg-zinc-800/40 ${!n.read ? 'bg-indigo-500/5' : ''}` 
+                                            : `border-zinc-50 hover:bg-zinc-50 ${!n.read ? 'bg-indigo-50/50' : ''}`
+                                    }`}
                                 >
-                                    <div className="flex items-start gap-3">
-                                        <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${!n.read ? 'bg-blue-500' : 'bg-zinc-200'}`} />
+                                    <div className="flex items-start gap-4">
+                                        <div className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${!n.read ? (isDark ? 'bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.4)]' : 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.3)]') : (isDark ? 'bg-zinc-800' : 'bg-zinc-200')}`} />
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-bold text-zinc-800 truncate">{n.title}</p>
-                                            <p className="text-xs text-zinc-400 mt-0.5 line-clamp-2">{n.body}</p>
-                                            <p className="text-[9px] text-zinc-300 mt-1">{n.created_at}</p>
+                                            <p className={`text-sm font-black uppercase tracking-tight truncate ${isDark ? 'text-white' : 'text-zinc-900'}`}>{n.title}</p>
+                                            <p className={`text-xs mt-1 line-clamp-2 leading-relaxed ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>{n.body}</p>
+                                            <p className={`text-[9px] font-bold uppercase tracking-widest mt-2 ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>{n.created_at}</p>
                                         </div>
                                     </div>
                                 </div>
                             )) : (
-                                <div className="p-8 text-center">
-                                    <Bell size={24} className="text-zinc-200 mx-auto mb-2" />
-                                    <p className="text-xs text-zinc-300">Sin notificaciones</p>
+                                <div className="p-10 text-center">
+                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${isDark ? 'bg-zinc-800' : 'bg-zinc-50'}`}>
+                                        <Bell size={24} className={isDark ? 'text-zinc-700' : 'text-zinc-200'} />
+                                    </div>
+                                    <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>Sin notificaciones</p>
                                 </div>
                             )}
                         </div>
@@ -458,93 +466,99 @@ export default function App() {
                             {activeTab === 'dashboard' && (
                                 <div className="space-y-8">
                                     {/* Indicadores Estilo Gris Top Bar - Solo para PC Dashboard */}
-                                    <div className="hidden md:grid grid-cols-4 gap-4">
+                                    <div className="hidden md:grid grid-cols-4 gap-3">
                                         {[
                                             { label: 'Inscritos', value: isTreasury ? (feesSummary?.total || 0) : allStudents.length, show: true, color: 'text-indigo-500' },
                                             { label: 'Mensualidad OK', value: isTreasury ? (feesSummary?.al_dia || 0) : allStudents.filter(s => s.payerStatus === 'paid').length, show: hasPermission?.('payments') ?? true, color: 'text-emerald-500' },
                                             { label: 'Por Validar', value: isTreasury ? (feesSummary?.en_revision || 0) : allStudents.filter(s => s.payerStatus === 'review').length, show: hasPermission?.('payments') ?? true, color: 'text-amber-500' },
                                             { label: 'En Deuda', value: isTreasury ? (feesSummary?.morosos || 0) : allStudents.filter(s => s.payerStatus === 'pending').length, show: hasPermission?.('payments') ?? true, color: 'text-rose-500' }
                                         ].map((stat, i) => stat.show && (
-                                            <div key={i} className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100 shadow-sm'} p-5 rounded-3xl border flex flex-col justify-between group hover:scale-[1.02] transition-all`}>
+                                            <div key={i} className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100 shadow-sm'} p-3.5 rounded-3xl border flex flex-col justify-between group hover:scale-[1.02] transition-all`}>
                                                 <p className={`text-[8px] font-black uppercase tracking-widest leading-none ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>{stat.label}</p>
-                                                <div className="flex items-baseline justify-between mt-2">
-                                                    <h4 className={`text-2xl font-black tracking-tighter leading-none ${isDark ? 'text-white' : 'text-zinc-950'}`}>{stat.value}</h4>
-                                                    <div className={`w-1.5 h-1.5 rounded-full ${stat.color} animate-pulse`} />
+                                                <div className="flex items-baseline justify-between mt-1.5">
+                                                    <h4 className={`text-xl font-black tracking-tighter leading-none ${isDark ? 'text-white' : 'text-zinc-950'}`}>{stat.value}</h4>
+                                                    <div className={`w-1 h-1 rounded-full ${stat.color} animate-pulse`} />
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
+                                    <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 mt-8">
+                                         {/* Main Content Area (Calendar) - Spans 2 columns */}
+                                         <div className="xl:col-span-2 space-y-4">
+                                             {branding?.industry === 'school_treasury' ? (
+                                                 <OverviewTreasury 
+                                                     branding={branding} 
+                                                     feesSummary={feesSummary}
+                                                     isDark={isDark}
+                                                     schedulesList={schedulesList}
+                                                 />
+                                             ) : (
+                                                 <OverviewSection 
+                                                     allStudents={allStudents}
+                                                     attendance={attendance}
+                                                     attendanceHistory={attendanceHistory}
+                                                     historyMonth={historyMonth}
+                                                     setHistoryMonth={setHistoryMonth}
+                                                     historyYear={historyYear}
+                                                     setHistoryYear={setHistoryYear}
+                                                     historyPage={historyPage}
+                                                     setHistoryPage={setHistoryPage}
+                                                     branding={branding}
+                                                     now={now}
+                                                     setSelectedHistoryDate={setSelectedHistoryDate}
+                                                     schedulesList={schedulesList}
+                                                     feesSummary={feesSummary}
+                                                     vocab={vocab}
+                                                     setActiveTab={setActiveTab}
+                                                     isDark={isDark}
+                                                     isDemo={isDemo}
+                                                     hasPermission={hasPermission}
+                                                 />
+                                             )}
+                                         </div>
 
-                                    <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-                                        <div className="xl:col-span-9 space-y-6">
-                                            {branding?.industry === 'school_treasury' ? (
-                                                <OverviewTreasury 
-                                                    branding={branding} 
-                                                    schedulesList={schedulesList} 
-                                                    feesSummary={feesSummary} 
-                                                />
-                                            ) : (
-                                                <OverviewSection 
-                                                    allStudents={allStudents}
-                                                    attendance={attendance}
-                                                    attendanceHistory={attendanceHistory}
-                                                    historyMonth={historyMonth}
-                                                    setHistoryMonth={setHistoryMonth}
-                                                    historyYear={historyYear}
-                                                    setHistoryYear={setHistoryYear}
-                                                    historyPage={historyPage}
-                                                    setHistoryPage={setHistoryPage}
-                                                    branding={branding}
-                                                    now={now}
-                                                    setSelectedHistoryDate={setSelectedHistoryDate}
-                                                    schedulesList={schedulesList}
-                                                    feesSummary={feesSummary}
-                                                    vocab={vocab}
-                                                    setActiveTab={setActiveTab}
-                                                    isDark={isDark}
-                                                    hasPermission={hasPermission}
-                                                />
-                                            )}
-                                        </div>
-                                        <div className="xl:col-span-3 space-y-6">
-                                            <div className="sticky top-0 space-y-6">
-                                                {/* Today's Schedule for PC */}
-                                                {isMartialArts && (
-                                                    <TodaySchedule schedules={schedulesList} primaryColor={branding?.primaryColor} isDark={isDark} />
-                                                )}
-                                                
-                                                {/* Quick Actions / Terminal Access */}
-                                                {isMartialArts && (
-                                                    <div className={`hidden md:block ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-950 border-zinc-800'} p-6 rounded-[2.5rem] shadow-xl relative overflow-hidden group`}>
-                                                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-all duration-700" />
-                                                        <div className="relative z-10">
-                                                            <h3 className="text-sm font-black text-white uppercase tracking-tighter mb-4">Check-in PWA</h3>
-                                                            <button 
-                                                                onClick={() => window.location.href = '/dashboard/checkin'}
-                                                                className="w-full py-3 bg-white text-zinc-950 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-zinc-100 transition-all active:scale-95 flex items-center justify-center gap-2"
-                                                            >
-                                                                Abrir Terminal <QrCode size={14} />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                )}
+                                         {/* Right Column - Schedule (Spans 1 column) */}
+                                         <div className="xl:col-span-1 space-y-4">
+                                             {isMartialArts && (
+                                                 <TodaySchedule schedules={schedulesList} primaryColor={branding?.primaryColor} isDark={isDark} />
+                                             )}
+                                         </div>
 
-                                                {/* Support Mini Card */}
-                                                <div 
-                                                    onClick={() => window.open('https://wa.me/56945392581', '_blank')}
-                                                    className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'} p-4 rounded-2xl border shadow-sm flex items-center gap-3 cursor-pointer hover:scale-[1.02] transition-all active:scale-95`}
-                                                >
-                                                    <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500">
-                                                        <Users size={18} />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className={`text-[8px] font-black uppercase tracking-widest truncate ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>SOPORTE</p>
-                                                        <p className={`text-[10px] font-bold truncate ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>+56 9 4539 2581</p>
-                                                    </div>
+                                         {/* Fourth Column - Check-in JJB (Spans 1 column) */}
+                                         <div className="xl:col-span-1 space-y-4">
+                                             {isMartialArts && (
+                                                 <div className={`hidden md:block ${isDark ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-zinc-950 border-zinc-800 text-white shadow-2xl shadow-zinc-300'} p-5 rounded-3xl relative overflow-hidden group border`}>
+                                                     <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-all duration-700" />
+                                                     <div className="relative z-10 flex flex-col items-center text-center">
+                                                         <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm border border-white/10">
+                                                             <QrCode size={24} className="text-white" />
+                                                         </div>
+                                                         <h3 className="text-xs font-black uppercase tracking-widest mb-1">Check-in JJB</h3>
+                                                         <p className="text-[8px] font-bold opacity-50 uppercase tracking-tighter mb-4">Acceso rápido para alumnos</p>
+                                                         <button 
+                                                             onClick={() => window.location.href = '/dashboard/checkin'}
+                                                             className="w-full py-2.5 bg-white text-zinc-950 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-zinc-100 transition-all active:scale-95 flex items-center justify-center gap-2"
+                                                         >
+                                                             Abrir Terminal
+                                                         </button>
+                                                     </div>
+                                                 </div>
+                                             )}
+                                             
+                                             <div 
+                                                onClick={() => window.open('https://wa.me/56945392581', '_blank')}
+                                                className={`${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'} p-4 rounded-2xl border shadow-sm flex items-center gap-3 cursor-pointer hover:scale-[1.02] transition-all active:scale-95`}
+                                            >
+                                                <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500">
+                                                    <Users size={18} />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className={`text-[8px] font-black uppercase tracking-widest truncate ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>SOPORTE</p>
+                                                    <p className={`text-[10px] font-bold truncate ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>+56 9 4539 2581</p>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </div>
+                                         </div>
+                                     </div>
                                 </div>
                             )}
                             {activeTab === 'attendance' && (
@@ -641,6 +655,7 @@ export default function App() {
                                         bubbleModalPayer={bubbleModalPayer}
                                         vocab={vocab}
                                         isDark={isDark}
+                                        handleBulkApprove={handleBulkApprove}
                                     />
                                 )
                             )}

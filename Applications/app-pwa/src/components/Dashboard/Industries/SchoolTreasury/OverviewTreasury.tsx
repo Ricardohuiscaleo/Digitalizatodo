@@ -10,13 +10,14 @@ interface OverviewTreasuryProps {
     branding: any;
     schedulesList: any[];
     feesSummary: { total: number; al_dia: number; en_revision: number; morosos: number } | null;
+    isDark?: boolean;
 }
 
 /**
  * Vista de Resumen especializada para Colegios (School Treasury)
  * Enfocada 100% en finanzas, sin sección de asistencia.
  */
-export default function OverviewTreasury({ branding, schedulesList, feesSummary }: OverviewTreasuryProps) {
+export default function OverviewTreasury({ branding, schedulesList, feesSummary, isDark }: OverviewTreasuryProps) {
     if (!feesSummary) return null;
 
     const cards = [

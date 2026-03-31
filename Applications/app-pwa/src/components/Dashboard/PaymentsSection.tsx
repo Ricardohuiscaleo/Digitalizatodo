@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Search, Calendar, Users, ChevronRight, SlidersHorizontal } from 'lucide-react';
+import { Search, Calendar, Users, ChevronRight, SlidersHorizontal, LayoutGrid, List } from 'lucide-react';
 import BubblePaymentModal from './BubblePaymentModal';
 import { StudentAvatar } from './Industries/MartialArts/StudentAvatar';
 
@@ -29,6 +29,7 @@ interface PaymentsSectionProps {
     bubbleModalPayer: any;
     vocab: any;
     isDark?: boolean;
+    handleBulkApprove?: (ids: string[]) => Promise<void>;
 }
 
 const PaymentsSection: React.FC<PaymentsSectionProps> = ({
@@ -55,14 +56,18 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
     bubbleModalPayer,
     vocab,
     isDark = false,
+    handleBulkApprove,
 }) => {
+    const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+    const [isBulkApproving, setIsBulkApproving] = React.useState(false);
+    const [viewMode, setViewMode] = React.useState<'table' | 'cards'>('cards');
     const getPayerRealStats = (payer: any) => {
         const reviewAmount = payer.payments?.filter((p: any) => p.status === 'review').reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
         const pendingAmount = payer.payments?.filter((p: any) => p.status === 'pending' || p.status === 'overdue').reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
         const approvedAmount = payer.payments?.filter((p: any) => p.status === 'approved').reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
         
         const hasReview = reviewAmount > 0;
-        const numEnrollments = (payer.enrolledStudents || payer.students || []).length;
+        const numEnrollments = (payer.enrolledStudents || payer.students || []).filter((s: any) => !s.deleted_at).length;
         const displayAmount = paymentFilter === 'history' 
             ? (approvedAmount + reviewAmount + pendingAmount)
             : ((hasReview || (paymentFilter === 'pending' && reviewAmount > 0)) ? reviewAmount : (pendingAmount || 0));
@@ -71,12 +76,37 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
     };
 
     const filteredPayers = payers.filter(p => {
+        if (p.deleted_at) return false;
+        
         const stats = getPayerRealStats(p);
         if (paymentFilter === 'pending') return stats.pendingAmount > 0;
         if (paymentFilter === 'review') return stats.reviewAmount > 0;
         if (paymentFilter === 'paid') return stats.approvedAmount > 0 && stats.pendingAmount === 0 && stats.reviewAmount === 0;
         return true;
     }).filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const toggleSelect = (id: string) => {
+        const next = new Set(selectedIds);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setSelectedIds(next);
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedIds.size === filteredPayers.length) setSelectedIds(new Set());
+        else setSelectedIds(new Set(filteredPayers.map(p => String(p.id))));
+    };
+
+    const executeBulkApprove = async () => {
+        if (!handleBulkApprove || selectedIds.size === 0) return;
+        setIsBulkApproving(true);
+        try {
+            await handleBulkApprove(Array.from(selectedIds));
+            setSelectedIds(new Set());
+        } finally {
+            setIsBulkApproving(false);
+        }
+    };
 
     const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
     const years = [new Date().getFullYear(), new Date().getFullYear() - 1];
@@ -106,6 +136,29 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-1 bg-zinc-400/10 p-1 rounded-xl">
+                        <div className="flex items-center gap-2 mr-2 pr-2 border-r border-zinc-500/20">
+                            <input 
+                                type="checkbox" 
+                                className="w-4 h-4 accent-indigo-500 rounded cursor-pointer"
+                                checked={filteredPayers.length > 0 && selectedIds.size === filteredPayers.length}
+                                onChange={toggleSelectAll}
+                            />
+                            <span className={`text-[8px] font-black uppercase ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Todos</span>
+                        </div>
+                        <button 
+                            onClick={() => setViewMode('table')}
+                            className={`p-1.5 rounded-lg transition-all ${viewMode === 'table' ? (isDark ? 'bg-zinc-700 text-white' : 'bg-white shadow-sm text-indigo-500') : 'text-zinc-400'}`}
+                        >
+                            <List size={14} />
+                        </button>
+                        <button 
+                            onClick={() => setViewMode('cards')}
+                            className={`p-1.5 rounded-lg transition-all ${viewMode === 'cards' ? (isDark ? 'bg-zinc-700 text-white' : 'bg-white shadow-sm text-indigo-500') : 'text-zinc-400'}`}
+                        >
+                            <LayoutGrid size={14} />
+                        </button>
+                    </div>
                 </div>
                 <div className={`flex p-1 rounded-2xl h-10 relative ${isDark ? 'bg-zinc-800/80' : 'bg-zinc-100/60'}`}>
                     <div
@@ -130,6 +183,37 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                         </button>
                     ))}
                 </div>
+
+                {/* Bulk Actions Header */}
+                {selectedIds.size > 0 && (
+                    <div className={`flex items-center justify-between p-4 rounded-2xl animate-in slide-in-from-top-2 duration-300 ${
+                        isDark ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-indigo-50 border-indigo-100 text-indigo-600'
+                    } border shadow-lg shadow-indigo-500/5`}>
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[10px] font-black">
+                                {selectedIds.size}
+                            </div>
+                            <p className="text-[10px] font-black uppercase tracking-widest">Apoderados seleccionados</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button 
+                                onClick={() => setSelectedIds(new Set())}
+                                className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${
+                                    isDark ? 'bg-zinc-800 text-zinc-400 hover:text-white' : 'bg-white text-zinc-400 hover:text-zinc-600'
+                                }`}
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                onClick={executeBulkApprove}
+                                disabled={isBulkApproving}
+                                className="px-6 py-2 bg-indigo-500 text-white rounded-xl text-[9px] font-black uppercase shadow-lg shadow-indigo-500/20 active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {isBulkApproving ? 'Procesando...' : 'Aprobar Masivamente'}
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {paymentFilter === 'history' && (
@@ -166,24 +250,42 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                 </div>
             )}
 
-            {/* Desktop tabla */}
-            <div className={`hidden md:block rounded-3xl border overflow-hidden ${
-                isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100 shadow-sm'
-            }`}>
+            {/* PC: Table View */}
+            {viewMode === 'table' && (
+                <div className={`hidden md:block rounded-3xl border overflow-hidden ${
+                    isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100 shadow-sm'
+                }`}>
                 <table className="w-full text-left">
                     <thead className={`border-b ${isDark ? 'bg-zinc-800/60 border-zinc-800' : 'bg-zinc-50 border-zinc-100'}`}>
                         <tr>
+                            <th className="px-6 py-4 w-4">
+                                <input 
+                                    type="checkbox" 
+                                    className="accent-indigo-500 w-4 h-4 rounded cursor-pointer"
+                                    checked={filteredPayers.length > 0 && selectedIds.size === filteredPayers.length}
+                                    onChange={toggleSelectAll}
+                                />
+                            </th>
                             {['Titular','Monto','Estado','Acción'].map((h,i) => (
                                 <th key={i} className={`px-6 py-4 text-[10px] font-black uppercase ${isDark ? 'text-zinc-600' : 'text-zinc-400'} ${i===3?'text-right':''}`}>{h}</th>
                             ))}
                         </tr>
                     </thead>
                     <tbody className={`divide-y ${isDark ? 'divide-zinc-800' : 'divide-zinc-50'}`}>
-                        {filteredPayers.map(payer => {
+                        {filteredPayers.map((payer: any) => {
                             const stats = getPayerRealStats(payer);
                             const isPaid = (payer.status === 'paid') || (paymentFilter === 'history' && stats.approvedAmount > 0);
+                            const students = (payer.enrolledStudents || payer.students || []).filter((s: any) => !s.deleted_at);
                             return (
-                                <tr key={payer.id} className={`transition-colors ${isDark ? 'hover:bg-zinc-800/40' : 'hover:bg-zinc-50/50'}`}>
+                                <tr key={payer.id} className={`transition-colors ${isDark ? 'hover:bg-zinc-800/40' : 'hover:bg-zinc-50/50'} ${selectedIds.has(String(payer.id)) ? (isDark ? 'bg-indigo-500/5' : 'bg-indigo-50/30') : ''}`}>
+                                    <td className="px-6 py-4">
+                                        <input 
+                                            type="checkbox" 
+                                            className="accent-indigo-500 w-4 h-4 rounded cursor-pointer"
+                                            checked={selectedIds.has(String(payer.id))}
+                                            onChange={() => toggleSelect(String(payer.id))}
+                                        />
+                                    </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
                                             <StudentAvatar 
@@ -193,7 +295,18 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                                                 isDark={isDark} 
                                                 industry={branding?.industry}
                                             />
-                                            <span className={`text-sm font-black uppercase ${isDark ? 'text-white' : 'text-zinc-900'}`}>{payer.name}</span>
+                                            <div className="flex flex-col">
+                                                <span className={`text-sm font-black uppercase ${isDark ? 'text-white' : 'text-zinc-900'}`}>{payer.name}</span>
+                                                <div className="flex flex-wrap gap-1 mt-0.5">
+                                                    {students.map((s: any) => (
+                                                        <span key={s.id} className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md ${
+                                                            isDark ? 'bg-zinc-800 text-zinc-500' : 'bg-zinc-100 text-zinc-400'
+                                                        }`}>
+                                                            {s.name.split(' ')[0]}: {s.enrollment?.plan?.name || s.plan_name || s.course_name || 'Sin plan'}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
                                     </td>
                                     <td className={`px-6 py-4 text-sm font-black ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>{formatMoney(stats.displayAmount)}</td>
@@ -213,7 +326,8 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                         })}
                     </tbody>
                 </table>
-            </div>
+                </div>
+            )}
 
             {bubbleModalPayer && (
                 <BubblePaymentModal
@@ -230,19 +344,19 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                 />
             )}
 
-            {/* Mobile lista */}
-            <div className="md:hidden space-y-3 pb-12 px-3">
+            {/* Cards View (Mobile or PC in Cards mode) */}
+            <div className={`${viewMode === 'cards' ? 'grid' : 'grid md:hidden'} grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 pb-12 px-3`}>
                 {filteredPayers.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-16 gap-3">
+                    <div className="col-span-full flex flex-col items-center justify-center py-16 gap-3">
                         <Users size={32} className={isDark ? 'text-zinc-700' : 'text-zinc-200'} />
                         <p className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-600' : 'text-zinc-300'}`}>Sin resultados</p>
                     </div>
                 )}
                 {filteredPayers.map(payer => {
                     const stats = getPayerRealStats(payer);
-                    const isPaid = payer.status === 'paid' || (stats.approvedAmount > 0 && stats.pendingAmount === 0 && stats.reviewAmount === 0);
-                    const isReview = !isPaid && stats.reviewAmount > 0;
-                    const students = payer.enrolledStudents || payer.students || [];
+                    const isPaid = stats.approvedAmount > 0 && stats.pendingAmount === 0 && stats.reviewAmount === 0;
+                    const isReview = stats.hasReview;
+                    const students = (payer.enrolledStudents || payer.students || []).filter((s: any) => !s.deleted_at);
                     
                     const statusColor = isPaid ? 'text-emerald-500' : isReview ? 'text-amber-400' : 'text-rose-500';
                     const statusLabel = isPaid ? 'Al día' : isReview ? 'Por aprobar' : 'Pendiente';
@@ -254,16 +368,30 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                             : (isDark ? 'bg-rose-500/[0.08] border-rose-500/30' : 'bg-rose-50 border-rose-500/20');
 
                     return (
-                        <button key={payer.id}
-                            className={`w-full flex flex-col gap-2.5 py-2.5 px-4 rounded-[1.8rem] border transition-all active:scale-[0.97] ${cardBg}`}
-                            onMouseDown={() => handleLongPressStart(payer.id)}
-                            onMouseUp={handleLongPressEnd}
-                            onTouchStart={() => handleLongPressStart(payer.id)}
-                            onTouchEnd={handleLongPressEnd}
-                            onClick={() => setBubbleModalPayer(payer)}
-                        >
-                            {/* Nivel 1 & 2: Alumnos (Avatar + Nombre Abajo) */}
-                            <div className="flex items-center gap-4 overflow-x-auto hide-scrollbar pt-2 pl-2 pb-1.5 min-h-[72px]">
+                        <div key={payer.id} className="relative group">
+                            {/* Checkbox for Bulk Actions */}
+                            <div className="absolute top-4 left-4 z-20">
+                                <input 
+                                    type="checkbox" 
+                                    className="w-5 h-5 accent-indigo-500 rounded-lg cursor-pointer border-2 border-white/20"
+                                    checked={selectedIds.has(String(payer.id))}
+                                    onChange={(e) => {
+                                        e.stopPropagation();
+                                        toggleSelect(String(payer.id));
+                                    }}
+                                />
+                            </div>
+
+                            <button 
+                                className={`w-full flex flex-col gap-2.5 py-4 px-5 rounded-[2rem] border transition-all active:scale-[0.97] hover:shadow-xl ${
+                                    selectedIds.has(String(payer.id)) 
+                                        ? (isDark ? 'bg-indigo-500/10 border-indigo-500/50' : 'bg-indigo-50 border-indigo-200')
+                                        : cardBg
+                                }`}
+                                onClick={() => setBubbleModalPayer(payer)}
+                            >
+                                {/* Nivel 1 & 2: Alumnos (Avatar + Nombre Abajo) */}
+                                <div className="flex items-center gap-4 overflow-x-auto hide-scrollbar pt-4 pl-4 pb-1.5 min-h-[80px]">
                                 {students.slice(0, 4).map((student: any) => {
                                     const classesCount = student.total_attendances || 0;
                                     
@@ -288,9 +416,18 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                                                     isReview ? 'bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.3)]' :
                                                     'bg-rose-500 shadow-[0_0_4px_rgba(244,63,94,0.3)]'
                                                 }`} />
-                                                <span className={`text-[8px] font-black uppercase tracking-tighter text-center max-w-[40px] truncate ${isDark ? 'text-zinc-500' : 'text-zinc-900/60'}`}>
-                                                    {student.name.split(' ')[0]}
-                                                </span>
+                                                <div className="flex flex-col items-center">
+                                                    <span className={`text-[8px] font-black uppercase tracking-tighter text-center max-w-[50px] truncate ${isDark ? 'text-zinc-500' : 'text-zinc-900/60'}`}>
+                                                        {student.name.split(' ')[0]}
+                                                    </span>
+                                                    <div className={`mt-0.5 px-1.5 py-0.5 rounded-md text-[7px] font-black uppercase tracking-wider text-center max-w-[65px] truncate border shadow-sm ${
+                                                        isDark 
+                                                            ? 'bg-zinc-800 border-white/5 text-zinc-500' 
+                                                            : 'bg-white border-zinc-100 text-zinc-400'
+                                                    }`}>
+                                                        {student.enrollment?.plan?.name || student.plan_name || student.course_name || 'Sin Plan'}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     );
@@ -336,10 +473,11 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                                     </div>
                                 </div>
                             </div>
-                        </button>
-                    );
-                })}
-            </div>
+                                </button>
+                            </div>
+                        );
+                    })}
+                </div>
         </div>
     );
 };

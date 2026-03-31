@@ -289,6 +289,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
 
     useRealtimeChannel(`dashboard.${branding?.slug}`, {
         'student.registered': () => reloadDataAndFees(),
+        'student.updated': () => reloadDataAndFees(),
     }, !!branding?.slug);
 
     const handlePriceInput = (cat: 'cat1' | 'cat2', val: string) => {
@@ -317,6 +318,16 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
 
     const handlePaymentApprove = (payer: any) => {
         setPaymentActionPayer(payer);
+    };
+
+    const handleBulkApprove = async (payerIds: string[]) => {
+        if (!token || !brandingSlugRef.current || payerIds.length === 0) return;
+        try {
+            await Promise.all(payerIds.map(id => approvePayment(brandingSlugRef.current, token, id)));
+            reloadDataAndFees();
+        } catch (err) {
+            console.error("Error bulk approving:", err);
+        }
     };
 
     const handleActivatePush = () => {
@@ -475,7 +486,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         allStudents, toggleAttendance,
         handlePriceInput, handleSavePrices, handleSaveBankInfo, handleLogoUpload,
         handlePaymentApprove, handleActivatePush, handleLoadDemo, handleConfirmPayment,
-        handleAcceptTerms,
+        handleAcceptTerms, handleBulkApprove,
         hasPermission,
         formatMoney: (a: number) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(a),
         STATUS_LABEL,

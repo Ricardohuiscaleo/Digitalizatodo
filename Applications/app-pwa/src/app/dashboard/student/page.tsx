@@ -89,6 +89,13 @@ export default function StudentDashboard() {
         'schedule.updated': () => martialArts.refreshSchedules(),
     }, !!slug);
 
+    useRealtimeChannel(`dashboard.${slug}`, {
+        'student.updated': (ev: any) => {
+            const myStudent = (common.data?.students || []).find((s: any) => String(s.id) === String(ev.studentId));
+            if (myStudent) common.refreshData();
+        },
+    }, !!slug);
+
     useRealtimeChannel(`payments.${slug}`, {
         'payment.updated': (ev: any) => {
             const guardianId = common.data?.guardian?.id;

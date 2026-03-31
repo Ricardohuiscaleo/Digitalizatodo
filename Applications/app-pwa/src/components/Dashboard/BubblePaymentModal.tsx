@@ -132,9 +132,14 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between gap-2 mb-1">
-                                        <p className={`text-sm font-black uppercase truncate ${isDark ? 'text-white' : 'text-zinc-900'}`}>
-                                            {payment.student_name}
-                                        </p>
+                                        <div className="flex flex-col">
+                                            <p className={`text-sm font-black uppercase truncate ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+                                                {payment.student_name}
+                                            </p>
+                                            <p className={`text-[9px] font-bold uppercase mt-0.5 opacity-60 ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                                                {payment.plan_name || payment.course_name || 'Sin plan'}
+                                            </p>
+                                        </div>
                                         <p className={`text-lg font-black tracking-tighter ${isDark ? 'text-white' : 'text-zinc-950'}`}>
                                             {formatMoney(payment.amount)}
                                         </p>
