@@ -481,11 +481,15 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
         updateTermsSection(index, 'content', newContent);
     };
 
-    const ActionCard = ({ icon: Icon, title, description, onClick, color = "indigo" }: any) => (
+    const ActionCard = ({ icon: Icon, title, description, onClick, color = "indigo", solid = false }: any) => (
         <button onClick={onClick}
             className={`w-full ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'} rounded-[24px] p-5 shadow-xl border flex items-center gap-4 active:scale-[0.98] transition-all ${isDark ? 'hover:bg-zinc-800' : 'hover:bg-zinc-50'} group shadow-zinc-950/5`}>
-            <div className={`w-14 h-14 rounded-2xl bg-${color}-500/10 flex items-center justify-center border border-${color}-500/20 group-hover:bg-${color}-500/20 transition-colors shadow-inner`}>
-                <Icon className={`text-${color}-500`} size={24} />
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all shadow-inner ${
+                solid && color === 'blue' 
+                    ? 'bg-blue-600 border-blue-500 shadow-lg shadow-blue-500/20' 
+                    : `bg-${color}-500/10 border-${color}-500/20 group-hover:bg-${color}-500/20`
+            }`}>
+                <Icon className={solid && color === 'blue' ? 'text-white' : `text-${color}-500`} size={24} />
             </div>
             <div className="flex-1 text-left">
                 <h4 className={`text-[14px] font-black uppercase tracking-tighter ${isDark ? 'text-zinc-100' : 'text-zinc-950'} leading-none mb-1`}>
@@ -579,6 +583,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                         description="Vincular cuenta y automatizar cobros"
                         onClick={() => setShowMPConnectModal(true)}
                         color="blue"
+                        solid={true}
                     />
                 )}
             </div>
