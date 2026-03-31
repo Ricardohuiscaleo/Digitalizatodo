@@ -8,6 +8,7 @@ use App\Services\MercadoPagoService;
 use App\Models\FeePayment;
 use App\Models\Tenant;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 class MercadoPagoController extends Controller
 {
@@ -67,21 +68,61 @@ class MercadoPagoController extends Controller
      */
     public function handleWebhook(Request $request)
     {
-        $payload = $request->all();
-        Log::info("Mercado Pago Webhook Received", $payload);
+        $topic = $request->query('topic') ?? $request->input('type') ?? null;
+        $id = $request->query('id') ?? $request->input('data.id') ?? null;
 
-        // Lógica de procesamiento de notificación
-        // 1. Identificar el tipo de evento (subscription_preapproval, payment, etc.)
-        // 2. Si el pago es exitoso, buscar la cuota correspondiente y marcar como PAGADA.
-        
-        $topic = $request->query('topic') ?? $payload['type'] ?? null;
-        $id = $request->query('id') ?? $payload['data']['id'] ?? null;
+        Log::info("Mercado Pago Webhook:", ['topic' => $topic, 'id' => $id]);
 
-        if ($topic === 'subscription_preapproval') {
-            // Manejar cobro recurrente automático
-            // Actualizar status en base de datos
+        if (!$id || !$topic) {
+            return response()->json(['status' => 'error', 'message' => 'Missing data'], 400);
         }
 
-        return response()->json(['status' => 'ok'], 200);
+        try {
+            // 🔍 1. Consultar detalles a Mercado Pago (según el tipo de notificación)
+            $externalReference = null;
+            $status = null;
+
+            if ($topic === 'payment') {
+                $response = Http::withToken(env('MERCADOPAGO_ACCESS_TOKEN'))
+                    ->get("https://api.mercadopago.com/v1/payments/{$id}");
+                
+                if ($response->successful()) {
+                    $paymentData = $response->json();
+                    $externalReference = $paymentData['external_reference'] ?? null;
+                    $status = $paymentData['status'];
+                }
+            } elseif ($topic === 'subscription_preapproval' || $topic === 'preapproval') {
+                $response = Http::withToken(env('MERCADOPAGO_ACCESS_TOKEN'))
+                    ->get("https://api.mercadopago.com/preapproval/{$id}");
+                
+                if ($response->successful()) {
+                    $subData = $response->json();
+                    $externalReference = $subData['external_reference'] ?? null;
+                    $status = $subData['status'];
+                }
+            }
+
+            // 🛡️ 2. Si tenemos la referencia, actualizamos la base de datos local
+            if ($externalReference && strpos($externalReference, 'FP_') === 0) {
+                $feePaymentId = str_replace('FP_', '', $externalReference);
+                $feePayment = FeePayment::find($feePaymentId);
+
+                if ($feePayment && ($status === 'approved' || $status === 'authorized')) {
+                    $feePayment->update([
+                        'status' => 'paid', // 🟢 MARCAR COMO PAGADO
+                        'paid_at' => now(),
+                        'payment_method' => 'mercadopago',
+                        'notes' => ($feePayment->notes ? $feePayment->notes . "\n" : "") . "MP Transaction: $id"
+                    ]);
+                    Log::info("Cuota Digitaliza Todo Pay actualizada con éxito: FP_{$feePaymentId}");
+                }
+            }
+
+            return response()->json(['status' => 'ok'], 200);
+
+        } catch (\Exception $e) {
+            Log::error("Error procesando Webhook MP: " . $e->getMessage());
+            return response()->json(['status' => 'error'], 500);
+        }
     }
 }
