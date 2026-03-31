@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Services\MercadoPagoService;
 use App\Models\FeePayment;
 use App\Models\Tenant;
+use App\Models\Plan; // 🥋 Importamos Plan para validar precios
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 
@@ -20,7 +21,7 @@ class MercadoPagoController extends Controller
     }
 
     /**
-     * Inicia el proceso de suscripción para un alumno
+     * Inicia el flujo de pago para un alumno (Suscripción o Pago Único)
      */
     public function initiateSubscription(Request $request, $tenantSlug)
     {
@@ -42,27 +43,34 @@ class MercadoPagoController extends Controller
         }
 
         try {
-            // 🔍 1. Buscar el Plan en la base de datos local para saber si es recurrente
-            // (Asumimos que el modelo es 'Fee' o similar según el listado del usuario)
-            $planId = $request->plan_id;
+            // 🔍 1. Buscar el Plan en la base de datos local
+            $localPlan = Plan::where('tenant_id', $tenant->id)->find($request->plan_id);
+            $planPrice = $localPlan ? (float) $localPlan->price : 0;
+            $requestAmount = (float) $request->amount;
+
+            // 🕵️‍♂️ DETECTOR DE PROPORCIONAL: 
+            // Si el monto a pagar no coincide con el precio del plan, es un prorrateo.
+            // En ese caso, forzamos un Pago Único para no crear una suscripción errónea.
+            $isProportional = $planPrice > 0 && abs($planPrice - $requestAmount) > 1;
             
             // Si el plan_id enviado es un string largo de MP, es suscripción.
-            // Si es un número pequeño, es nuestro ID local.
-            $isMPPlan = strlen($planId) > 10;
-            
-            if ($isMPPlan) {
-                // Flujo Suscripción Clásico
+            $isMPPlan = strlen($request->plan_id) > 10;
+
+            if ($isMPPlan && !$isProportional) {
+                // 🔄 Flujo Suscripción Clásico (Solo si el monto es el completo del plan)
                 $subscription = $this->mpService->createSubscription(
                     $request->email,
-                    $planId, 
+                    $request->plan_id, 
                     $request->amount,
                     $request->fee_payment_id
                 );
                 $initPoint = $subscription->init_point;
             } else {
-                // ⚡ Flujo de Pago Único (Clases Sueltas / Packs)
+                // ⚡ Flujo de Pago Único (Para Clases Sueltas O Pagos Proporcionales)
+                $title = $isProportional ? "Pago Proporcional - " . ($localPlan->name ?? "Mensualidad") : "Pago Digitaliza Todo Pay";
+                
                 $preference = $this->mpService->createOneTimePayment(
-                    "Pago Digitaliza Todo Pay",
+                    $title,
                     $request->amount,
                     $request->fee_payment_id,
                     $request->email
@@ -72,7 +80,8 @@ class MercadoPagoController extends Controller
 
             return response()->json([
                 'success' => true,
-                'init_point' => $initPoint
+                'init_point' => $initPoint,
+                'is_proportional' => $isProportional
             ]);
 
         } catch (\Exception $e) {
