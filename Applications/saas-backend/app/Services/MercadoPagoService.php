@@ -21,7 +21,7 @@ class MercadoPagoService
         $this->publicKey = env('MERCADOPAGO_PUBLIC_KEY');
         // Forzamos sandbox temporalmente si no está definido para seguridad en pruebas
         $this->isSandbox = env('MERCADOPAGO_MODE', 'sandbox') === 'sandbox';
-        $this->platformFeePercent = env('MERCADOPAGO_PLATFORM_FEE', 5);
+        $this->platformFeePercent = env('MERCADOPAGO_PLATFORM_FEE', 1.81);
 
         if ($this->accessToken) {
             MercadoPagoConfig::setAccessToken($this->accessToken);
