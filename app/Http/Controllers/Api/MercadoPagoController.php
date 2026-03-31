@@ -30,6 +30,15 @@ class MercadoPagoController extends Controller
             'amount' => 'required|numeric'
         ]);
 
+        // 🛡️ SEGURIDAD: Bloquear si la academia no ha vinculado sus datos
+        $tenant = Tenant::where('slug', $tenantSlug)->firstOrFail();
+        if ($tenant->mercadopago_auth_status !== 'connected' || !$tenant->mercadopago_access_token) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta academia aún no ha configurado Digitalizatodo Pay. Por favor, contacta al administrador del Dojo.'
+            ], 400);
+        }
+
         try {
             // 1. Obtener o crear el Plan en Mercado Pago si no existe (opcional)
             // Aquí podríamos buscar si el plan local ya tiene un mp_plan_id
