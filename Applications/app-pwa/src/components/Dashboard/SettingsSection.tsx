@@ -8,6 +8,7 @@ import {
     Home, Star, Baby, AlertCircle, Copy, Check, User, Info, Smartphone, Lock, CheckCircle2, QrCode
 } from 'lucide-react';
 import { deleteRegistrationPage, generateRegistrationPage } from "@/lib/api";
+import { MPConnectModal } from './Admin/MPConnectModal';
 
 interface SettingsSectionProps {
     branding: any;
@@ -105,6 +106,10 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
     const [showSignatureModal, setShowSignatureModal] = useState(false);
     const [showTermsModal, setShowTermsModal] = useState(false);
     const [showSchedulesModal, setShowSchedulesModal] = useState(false);
+    
+    // Mercado Pago OAuth State
+    const [showMPConnectModal, setShowMPConnectModal] = useState(false);
+    const [mpLoading, setMpLoading] = useState(false);
     
     // Schedule form state
     const [showScheduleForm, setShowScheduleForm] = useState(false);
@@ -567,18 +572,40 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                     />
                 )}
 
-                {branding?.industry === 'martial_arts' && hasPermission('settings.checkin') && (
-                    <div className="hidden md:block">
-                        <ActionCard 
-                            icon={QrCode} 
-                            title="Punto de Marcación" 
-                            description="Cámara / Escáner para el Dojo"
-                            onClick={() => window.location.href = '/dashboard/checkin'}
-                            color="rose"
-                        />
-                    </div>
+                {branding?.industry === 'martial_arts' && hasPermission('settings.payments') && (
+                    <ActionCard 
+                        icon={CreditCard} 
+                        title="Pagos Mercado Pago" 
+                        description="Vincular cuenta y automatizar cobros"
+                        onClick={() => setShowMPConnectModal(true)}
+                        color="purple"
+                    />
                 )}
             </div>
+
+            {/* MODAL: CONEXIÓN MERCADO PAGO OAUTH */}
+            <MPConnectModal
+                isOpen={showMPConnectModal}
+                onClose={() => setShowMPConnectModal(false)}
+                isDark={isDark}
+                loading={mpLoading}
+                onConnect={async () => {
+                    setMpLoading(true);
+                    try {
+                        const response = await fetch('/api/mercadopago/auth/url', {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const data = await response.json();
+                        if (data.url) {
+                            window.location.href = data.url; // Redirigir a Mercado Pago
+                        }
+                    } catch (error) {
+                        alert("Error al iniciar la conexión con Mercado Pago.");
+                    } finally {
+                        setMpLoading(false);
+                    }
+                }}
+            />
 
             {/* LINK DE REGISTRO */}
             {hasPermission('settings.registration') && (

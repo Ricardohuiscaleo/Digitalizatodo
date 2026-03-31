@@ -22,6 +22,7 @@ import {
     Calendar
 } from "lucide-react";
 import { PaymentRow } from "../../StudentPaymentComponents";
+import { createSubscription } from "@/lib/api";
 
 interface PaymentsMartialArtsProps {
     paymentTab: "pending" | "upgrade" | "history";
@@ -172,6 +173,31 @@ export function PaymentsMartialArts({
         const isInReview = payment.status === 'pending_review';
         const isUploading = isUploadingPending === pid;
 
+        const handlePayWithMP = async () => {
+            if (!student?.email) {
+                alert("El alumno no tiene un correo registrado.");
+                return;
+            }
+            setIsUploadingPending(pid);
+            try {
+                // Obtenemos el plan_id si es proyectado o el ID de suscripción de MP
+                const res = await createSubscription(student.tenant_id, "", {
+                    studentId: String(student.id),
+                    planId: payment.mp_plan_id || "TEST_PLAN_ID", // Aquí usaremos el ID real del plan de MP
+                    email: student.email,
+                    amount: payment.amount
+                });
+
+                if (res?.init_point) {
+                    window.location.href = res.init_point;
+                } else {
+                    alert("No se pudo generar el link de pago.");
+                }
+            } finally {
+                setIsUploadingPending(null);
+            }
+        };
+
         return (
             <div key={pid} className="space-y-0 relative">
                 <div className={`p-4 rounded-[2rem] border transition-all duration-300 ${
@@ -205,15 +231,7 @@ export function PaymentsMartialArts({
                                         : 'bg-zinc-900 text-white hover:bg-orange-600 active:scale-95'
                                     }`}
                                 >
-                                    {isOpen ? <><X size={11} /> Cancel</> : <><Upload size={11} /> Pagar</>}
-                                </button>
-                            )}
-                            {payment.proof_image && (
-                                <button
-                                    onClick={() => setProofModal({ url: payment.proof_image, canDelete: !isInReview, paymentId: pid })}
-                                    className="w-9 h-9 flex items-center justify-center bg-zinc-50 text-zinc-400 rounded-xl hover:bg-zinc-900 hover:text-white transition-all border border-zinc-100"
-                                >
-                                    <Eye size={16} />
+                                    {isOpen ? <><X size={11} /> Cancelar</> : <><CreditCard size={11} /> Pagar</>}
                                 </button>
                             )}
                         </div>
@@ -223,57 +241,29 @@ export function PaymentsMartialArts({
                 {isOpen && (
                     <div className="mx-2 rounded-b-[2rem] border-x border-b border-orange-200 bg-orange-50/30 p-5 space-y-4 animate-in slide-in-from-top-2 duration-300">
                         <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-lg bg-orange-500 flex items-center justify-center">
-                                <Upload size={12} className="text-white" />
+                            <div className="w-6 h-6 rounded-lg bg-emerald-500 flex items-center justify-center">
+                                <ShieldCheck size={12} className="text-white" />
                             </div>
                             <div>
-                                <p className="text-[10px] font-black text-zinc-900 uppercase tracking-wide">Sube tu comprobante</p>
-                                <p className="text-[9px] text-zinc-500">El Sensei lo aprobará pronto 🥋</p>
+                                <p className="text-[10px] font-black text-zinc-900 uppercase tracking-wide">Pago Seguro con Tarjeta</p>
+                                <p className="text-[9px] text-zinc-500">Activa tu suscripción mensual 🥋</p>
                             </div>
                         </div>
 
-                        {pendingProofPreview ? (
-                            <div className="relative rounded-2xl overflow-hidden border-2 border-dashed border-zinc-200 bg-white">
-                                <img src={pendingProofPreview} alt="Comprobante" className="w-full h-40 object-cover" />
-                                <button
-                                    onClick={() => { setPendingProofFile(null); setPendingProofPreview(null); }}
-                                    className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center shadow hover:bg-red-600 transition-colors"
-                                >
-                                    <Trash2 size={12} />
-                                </button>
-                                <div className="absolute bottom-2 left-2 bg-black/60 text-white text-[8px] font-bold px-2 py-1 rounded-lg truncate max-w-[80%]">
-                                    {pendingProofFile?.name}
-                                </div>
-                            </div>
-                        ) : (
-                            <button
-                                onClick={() => pendingFileRef.current?.click()}
-                                className="w-full h-28 rounded-2xl border-2 border-dashed border-zinc-200 bg-white hover:border-orange-300 hover:bg-orange-50 transition-all flex flex-col items-center justify-center gap-2 group"
-                            >
-                                <ImageIcon size={24} className="text-zinc-300 group-hover:text-orange-400 transition-colors" />
-                                <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400 group-hover:text-orange-600">Toca para subir foto</span>
-                                <span className="text-[8px] text-zinc-300">JPG, PNG, HEIC — máx 50MB</span>
-                            </button>
-                        )}
-
                         <button
-                            onClick={() => handleSubmitPendingProof(pid)}
-                            disabled={!pendingProofFile || isUploading}
-                            className={`w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2 ${
-                                pendingProofFile
-                                ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-lg shadow-orange-200 active:scale-95'
-                                : 'bg-zinc-100 text-zinc-300 cursor-not-allowed'
-                            }`}
+                            onClick={handlePayWithMP}
+                            disabled={isUploading}
+                            className={`w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2 bg-zinc-900 text-white hover:bg-zinc-950 active:scale-95 shadow-xl shadow-zinc-200`}
                         >
                             {isUploading ? (
-                                <><Loader2 size={14} className="animate-spin" /> Enviando...</>
+                                <><Loader2 size={14} className="animate-spin" /> Conectando...</>
                             ) : (
-                                <><Check size={14} /> Confirmar y Enviar</>
+                                <><CreditCard size={14} /> Pagar Ahora</>
                             )}
                         </button>
 
-                        <p className="text-center text-[8px] text-zinc-400">
-                            Una vez validado, tu pago quedará registrado como aprobado
+                        <p className="text-center text-[7.5px] font-bold text-zinc-400 uppercase tracking-widest leading-relaxed">
+                            Al pagar, autorizas el cobro mensual automático.<br/>Seguridad garantizada por Mercado Pago.
                         </p>
                     </div>
                 )}
