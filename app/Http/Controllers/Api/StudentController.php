@@ -37,12 +37,16 @@ class StudentController extends Controller
         $students = $query
             ->with([
                 'course',
+                'guardians',
                 'enrollments.payments',
                 'attendances' => fn($q) => $q->where('date', now()->format('Y-m-d'))
             ])
             ->get()
             ->map(function ($student) {
                 $bp = $student->belt_progress;
+                
+                // Buscar email/teléfono en el apoderado si el alumno no los tiene directos
+                $primaryGuardian = $student->guardians->where('pivot.primary', true)->first() ?? $student->guardians->first();
                 
                 return [
                     'id' => $student->id,
@@ -64,8 +68,8 @@ class StudentController extends Controller
                     'weight' => $student->weight,
                     'height' => $student->height,
                     'birth_date' => $student->birth_date,
-                    'phone' => $student->phone,
-                    'email' => $student->email,
+                    'phone' => $student->phone ?? $primaryGuardian?->phone,
+                    'email' => $primaryGuardian?->email,
                     'today_status' => $bp['today_status'],
                     'belt_progress' => $bp,
                 ];
@@ -219,8 +223,10 @@ class StudentController extends Controller
     {
         $tenantModel = app('currentTenant');
         $student = Student::where('tenant_id', $tenantModel->id)
-            ->with(['course', 'enrollments.payments'])
+            ->with(['course', 'enrollments.payments', 'guardians'])
             ->findOrFail($id);
+        
+        $primaryGuardian = $student->guardians->where('pivot.primary', true)->first() ?? $student->guardians->first();
 
         $user = $request->user();
         if ($user && $user->role === 'guardian') {
@@ -234,8 +240,8 @@ class StudentController extends Controller
         $data = [
             'id' => $student->id,
             'name' => $student->name,
-            'phone' => $student->phone,
-            'email' => $student->email,
+            'phone' => $student->phone ?? $primaryGuardian?->phone,
+            'email' => $student->email ?? $primaryGuardian?->email,
             'category' => $student->category,
             'photo' => $student->photo,
             'course_id' => $student->course_id,
