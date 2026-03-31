@@ -71,16 +71,6 @@ export const MPConnectModal: React.FC<MPConnectModalProps> = ({
                                 <p className={`text-[11px] font-medium leading-relaxed ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
                                     Al activar los pagos automáticos, se aplicará un descuento total del **5%** por cada transacción procesada con éxito.
                                 </p>
-                                <div className="mt-3 grid grid-cols-2 gap-2 text-[9px] font-black uppercase tracking-wider">
-                                    <div className="flex items-center gap-2 text-zinc-500">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-zinc-500 opacity-30" />
-                                        3.19% Mercado Pago
-                                    </div>
-                                    <div className="flex items-center gap-2 text-indigo-500">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                                        1.81% Digitaliza Todo
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -129,7 +119,7 @@ export const MPConnectModal: React.FC<MPConnectModalProps> = ({
                             </div>
                             <div className="flex-1">
                                 <p className={`text-[12px] font-bold leading-tight ${isDark ? 'text-zinc-200' : 'text-zinc-800'}`}>
-                                    Acepto los <a href="#" onClick={(e) => {e.preventDefault(); alert("Abriendo Términos y Condiciones...");}} className="text-indigo-500 underline decoration-indigo-500/30 underline-offset-4">Términos y Condiciones de Digitaliza Todo</a> y confirmo la conexión de mi cuenta para recibir pagos.
+                                    Acepto la <a href="https://digitalizatodo.cl/terminos/" target="_blank" rel="noopener noreferrer" className="text-indigo-500 underline decoration-indigo-500/30 underline-offset-4">Comisión</a>, <a href="https://digitalizatodo.cl/legal/" target="_blank" rel="noopener noreferrer" className="text-indigo-500 underline decoration-indigo-500/30 underline-offset-4">Legal</a> y <a href="https://digitalizatodo.cl/privacidad/" target="_blank" rel="noopener noreferrer" className="text-indigo-500 underline decoration-indigo-500/30 underline-offset-4">Privacidad</a> de Digitaliza Todo.
                                 </p>
                             </div>
                         </label>

@@ -575,10 +575,10 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                 {branding?.industry === 'martial_arts' && hasPermission('settings.payments') && (
                     <ActionCard 
                         icon={CreditCard} 
-                        title="Pagos Mercado Pago" 
+                        title="PAGOS AUTOMÁTICOS EN DIGITALIZA TODO" 
                         description="Vincular cuenta y automatizar cobros"
                         onClick={() => setShowMPConnectModal(true)}
-                        color="purple"
+                        color="blue"
                     />
                 )}
             </div>
