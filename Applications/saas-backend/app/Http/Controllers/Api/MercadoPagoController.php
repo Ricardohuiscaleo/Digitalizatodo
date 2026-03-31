@@ -28,7 +28,8 @@ class MercadoPagoController extends Controller
             'plan_id' => 'required',
             'student_id' => 'required',
             'email' => 'required|email',
-            'amount' => 'required|numeric'
+            'amount' => 'required|numeric',
+            'fee_payment_id' => 'nullable|integer' // 🛡️ ID para rastreo
         ]);
 
         // 🛡️ SEGURIDAD: Bloquear si la academia no ha vinculado sus datos
@@ -41,20 +42,37 @@ class MercadoPagoController extends Controller
         }
 
         try {
-            // 1. Obtener o crear el Plan en Mercado Pago si no existe (opcional)
-            // Aquí podríamos buscar si el plan local ya tiene un mp_plan_id
+            // 🔍 1. Buscar el Plan en la base de datos local para saber si es recurrente
+            // (Asumimos que el modelo es 'Fee' o similar según el listado del usuario)
+            $planId = $request->plan_id;
             
-            // 2. Crear la suscripción (Preapproval)
-            $subscription = $this->mpService->createSubscription(
-                $request->email,
-                $request->plan_id, // ID del plan en MP
-                $request->amount
-            );
+            // Si el plan_id enviado es un string largo de MP, es suscripción.
+            // Si es un número pequeño, es nuestro ID local.
+            $isMPPlan = strlen($planId) > 10;
+            
+            if ($isMPPlan) {
+                // Flujo Suscripción Clásico
+                $subscription = $this->mpService->createSubscription(
+                    $request->email,
+                    $planId, 
+                    $request->amount,
+                    $request->fee_payment_id
+                );
+                $initPoint = $subscription->init_point;
+            } else {
+                // ⚡ Flujo de Pago Único (Clases Sueltas / Packs)
+                $preference = $this->mpService->createOneTimePayment(
+                    "Pago Digitaliza Todo Pay",
+                    $request->amount,
+                    $request->fee_payment_id,
+                    $request->email
+                );
+                $initPoint = $preference->init_point;
+            }
 
             return response()->json([
                 'success' => true,
-                'init_point' => $subscription->init_point, // URL para redirigir al alumno
-                'subscription_id' => $subscription->id
+                'init_point' => $initPoint
             ]);
 
         } catch (\Exception $e) {

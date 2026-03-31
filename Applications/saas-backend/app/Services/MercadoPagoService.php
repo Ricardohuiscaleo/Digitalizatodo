@@ -5,6 +5,7 @@ namespace App\Services;
 use MercadoPago\MercadoPagoConfig;
 use MercadoPago\Client\PreApprovalPlan\PreApprovalPlanClient;
 use MercadoPago\Client\PreApproval\PreApprovalClient;
+use MercadoPago\Client\Preference\PreferenceClient;
 use MercadoPago\Exceptions\MPApiException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
@@ -100,12 +101,40 @@ class MercadoPagoService
     }
     
     /**
-     * Generar un cobro puntual con Split Payment (Marketplace)
-     * Este es el flujo recomendado para Checkout API con comisión.
+     * Generar un cobro puntual para Clases Sueltas o Packs
      */
-    public function createMarketplacePayment($amount, $token, $description, $payerEmail, $collectorId)
+    public function createOneTimePayment($title, $amount, $feePaymentId, $payerEmail)
     {
-        // Lógica para Payment API con application_fee
-        // Requerido para repartir el dinero entre Digitaliza Todo y la Academia
+        $client = new PreferenceClient();
+
+        try {
+            $preferenceRequest = [
+                "items" => [
+                    [
+                        "title" => $title,
+                        "quantity" => 1,
+                        "unit_price" => (float) $amount,
+                        "currency_id" => "CLP"
+                    ]
+                ],
+                "payer" => [
+                    "email" => $payerEmail
+                ],
+                "external_reference" => "FP_" . $feePaymentId, // 🛡️ RASTREO IGUAL QUE SUBS
+                "back_urls" => [
+                    "success" => "https://admin.digitalizatodo.cl/dashboard?payment=success",
+                    "failure" => "https://admin.digitalizatodo.cl/dashboard?payment=failure",
+                ],
+                "auto_return" => "approved",
+                "notification_url" => "https://admin.digitalizatodo.cl/api/mercadopago/webhook"
+            ];
+
+            $preference = $client->create($preferenceRequest);
+            return $preference;
+
+        } catch (MPApiException $e) {
+            Log::error("Error MP Preference (FP: $feePaymentId): " . $e->getApiResponse()->getContent());
+            throw new Exception("Error al crear cobro puntual: " . $e->getApiResponse()->getContent());
+        }
     }
 }

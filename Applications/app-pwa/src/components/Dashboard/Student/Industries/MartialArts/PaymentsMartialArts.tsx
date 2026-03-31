@@ -183,9 +183,10 @@ export function PaymentsMartialArts({
                 // Obtenemos el plan_id si es proyectado o el ID de suscripción de MP
                 const res = await createSubscription(student.tenant_id, "", {
                     studentId: String(student.id),
-                    planId: payment.mp_plan_id || "TEST_PLAN_ID", // Aquí usaremos el ID real del plan de MP
+                    planId: payment.mp_plan_id || "TEST_PLAN_ID", // ID del plan en MP
                     email: student.email,
-                    amount: payment.amount
+                    amount: payment.amount,
+                    fee_payment_id: payment.id // 🚀 El cable final conectado
                 });
 
                 if (res?.init_point) {
