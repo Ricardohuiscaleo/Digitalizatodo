@@ -195,11 +195,11 @@ class StudentRegistrationController extends Controller
 
                     // Asegurar que exista una plantilla de cobro recurrente (Fee) para este plan
                     if ($plan->is_recurring) {
-                        \App\Models\Fee::firstOrCreate(
+                        \App\Models\Fee::updateOrCreate(
                             ['tenant_id' => $tenant->id, 'plan_id' => $plan->id],
                             [
                                 'title'         => $plan->name,
-                                'amount'        => $plan->price,
+                                'amount'        => $plan->price, // 🎯 Ahora siempre se sincroniza el precio real
                                 'type'          => 'recurring',
                                 'billing_cycle' => $plan->billing_cycle ?? 'monthly_fixed',
                                 'recurring_day' => $plan->billing_day ?? 1,
