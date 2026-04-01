@@ -30,7 +30,8 @@ class MPService
                 "frequency" => $frequency,
                 "frequency_type" => $frequencyType,
                 "transaction_amount" => $amount,
-                "currency_id" => "CLP"
+                "currency_id" => "CLP",
+                "billing_day" => 1 // <--- Fuerza el cobro los días 1
             ],
             "back_url" => "https://digitalizatodo.cl"
         ]);
