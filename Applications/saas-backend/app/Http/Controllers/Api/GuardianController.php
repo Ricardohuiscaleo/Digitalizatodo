@@ -122,24 +122,83 @@ class GuardianController extends Controller
                 }
             }
 
-            // Inteligencia de Estado v1.5.2
+            // Inteligencia de Estado v1.5.3 (Modo Disciplina)
             $hasPending = false;
             $hasReview = false;
-            $hasApproved = false;
+            $hasApprovedCurrent = false; // Solo cuenta si es de este mes o futuro
             
+            $currentMonthStart = now()->startOfMonth();
+
+            // Sincronización: Traer FeePayments y agregarlos a activePayments si no están
+            $feePayments = \App\Models\FeePayment::whereIn('student_id', $students->pluck('id'))
+                ->with(['fee', 'student.enrollment.plan'])
+                ->get();
+
+            foreach ($feePayments as $fp) {
+                $pStatus = $fp->status === 'review' ? 'review' : $fp->status;
+                
+                // Inteligencia de Precios v1.5.5
+                // 1. Usar el monto de la cuota maestra si existe
+                // 2. Si no, usar el precio del plan de entrenamiento del alumno
+                $amount = (float)($fp->fee->amount ?? 0);
+                if ($amount <= 0 && $fp->student && $fp->student->enrollment && $fp->student->enrollment->plan) {
+                    $amount = (float)($fp->student->enrollment->plan->price ?? 0);
+                }
+
+                // Evitar duplicados con activePayments ya existentes (por ID de pago de MP si aplica)
+                $activePayments[] = [
+                    'id' => 'fp_' . $fp->id,
+                    'student_name' => $fp->student->name,
+                    'student_photo' => $fp->student->photo ? (str_starts_with($fp->student->photo, 'http') ? $fp->student->photo : $s3BaseUrl . $fp->student->photo) : "https://i.pravatar.cc/150?u=" . $fp->student->id,
+                    'amount' => $amount,
+                    'status' => $pStatus,
+                    'due_date' => $fp->period_month ? \Carbon\Carbon::create($fp->period_year, $fp->period_month, 1)->format('d M, Y') : null,
+                    'proof_url' => $fp->proof_url,
+                    'plan_name' => $fp->fee->title ?? ($fp->student->enrollment->plan->name ?? 'Mensualidad'),
+                    'is_fee' => true
+                ];
+            }
+
             foreach ($activePayments as $p) {
                 if ($p['status'] === 'review') $hasReview = true;
                 if ($p['status'] === 'pending' || $p['status'] === 'overdue') $hasPending = true;
-                if ($p['status'] === 'approved') $hasApproved = true;
+                
+                if ($p['status'] === 'approved') {
+                    $dueDate = isset($p['due_date']) ? \Carbon\Carbon::parse($p['due_date']) : null;
+                    if ($dueDate && $dueDate->greaterThanOrEqualTo($currentMonthStart)) {
+                        $hasApprovedCurrent = true;
+                    }
+                }
             }
 
-            // Prioridad: Review > Pending > Paid
+            // Prioridad: Review > Pending > Paid (Solo si es de este mes)
             if ($hasReview) $status = 'review';
             elseif ($hasPending) $status = 'pending';
-            elseif ($hasApproved) $status = 'paid';
-            else $status = 'paid'; // Default
+            elseif ($hasApprovedCurrent) $status = 'paid';
+            else $status = 'pending'; // Si no hay pago aprobado este mes, asumimos pendiente
 
             $totalDue = $hasPending ? array_sum(array_column(array_filter($activePayments, fn($p) => $p['status'] === 'pending' || $p['status'] === 'overdue'), 'amount')) : 0;
+
+            // Inteligencia Predictiva v1.5.6
+            // Si el estado es PENDIENTE pero no hay registros de deuda físicos ($totalDue == 0),
+            // calculamos la "Deuda Virtual" basada en el precio de los planes cargados.
+            if ($status === 'pending' && $totalDue <= 0) {
+                foreach ($students as $s) {
+                    // Solo sumamos si el alumno no tiene un pago aprobado para este mes
+                    $hasMonthPaid = false;
+                    foreach ($activePayments as $p) {
+                        $dueDate = isset($p['due_date']) ? \Carbon\Carbon::parse($p['due_date']) : null;
+                        if ($p['status'] === 'approved' && $dueDate && $dueDate->greaterThanOrEqualTo($currentMonthStart)) {
+                            $hasMonthPaid = true;
+                            break;
+                        }
+                    }
+
+                    if (!$hasMonthPaid && $s->enrollment && $s->enrollment->plan) {
+                        $totalDue += (float)($s->enrollment->plan->price ?? 0);
+                    }
+                }
+            }
             $proofImage = null;
             foreach ($activePayments as $p) {
                 if ($p['proof_url']) {
@@ -173,7 +232,7 @@ class GuardianController extends Controller
                         'gender' => $s->gender,
                         'weight' => $s->weight,
                         'height' => $s->height,
-                        'payment_status' => ($s->is_updated || $hasApproved) ? 'paid' : 'overdue',
+                        'payment_status' => ($status === 'paid') ? 'paid' : 'overdue',
                         'label' => $s->belt_rank ?? '', 
                         'today_status' => $bp['today_status'],
                         'method' => $bp['registration_method'],

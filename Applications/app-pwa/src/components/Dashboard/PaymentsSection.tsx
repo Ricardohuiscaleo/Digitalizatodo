@@ -371,8 +371,8 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                 )}
                 {filteredPayers.map(payer => {
                     const stats = getPayerRealStats(payer);
-                    const isPaid = stats.approvedAmount > 0 && stats.pendingAmount === 0 && stats.reviewAmount === 0;
-                    const isReview = stats.hasReview;
+                    const isReview = (payer.status === 'review');
+                    const isPaid = (payer.status === 'paid');
                     const students = (payer.enrolledStudents || payer.students || []).filter((s: any) => !s.deleted_at);
                     
                     const statusColor = isPaid ? 'text-emerald-500' : isReview ? 'text-amber-400' : 'text-rose-500';

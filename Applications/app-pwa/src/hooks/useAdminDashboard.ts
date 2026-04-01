@@ -139,10 +139,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         return common.payers.flatMap((payer: any) => {
             const students = payer.enrolledStudents || payer.students || [];
             
-            // Inteligencia de Estado v1.5.1:
-            // Si el pagador está marcado como 'paid' O si detectamos un pago aprobado recientemente
-            const hasApprovedPayment = payer.payments?.some((p: any) => p.status === 'approved');
-            const resolvedStatus = (payer.status === 'paid' || hasApprovedPayment) ? 'paid' : payer.status;
+            const resolvedStatus = payer.status || 'pending';
 
             return students.map((student: any) => ({
                 ...student,
