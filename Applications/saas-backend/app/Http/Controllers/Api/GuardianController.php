@@ -219,7 +219,7 @@ class GuardianController extends Controller
                 'proof_image' => $proofImage,
                 'payments' => $activePayments,
                 'pricing' => $pricing,
-                'enrolledStudents' => $students->map(function ($s) use ($s3BaseUrl, $hasApproved) {
+                'enrolledStudents' => $students->map(function ($s) use ($s3BaseUrl, $status) {
                     $bp = $s->belt_progress;
                     return [
                         'id' => $s->id,
