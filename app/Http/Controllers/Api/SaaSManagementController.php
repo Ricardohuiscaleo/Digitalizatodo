@@ -35,20 +35,22 @@ class SaaSManagementController extends Controller
             // 1. Obtener datos del plan
             $plan = SaasPlan::findOrFail($request->plan_id);
             
-            // Actualizar intención preliminar del tenant
+            // Registramos la aceptación de términos e intervalo, pero NO cambiamos el plan aún
             $tenant->update([
-                'saas_plan_id' => $plan->id,
-                'saas_plan' => $plan->slug,
                 'billing_interval' => $request->interval,
                 'mercadopago_terms_accepted_at' => now(),
             ]);
 
-            // CASO 1: Plan Gratuito ($0) -> Activar YA
+            // CASO 1: Plan Gratuito ($0) -> Activar YA y cambiar plan
             $isFreePlan = ($request->interval === 'yearly' && $plan->price_yearly <= 0) || 
                           ($request->interval === 'monthly' && $plan->price_monthly <= 0);
 
             if ($isFreePlan) {
-                $tenant->update(['active' => true]);
+                $tenant->update([
+                    'saas_plan_id' => $plan->id,
+                    'saas_plan' => $plan->slug,
+                    'active' => true
+                ]);
                 return response()->json([
                     'success' => true,
                     'is_free' => true,

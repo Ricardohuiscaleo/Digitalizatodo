@@ -43,6 +43,8 @@ class MercadoPagoController extends Controller
         }
 
         try {
+            $collectorId = $tenant->mercadopago_user_id;
+
             // 🔍 1. Buscar el Plan en la base de datos local
             $localPlan = Plan::where('tenant_id', $tenant->id)->find($request->plan_id);
             $planPrice = $localPlan ? (float) $localPlan->price : 0;
@@ -62,7 +64,8 @@ class MercadoPagoController extends Controller
                     $request->email,
                     $request->plan_id, 
                     $request->amount,
-                    $request->fee_payment_id
+                    $request->fee_payment_id,
+                    $collectorId
                 );
                 $initPoint = $subscription->init_point;
             } else {
@@ -73,7 +76,8 @@ class MercadoPagoController extends Controller
                     $title,
                     $request->amount,
                     $request->fee_payment_id,
-                    $request->email
+                    $request->email,
+                    $collectorId
                 );
                 $initPoint = $preference->init_point;
             }
@@ -105,12 +109,33 @@ class MercadoPagoController extends Controller
         }
 
         try {
+            // 🔍 0. Manejar vinculación de cuenta (mp-connect)
+            if ($topic === 'mp-connect' || (isset($payload['type']) && $payload['type'] === 'mp-connect')) {
+                $userId = $id; // EL ID en mp-connect es el user_id de MP
+                $tenant = Tenant::where('mercadopago_user_id', $userId)->first();
+                if ($tenant) {
+                    $tenant->update(['mercadopago_auth_status' => 'connected']);
+                    Log::info("Tenant {$tenant->name} vinculado/actualizado vía webhook (mp-connect).");
+                }
+                return response()->json(['status' => 'ok'], 200);
+            }
+
             // 🔍 1. Consultar detalles a Mercado Pago (según el tipo de notificación)
             $externalReference = null;
             $status = null;
+            $tenant = null;
+
+            // Determinar qué token usar para consultar el pago
+            // Si viene de una academia, necesitamos su token.
+            // Para simplificar, intentamos buscar el tenant por el ID de recurso si es posible, 
+            // pero MP en pagos no siempre envía el collector_id en el webhook simple.
+            // Usaremos el token de la plataforma por ahora para la consulta inicial si tiene permisos, 
+            // o mejor, el flujo Marketplace.
+            
+            $accessToken = env('MERCADOPAGO_ACCESS_TOKEN');
 
             if ($topic === 'payment') {
-                $response = Http::withToken(env('MERCADOPAGO_ACCESS_TOKEN'))
+                $response = Http::withToken($accessToken)
                     ->get("https://api.mercadopago.com/v1/payments/{$id}");
                 
                 if ($response->successful()) {
@@ -119,7 +144,7 @@ class MercadoPagoController extends Controller
                     $status = $paymentData['status'];
                 }
             } elseif ($topic === 'subscription_preapproval' || $topic === 'preapproval') {
-                $response = Http::withToken(env('MERCADOPAGO_ACCESS_TOKEN'))
+                $response = Http::withToken($accessToken)
                     ->get("https://api.mercadopago.com/preapproval/{$id}");
                 
                 if ($response->successful()) {
