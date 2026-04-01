@@ -48,9 +48,8 @@ class GuardianController extends Controller
                       ->where('date', now()->format('Y-m-d'));
             }])
             ->get()
-            ->map(function ($guardian) use ($tenantId) {
+            ->map(function ($guardian) use ($tenantId, $isHistory) {
             // Calculate status based on payments of their students
-            // Simplified logic: checking if any student has pending/review payments
             $students = $guardian->students;
             $status = 'paid';
             $tenant = Tenant::find($tenantId);
@@ -119,25 +118,33 @@ class GuardianController extends Controller
                             'belt_classes_at_promotion' => (int)($student->belt_classes_at_promotion ?? 0),
                             'plan_name' => $payment->plan?->name ?? $enrollment->plan?->name ?? null,
                         ];
-                        if ($payment->status === 'pending_review') {
-                            $status = 'review';
-                        } elseif ($payment->status === 'pending' || $payment->status === 'overdue') {
-                            if ($status !== 'review') $status = 'pending';
-                        }
                     }
                 }
             }
 
-            // Calcular total_due y extraer el primer comprobante disponible
-            $totalDue = 0;
-            $proofImage = null;
+            // Inteligencia de Estado v1.5.2
+            $hasPending = false;
+            $hasReview = false;
+            $hasApproved = false;
             
             foreach ($activePayments as $p) {
-                if ($p['status'] === 'pending' || $p['status'] === 'overdue') {
-                    $totalDue += $p['amount'];
-                }
-                if ($p['proof_url'] && !$proofImage) {
+                if ($p['status'] === 'review') $hasReview = true;
+                if ($p['status'] === 'pending' || $p['status'] === 'overdue') $hasPending = true;
+                if ($p['status'] === 'approved') $hasApproved = true;
+            }
+
+            // Prioridad: Review > Pending > Paid
+            if ($hasReview) $status = 'review';
+            elseif ($hasPending) $status = 'pending';
+            elseif ($hasApproved) $status = 'paid';
+            else $status = 'paid'; // Default
+
+            $totalDue = $hasPending ? array_sum(array_column(array_filter($activePayments, fn($p) => $p['status'] === 'pending' || $p['status'] === 'overdue'), 'amount')) : 0;
+            $proofImage = null;
+            foreach ($activePayments as $p) {
+                if ($p['proof_url']) {
                     $proofImage = $p['proof_url'];
+                    break;
                 }
             }
 
@@ -150,7 +157,7 @@ class GuardianController extends Controller
                 'proof_image' => $proofImage,
                 'payments' => $activePayments,
                 'pricing' => $pricing,
-                'enrolledStudents' => $students->map(function ($s) use ($s3BaseUrl) {
+                'enrolledStudents' => $students->map(function ($s) use ($s3BaseUrl, $hasApproved) {
                     $bp = $s->belt_progress;
                     return [
                         'id' => $s->id,
@@ -166,7 +173,7 @@ class GuardianController extends Controller
                         'gender' => $s->gender,
                         'weight' => $s->weight,
                         'height' => $s->height,
-                        'payment_status' => $s->is_updated ? 'paid' : 'overdue',
+                        'payment_status' => ($s->is_updated || $hasApproved) ? 'paid' : 'overdue',
                         'label' => $s->belt_rank ?? '', 
                         'today_status' => $bp['today_status'],
                         'method' => $bp['registration_method'],
