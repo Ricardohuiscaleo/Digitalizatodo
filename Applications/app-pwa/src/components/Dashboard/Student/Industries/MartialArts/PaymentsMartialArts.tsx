@@ -63,11 +63,13 @@ export function PaymentsMartialArts({
             const res = await subscribeWithCard(slug, token, {
                 token: formData.token,
                 payment_method_id: formData.payment_method_id,
-                plan_id: payment.plan_id || payment.id,
+                plan_id: payment.plan_id || payment.fee_id,
                 student_id: student.id,
                 email: student.email || guardianEmail,
                 amount: payment.amount,
-                fee_payment_id: payment.id
+                fee_id: payment.fee_id,
+                period_month: payment.month,
+                period_year: payment.year,
             });
 
             if (res?.success) {
