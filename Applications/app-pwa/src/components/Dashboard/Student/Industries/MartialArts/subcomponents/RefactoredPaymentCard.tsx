@@ -43,6 +43,7 @@ export function RefactoredPaymentCard({
     handleUploadProof,
     bankInfo
 }: RefactoredPaymentCardProps) {
+    console.log("[MP-Debug] Rendering RefactoredPaymentCard v4 - mpReady:", true);
     const [isOpen, setIsOpen] = useState(false);
     const [showCardForm, setShowCardForm] = useState(false);
     const [showBankDetails, setShowBankDetails] = useState(false);
@@ -133,14 +134,14 @@ export function RefactoredPaymentCard({
                                     <div className="flex items-center justify-between mb-4 px-2">
                                         <div className="flex items-center gap-2">
                                             <ShieldCheck className="text-emerald-500" size={16} />
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Pago Seguro (MP)</span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Pago Seguro (MP) <span className="text-[8px] opacity-50 ml-1">v1.4.3</span></span>
                                         </div>
                                         <button onClick={() => setShowCardForm(false)} className="p-2 hover:bg-zinc-100 rounded-full text-zinc-400 transition-colors">
                                             <X size={16} />
                                         </button>
                                     </div>
 
-                                    <div className="bg-white/50 p-2 rounded-3xl border border-zinc-100/50">
+                                    <div className="bg-white/50 p-2 rounded-3xl border border-zinc-100/50 block min-h-[350px]">
                                         <CardPayment
                                             initialization={{
                                                 amount: amount,
