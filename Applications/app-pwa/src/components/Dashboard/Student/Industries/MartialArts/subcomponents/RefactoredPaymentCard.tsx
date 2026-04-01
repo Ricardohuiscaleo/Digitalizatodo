@@ -53,10 +53,14 @@ export function RefactoredPaymentCard({
 
     useEffect(() => {
         const key = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY;
-        if (key) {
-            initMercadoPago(key, { locale: 'es-CL' });
-            setMpReady(true);
+        try {
+            if (key) {
+                initMercadoPago(key, { locale: 'es-CL' });
+            }
+        } catch (e) {
+            // ignorar si ya fue inicializado
         }
+        setMpReady(true); // siempre mostrar el form
     }, []);
 
     const isProjected = payment.isProjected;
@@ -147,27 +151,22 @@ export function RefactoredPaymentCard({
                                             <X size={16} />
                                         </button>
                                     </div>
-                                    
-                                    <div className="bg-white/50 p-2 rounded-3xl border border-zinc-100/50 min-h-[200px] flex items-center justify-center">
-                                        {mpReady ? (
-                                            <CardPayment
-                                                initialization={{
-                                                    amount: amount,
-                                                    payer: { email: student.email || guardianEmail }
-                                                }}
-                                                onSubmit={(formData) => handleCardSubmit(formData, payment, student)}
-                                                customization={{
-                                                    paymentMethods: { maxInstallments: 1 },
-                                                    visual: { style: { theme: 'flat' } }
-                                                }}
-                                            />
+
+                                    <button
+                                        onClick={() => handleCardSubmit({}, payment, student)}
+                                        disabled={isUploading}
+                                        className="w-full h-16 bg-blue-600 text-white rounded-[1.5rem] flex items-center justify-center gap-3 active:scale-[0.98] transition-all shadow-lg shadow-blue-200 disabled:opacity-50"
+                                    >
+                                        {isUploading ? (
+                                            <Loader2 className="animate-spin" size={20} />
                                         ) : (
-                                            <div className="flex flex-col items-center gap-3 py-8">
-                                                <Loader2 className="animate-spin text-zinc-400" size={28} />
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Cargando pago seguro...</p>
-                                            </div>
+                                            <>
+                                                <CreditCard size={20} />
+                                                <span className="text-sm font-black uppercase tracking-widest">Pagar ${amount.toLocaleString('es-CL')} con Tarjeta</span>
+                                            </>
                                         )}
-                                    </div>
+                                    </button>
+                                    <p className="text-center text-[9px] text-zinc-400 font-bold uppercase tracking-widest mt-2">Serás redirigido a Mercado Pago</p>
                                 </div>
                             ) : (
                                 <>

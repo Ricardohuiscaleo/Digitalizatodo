@@ -71,9 +71,7 @@ export function PaymentsMartialArts({
         if (!token) return;
         setIsProcessing(payment.id);
         try {
-            const res = await subscribeWithCard(slug, token, {
-                token: formData.token,
-                payment_method_id: formData.payment_method_id,
+            const res = await createSubscription(slug, token, {
                 plan_id: payment.plan_id || payment.fee_id,
                 student_id: student.id,
                 email: student.email || guardianEmail,
@@ -82,12 +80,10 @@ export function PaymentsMartialArts({
                 period_month: payment.month,
                 period_year: payment.year,
             });
-
-            if (res?.success) {
-                alert("¡Pago Exitoso! Tu suscripción automática está activa.");
-                window.location.reload();
+            if (res?.init_point) {
+                window.location.href = res.init_point;
             } else {
-                alert("No se pudo procesar: " + (res?.message || "Revisar datos de tarjeta"));
+                alert("No se pudo generar el link de pago: " + (res?.message || res?.error || 'Error desconocido'));
             }
         } catch (error) {
             alert("Error de conexión con Mercado Pago.");
