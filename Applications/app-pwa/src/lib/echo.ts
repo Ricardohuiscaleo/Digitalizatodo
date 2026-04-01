@@ -18,6 +18,7 @@ export const getEcho = (): Echo<any> | null => {
 
   const key = process.env.NEXT_PUBLIC_REVERB_APP_KEY;
   const host = process.env.NEXT_PUBLIC_REVERB_HOST || 'localhost';
+  const port = process.env.NEXT_PUBLIC_REVERB_PORT || 443;
   const scheme = process.env.NEXT_PUBLIC_REVERB_SCHEME || 'http';
 
   if (!key) return null;
@@ -30,8 +31,8 @@ export const getEcho = (): Echo<any> | null => {
     broadcaster: 'reverb',
     key,
     wsHost: host,
-    wsPort: scheme === 'https' ? 443 : 443,
-    wssPort: 443,
+    wsPort: Number(port),
+    wssPort: Number(port),
     forceTLS: scheme === 'https',
     enabledTransports: ['ws', 'wss'],
     // Aggressive reconnection for mobile networks
