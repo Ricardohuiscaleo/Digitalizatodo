@@ -748,12 +748,15 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                                                 if (plan.slug === (branding?.saas_plan || 'free')) return;
                                                 setSaasLoading(true);
                                                 try {
-                                                    const res = await initiateSaasSubscription(user.tenant_slug, token || '', plan.id, 'monthly');
-                                                    if (res?.init_point) {
-                                                        window.location.href = res.init_point;
-                                                    } else {
-                                                        alert("No se pudo iniciar la suscripción: " + (res?.message || 'Error desconocido'));
-                                                    }
+                                                        const res = await initiateSaasSubscription(user.tenant_slug, token || '', plan.id, 'monthly');
+                                                        if (res?.is_free) {
+                                                            alert("¡Plan Gratuito activado con éxito! 🥋🚀");
+                                                            window.location.reload();
+                                                        } else if (res?.init_point) {
+                                                            window.location.href = res.init_point;
+                                                        } else {
+                                                            alert("No se pudo iniciar la suscripción: " + (res?.message || 'Error desconocido'));
+                                                        }
                                                 } catch (err) {
                                                     alert("Error de conexión");
                                                 } finally {

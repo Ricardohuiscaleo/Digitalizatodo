@@ -32,9 +32,10 @@ class SaaSManagementController extends Controller
         ]);
 
         try {
-            // 1. Actualizar el plan deseado en el tenant (esto no lo activa aún, el webhook lo hará)
+            // 1. Obtener datos del plan
             $plan = SaasPlan::findOrFail($request->plan_id);
             
+            // Actualizar intención preliminar del tenant
             $tenant->update([
                 'saas_plan_id' => $plan->id,
                 'saas_plan' => $plan->slug,
@@ -42,8 +43,46 @@ class SaaSManagementController extends Controller
                 'mercadopago_terms_accepted_at' => now(),
             ]);
 
-            // 2. Generar el Preapproval (Suscripción) en Mercado Pago
-            // Nota: MPService::createPreapproval devuelve la respuesta de MP
+            // CASO 1: Plan Gratuito ($0) -> Activar YA
+            $isFreePlan = ($request->interval === 'yearly' && $plan->price_yearly <= 0) || 
+                          ($request->interval === 'monthly' && $plan->price_monthly <= 0);
+
+            if ($isFreePlan) {
+                $tenant->update(['active' => true]);
+                return response()->json([
+                    'success' => true,
+                    'is_free' => true,
+                    'message' => 'Plan gratuito activado automáticamente.'
+                ]);
+            }
+
+            // CASO 2: Plan de Pago -> Validar o Crear Plan en Mercado Pago
+            $mpPlanId = ($request->interval === 'yearly') ? $plan->mp_plan_yearly : $plan->mp_plan_monthly;
+            if (!$mpPlanId) {
+                $mpPlanId = $plan->mercadopago_plan_id;
+            }
+
+            // ¡AUTOMATIZACIÓN! Si no hay ID en la DB, lo creamos en MP ahora mismo
+            if (!$mpPlanId) {
+                Log::info("SaaS: Plan '{$plan->name}' no existe en MP. Creándolo automáticamente...");
+                $newPlanResult = $this->mpService->createPreapprovalPlan($plan, ($request->interval === 'yearly' ? 'years' : 'months'));
+                
+                if (isset($newPlanResult['id'])) {
+                    $mpPlanId = $newPlanResult['id'];
+                    // Guardar el nuevo ID en la DB para la próxima vez
+                    $columnToUpdate = ($request->interval === 'yearly') ? 'mp_plan_yearly' : 'mp_plan_monthly';
+                    $plan->update([$columnToUpdate => $mpPlanId]);
+                    Log::info("SaaS: Plan creado exitosamente con ID: {$mpPlanId}");
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No se pudo crear el plan en Mercado Pago de forma automática.',
+                        'details' => $newPlanResult
+                    ], 400);
+                }
+            }
+
+            // 2. Generar la Suscripción (Preapproval) final
             $mpResult = $this->mpService->createPreapproval($tenant);
 
             if (isset($mpResult['init_point'])) {
@@ -54,11 +93,10 @@ class SaaSManagementController extends Controller
                 ]);
             }
 
-            Log::error("Error registrando suscripción SaaS en MP:", $mpResult);
-
+            Log::error("SaaS: Falló suscripción en MP p/ Tenant {$tenant->id}:", $mpResult);
             return response()->json([
                 'success' => false,
-                'message' => 'No se pudo generar el link de pago. ' . ($mpResult['message'] ?? ''),
+                'message' => 'Error al conectar con la pasarela de pago.',
                 'details' => $mpResult
             ], 400);
 
