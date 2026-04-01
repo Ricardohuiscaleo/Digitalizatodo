@@ -12,6 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
+    ->withCommands([
+        \App\Console\Commands\ProcessRecurringPayments::class,
+    ])
     ->withMiddleware(function (Middleware $middleware): void {
         // Confiar en todos los proxies (necesario para Traefik/Coolify)
         $middleware->trustProxies(at: '*');
