@@ -134,13 +134,17 @@ export function RefactoredPaymentCard({
                                     <div className="flex items-center justify-between mb-4 px-2">
                                         <div className="flex items-center gap-2">
                                             <ShieldCheck className="text-emerald-500" size={16} />
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Pago Seguro (MP) <span className="text-[8px] opacity-50 ml-1">v1.4.4</span></span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Pago Seguro (MP) <span className="text-[8px] font-black bg-blue-600 text-white px-1.5 py-0.5 rounded ml-1">v1.4.5</span></span>
                                         </div>
-                                        {/* CSS Hack para IDs internos de MP en dispositivos móviles */}
+                                        {/* CSS Hack para IDs internos y estabilidad de scroll en PWA */}
                                         <style dangerouslySetInnerHTML={{ __html: `
                                             #form-checkout__cardNumber, #form-checkout__expirationDate, #form-checkout__securityCode {
                                                 min-height: 48px !important;
                                                 display: block !important;
+                                            }
+                                            #mp-brick-container {
+                                                overscroll-behavior: contain !important;
+                                                touch-action: pan-y !important;
                                             }
                                         ` }} />
                                         <button onClick={() => setShowCardForm(false)} className="p-2 hover:bg-zinc-100 rounded-full text-zinc-400 transition-colors">
