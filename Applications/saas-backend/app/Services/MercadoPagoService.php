@@ -59,6 +59,9 @@ class MercadoPagoService
                 "email" => $email,
                 "first_name" => $name
             ]);
+        } catch (MPApiException $e) {
+            Log::error("Error MP Customer (API): " . json_encode($e->getApiResponse()->getContent()));
+            return null;
         } catch (Exception $e) {
             Log::error("Error MP Customer: " . $e->getMessage());
             return null;
