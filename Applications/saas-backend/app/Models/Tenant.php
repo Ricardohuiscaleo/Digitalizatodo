@@ -22,6 +22,8 @@ class Tenant extends Model implements HasAvatar
         'mercadopago_user_id',
         'mercadopago_auth_status',
         'mercadopago_terms_accepted_at',
+        'mercadopago_subscription_id',
+        'saas_status',
     ];
 
     public function getRouteKeyName(): string
