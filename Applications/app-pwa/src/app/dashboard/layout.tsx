@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { useBranding } from "@/context/BrandingContext";
 import { getProfile } from "@/lib/api";
+import { initMercadoPago } from "@mercadopago/sdk-react";
+
+let mpInitialized = false;
 
 export default function DashboardLayout({
     children,
@@ -14,6 +17,15 @@ export default function DashboardLayout({
     const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
 
     useEffect(() => {
+        // Inicializar MP una sola vez globalmente
+        const key = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY;
+        if (key && !mpInitialized) {
+            try {
+                initMercadoPago(key, { locale: 'es-CL' });
+                mpInitialized = true;
+            } catch (e) {}
+        }
+
         const token = localStorage.getItem("auth_token") || localStorage.getItem("staff_token");
         const tenantSlug = localStorage.getItem("tenant_slug");
 

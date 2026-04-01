@@ -48,20 +48,8 @@ export function RefactoredPaymentCard({
     const [showBankDetails, setShowBankDetails] = useState(false);
     const [proofFile, setProofFile] = useState<File | null>(null);
     const [proofPreview, setProofPreview] = useState<string | null>(null);
-    const [mpReady, setMpReady] = useState(false);
+    const [mpReady, setMpReady] = useState(true); // MP ya inicializado en layout
     const fileRef = React.useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        const key = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY;
-        try {
-            if (key) {
-                initMercadoPago(key, { locale: 'es-CL' });
-            }
-        } catch (e) {
-            // ignorar si ya fue inicializado
-        }
-        setMpReady(true); // siempre mostrar el form
-    }, []);
 
     const isProjected = payment.isProjected;
     const isOverdue = !isProjected && new Date(payment.due_date + 'T12:00:00') < new Date();
@@ -152,21 +140,19 @@ export function RefactoredPaymentCard({
                                         </button>
                                     </div>
 
-                                    <button
-                                        onClick={() => handleCardSubmit({}, payment, student)}
-                                        disabled={isUploading}
-                                        className="w-full h-16 bg-blue-600 text-white rounded-[1.5rem] flex items-center justify-center gap-3 active:scale-[0.98] transition-all shadow-lg shadow-blue-200 disabled:opacity-50"
-                                    >
-                                        {isUploading ? (
-                                            <Loader2 className="animate-spin" size={20} />
-                                        ) : (
-                                            <>
-                                                <CreditCard size={20} />
-                                                <span className="text-sm font-black uppercase tracking-widest">Pagar ${amount.toLocaleString('es-CL')} con Tarjeta</span>
-                                            </>
-                                        )}
-                                    </button>
-                                    <p className="text-center text-[9px] text-zinc-400 font-bold uppercase tracking-widest mt-2">Serás redirigido a Mercado Pago</p>
+                                    <div className="bg-white/50 p-2 rounded-3xl border border-zinc-100/50">
+                                        <CardPayment
+                                            initialization={{
+                                                amount: amount,
+                                                payer: { email: student.email || guardianEmail }
+                                            }}
+                                            onSubmit={(formData) => handleCardSubmit(formData, payment, student)}
+                                            customization={{
+                                                paymentMethods: { maxInstallments: 1 },
+                                                visual: { style: { theme: 'flat' } }
+                                            }}
+                                        />
+                                    </div>
                                 </div>
                             ) : (
                                 <>
