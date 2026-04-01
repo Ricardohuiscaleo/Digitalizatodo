@@ -22,6 +22,17 @@ interface PaymentsMartialArtsProps {
     slug: string;
     bankInfo?: any;
     copiedBank?: boolean;
+    setCopiedBank?: (v: boolean) => void;
+    selectedPayments?: string[];
+    setSelectedPayments?: (v: string[]) => void;
+    uploadingPayment?: any;
+    bulkFileInputRef?: any;
+    uploadSuccess?: any;
+    setProofModal?: any;
+    setConfirmDelete?: any;
+    handleBulkUploadProof?: any;
+    vocab?: any;
+    onBuyPack?: any;
     guardianEmail?: string;
     handleUploadProof: (id: string, file: File) => void;
     primaryColor: string;
@@ -253,22 +264,27 @@ export function PaymentsMartialArts({
                 )}
 
                 {paymentTab === "history" && (
-                    <div className="space-y-4 animate-in slide-in-from-right-4 duration-500">
+                    <div className="space-y-3 animate-in slide-in-from-right-4 duration-500">
                         {paymentHistory?.length > 0 ? (
                             paymentHistory.map((p: any) => (
-                                <div key={p.id} className="relative bg-white/40 backdrop-blur-xl border border-white/60 p-6 rounded-[2rem] flex justify-between items-center group hover:border-emerald-100 transition-colors">
+                                <div key={p.id} className="relative bg-white/40 backdrop-blur-xl border border-white/60 p-5 rounded-[2rem] flex justify-between items-center">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                                            <History size={20} />
+                                        <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                                            <History size={18} />
                                         </div>
                                         <div>
-                                            <p className="text-lg font-black text-zinc-900">${Number(p.amount).toLocaleString('es-CL')}</p>
-                                            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{p.paid_at || p.created_at}</p>
+                                            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{p.title || 'Mensualidad'}</p>
+                                            <p className="text-xl font-black text-zinc-900">${Number(p.amount).toLocaleString('es-CL')}</p>
+                                            <p className="text-[9px] font-bold text-zinc-300 mt-0.5">{p.paid_at || p.due_date}</p>
                                         </div>
                                     </div>
-                                    <div className="flex flex-col items-end gap-1">
-                                        <span className="text-[8px] font-black uppercase px-2.5 py-1.5 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">Exitoso ✓</span>
-                                        <span className="text-[7px] font-bold text-zinc-300 uppercase tracking-tighter">ID: {p.id}</span>
+                                    <div className="flex flex-col items-end gap-1.5">
+                                        <span className="text-[8px] font-black uppercase px-2.5 py-1.5 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">✓ Pagado</span>
+                                        {p.payment_method && (
+                                            <span className="text-[8px] font-bold text-zinc-300 uppercase">
+                                                {p.payment_method === 'mercadopago' ? '💳 MP Auto' : p.payment_method === 'transfer' ? '🏦 Transfer' : p.payment_method}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             ))
