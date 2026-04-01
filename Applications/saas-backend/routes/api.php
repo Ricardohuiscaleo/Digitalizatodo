@@ -165,6 +165,7 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
             Route::post('payments/plan-purchase', [PaymentController::class , 'storePlanPurchase']);
             Route::post('payments/{payment}/pay', [PaymentController::class , 'initiatePayment']);
             Route::post('mercadopago/subscribe', [MercadoPagoController::class, 'initiateSubscription']);
+            Route::post('mercadopago/subscribe-with-card', [MercadoPagoController::class, 'subscribeWithCard']);
             Route::post('payments/{payment}/upload-proof', [PaymentController::class , 'uploadProof']);
             Route::delete('payments/{payment}/proof', [PaymentController::class , 'deleteProof']);
 

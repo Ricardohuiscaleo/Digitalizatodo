@@ -45,42 +45,28 @@ class MercadoPagoController extends Controller
         try {
             $collectorId = $tenant->mercadopago_user_id;
 
-            // 🔍 1. Buscar el Plan en la base de datos local
-            $localPlan = Plan::where('tenant_id', $tenant->id)->find($request->plan_id);
-            $planPrice = $localPlan ? (float) $localPlan->price : 0;
-            $requestAmount = (float) $request->amount;
-
-            // 🕵️‍♂️ DETECTOR DE PROPORCIONAL: 
-            // Si el monto a pagar no coincide con el precio del plan, es un prorrateo.
-            // En ese caso, forzamos un Pago Único para no crear una suscripción errónea.
-            $isProportional = $planPrice > 0 && abs($planPrice - $requestAmount) > 1;
+            // 🚀 SWITCH TO PREFERENCES (Checkout Pro)
+            // Mercado Pago subscriptions (preapproval) don't natively support marketplace splits via API.
+            // Using Preferences ensures the 1.81% split for Digitaliza Todo works every time.
             
-            // Si el plan_id enviado es un string largo de MP, es suscripción.
-            $isMPPlan = strlen($request->plan_id) > 10;
-
-            if ($isMPPlan && !$isProportional) {
-                // 🔄 Flujo Suscripción Clásico (Solo si el monto es el completo del plan)
-                $subscription = $this->mpService->createSubscription(
-                    $request->email,
-                    $request->plan_id, 
-                    $request->amount,
-                    $request->fee_payment_id,
-                    $collectorId
-                );
-                $initPoint = $subscription->init_point;
-            } else {
-                // ⚡ Flujo de Pago Único (Para Clases Sueltas O Pagos Proporcionales)
-                $title = $isProportional ? "Pago Proporcional - " . ($localPlan->name ?? "Mensualidad") : "Pago Digitaliza Todo Pay";
-                
-                $preference = $this->mpService->createOneTimePayment(
-                    $title,
-                    $request->amount,
-                    $request->fee_payment_id,
-                    $request->email,
-                    $collectorId
-                );
-                $initPoint = $preference->init_point;
+            $localPlan = Plan::where('tenant_id', $tenant->id)->find($request->plan_id);
+            $isProportional = false;
+            if ($localPlan) {
+                $planPrice = (float) $localPlan->price;
+                $requestAmount = (float) $request->amount;
+                $isProportional = $planPrice > 0 && abs($planPrice - $requestAmount) > 1;
             }
+
+            $title = $isProportional ? "Pago Proporcional - " . ($localPlan->name ?? "Mensualidad") : ($localPlan->name ?? "Mensualidad");
+            
+            $preference = $this->mpService->createOneTimePayment(
+                $title,
+                $request->amount,
+                $request->fee_payment_id,
+                $request->email,
+                $collectorId
+            );
+            $initPoint = $preference->init_point;
 
             return response()->json([
                 'success' => true,
@@ -176,5 +162,93 @@ class MercadoPagoController extends Controller
             Log::error("Error procesando Webhook MP: " . $e->getMessage());
             return response()->json(['status' => 'error'], 500);
         }
+    /**
+     * Procesa el primer pago y guarda la tarjeta para cobros recurrentes (Custom Engine)
+     */
+    public function subscribeWithCard(Request $request, $tenantSlug)
+    {
+        $request->validate([
+            'token' => 'required|string',
+            'payment_method_id' => 'required|string',
+            'plan_id' => 'required',
+            'student_id' => 'required',
+            'email' => 'required|email',
+            'amount' => 'required|numeric',
+            'fee_payment_id' => 'nullable|integer'
+        ]);
+
+        $tenant = Tenant::where('slug', $tenantSlug)->firstOrFail();
+        if ($tenant->mercadopago_auth_status !== 'connected' || !$tenant->mercadopago_access_token) {
+            return response()->json(['success' => false, 'message' => 'Academia no vinculada'], 400);
+        }
+
+        try {
+            $student = \App\Models\Student::findOrFail($request->student_id);
+            $collectorId = $tenant->mercadopago_user_id;
+            
+            // 💰 1. Cálculo de split (1.81%)
+            $feeAmount = ($request->amount * (env('MERCADOPAGO_PLATFORM_FEE', 1.81))) / 100;
+
+            // 🏦 2. Vaulting: Buscar o Crear Cliente
+            $customer = $this->mpService->getOrCreateCustomer($request->email, $student->name);
+            if (!$customer) throw new \Exception("No se pudo crear el cliente en Mercado Pago");
+
+            // 💳 3. Guardar tarjeta en MP
+            $card = $this->mpService->addCardToCustomer($customer->id, $request->token);
+
+            // 💸 4. Procesar Pago Inicial (Checkout API con Split)
+            $payment = $this->mpService->createPaymentWithToken(
+                $request->amount,
+                $feeAmount,
+                $request->email,
+                $request->token,
+                $request->payment_method_id,
+                $collectorId,
+                "Primer Pago - " . ($student->name ?? "Plan"),
+                "FP_" . $request->fee_payment_id
+            );
+
+            if ($payment->status === 'approved' || $payment->status === 'authorized') {
+                // ✅ 5. Actualizar Alumno con sus Tokens
+                $student->update([
+                    'mercadopago_customer_id' => $customer->id,
+                    'mercadopago_card_id' => $card->id,
+                    'mercadopago_last_four' => $card->last_four_digits,
+                    'mercadopago_payment_method_id' => $request->payment_method_id,
+                ]);
+
+                // ✅ 6. Actualizar Cuota como pagada
+                if ($request->fee_payment_id) {
+                    $feePayment = FeePayment::find($request->fee_payment_id);
+                    if ($feePayment) {
+                        $feePayment->update([
+                            'status' => 'paid',
+                            'paid_at' => now(),
+                            'payment_method' => 'mercadopago'
+                        ]);
+                    }
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'status' => $payment->status,
+                    'message' => 'Pago procesado y suscripción activada correctamente.'
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'status' => $payment->status,
+                'message' => 'El pago fue rechazado o está pendiente: ' . $payment->status_detail
+            ], 400);
+
+        } catch (\Exception $e) {
+            Log::error("Error en subscribeWithCard: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }
+

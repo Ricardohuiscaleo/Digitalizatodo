@@ -194,10 +194,11 @@ class GuardianController extends Controller
         $tenantId = $tenant->id;
         $guardian = Guardian::where('tenant_id', $tenantId)->findOrFail($id);
 
+        $approvedCount = 0;
         foreach ($guardian->students as $student) {
             $paymentsToApprove = \App\Models\Payment::where('tenant_id', $tenantId)
                 ->whereIn('enrollment_id', $student->enrollments->pluck('id'))
-                ->where('status', 'pending_review')
+                ->whereIn('status', ['pending', 'pending_review', 'overdue'])
                 ->get();
 
             foreach ($paymentsToApprove as $payment) {
@@ -276,15 +277,19 @@ class GuardianController extends Controller
                     'status' => 'approved',
                     'paid_at' => now()
                 ]);
+                $approvedCount++;
             }
         }
 
-        event(new \App\Events\PaymentStatusUpdated($guardian->id, 'approved', $tenant->slug));
+        if ($approvedCount > 0) {
+            event(new \App\Events\PaymentStatusUpdated($guardian->id, 'approved', $tenant->slug));
 
-        // Notificar al apoderado
-        \App\Models\Notification::send($tenantId, $guardian->id, 'Pago aprobado', 'Tu pago ha sido aprobado. ¡Gracias!', 'payment', $tenant->slug);
+            // Notificar al apoderado
+            \App\Models\Notification::send($tenantId, $guardian->id, 'Pago aprobado', 'Tu pago ha sido aprobado. ¡Gracias!', 'payment', $tenant->slug);
+            return response()->json(['message' => 'Pagos aprobados correctamente', 'count' => $approvedCount]);
+        }
 
-        return response()->json(['message' => 'Pagos aprobados correctamente']);
+        return response()->json(['message' => 'No se encontraron pagos pendientes para aprobar.'], 422);
     }
 
     /**

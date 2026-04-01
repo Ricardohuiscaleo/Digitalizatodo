@@ -221,12 +221,38 @@ export async function createSubscription(tenantId: string, token: string, data: 
                 student_id: data.student_id,
                 email: data.email,
                 amount: data.amount,
-                fee_payment_id: data.fee_payment_id // 🚀 El cable final para la automatización
+                fee_payment_id: data.fee_payment_id
             }),
         });
         return await safeJson(response);
     } catch (error) {
         console.error('Error creating subscription:', error);
+        return { success: false, message: 'Error de conexión' };
+    }
+}
+
+export async function subscribeWithCard(tenantId: string, token: string, data: any) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/mercadopago/subscribe-with-card`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                token: data.token,
+                payment_method_id: data.payment_method_id,
+                plan_id: data.plan_id,
+                student_id: data.student_id,
+                email: data.email,
+                amount: data.amount,
+                fee_payment_id: data.fee_payment_id
+            }),
+        });
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error in subscribeWithCard:', error);
         return { success: false, message: 'Error de conexión' };
     }
 }

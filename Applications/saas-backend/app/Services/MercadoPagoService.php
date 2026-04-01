@@ -3,12 +3,13 @@
 namespace App\Services;
 
 use MercadoPago\MercadoPagoConfig;
-use MercadoPago\Client\PreApprovalPlan\PreApprovalPlanClient;
-use MercadoPago\Client\PreApproval\PreApprovalClient;
+use MercadoPago\Client\Common\RequestOptions;
+use MercadoPago\Client\Customer\CustomerClient;
+use MercadoPago\Client\Customer\CustomerCardClient;
+use MercadoPago\Client\Payment\PaymentClient;
 use MercadoPago\Client\Preference\PreferenceClient;
 use MercadoPago\Exceptions\MPApiException;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Http;
 use Exception;
 
 class MercadoPagoService
@@ -22,7 +23,6 @@ class MercadoPagoService
     {
         $this->accessToken = env('MERCADOPAGO_ACCESS_TOKEN');
         $this->publicKey = env('MERCADOPAGO_PUBLIC_KEY');
-        // Forzamos sandbox temporalmente si no está definido para seguridad en pruebas
         $this->isSandbox = env('MERCADOPAGO_MODE', 'sandbox') === 'sandbox';
         $this->platformFeePercent = env('MERCADOPAGO_PLATFORM_FEE', 1.81);
 
@@ -40,90 +40,118 @@ class MercadoPagoService
     }
 
     /**
-     * Crea un Plan de Suscripción en Mercado Pago
-     * Útil para academias que tienen precios fijos mensuales.
+     * 🏦 Vaulting: Crea o busca un Cliente en Mercado Pago
      */
-    public function createSubscriptionPlan($tenant, $title, $amount)
+    public function getOrCreateCustomer($email, $name = 'Student')
     {
-        $client = new PreApprovalPlanClient();
+        $client = new CustomerClient();
+        
+        try {
+            // Buscamos si ya existe por email
+            $searchRequest = new \MercadoPago\Net\MPSearchRequest(0, 1, ["email" => $email]);
+            $search = $client->search($searchRequest);
+            if (!empty($search->results)) {
+                return $search->results[0];
+            }
+
+            // Si no existe, lo creamos
+            return $client->create([
+                "email" => $email,
+                "first_name" => $name
+            ]);
+        } catch (Exception $e) {
+            Log::error("Error MP Customer: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 💳 Vaulting: Asocia una tarjeta tokenizada a un cliente
+     */
+    public function addCardToCustomer($customerId, $cardToken)
+    {
+        $client = new CustomerCardClient();
+        try {
+            return $client->create($customerId, ["token" => $cardToken]);
+        } catch (Exception $e) {
+            Log::error("Error MP Card Vault: " . $e->getMessage());
+            throw new Exception("No se pudo guardar la tarjeta segura.");
+        }
+    }
+
+    /**
+     * 💰 Checkout API: Pago Directo con Split Automático (application_fee)
+     * Utilizado para cobros RECURRENTES desde el Cron.
+     */
+    public function createDirectPayment($amount, $feeAmount, $customerId, $cardId, $collectorId, $description, $externalReference)
+    {
+        $client = new PaymentClient();
 
         try {
-            $planRequest = [
-                "reason" => $title,
-                "auto_setup" => true,
-                "payment_methods_allowed" => [
-                    "payment_types" => [
-                        ["id" => "credit_card"],
-                        ["id" => "debit_card"]
-                    ]
+            $paymentRequest = [
+                "transaction_amount" => (float) $amount,
+                "description" => $description,
+                "external_reference" => $externalReference,
+                "payment_method_id" => "credit_card",
+                "payer" => [
+                    "type" => "customer",
+                    "id" => $customerId,
                 ],
-                "back_url" => "https://digitalizatodo.cl/pago-exitoso",
-                "status" => "active",
-                "auto_recurring" => [
-                    "frequency" => 1,
-                    "frequency_type" => "months",
-                    "transaction_amount" => (float) $amount,
-                    "currency_id" => "CLP"
-                ]
+                "token" => null, 
+                "metadata" => [
+                    "collector_id" => $collectorId
+                ],
+                "application_fee" => (float) $feeAmount, // 💰 EL SPLIT
             ];
 
-            // Si es Marketplace, aquí se podría configurar el reparto o usar el modo checkout pro
-            $plan = $client->create($planRequest);
-            return $plan;
+            // Para el split en cobros indirectos, usamos el token del vendedor como contexto
+            // pero el fee se descuenta si la App está vinculada vía OAuth.
+            $payment = $client->create($paymentRequest);
+            return $payment;
 
         } catch (MPApiException $e) {
-            throw new Exception("Error MP: " . $e->getMessage());
+            Log::error("Error MP Direct Payment: " . $e->getApiResponse()->getContent());
+            throw new Exception("Error al procesar cobro automático.");
         }
     }
 
     /**
-     * Inicia una suscripción para un alumno específico (Marketplace Split)
-     * @param string $collectorId ID de Mercado Pago de la Academia
+     * Versión para el primer pago (usando token directo del formulario)
      */
-    public function createSubscription($studentEmail, $planId, $amount, $feePaymentId, $collectorId = null, $feeAmount = 0)
+    public function createPaymentWithToken($amount, $feeAmount, $payerEmail, $token, $paymentMethodId, $collectorId, $description, $externalReference)
     {
-        $client = new PreApprovalClient();
+        $client = new PaymentClient();
 
         try {
-            // Cálculo de comisión de Digitaliza Todo (Marketplace)
-            if ($feeAmount == 0) {
-                $feeAmount = ($amount * $this->platformFeePercent) / 100;
-            }
-
-            $subscriptionRequest = [
-                "preapproval_plan_id" => $planId,
-                "payer_email" => $studentEmail,
-                "status" => "pending",
-                "external_reference" => "FP_" . $feePaymentId,
-                "back_url" => "https://admin.digitalizatodo.cl/dashboard?payment=success",
-                "marketplace_fee" => (float) $feeAmount, // 💰 SPLIT AUTOMÁTICO
+            $paymentRequest = [
+                "transaction_amount" => (float) $amount,
+                "description" => $description,
+                "external_reference" => $externalReference,
+                "payment_method_id" => $paymentMethodId,
+                "payer" => [
+                    "email" => $payerEmail,
+                ],
+                "token" => $token,
+                "application_fee" => (float) $feeAmount, // 💰 SPLIT
             ];
 
-            // En modo Marketplace, el collector_id es quien recibe el dinero
-            if ($collectorId) {
-                $subscriptionRequest["collector_id"] = (int) $collectorId;
-            }
-
-            $subscription = $client->create($subscriptionRequest);
-            return $subscription;
+            $payment = $client->create($paymentRequest);
+            return $payment;
 
         } catch (MPApiException $e) {
-            Log::error("Error MP Subscription (FP: $feePaymentId): " . $e->getApiResponse()->getContent());
-            throw new Exception("Error al crear suscripción: " . $e->getApiResponse()->getContent());
+            Log::error("Error MP Payment Token: " . $e->getApiResponse()->getContent());
+            throw new Exception("Error al procesar pago con tarjeta.");
         }
     }
-    
+
     /**
-     * Generar un cobro puntual para Clases Sueltas o Packs (Marketplace Split)
-     * @param string $collectorId ID de Mercado Pago de la Academia
+     * Generar un Preference (Checkout Pro) si el usuario prefiere redirección
      */
     public function createOneTimePayment($title, $amount, $feePaymentId, $payerEmail, $collectorId = null)
     {
         $client = new PreferenceClient();
-
         try {
             $feeAmount = ($amount * $this->platformFeePercent) / 100;
-
             $preferenceRequest = [
                 "items" => [
                     [
@@ -133,29 +161,24 @@ class MercadoPagoService
                         "currency_id" => "CLP"
                     ]
                 ],
-                "payer" => [
-                    "email" => $payerEmail
-                ],
+                "payer" => ["email" => $payerEmail],
                 "external_reference" => "FP_" . $feePaymentId,
-                "marketplace_fee" => (float) $feeAmount, // 💰 SPLIT AUTOMÁTICO
+                "marketplace_fee" => (float) $feeAmount,
                 "back_urls" => [
                     "success" => "https://admin.digitalizatodo.cl/dashboard?payment=success",
                     "failure" => "https://admin.digitalizatodo.cl/dashboard?payment=failure",
                 ],
                 "auto_return" => "approved",
-                "notification_url" => "https://admin.digitalizatodo.cl/api/mercadopago/webhook"
             ];
 
             if ($collectorId) {
                 $preferenceRequest["collector_id"] = (int) $collectorId;
             }
 
-            $preference = $client->create($preferenceRequest);
-            return $preference;
-
-        } catch (MPApiException $e) {
-            Log::error("Error MP Preference (FP: $feePaymentId): " . $e->getApiResponse()->getContent());
-            throw new Exception("Error al crear cobro puntual: " . $e->getApiResponse()->getContent());
+            return $client->create($preferenceRequest);
+        } catch (Exception $e) {
+            Log::error("Error MP Preference: " . $e->getMessage());
+            throw new Exception("Error al crear preferencia de pago.");
         }
     }
 }
