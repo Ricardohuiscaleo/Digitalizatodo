@@ -362,7 +362,7 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
             )}
 
             {/* Cards View (Mobile or PC in Cards mode) */}
-            <div className={`${viewMode === 'cards' ? 'grid' : 'grid md:hidden'} grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 pb-12 px-3`}>
+            <div className={`${viewMode === 'cards' ? 'grid' : 'grid md:hidden'} grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-4 pb-12 px-3`}>
                 {filteredPayers.length === 0 && (
                     <div className="col-span-full flex flex-col items-center justify-center py-16 gap-3">
                         <Users size={32} className={isDark ? 'text-zinc-700' : 'text-zinc-200'} />
@@ -374,6 +374,7 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                     const isReview = (payer.status === 'review');
                     const isPaid = (payer.status === 'paid');
                     const students = (payer.enrolledStudents || payer.students || []).filter((s: any) => !s.deleted_at);
+                    const isPayerParticipating = students.some((s: any) => s.name === payer.name || s.id === payer.id);
                     
                     const statusColor = isPaid ? 'text-emerald-500' : isReview ? 'text-amber-400' : 'text-rose-500';
                     const statusLabel = isPaid ? 'Al día' : isReview ? 'Por aprobar' : 'Pendiente';
@@ -400,110 +401,98 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                             </div>
 
                             <button 
-                                className={`w-full flex flex-col gap-2.5 py-4 px-5 rounded-[2rem] border transition-all active:scale-[0.97] hover:shadow-xl ${
+                                className={`w-full group relative flex flex-col gap-6 p-5 md:p-8 rounded-[2.5rem] border transition-all duration-300 md:hover:translate-y-[-6px] md:hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] md:hover:z-10 ${
                                     selectedIds.has(String(payer.id)) 
                                         ? (isDark ? 'bg-indigo-500/10 border-indigo-500/50' : 'bg-indigo-50 border-indigo-200')
-                                        : cardBg
+                                        : (isDark ? cardBg + ' md:bg-zinc-900/60 md:backdrop-blur-md' : cardBg + ' md:bg-white md:hover:border-zinc-200')
                                 }`}
                                 onClick={() => setBubbleModalPayer(payer)}
                             >
-                                {/* Nivel 1 & 2: Alumnos (Avatar + Nombre Abajo) */}
-                                <div className="flex items-center gap-4 overflow-x-auto hide-scrollbar pt-4 pl-4 pb-1.5 min-h-[80px]">
-                                {students.slice(0, 4).map((student: any) => {
-                                    const classesCount = student.total_attendances || 0;
-                                    
-                                    return (
-                                        <div key={student.id} className="flex flex-col items-center gap-1.5 flex-shrink-0">
-                                            <StudentAvatar
-                                                photo={student.photo || payer.photo}
-                                                name={student.name}
-                                                size={46}
-                                                beltRank={student.belt_rank}
-                                                degrees={student.degrees ?? 0}
-                                                classesCount={classesCount > 0 ? classesCount : undefined}
-                                                payerStatus={payer.status}
-                                                modality={student.modality}
-                                                showPayerDot={false}
-                                                isDark={isDark}
-                                                industry={branding?.industry}
-                                            />
-                                            <div className="flex items-center justify-center gap-1.5 mt-0.5">
-                                                <div className={`w-1 h-1 rounded-full flex-shrink-0 ${
-                                                    isPaid ? 'bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.3)]' :
-                                                    isReview ? 'bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.3)]' :
-                                                    'bg-rose-500 shadow-[0_0_4px_rgba(244,63,94,0.3)]'
-                                                }`} />
-                                                <div className="flex flex-col items-center">
-                                                    <span className={`text-[8px] font-black uppercase tracking-tighter text-center max-w-[50px] truncate ${isDark ? 'text-zinc-500' : 'text-zinc-900/60'}`}>
-                                                        {student.name.split(' ')[0]}
-                                                    </span>
-                                                    {student.category?.toLowerCase() === 'kids' && (
-                                                        <span className="text-[6px] font-black uppercase text-fuchsia-500 tracking-[0.15em] -mt-0.5 animate-pulse">KID</span>
-                                                    )}
-                                                    <div className={`mt-0.5 px-1.5 py-0.5 rounded-md text-[7px] font-black uppercase tracking-wider text-center max-w-[65px] truncate border shadow-sm ${
-                                                        isDark 
-                                                            ? 'bg-zinc-800 border-white/5 text-zinc-500' 
-                                                            : 'bg-white border-zinc-100 text-zinc-400'
-                                                    }`}>
-                                                        {student.enrollment?.plan?.name || student.plan_name || student.course_name || 'Sin Plan'}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                                {students.length > 4 && (
-                                    <div className="flex flex-col items-center gap-1.5 pr-2">
-                                        <div className={`w-11 h-11 rounded-full flex items-center justify-center text-[10px] font-black ${
-                                            isDark ? 'bg-zinc-800 text-zinc-600' : 'bg-zinc-100 text-zinc-300'
-                                        }`}>
-                                            +{students.length - 4}
-                                        </div>
-                                        <span className="text-[8px] font-black uppercase text-zinc-700">Más</span>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className={`space-y-2 pb-0.5 pt-2 border-t ${isDark ? 'border-white/5' : 'border-black/5'}`}>
-                                {/* Nivel 3: Titular */}
-                                <div className="text-left flex items-center gap-2">
-                                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                                        isPaid ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' :
-                                        isReview ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.4)]' :
-                                        'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]'
-                                    }`} />
-                                    <p className={`text-[15px] font-black uppercase tracking-tight leading-none ${isDark ? 'text-white' : 'text-zinc-900'}`}>
-                                        {payer.name}
+                                {/* Fila 1: Monto Total y Estado */}
+                                <div className="flex items-center justify-between w-full mb-1">
+                                    <p className={`text-2xl md:text-4xl font-black tracking-tighter ${statusColor}`}>
+                                        {formatMoney(stats.displayAmount)}
                                     </p>
+                                    <span className={`px-2.5 py-1 rounded-full text-[8px] md:text-[10px] font-black uppercase border ${statusBg} ${statusColor} border-current/10`}>
+                                        {statusLabel}
+                                    </span>
                                 </div>
 
-                                {/* Nivel 4: Total y Botón Gestionar */}
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-1.5">
-                                        <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase border ${statusBg} ${statusColor} border-current/10 font-black`}>
-                                            {statusLabel}
+                                {/* Fila 2: Nombre del Titular */}
+                                <div className="flex flex-col text-left mb-6">
+                                    <p className={`text-[15px] md:text-[22px] font-black uppercase tracking-tight leading-tight ${isDark ? 'text-white' : 'text-zinc-900'}`}>
+                                        {payer.name}
+                                    </p>
+                                    <div className="flex items-center gap-2 mt-0.5 md:mt-1">
+                                        <span className={`text-[8px] md:text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>
+                                            Titular del Grupo
                                         </span>
                                         {payer.is_automatic && (
-                                            <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase border bg-indigo-500/10 text-indigo-500 border-indigo-500/20 font-black animate-pulse flex items-center gap-1 shadow-sm">
-                                                <RefreshCw size={8} className="animate-spin-slow" />
-                                                Auto
+                                            <span className="px-1.5 py-0.5 rounded-full text-[7px] md:text-[9px] font-black uppercase bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
+                                                Pago Automático
                                             </span>
                                         )}
-                                        <p className={`text-base font-black tracking-tighter ${statusColor}`}>
-                                            {formatMoney(stats.displayAmount)}
-                                        </p>
                                     </div>
-                                    <div className={`flex items-center gap-1.5 pr-1 ${statusColor} opacity-70`}>
-                                        <span className="text-[9px] font-black uppercase tracking-widest">Gestionar</span>
+                                </div>
+
+                                {/* Fila 3: Cuerpo - Burbujas de Alumnos */}
+                                <div className={`w-full flex-1 border-t pt-5 md:pt-8 ${isDark ? 'border-white/5' : 'border-black/5'}`}>
+                                    <div className="flex items-center gap-4 overflow-x-auto hide-scrollbar md:grid md:grid-cols-4 md:gap-y-10 md:overflow-visible">
+                                        {students.slice(0, 8).map((student: any) => {
+                                            const classesCount = student.total_attendances || 0;
+                                            const individualAmount = student.enrollment?.amount || student.amount || student.enrollment?.plan?.price || 0;
+                                            
+                                            return (
+                                                <div key={student.id} className="flex flex-col items-center gap-2 flex-shrink-0 md:w-32">
+                                                    <StudentAvatar
+                                                        photo={student.photo || payer.photo}
+                                                        name={student.name}
+                                                        size={60}
+                                                        beltRank={student.belt_rank}
+                                                        degrees={student.degrees ?? 0}
+                                                        classesCount={classesCount > 0 ? classesCount : undefined}
+                                                        payerStatus={payer.status}
+                                                        modality={student.modality}
+                                                        showPayerDot={false}
+                                                        isDark={isDark}
+                                                        industry={branding?.industry}
+                                                    />
+                                                    <div className="flex flex-col items-center text-center">
+                                                        <span className={`text-[9px] md:text-[11px] font-black uppercase tracking-tighter truncate max-w-[50px] md:max-w-[80px] ${isDark ? 'text-zinc-400' : 'text-zinc-900/70'}`}>
+                                                            {student.name.split(' ')[0]}
+                                                        </span>
+                                                        <span className={`text-[8px] md:text-[10px] font-black tracking-widest ${statusColor}`}>
+                                                            {formatMoney(individualAmount)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        {students.length > 8 && (
+                                            <div className="flex flex-col items-center gap-2 shrink-0 h-full justify-center">
+                                                <div className={`w-14 h-14 rounded-full border-2 border-dashed flex items-center justify-center text-[10px] font-black ${
+                                                    isDark ? 'border-zinc-800 text-zinc-700' : 'border-zinc-200 text-zinc-300'
+                                                }`}>
+                                                    +{students.length - 8}
+                                                </div>
+                                                <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400">Ver más</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Pie: Quick Action Chevron */}
+                                <div className="absolute bottom-6 right-8 hidden md:flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity translate-x-2 group-hover:translate-x-0 duration-300">
+                                    <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-indigo-400' : 'text-indigo-500'}`}>Gestionar</span>
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center ${isDark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-50 text-indigo-500'}`}>
                                         <ChevronRight size={14} />
                                     </div>
                                 </div>
-                            </div>
-                                </button>
-                            </div>
-                        );
-                    })}
-                </div>
+                            </button>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 };

@@ -97,22 +97,71 @@ class GuardianController extends Controller
             $s3BaseUrl = 'https://' . config('services.s3.bucket', 'digitalizatodo') . '.s3.' . config('services.s3.region', 'us-east-1') . '.amazonaws.com/';
 
             $activePayments = [];
+            // SISTEMA INTELIGENTE DE DE-DUPLICACIÓN (VERSION 2.0)
+            // 1. Recolectamos FeePayments (Prioridad Alta)
+            $feePayments = \App\Models\FeePayment::whereIn('student_id', $students->pluck('id'))
+                ->with(['fee', 'student.enrollments.plan'])
+                ->get();
+
+            $activePeriods = []; // Mapa para de-duplicación: studentID_month_year
+            $tempPayments = [];
+
+            foreach ($feePayments as $fp) {
+                $pStatus = $fp->status === 'review' ? 'review' : $fp->status;
+                $amount = (float)($fp->fee?->amount ?? 0);
+                $enrollment = $fp->student?->enrollments?->first();
+                if ($amount <= 0 && $enrollment && $enrollment->plan) {
+                    $amount = (float)($enrollment->plan->price ?? 0);
+                }
+
+                $pKey = $fp->student_id . '_' . $fp->period_month . '_' . $fp->period_year;
+                $activePeriods[$pKey] = true;
+
+                $tempPayments[] = [
+                    'id' => 'fp_' . $fp->id,
+                    'student_id' => $fp->student_id,
+                    'student_name' => $fp->student->name,
+                    'student_photo' => $fp->student->photo ? (str_starts_with($fp->student->photo, 'http') ? $fp->student->photo : $s3BaseUrl . $fp->student->photo) : "https://i.pravatar.cc/150?u=" . $fp->student->id,
+                    'amount' => $amount,
+                    'status' => $pStatus,
+                    'due_date' => $fp->period_month ? Carbon::create($fp->period_year, $fp->period_month, 1)->format('d M, Y') : null,
+                    'raw_due_date' => $fp->period_month ? Carbon::create($fp->period_year, $fp->period_month, 1) : null,
+                    'proof_url' => $fp->proof_url,
+                    'plan_name' => $fp->fee?->title ?? ($enrollment?->plan?->name ?? 'Mensualidad'),
+                    'is_fee' => true
+                ];
+            }
+
+            // 2. Recolectamos Payments Legados (Prioridad Baja - Solo si no hay colisión)
             foreach ($students as $student) {
                 foreach ($student->enrollments as $enrollment) {
                     $hasAddedApproved = false;
                     foreach ($enrollment->payments as $payment) {
+                        // Sincronización inteligente: Si ya existe un FeePayment para este mes, lo ignoramos
+                        $pMonth = $payment->due_date ? $payment->due_date->month : null;
+                        $pYear = $payment->due_date ? $payment->due_date->year : null;
+                        $pKey = $student->id . '_' . $pMonth . '_' . $pYear;
+
+                        // Solo agregamos si no hay FeePayment O si es un pago especial (Upgrade/Pack etc)
+                        $isSpecial = in_array($payment->type, ['plan_upgrade', 'pack_4', 'single', 'referral']);
+                        if (isset($activePeriods[$pKey]) && !$isSpecial) {
+                            continue;
+                        }
+
                         if ($payment->status === 'approved') {
                             if ($hasAddedApproved && !$isHistory) continue;
                             $hasAddedApproved = true;
                         }
 
-                        $activePayments[] = [
-                            'id' => $payment->id,
+                        $tempPayments[] = [
+                            'id' => 'p_' . $payment->id,
+                            'student_id' => $student->id,
                             'student_name' => $student->name,
                             'student_photo' => $student->photo ? (str_starts_with($student->photo, 'http') ? $student->photo : $s3BaseUrl . $student->photo) : "https://i.pravatar.cc/150?u=" . $student->id,
                             'amount' => (float)$payment->amount,
                             'status' => $payment->status === 'pending_review' ? 'review' : $payment->status,
                             'due_date' => $payment->due_date?->format('d M, Y'),
+                            'raw_due_date' => $payment->due_date,
                             'proof_url' => $payment->proof_image ? (str_starts_with($payment->proof_image, 'http') ? $payment->proof_image : $s3BaseUrl . $payment->proof_image) : null,
                             'belt_rank' => $student->belt_rank,
                             'degrees' => (int)($student->degrees ?? 0),
@@ -120,48 +169,13 @@ class GuardianController extends Controller
                             'previous_classes' => (int)($student->previous_classes ?? 0),
                             'belt_classes_at_promotion' => (int)($student->belt_classes_at_promotion ?? 0),
                             'plan_name' => $payment?->plan?->name ?? $enrollment?->plan?->name ?? null,
+                            'is_fee' => false
                         ];
                     }
                 }
             }
 
-            // Inteligencia de Estado v1.5.3 (Modo Disciplina)
-            $hasPending = false;
-            $hasReview = false;
-            $hasApprovedCurrent = false; // Solo cuenta si es del periodo solicitado o futuro
-            
-            $currentMonthStart = $referenceDate;
-
-            // Sincronización: Traer FeePayments y agregarlos a activePayments si no están
-            $feePayments = \App\Models\FeePayment::whereIn('student_id', $students->pluck('id'))
-                ->with(['fee', 'student.enrollments.plan'])
-                ->get();
-
-            foreach ($feePayments as $fp) {
-                $pStatus = $fp->status === 'review' ? 'review' : $fp->status;
-                
-                // Inteligencia de Precios v1.5.5
-                // 1. Usar el monto de la cuota maestra si existe
-                // 2. Si no, usar el precio del plan de entrenamiento del alumno
-                $amount = (float)($fp->fee?->amount ?? 0);
-                $enrollment = $fp->student?->enrollments?->first();
-                if ($amount <= 0 && $enrollment && $enrollment->plan) {
-                    $amount = (float)($enrollment->plan->price ?? 0);
-                }
-
-                // Evitar duplicados con activePayments ya existentes (por ID de pago de MP si aplica)
-                $activePayments[] = [
-                    'id' => 'fp_' . $fp->id,
-                    'student_name' => $fp->student->name,
-                    'student_photo' => $fp->student->photo ? (str_starts_with($fp->student->photo, 'http') ? $fp->student->photo : $s3BaseUrl . $fp->student->photo) : "https://i.pravatar.cc/150?u=" . $fp->student->id,
-                    'amount' => $amount,
-                    'status' => $pStatus,
-                    'due_date' => $fp->period_month ? Carbon::create($fp->period_year, $fp->period_month, 1)->format('d M, Y') : null,
-                    'proof_url' => $fp->proof_url,
-                    'plan_name' => $fp->fee?->title ?? ($enrollment?->plan?->name ?? 'Mensualidad'),
-                    'is_fee' => true
-                ];
-            }
+            $activePayments = $tempPayments;
 
             foreach ($activePayments as $p) {
                 if ($p['status'] === 'review') $hasReview = true;
