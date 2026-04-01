@@ -28,17 +28,20 @@ class GuardianController extends Controller
         $tenant = app('currentTenant');
         $tenantId = $tenant->id;
 
-        $requestedMonth = (int) ($request->query('month') ?? now()->month);
-        $requestedYear = (int) ($request->query('year') ?? now()->year);
+        $month = $request->query('month');
+        $year = $request->query('year');
+        $requestedMonth = (int) ($month ?? now()->month);
+        $requestedYear = (int) ($year ?? now()->year);
+        $isHistory = $request->query('history') === 'true';
         $referenceDate = Carbon::create($requestedYear, $requestedMonth, 1)->startOfMonth();
 
         $guardians = Guardian::where('tenant_id', $tenantId)
-            ->with(['students.enrollments.plan', 'students.enrollments.payments' => function ($query) use ($tenantId, $month, $year, $isHistory) {
+            ->with(['students.enrollments.plan', 'students.enrollments.payments' => function ($query) use ($tenantId, $requestedMonth, $requestedYear, $isHistory) {
                 $query->where('tenant_id', $tenantId);
                 
-                if ($isHistory && $month && $year) {
-                    $query->whereMonth('due_date', $month)
-                          ->whereYear('due_date', $year);
+                if ($isHistory && $requestedMonth && $requestedYear) {
+                    $query->whereMonth('due_date', $requestedMonth)
+                          ->whereYear('due_date', $requestedYear);
                 } else {
                     // Traer pending/review/overdue + el último approved por enrollment
                     $query->whereIn('status', ['pending', 'pending_review', 'overdue', 'approved'])
