@@ -320,9 +320,16 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                                     </td>
                                     <td className={`px-6 py-4 text-sm font-black ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>{formatMoney(stats.displayAmount)}</td>
                                     <td className="px-6 py-4">
-                                        {isPaid ? <span className="text-emerald-500 font-black text-[10px] uppercase">✓ Al Día</span>
-                                            : stats.hasReview ? <span className="text-amber-400 font-black text-[10px] uppercase animate-pulse">Por Aprobar</span>
-                                            : <span className="text-rose-500 font-black text-[10px] uppercase">Pendiente</span>}
+                                        <div className="flex flex-col gap-1">
+                                            {isPaid ? <span className="text-emerald-500 font-black text-[10px] uppercase">✓ Al Día</span>
+                                                : stats.hasReview ? <span className="text-amber-400 font-black text-[10px] uppercase animate-pulse">Por Aprobar</span>
+                                                : <span className="text-rose-500 font-black text-[10px] uppercase">Pendiente</span>}
+                                            {payer.is_automatic && (
+                                                <span className="text-[7px] font-black uppercase bg-indigo-500/10 text-indigo-500 px-1.5 py-0.5 rounded-md self-start border border-indigo-500/20 shadow-sm animate-pulse">
+                                                    PAGO AUTOMÁTICO
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <button onClick={() => handlePaymentApprove(payer.id)}
@@ -475,6 +482,12 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                                         <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase border ${statusBg} ${statusColor} border-current/10 font-black`}>
                                             {statusLabel}
                                         </span>
+                                        {payer.is_automatic && (
+                                            <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase border bg-indigo-500/10 text-indigo-500 border-indigo-500/20 font-black animate-pulse flex items-center gap-1 shadow-sm">
+                                                <RefreshCw size={8} className="animate-spin-slow" />
+                                                Auto
+                                            </span>
+                                        )}
                                         <p className={`text-base font-black tracking-tighter ${statusColor}`}>
                                             {formatMoney(stats.displayAmount)}
                                         </p>

@@ -97,9 +97,15 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
                         />
                         <div>
                             <p className={`text-base font-black uppercase leading-none ${isDark ? 'text-white' : 'text-zinc-900'}`}>{payer.name}</p>
-                            <p className={`text-[10px] font-bold mt-0.5 ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
-                                {payer.enrolledStudents?.length} {vocab?.memberLabel || 'Miembro'}s
-                            </p>
+                                {payer.is_automatic ? (
+                                    <span className="text-[7px] font-black uppercase bg-indigo-500/10 text-indigo-500 px-2 py-0.5 rounded-full border border-indigo-500/20 animate-pulse flex items-center gap-1 mt-1.5 w-max">
+                                        <RefreshCw size={8} /> PAGO AUTOMÁTICO
+                                    </span>
+                                ) : (
+                                    <p className={`text-[10px] font-bold mt-0.5 ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                                        {payer.enrolledStudents?.length} {vocab?.memberLabel || 'Miembro'}s
+                                    </p>
+                                )}
                         </div>
                     </div>
                 </div>
@@ -176,6 +182,11 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
 
                 {!isPaid && (
                     <div className="px-6 pt-4 pb-10">
+                        {!payer.is_automatic && (
+                            <p className={`text-center text-[9px] font-bold uppercase tracking-tight mb-3 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>
+                                ¿Te pagaron en efectivo o por transferencia? Márcalo aquí:
+                            </p>
+                        )}
                         <button
                             onClick={() => onApprove(payer.id)}
                             className="w-full h-14 rounded-2xl text-white font-black text-[12px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg"
@@ -183,6 +194,11 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
                         >
                             {isReview ? <><RefreshCw size={18} /> Aprobar Pago</> : <><DollarSign size={18} /> Marcar como Pagado</>}
                         </button>
+                        {payer.is_automatic && (
+                            <p className={`text-center text-[9px] font-bold uppercase tracking-tight mt-3 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>
+                                * Este apoderado tiene pagos automáticos activados.
+                            </p>
+                        )}
                     </div>
                 )}
                 {isPaid && <div className="pb-10" />}
