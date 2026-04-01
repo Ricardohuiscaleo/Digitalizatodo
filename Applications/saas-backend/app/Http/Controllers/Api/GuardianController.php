@@ -117,7 +117,7 @@ class GuardianController extends Controller
                             'total_attendances' => $student->attendances()->count(),
                             'previous_classes' => (int)($student->previous_classes ?? 0),
                             'belt_classes_at_promotion' => (int)($student->belt_classes_at_promotion ?? 0),
-                            'plan_name' => $payment->plan?->name ?? $enrollment->plan?->name ?? null,
+                            'plan_name' => $payment?->plan?->name ?? $enrollment?->plan?->name ?? null,
                         ];
                     }
                 }
@@ -141,7 +141,7 @@ class GuardianController extends Controller
                 // Inteligencia de Precios v1.5.5
                 // 1. Usar el monto de la cuota maestra si existe
                 // 2. Si no, usar el precio del plan de entrenamiento del alumno
-                $amount = (float)($fp->fee->amount ?? 0);
+                $amount = (float)($fp->fee?->amount ?? 0);
                 $enrollment = $fp->student?->enrollments?->first();
                 if ($amount <= 0 && $enrollment && $enrollment->plan) {
                     $amount = (float)($enrollment->plan->price ?? 0);
@@ -156,7 +156,7 @@ class GuardianController extends Controller
                     'status' => $pStatus,
                     'due_date' => $fp->period_month ? Carbon::create($fp->period_year, $fp->period_month, 1)->format('d M, Y') : null,
                     'proof_url' => $fp->proof_url,
-                    'plan_name' => $fp->fee->title ?? ($enrollment?->plan?->name ?? 'Mensualidad'),
+                    'plan_name' => $fp->fee?->title ?? ($enrollment?->plan?->name ?? 'Mensualidad'),
                     'is_fee' => true
                 ];
             }
