@@ -196,16 +196,24 @@ class AuthController extends Controller
 
             $allEnrollmentIds = $guardian->students->flatMap->enrollments->pluck('id')->filter();
 
-            // Calcular total_due: solo pagos pending/overdue
-            $totalDue = $guardian->students->flatMap->enrollments->flatMap->payments
+            // Calcular total_due: pagos pending/overdue (Payments) + fee_payments pending/overdue
+            $regularDebts = $guardian->students->flatMap->enrollments->flatMap->payments
                 ->whereIn('status', ['pending', 'overdue'])
                 ->sum('amount');
+            
+            $feeDebts = \App\Models\FeePayment::where('guardian_id', $guardian->id)
+                ->whereIn('status', ['pending', 'overdue'])
+                ->with('fee')
+                ->get()
+                ->sum(fn($fp) => $fp->fee->amount ?? 0);
+
+            $totalDue = $regularDebts + $feeDebts;
 
             $paymentHistoryQuery = \App\Models\Payment::whereIn('enrollment_id', $allEnrollmentIds)
                 ->whereIn('status', ['approved', 'pending_review']);
 
             $feePayments = collect([]);
-            if ($tenant->industry === 'school_treasury') {
+            if ($tenant->industry === 'school_treasury' || true) { // Permitir siempre para ver historial de cuotas
                 $feePayments = \App\Models\FeePayment::where('guardian_id', $guardian->id)
                     ->whereIn('status', ['paid', 'review'])
                     ->with('fee')
@@ -213,14 +221,15 @@ class AuthController extends Controller
                     ->limit(10)
                     ->get()
                     ->map(fn($fp) => [
-                        'id'          => $fp->id,
-                        'amount'      => $fp->fee->amount ?? 0,
-                        'status'      => $fp->status === 'paid' ? 'approved' : 'pending_review',
-                        'paid_at'     => $fp->paid_at?->format('d M, Y'),
-                        'due_date'    => \Carbon\Carbon::create($fp->period_year, $fp->period_month, 1)->format('M Y'),
-                        'proof_image' => $fp->proof_url, // Mapeamos proof_url a proof_image para la PWA
-                        'is_fee'      => true,
-                        'title'       => ($fp->fee->title ?? 'Cuota') . " - " . \Carbon\Carbon::create(null, $fp->period_month)->translatedFormat('M') . " {$fp->period_year}",
+                        'id'             => $fp->id,
+                        'amount'         => $fp->fee->amount ?? 0,
+                        'status'         => $fp->status === 'paid' ? 'approved' : 'pending_review',
+                        'paid_at'        => $fp->paid_at?->format('d M, Y'),
+                        'due_date'       => \Carbon\Carbon::create($fp->period_year, $fp->period_month, 1)->format('M Y'),
+                        'proof_image'    => $fp->proof_url,
+                        'payment_method' => $fp->payment_method, // Inyectamos método
+                        'is_fee'         => true,
+                        'title'          => ($fp->fee->title ?? 'Cuota') . " - " . \Carbon\Carbon::create(null, $fp->period_month)->translatedFormat('M') . " {$fp->period_year}",
                     ]);
             }
 
@@ -228,15 +237,17 @@ class AuthController extends Controller
                 ->limit(10)
                 ->get()
                 ->map(fn($p) => [
-                    'id'          => $p->id,
-                    'amount'      => $p->amount,
-                    'status'      => $p->status,
-                    'paid_at'     => $p->paid_at?->format('d M, Y'),
-                    'due_date'    => $p->due_date?->format('d M, Y'),
-                    'proof_image' => $toUrl($p->proof_image),
-                    'is_fee'      => false,
-                    'title'       => 'Pago de Mensualidad',
+                    'id'             => $p->id,
+                    'amount'         => $p->amount,
+                    'status'         => $p->status,
+                    'paid_at'        => $p->paid_at?->format('d M, Y'),
+                    'due_date'       => $p->due_date?->format('d M, Y'),
+                    'proof_image'    => $toUrl($p->proof_image),
+                    'payment_method' => $p->payment_method, // Inyectamos método
+                    'is_fee'         => false,
+                    'title'          => 'Pago de Mensualidad',
                 ]);
+
 
             $combinedHistory = $regularHistory->concat($feePayments)
                 ->sortByDesc(fn($item) => $item['paid_at'] ?? $item['due_date'])
@@ -255,34 +266,64 @@ class AuthController extends Controller
                     'industry'      => $tenant->industry,
                 ],
                 'bank_info' => $bankInfo,
-                'students'  => $guardian->students->map(fn($s) => [
-                    'id'                => $s->id,
-                    'name'              => $s->name,
-                    'photo'             => $toUrl($s->photo),
-                    'category'          => $s->category ?? 'Sin Categoría',
-                    'belt_rank'         => $s->belt_rank,
-                    'degrees'           => (int)($s->degrees ?? 0),
-                    'modality'          => $s->modality,
-                    'attendance_count'  => \App\Models\Attendance::where('student_id', $s->id)->where('status', 'present')->count(),
-                    'total_attendances' => \App\Models\Attendance::where('student_id', $s->id)->where('status', 'present')->count(),
-                    'previous_classes'  => (int)($s->previous_classes ?? 0),
-                    'payerStatus'       => $s->enrollments->contains(fn($e) => $e->payments->contains(fn($p) => in_array($p->status, ['pending', 'overdue']) && $p->due_date && $p->due_date->isPast())) ? 'overdue' : ($s->enrollments->contains(fn($e) => $e->payments->contains(fn($p) => in_array($p->status, ['pending_review', 'proof_uploaded']))) ? 'pending' : 'paid'),
-                    'pending_payments'  => $s->enrollments->flatMap->payments->count(),
-                    'recent_attendance' => $s->attendances->map(fn($a) => [
-                        'date'   => $a->date->format('Y-m-d'),
-                        'status' => $a->status,
-                    ]),
-                    'payments' => $s->enrollments->flatMap->payments->map(fn($p) => [
-                        'id'          => $p->id,
-                        'amount'      => $p->amount,
-                        'due_date'    => $p->due_date?->format('d M, Y'),
-                        'status'      => $p->status,
-                        'proof_image' => $toUrl($p->proof_image),
-                    ]),
-                ]),
+                'students'  => $guardian->students->map(function($s) {
+                    // Buscar el próximo vencimiento pendiente
+                    $nextFee = \App\Models\FeePayment::where('student_id', $s->id)
+                        ->where('status', 'pending')
+                        ->orderBy('period_year')
+                        ->orderBy('period_month')
+                        ->first();
+                    
+                    $nextRegular = $s->enrollments->flatMap->payments
+                        ->where('status', 'pending')
+                        ->sortBy('due_date')
+                        ->first();
+
+                    $nextDate = null;
+                    $nextAmount = 0;
+
+                    if ($nextFee && $nextRegular) {
+                        $feeDate = \Carbon\Carbon::create($nextFee->period_year, $nextFee->period_month, 1);
+                        if ($feeDate->lt($nextRegular->due_date)) {
+                            $nextDate = $feeDate->format('d M, Y');
+                            $nextAmount = $nextFee->fee->amount ?? 0;
+                        } else {
+                            $nextDate = $nextRegular->due_date->format('d M, Y');
+                            $nextAmount = $nextRegular->amount;
+                        }
+                    } elseif ($nextFee) {
+                        $nextDate = \Carbon\Carbon::create($nextFee->period_year, $nextFee->period_month, 1)->format('d M, Y');
+                        $nextAmount = $nextFee->fee->amount ?? 0;
+                    } elseif ($nextRegular) {
+                        $nextDate = $nextRegular->due_date->format('d M, Y');
+                        $nextAmount = $nextRegular->amount;
+                    }
+
+                    return [
+                        'id'                => $s->id,
+                        'name'              => $s->name,
+                        'photo'             => $this->toS3Url($s->photo),
+                        'category'          => $s->category ?? 'Sin Categoría',
+                        'belt_rank'         => $s->belt_rank,
+                        'degrees'           => (int)($s->degrees ?? 0),
+                        'modality'          => $s->modality,
+                        'attendance_count'  => \App\Models\Attendance::where('student_id', $s->id)->where('status', 'present')->count(),
+                        'total_attendances' => \App\Models\Attendance::where('student_id', $s->id)->where('status', 'present')->count(),
+                        'previous_classes'  => (int)($s->previous_classes ?? 0),
+                        'payerStatus'       => $s->enrollments->contains(fn($e) => $e->payments->contains(fn($p) => in_array($p->status, ['pending', 'overdue']) && $p->due_date && $p->due_date->isPast())) ? 'overdue' : ($s->enrollments->contains(fn($e) => $e->payments->contains(fn($p) => in_array($p->status, ['pending_review', 'proof_uploaded']))) ? 'pending' : 'paid'),
+                        'pending_payments'  => $s->enrollments->flatMap->payments->whereIn('status', ['pending', 'overdue'])->count() + \App\Models\FeePayment::where('student_id', $s->id)->whereIn('status', ['pending', 'overdue'])->count(),
+                        'next_payment_date' => $nextDate,
+                        'next_payment_amount' => round($nextAmount),
+                        'recent_attendance' => $s->attendances->map(fn($a) => [
+                            'date'   => $a->date->format('Y-m-d'),
+                            'status' => $a->status,
+                        ]),
+                    ];
+                }),
                 'total_due' => round($totalDue),
                 'payment_history' => $combinedHistory,
             ]);
+
         }
 
         return response()->json(['message' => 'No autorizado'], 401);
