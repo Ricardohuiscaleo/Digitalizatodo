@@ -132,7 +132,7 @@ class GuardianController extends Controller
 
             // Sincronización: Traer FeePayments y agregarlos a activePayments si no están
             $feePayments = \App\Models\FeePayment::whereIn('student_id', $students->pluck('id'))
-                ->with(['fee', 'student.enrollment.plan'])
+                ->with(['fee', 'student.enrollments.plan'])
                 ->get();
 
             foreach ($feePayments as $fp) {
