@@ -65,27 +65,28 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
         const reviewAmount = payer.payments?.filter((p: any) => p.status === 'review' && !p.deleted_at).reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
         const pendingAmount = payer.payments?.filter((p: any) => (p.status === 'pending' || p.status === 'overdue') && !p.deleted_at).reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
         const approvedAmount = payer.payments?.filter((p: any) => p.status === 'approved' && !p.deleted_at).reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
-        
-        const hasReview = reviewAmount > 0;
+
+        // Si el backend ya calculó el status correctamente (fee_payments), usarlo
+        const backendStatus = payer.status; // 'paid' | 'pending' | 'review'
+        const backendTotalDue = payer.total_due || 0;
+
+        const hasReview = backendStatus === 'review' || reviewAmount > 0;
+        const effectivePending = backendStatus === 'pending' ? (backendTotalDue || pendingAmount) : pendingAmount;
         const numEnrollments = (payer.enrolledStudents || payer.students || []).filter((s: any) => !s.deleted_at).length;
-        const displayAmount = paymentFilter === 'history' 
-            ? (approvedAmount + reviewAmount + pendingAmount)
-            : ((hasReview || (paymentFilter === 'pending' && reviewAmount > 0)) ? reviewAmount : (pendingAmount || 0));
-            
-        return { displayAmount, reviewAmount, pendingAmount, approvedAmount, numEnrollments, hasReview };
+        const displayAmount = paymentFilter === 'history'
+            ? (approvedAmount + reviewAmount + effectivePending)
+            : (hasReview ? reviewAmount : (effectivePending || 0));
+
+        return { displayAmount, reviewAmount, pendingAmount: effectivePending, approvedAmount, numEnrollments, hasReview };
     };
 
     const filteredPayers = payers.filter(p => {
         if (p.deleted_at) return false;
-        
         const stats = getPayerRealStats(p);
-        
-        // Hide orphaned payers (no active students) unless in history mode
         if (stats.numEnrollments === 0 && paymentFilter !== 'history') return false;
-
-        if (paymentFilter === 'pending') return stats.pendingAmount > 0;
-        if (paymentFilter === 'review') return stats.reviewAmount > 0;
-        if (paymentFilter === 'paid') return stats.approvedAmount > 0 && stats.pendingAmount === 0 && stats.reviewAmount === 0;
+        if (paymentFilter === 'pending') return p.status === 'pending' || stats.pendingAmount > 0;
+        if (paymentFilter === 'review') return p.status === 'review' || stats.reviewAmount > 0;
+        if (paymentFilter === 'paid') return p.status === 'paid' && stats.pendingAmount === 0 && stats.reviewAmount === 0;
         return true;
     }).filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
