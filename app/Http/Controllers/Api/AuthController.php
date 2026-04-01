@@ -302,7 +302,7 @@ class AuthController extends Controller
                     return [
                         'id'                => $s->id,
                         'name'              => $s->name,
-                        'photo'             => $this->toS3Url($s->photo),
+                        'photo'             => $toUrl($s->photo),
                         'category'          => $s->category ?? 'Sin Categoría',
                         'belt_rank'         => $s->belt_rank,
                         'degrees'           => (int)($s->degrees ?? 0),
