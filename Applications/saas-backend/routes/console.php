@@ -13,3 +13,6 @@ Schedule::command('fees:send-reminders')->dailyAt('09:00');
 
 // Recordatorios de clases: corre cada minuto (verifica clases en T+30m)
 Schedule::command('classes:send-reminders')->everyMinute();
+
+// Cobros automáticos de Mercado Pago: corre diariamente a las 3am
+Schedule::command('mercadopago:process-recurring')->dailyAt('03:00');
