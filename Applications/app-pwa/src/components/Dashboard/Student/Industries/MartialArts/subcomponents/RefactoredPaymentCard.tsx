@@ -43,7 +43,13 @@ export function RefactoredPaymentCard({
     handleUploadProof,
     bankInfo
 }: RefactoredPaymentCardProps) {
-    console.log("[MP-Debug] Rendering RefactoredPaymentCard v4 - mpReady:", true);
+    // Sellar la inicialización antes del render (v1.4.6)
+    const key = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY;
+    if (key) {
+        initMercadoPago(key, { locale: 'es-CL' });
+    }
+    
+    console.log("[MP-Debug] Rendering RefactoredPaymentCard v1.4.6 - mpReady:", true);
     const [isOpen, setIsOpen] = useState(false);
     const [showCardForm, setShowCardForm] = useState(false);
     const [showBankDetails, setShowBankDetails] = useState(false);
@@ -134,7 +140,7 @@ export function RefactoredPaymentCard({
                                     <div className="flex items-center justify-between mb-4 px-2">
                                         <div className="flex items-center gap-2">
                                             <ShieldCheck className="text-emerald-500" size={16} />
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Pago Seguro (MP) <span className="text-[8px] font-black bg-blue-600 text-white px-1.5 py-0.5 rounded ml-1">v1.4.5</span></span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Pago Seguro (MP) <span className="text-[8px] font-black bg-blue-600 text-white px-1.5 py-0.5 rounded ml-1">v1.4.6</span></span>
                                         </div>
                                         {/* CSS Hack para IDs internos y estabilidad de scroll en PWA */}
                                         <style dangerouslySetInnerHTML={{ __html: `
