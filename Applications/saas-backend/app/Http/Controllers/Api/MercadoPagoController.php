@@ -220,7 +220,7 @@ class MercadoPagoController extends Controller
             $student = \App\Models\Student::findOrFail($request->student_id);
 
             // 💰 1. Split
-            $feeAmount = ($request->amount * (env('MERCADOPAGO_PLATFORM_FEE', 1.81))) / 100;
+            $feeAmount = round(($request->amount * (env('MERCADOPAGO_PLATFORM_FEE', 1.81))) / 100);
 
             // 🏦 2. Vaulting
             $customer = $this->mpService->getOrCreateCustomer($request->email, $student->name);

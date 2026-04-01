@@ -93,6 +93,7 @@ class MercadoPagoService
                 "description" => $description,
                 "external_reference" => $externalReference,
                 "payment_method_id" => "credit_card",
+                "installments" => 1,
                 "payer" => [
                     "type" => "customer",
                     "id" => $customerId,
@@ -110,7 +111,7 @@ class MercadoPagoService
             return $payment;
 
         } catch (MPApiException $e) {
-            Log::error("Error MP Direct Payment: " . $e->getApiResponse()->getContent());
+            Log::error("Error MP Direct Payment: " . json_encode($e->getApiResponse()->getContent()));
             throw new Exception("Error al procesar cobro automático.");
         }
     }
@@ -128,6 +129,7 @@ class MercadoPagoService
                 "description" => $description,
                 "external_reference" => $externalReference,
                 "payment_method_id" => $paymentMethodId,
+                "installments" => 1,
                 "payer" => [
                     "email" => $payerEmail,
                 ],
@@ -139,7 +141,7 @@ class MercadoPagoService
             return $payment;
 
         } catch (MPApiException $e) {
-            Log::error("Error MP Payment Token: " . $e->getApiResponse()->getContent());
+            Log::error("Error MP Payment Token: " . json_encode($e->getApiResponse()->getContent()));
             throw new Exception("Error al procesar pago con tarjeta.");
         }
     }
