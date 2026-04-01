@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Guardian;
 use App\Models\Notification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -11,6 +12,11 @@ class NotificationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        // Guardians no tienen notificaciones en el sistema (user_id es de staff)
+        if ($request->user() instanceof Guardian) {
+            return response()->json(['unread' => 0, 'notifications' => []]);
+        }
+
         $notifications = Notification::forUser($request->user()->id)
             ->where('tenant_id', app('currentTenant')->id)
             ->orderByDesc('created_at')
@@ -35,6 +41,10 @@ class NotificationController extends Controller
 
     public function read(Request $request, int $id): JsonResponse
     {
+        if ($request->user() instanceof Guardian) {
+            return response()->json(['ok' => true]);
+        }
+
         Notification::where('id', $id)
             ->where('user_id', $request->user()->id)
             ->whereNull('read_at')
@@ -45,6 +55,10 @@ class NotificationController extends Controller
 
     public function readAll(Request $request): JsonResponse
     {
+        if ($request->user() instanceof Guardian) {
+            return response()->json(['ok' => true]);
+        }
+
         Notification::forUser($request->user()->id)
             ->where('tenant_id', app('currentTenant')->id)
             ->unread()
