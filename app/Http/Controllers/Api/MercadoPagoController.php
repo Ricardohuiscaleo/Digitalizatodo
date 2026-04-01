@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\MercadoPagoService;
 use App\Models\FeePayment;
+use App\Models\Guardian;
+use App\Models\Notification;
 use App\Models\Tenant;
-use App\Models\Plan; // 🥋 Importamos Plan para validar precios
+use App\Models\Plan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 
@@ -142,12 +144,45 @@ class MercadoPagoController extends Controller
 
                 if ($feePayment && ($status === 'approved' || $status === 'authorized')) {
                     $feePayment->update([
-                        'status' => 'paid', // 🟢 MARCAR COMO PAGADO
-                        'paid_at' => now(),
+                        'status'         => 'paid',
+                        'paid_at'        => now(),
                         'payment_method' => 'mercadopago',
-                        'notes' => ($feePayment->notes ? $feePayment->notes . "\n" : "") . "MP Transaction: $id"
+                        'notes'          => ($feePayment->notes ? $feePayment->notes . "\n" : "") . "MP Transaction: $id"
                     ]);
                     Log::info("Cuota Digitaliza Todo Pay actualizada con éxito: FP_{$feePaymentId}");
+
+                    // Notificar al staff
+                    $tenantObj = Tenant::find($feePayment->tenant_id);
+                    if ($tenantObj) {
+                        $guardian = $feePayment->guardian_id ? \App\Models\Guardian::find($feePayment->guardian_id) : null;
+                        $amount = $feePayment->fee?->amount ?? 0;
+
+                        \App\Models\User::where('tenant_id', $tenantObj->id)->each(function ($staff) use ($tenantObj, $guardian, $amount, $id) {
+                            \App\Models\Notification::send(
+                                $tenantObj->id,
+                                $staff->id,
+                                '💳 Pago MP Confirmado',
+                                ($guardian ? $guardian->name : 'Un apoderado') . " pagó $" . number_format($amount, 0, ',', '.') . " vía Mercado Pago.",
+                                'payment',
+                                $tenantObj->slug
+                            );
+                        });
+
+                        // Notificar al apoderado
+                        if ($guardian) {
+                            \App\Models\Notification::send(
+                                $tenantObj->id,
+                                $guardian->id,
+                                '✅ Pago Confirmado',
+                                "Tu pago de $" . number_format($amount, 0, ',', '.') . " fue confirmado por Mercado Pago.",
+                                'payment',
+                                $tenantObj->slug
+                            );
+                        }
+
+                        // Emitir evento realtime
+                        event(new \App\Events\FeeUpdated($tenantObj->slug, $feePayment->guardian_id));
+                    }
                 }
             }
 
@@ -246,11 +281,52 @@ class MercadoPagoController extends Controller
                     ]);
                 }
 
+                // ✅ 8. Notificar al staff
+                $guardian = $student->guardians()->first();
+                \App\Models\User::where('tenant_id', $tenant->id)->each(function ($staff) use ($tenant, $student, $guardian, $request, $payment) {
+                    \App\Models\Notification::send(
+                        $tenant->id,
+                        $staff->id,
+                        '💳 Pago con Tarjeta Aprobado',
+                        "{$student->name} pagó $" . number_format($request->amount, 0, ',', '.') . " con tarjeta (MP). Cobro automático activado.",
+                        'payment',
+                        $tenant->slug
+                    );
+                });
+
+                // ✅ 9. Notificar al apoderado
+                if ($guardian) {
+                    \App\Models\Notification::send(
+                        $tenant->id,
+                        $guardian->id,
+                        '✅ Pago Aprobado',
+                        "Tu pago de $" . number_format($request->amount, 0, ',', '.') . " fue aprobado. El cobro automático está activo para los próximos meses.",
+                        'payment',
+                        $tenant->slug
+                    );
+                }
+
+                // ✅ 10. Emitir evento realtime
+                event(new \App\Events\FeeUpdated($tenant->slug, $guardian?->id));
+
                 return response()->json([
                     'success' => true,
                     'status' => $payment->status,
                     'message' => 'Pago procesado y suscripción activada correctamente.'
                 ]);
+            }
+
+            // ❌ Pago rechazado — notificar al apoderado
+            $guardian = $student->guardians()->first();
+            if ($guardian) {
+                \App\Models\Notification::send(
+                    $tenant->id,
+                    $guardian->id,
+                    '❌ Pago Rechazado',
+                    "Tu pago de $" . number_format($request->amount, 0, ',', '.') . " fue rechazado. Verifica los datos de tu tarjeta e intenta nuevamente.",
+                    'payment',
+                    $tenant->slug
+                );
             }
 
             return response()->json([
