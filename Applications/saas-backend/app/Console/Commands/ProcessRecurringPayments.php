@@ -35,9 +35,9 @@ class ProcessRecurringPayments extends Command
     {
         $this->info("Iniciando proceso de cobros recurrentes...");
 
-        // Buscamos cuotas pendientes del mes actual o anterior que no tengan pago aprobado
-        // Y cuyo alumno tenga token de Mercado Pago guardado
+        // Buscamos cuotas pendientes con menos de 3 intentos
         $pendingPayments = FeePayment::where('status', 'pending')
+            ->where('retry_attempts', '<', 3)
             ->whereHas('student', function ($query) {
                 $query->whereNotNull('mercadopago_customer_id')
                       ->whereNotNull('mercadopago_card_id');
@@ -55,7 +55,6 @@ class ProcessRecurringPayments extends Command
             $student = $feePayment->student;
             $tenant = $student->tenant;
             
-            // Si el tenant no está conectado a MP, saltamos
             if ($tenant->mercadopago_auth_status !== 'connected' || !$tenant->mercadopago_access_token) {
                 continue;
             }
@@ -83,19 +82,52 @@ class ProcessRecurringPayments extends Command
                         'status' => 'paid',
                         'paid_at' => now(),
                         'payment_method' => 'mercadopago',
-                        'notes' => "Cobro automático exitoso. MP ID: " . $payment->id
+                        'retry_attempts' => $feePayment->retry_attempts + 1,
+                        'last_retry_at' => now(),
+                        'notes' => "Cobro automático exitoso (Intento " . ($feePayment->retry_attempts + 1) . "). MP ID: " . $payment->id
                     ]);
                     $this->info("✅ Éxito: FP_{$feePayment->id}");
                 } else {
-                    $this->error("❌ Rechazado: Status " . $payment->status);
+                    $this->handleFailure($feePayment, "Rechazado: Status " . $payment->status);
                 }
 
             } catch (\Exception $e) {
-                $this->error("❌ Error en FP_{$feePayment->id}: " . $e->getMessage());
-                Log::error("Procesamiento automático fallido FP_{$feePayment->id}: " . $e->getMessage());
+                $this->handleFailure($feePayment, $e->getMessage());
             }
         }
 
         $this->info("Proceso finalizado.");
+    }
+
+    /**
+     * Gestiona el fallo del cobro, incrementa reintentos y notifica al staff.
+     */
+    protected function handleFailure(FeePayment $feePayment, $reason)
+    {
+        $student = $feePayment->student;
+        $tenant = $student->tenant;
+
+        $newAttempts = $feePayment->retry_attempts + 1;
+        
+        $feePayment->update([
+            'retry_attempts' => $newAttempts,
+            'last_retry_at' => now(),
+            'notes' => "Cobro fallido (Intento $newAttempts): " . substr($reason, 0, 150)
+        ]);
+
+        $this->error("❌ Fallo (Intento $newAttempts) en FP_{$feePayment->id}: $reason");
+        Log::error("Procesamiento automático fallido FP_{$feePayment->id}: $reason");
+
+        // Notificar al Staff (Profesores/Administradores)
+        \App\Models\User::where('tenant_id', $tenant->id)->each(function ($staff) use ($tenant, $student, $newAttempts) {
+            \App\Models\Notification::send(
+                $tenant->id,
+                $staff->id,
+                '⚠️ Cobro Automático Fallido',
+                "El cobro de {$student->name} falló (Intento $newAttempts/3). Por favor, contacte al apoderado.",
+                'fee',
+                $tenant->slug
+            );
+        });
     }
 }

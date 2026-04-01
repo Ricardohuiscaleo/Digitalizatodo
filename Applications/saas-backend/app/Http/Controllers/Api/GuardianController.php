@@ -482,13 +482,79 @@ class GuardianController extends Controller
             ],
             'debts' => [
                 'total' => $debtsAmount,
-                'payments' => $debtsPayments
+                'payments' => $debtsPayments->map(fn($p) => [
+                    'id'             => $p->id,
+                    'fee_id'         => $p->fee_id,
+                    'alumno'         => $p->student->name ?? $guardian->name,
+                    'monto'          => $p->fee->amount ?? 0,
+                    'vencimiento'    => \Carbon\Carbon::create($p->period_year, $p->period_month, 1)->format('Y-m-d'),
+                    'estado'         => $p->status,
+                    'payment_method' => $p->payment_method, // Aquí inyectamos el método
+                    'proof_url'      => $p->proof_url,
+                ])
             ],
             'refunds' => [
                 'total' => $refundsAmount,
                 'payments' => $refundsPayments
             ]
         ]);
+    }
+
+    /**
+     * Aprobación masiva de pagos desde el Staff.
+     */
+    public function bulkApprove(Request $request)
+    {
+        $tenant = app('currentTenant');
+        $request->validate([
+            'payment_ids' => 'required|array',
+            'payment_ids.*' => 'integer',
+            'payment_method' => 'required|in:cash,transfer,mercadopago'
+        ]);
+
+        $paymentIds = $request->input('payment_ids');
+        $method = $request->input('payment_method');
+
+        $approvedCount = 0;
+
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            $payments = \App\Models\FeePayment::whereIn('id', $paymentIds)
+                ->where('tenant_id', $tenant->id)
+                ->get();
+
+            foreach ($payments as $payment) {
+                $payment->update([
+                    'status' => 'paid',
+                    'paid_at' => now(),
+                    'payment_method' => $method
+                ]);
+
+                // Sincronizar con la tabla payments si existe registro pendiente
+                \App\Models\Payment::where('student_id', $payment->student_id)
+                    ->where('status', 'pending')
+                    ->whereDate('due_date', \Carbon\Carbon::create($payment->period_year, $payment->period_month, 1))
+                    ->update([
+                        'status' => 'approved',
+                        'paid_at' => now(),
+                    ]);
+                
+                $approvedCount++;
+            }
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            // Notificar al Guardian de la aprobación masiva (opcional)
+            // event(new FeeUpdated($tenant->slug, ...));
+
+            return response()->json([
+                'message' => "Se han aprobado {$approvedCount} pagos exitosamente como {$method}.",
+                'approved_count' => $approvedCount
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     /**

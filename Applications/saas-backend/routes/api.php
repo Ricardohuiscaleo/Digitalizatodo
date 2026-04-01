@@ -191,6 +191,7 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
                     // Gestión de Cuentas (Payers)
                     Route::get('payers', [GuardianController::class , 'index']);
                     Route::post('payers/{id}/approve', [GuardianController::class , 'approvePayment']);
+                    Route::post('payers/bulk-approve', [GuardianController::class , 'bulkApprove']);
                     Route::get('payers/{id}/settlement', [GuardianController::class , 'settlement']);
                     Route::delete('payers/{id}', [GuardianController::class , 'destroy']);
                     Route::post('settings/pricing', [GuardianController::class, 'updatePricing']);
