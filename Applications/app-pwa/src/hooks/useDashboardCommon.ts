@@ -72,9 +72,8 @@ export function useDashboardCommon(slug: string | undefined, token: string | nul
         
         const isHistory = filter === 'history';
         const data = await getPayers(slug, token, { month, year, history: isHistory });
-        if (data?.payers) {
-            setPayers(data.payers);
-        }
+        const payersList = data?.payers || (Array.isArray(data) ? data : []);
+        setPayers(payersList);
     }, [token, slug]);
 
     const loadExpenses = useCallback(async () => {

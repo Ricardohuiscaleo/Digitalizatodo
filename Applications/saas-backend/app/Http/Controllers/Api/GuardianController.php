@@ -236,7 +236,7 @@ class GuardianController extends Controller
             ];
         });
 
-        return response()->json($guardians);
+        return response()->json(['payers' => $guardians]);
     }
 
     /**

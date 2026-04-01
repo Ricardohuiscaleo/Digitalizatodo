@@ -75,8 +75,9 @@ export default function CheckinPage() {
             }
 
             if (studentsRes?.students) {
+                const payers = payersData?.payers || (Array.isArray(payersData) ? payersData : []);
                 const students = studentsRes.students.map((s: any) => {
-                    const payer = payersData?.payers?.find((p: any) => 
+                    const payer = payers.find((p: any) => 
                         (p.enrolledStudents || p.students || []).some((es: any) => String(es.id) === String(s.id))
                     );
                     return {

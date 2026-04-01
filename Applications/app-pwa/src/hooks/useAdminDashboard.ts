@@ -212,7 +212,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
                 }
 
                 // Load Initial Data
-                common.setPayers(payersData?.payers || []);
+                common.setPayers(payersData?.payers || (Array.isArray(payersData) ? payersData : []));
                 common.setSchedulesList(schedulesData?.schedules || []);
                 
                 if (profile.tenant?.industry === 'martial_arts' || !profile.tenant?.industry) {
