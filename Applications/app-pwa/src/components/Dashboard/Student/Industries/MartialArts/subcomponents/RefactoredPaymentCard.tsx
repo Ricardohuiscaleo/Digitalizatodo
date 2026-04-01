@@ -55,7 +55,7 @@ export function RefactoredPaymentCard({
     const fileRef = React.useRef<HTMLInputElement>(null);
 
     const isProjected = payment.isProjected;
-    const isOverdue = !isProjected && new Date(payment.due_date) < new Date();
+    const isOverdue = !isProjected && new Date(payment.due_date + 'T12:00:00') < new Date();
     const amount = Number(payment.amount);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,15 +103,11 @@ export function RefactoredPaymentCard({
 
                     <div className="flex flex-col items-end gap-2">
                         <span className="text-[10px] font-black text-zinc-400 font-mono">
-                            {new Date(payment.due_date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }).replace('.', '')}
+                            {new Date(payment.due_date + 'T12:00:00').toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }).replace('.', '')}
                         </span>
                         <button 
                             disabled={isProjected}
-                            onClick={() => {
-                                const nextOpen = !isOpen;
-                                setIsOpen(nextOpen);
-                                if (nextOpen) setShowCardForm(true); // Despliegue automático
-                            }}
+                            onClick={() => { setIsOpen(true); setShowCardForm(true); }}
                             className={`px-4 py-2.5 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm ${
                                 isOpen ? 'bg-zinc-900 text-white' : 
                                 isProjected ? 'bg-zinc-50 text-zinc-200 cursor-not-allowed' :
@@ -119,7 +115,7 @@ export function RefactoredPaymentCard({
                             }`}
                         >
                             <span className="text-[10px] font-black uppercase tracking-widest">
-                                {isOpen ? <X size={16} /> : 'PAGAR'}
+                                {isOpen ? <X size={16} onClick={(e) => { e.stopPropagation(); setIsOpen(false); setShowCardForm(false); }} /> : 'PAGAR'}
                             </span>
                         </button>
                     </div>

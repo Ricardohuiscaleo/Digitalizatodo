@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Search, Calendar, Users, ChevronRight, SlidersHorizontal, LayoutGrid, List } from 'lucide-react';
+import { Search, Calendar, Users, ChevronRight, SlidersHorizontal, LayoutGrid, List, RefreshCw } from 'lucide-react';
 import BubblePaymentModal from './BubblePaymentModal';
 import { StudentAvatar } from './Industries/MartialArts/StudentAvatar';
 
