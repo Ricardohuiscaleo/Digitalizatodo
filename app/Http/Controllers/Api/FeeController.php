@@ -223,6 +223,20 @@ class FeeController extends Controller
                 'approved_by'    => $request->user()->id,
                 'notes'          => $validated['notes'] ?? null,
             ]);
+
+            // SINCRONIZACIÓN: Si existe un registro gemelo en la tabla 'payments' (Artes Marciales), aprobarlo también
+            if ($payment->period_month && $payment->period_year) {
+                \App\Models\Payment::where('tenant_id', $tenant->id)
+                    ->where('student_id', $payment->student_id)
+                    ->where('status', '!=', 'approved')
+                    ->whereMonth('due_date', $payment->period_month)
+                    ->whereYear('due_date', $payment->period_year)
+                    ->update([
+                        'status' => 'approved',
+                        'paid_at' => now(),
+                        'payment_method' => $validated['payment_method']
+                    ]);
+            }
         }
 
         $guardianId = $validated['guardian_id'];
