@@ -43,12 +43,6 @@ class MercadoPagoController extends Controller
         }
 
         try {
-            $collectorId = $tenant->mercadopago_user_id;
-
-            // 🚀 SWITCH TO PREFERENCES (Checkout Pro)
-            // Mercado Pago subscriptions (preapproval) don't natively support marketplace splits via API.
-            // Using Preferences ensures the 1.81% split for Digitaliza Todo works every time.
-            
             $localPlan = Plan::where('tenant_id', $tenant->id)->find($request->plan_id);
             $isProportional = false;
             if ($localPlan) {
@@ -58,13 +52,14 @@ class MercadoPagoController extends Controller
             }
 
             $title = $isProportional ? "Pago Proporcional - " . ($localPlan->name ?? "Mensualidad") : ($localPlan->name ?? "Mensualidad");
-            
+
+            // Usar el access_token del dojo (OAuth) para que MP aplique marketplace_fee correctamente
             $preference = $this->mpService->createOneTimePayment(
                 $title,
                 $request->amount,
                 $request->fee_payment_id,
                 $request->email,
-                $collectorId
+                $tenant->mercadopago_access_token
             );
             $initPoint = $preference->init_point;
 
