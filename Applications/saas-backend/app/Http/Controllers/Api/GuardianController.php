@@ -189,9 +189,9 @@ class GuardianController extends Controller
                 if ($p['status'] === 'review') $hasReview = true;
                 if ($p['status'] === 'pending' || $p['status'] === 'overdue') $hasPending = true;
                 
-                if ($p['status'] === 'approved') {
-                    $dueDate = isset($p['due_date']) ? Carbon::parse($p['due_date']) : null;
-                    if ($dueDate && $dueDate->greaterThanOrEqualTo($currentMonthStart)) {
+                if ($p['status'] === 'paid') {
+                    $dueDate = isset($p['raw_due_date']) ? $p['raw_due_date'] : (isset($p['due_date']) ? Carbon::parse($p['due_date']) : null);
+                    if ($dueDate && $dueDate->greaterThanOrEqualTo($referenceDate)) {
                         $hasApprovedCurrent = true;
                     }
                 }
@@ -201,20 +201,16 @@ class GuardianController extends Controller
             if ($hasReview) $status = 'review';
             elseif ($hasPending) $status = 'pending';
             elseif ($hasApprovedCurrent) $status = 'paid';
-            else $status = 'pending'; // Si no hay pago aprobado este mes, asumimos pendiente
+            else $status = 'pending'; 
 
             $totalDue = $hasPending ? array_sum(array_column(array_filter($activePayments, fn($p) => $p['status'] === 'pending' || $p['status'] === 'overdue'), 'amount')) : 0;
 
-            // Inteligencia Predictiva v1.5.6
-            // Si el estado es PENDIENTE pero no hay registros de deuda físicos ($totalDue == 0),
-            // calculamos la "Deuda Virtual" basada en el precio de los planes cargados.
             if ($status === 'pending' && $totalDue <= 0) {
                 foreach ($students as $s) {
-                    // Solo sumamos si el alumno no tiene un pago aprobado para este mes
                     $hasMonthPaid = false;
                     foreach ($activePayments as $p) {
-                        $dueDate = isset($p['due_date']) ? Carbon::parse($p['due_date']) : null;
-                        if ($p['status'] === 'approved' && $dueDate && $dueDate->greaterThanOrEqualTo($currentMonthStart)) {
+                        $dueDate = isset($p['raw_due_date']) ? $p['raw_due_date'] : (isset($p['due_date']) ? Carbon::parse($p['due_date']) : null);
+                        if ($p['status'] === 'paid' && $dueDate && $dueDate->greaterThanOrEqualTo($referenceDate)) {
                             $hasMonthPaid = true;
                             break;
                         }
@@ -228,7 +224,7 @@ class GuardianController extends Controller
             }
             $proofImage = null;
             foreach ($activePayments as $p) {
-                if ($p['proof_url']) {
+                if (isset($p['proof_url']) && $p['proof_url']) {
                     $proofImage = $p['proof_url'];
                     break;
                 }

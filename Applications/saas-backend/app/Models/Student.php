@@ -219,7 +219,7 @@ class Student extends Model
             ->flatMap->payments
             ->first();
 
-        if (!$lastPayment || $lastPayment->status !== 'approved') {
+        if (!$lastPayment || $lastPayment->status !== 'paid') {
             return false;
         }
 
