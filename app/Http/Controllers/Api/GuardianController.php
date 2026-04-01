@@ -54,6 +54,27 @@ class GuardianController extends Controller
             $students = $guardian->students;
             $status = 'paid';
             $tenant = Tenant::find($tenantId);
+
+            // Para martial_arts: el status se basa en fee_payments del mes actual
+            $now = now();
+            $hasFeeSystem = \App\Models\FeePayment::whereIn('student_id', $students->pluck('id'))
+                ->exists();
+
+            if ($hasFeeSystem) {
+                $paidThisMonth = \App\Models\FeePayment::whereIn('student_id', $students->pluck('id'))
+                    ->where('period_month', $now->month)
+                    ->where('period_year', $now->year)
+                    ->where('status', 'paid')
+                    ->exists();
+                $reviewThisMonth = \App\Models\FeePayment::whereIn('student_id', $students->pluck('id'))
+                    ->where('period_month', $now->month)
+                    ->where('period_year', $now->year)
+                    ->where('status', 'review')
+                    ->exists();
+
+                if ($reviewThisMonth) $status = 'review';
+                elseif (!$paidThisMonth) $status = 'pending';
+            }
             $pricing = $tenant->data['pricing'] ?? [];
             
             if (empty($pricing)) {

@@ -67,6 +67,9 @@ class ProcessRecurringPayments extends Command
 
                 $this->info("Cobrando CLP $amount a {$student->name} (Tenant: {$tenant->slug})");
 
+                // Usar el access_token del tenant (OAuth) para que el split funcione
+                \MercadoPago\MercadoPagoConfig::setAccessToken($tenant->mercadopago_access_token);
+
                 $payment = $this->mpService->createDirectPayment(
                     $amount,
                     $feeAmount,
@@ -76,6 +79,9 @@ class ProcessRecurringPayments extends Command
                     "Mensualidad Automática - " . $feePayment->period_month . "/" . $feePayment->period_year,
                     "FP_" . $feePayment->id
                 );
+
+                // Restaurar token de plataforma
+                \MercadoPago\MercadoPagoConfig::setAccessToken(env('MERCADOPAGO_ACCESS_TOKEN'));
 
                 if ($payment->status === 'approved' || $payment->status === 'authorized') {
                     $feePayment->update([

@@ -266,7 +266,7 @@ class AuthController extends Controller
                     'industry'      => $tenant->industry,
                 ],
                 'bank_info' => $bankInfo,
-                'students'  => $guardian->students->map(function($s) {
+                'students'  => $guardian->students->map(function($s) use ($toUrl) {
                     // Buscar el próximo vencimiento pendiente
                     $nextFee = \App\Models\FeePayment::where('student_id', $s->id)
                         ->where('status', 'pending')
@@ -302,7 +302,7 @@ class AuthController extends Controller
                     return [
                         'id'                => $s->id,
                         'name'              => $s->name,
-                        'photo'             => $this->toS3Url($s->photo),
+                        'photo'             => $toUrl($s->photo),
                         'category'          => $s->category ?? 'Sin Categoría',
                         'belt_rank'         => $s->belt_rank,
                         'degrees'           => (int)($s->degrees ?? 0),
