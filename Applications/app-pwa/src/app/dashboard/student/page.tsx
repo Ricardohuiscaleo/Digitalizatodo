@@ -352,6 +352,8 @@ export default function StudentDashboard() {
                         vocab={vocab} 
                         onBuyPack={handleBuyPack}
                         guardianEmail={common.data?.guardian?.email} 
+                        token={token}
+                        slug={slug || ""}
                     />
                     )
                 )}

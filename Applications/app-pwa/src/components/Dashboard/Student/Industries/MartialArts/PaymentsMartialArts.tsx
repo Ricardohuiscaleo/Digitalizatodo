@@ -50,6 +50,8 @@ interface PaymentsMartialArtsProps {
     onBuyPack?: (studentId: string, type: string, file?: File) => Promise<void>;
     plans: any[];
     guardianEmail?: string;
+    token: string | null;
+    slug: string;
 }
 
 // Helpers
@@ -93,7 +95,9 @@ export function PaymentsMartialArts({
     vocab,
     onBuyPack,
     plans,
-    guardianEmail
+    guardianEmail,
+    token,
+    slug
 }: PaymentsMartialArtsProps) {
     const [showBankInfo, setShowBankInfo] = React.useState(false);
     const [isBuying, setIsBuying] = React.useState<string | null>(null);
@@ -158,7 +162,7 @@ export function PaymentsMartialArts({
             }
             setIsUploadingPending(pid);
             try {
-                const res = await createSubscription(student.tenant_id, "", {
+                const res = await createSubscription(slug, token || "", {
                     student_id: String(student.id),
                     plan_id: payment.mp_plan_id || String(payment.plan_id || ""), 
                     email: emailToUse,
@@ -298,7 +302,7 @@ export function PaymentsMartialArts({
                                             <button onClick={async () => {
                                                 const email = students.find(s => String(s.id) === selectedStudentId)?.email || guardianEmail;
                                                 if (!email) return alert("Email missing");
-                                                const res = await createSubscription(students[0].tenant_id, "", { student_id: selectedStudentId, plan_id: String(plan.id), email, amount: plan.price });
+                                                const res = await createSubscription(slug, token || "", { student_id: selectedStudentId, plan_id: String(plan.id), email, amount: plan.price });
                                                 if (res?.init_point) window.location.href = res.init_point;
                                             }} className="w-full bg-zinc-950 text-white py-4 rounded-2xl text-[9px] font-black uppercase flex items-center justify-center gap-2">
                                                 <ShieldCheck size={14} /> Pagar con Digitaliza Todo Pay
