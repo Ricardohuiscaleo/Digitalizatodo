@@ -43,9 +43,9 @@ export function RefactoredPaymentCard({
     handleUploadProof,
     bankInfo
 }: RefactoredPaymentCardProps) {
-    // Sellar la inicialización antes del render (v1.4.7)
-    const key = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY;
-    console.log("[MP-Debug] Rendering RefactoredPaymentCard v1.4.7 - mpReady:", true);
+    // Sellar la inicialización antes del render (v1.4.8)
+    const key = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY || process.env.MERCADOPAGO_PUBLIC_KEY;
+    console.log("[MP-Debug] Rendering RefactoredPaymentCard v1.4.8 - mpReady:", true);
     console.log("[MP-Debug] Key check:", key ? "Defined (Starts with: " + key.substring(0, 10) + "...)" : "UNDEFINED");
     
     if (key) {
@@ -141,7 +141,7 @@ export function RefactoredPaymentCard({
                                     <div className="flex items-center justify-between mb-4 px-2">
                                         <div className="flex items-center gap-2">
                                             <ShieldCheck className="text-emerald-500" size={16} />
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Pago Seguro (MP) <span className="text-[8px] font-black bg-blue-600 text-white px-1.5 py-0.5 rounded ml-1">v1.4.7</span></span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Pago Seguro (MP) <span className="text-[8px] font-black bg-blue-600 text-white px-1.5 py-0.5 rounded ml-1">v1.4.8</span></span>
                                         </div>
                                         {/* CSS Hack para IDs internos y estabilidad de scroll en PWA */}
                                         <style dangerouslySetInnerHTML={{ __html: `
@@ -161,26 +161,36 @@ export function RefactoredPaymentCard({
 
                                     <div className="bg-white/50 p-2 rounded-3xl border border-zinc-100/50 block min-h-[350px] relative z-10 overflow-visible">
                                         <div className="min-h-[300px] w-full" id="mp-brick-container">
-                                            <CardPayment
-                                                initialization={{
-                                                    amount: amount,
-                                                    payer: { email: student.email || guardianEmail }
-                                                }}
-                                                onSubmit={(formData) => handleCardSubmit(formData, payment, student)}
-                                                customization={{
-                                                    paymentMethods: { maxInstallments: 1 },
-                                                    visual: { 
-                                                        style: { 
-                                                            theme: 'flat',
-                                                            customVariables: {
-                                                                borderRadiusMedium: '1.25rem',
-                                                                inputHorizontalPadding: '1rem',
-                                                                inputVerticalPadding: '1rem',
-                                                            }
-                                                        } 
-                                                    }
-                                                }}
-                                            />
+                                            {key ? (
+                                                <CardPayment
+                                                    initialization={{
+                                                        amount: amount,
+                                                        payer: { email: student.email || guardianEmail }
+                                                    }}
+                                                    onSubmit={(formData) => handleCardSubmit(formData, payment, student)}
+                                                    customization={{
+                                                        paymentMethods: { maxInstallments: 1 },
+                                                        visual: { 
+                                                            style: { 
+                                                                theme: 'flat',
+                                                                customVariables: {
+                                                                    borderRadiusMedium: '1.25rem',
+                                                                    inputHorizontalPadding: '1rem',
+                                                                    inputVerticalPadding: '1rem',
+                                                                }
+                                                            } 
+                                                        }
+                                                    }}
+                                                />
+                                            ) : (
+                                                <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
+                                                    <ShieldCheck className="text-rose-500 opacity-20" size={48} />
+                                                    <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest leading-relaxed">
+                                                        ⚠️ Clave de Pago No Encontrada<br/>
+                                                        <span className="text-zinc-400 font-medium normal-case">Por favor, configura NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY en Coolify.</span>
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
