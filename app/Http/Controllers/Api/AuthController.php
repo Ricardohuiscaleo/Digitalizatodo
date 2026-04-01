@@ -205,7 +205,7 @@ class AuthController extends Controller
                 ->whereIn('status', ['pending', 'overdue'])
                 ->with('fee')
                 ->get()
-                ->sum(fn($fp) => $fp->fee->amount ?? 0);
+                ->sum(fn($fp) => $fp->fee?->amount ?? 0);
 
             $totalDue = $regularDebts + $feeDebts;
 
@@ -222,14 +222,14 @@ class AuthController extends Controller
                     ->get()
                     ->map(fn($fp) => [
                         'id'             => $fp->id,
-                        'amount'         => $fp->fee->amount ?? 0,
+                        'amount'         => $fp->fee?->amount ?? 0,
                         'status'         => $fp->status === 'paid' ? 'approved' : 'pending_review',
                         'paid_at'        => $fp->paid_at?->format('d M, Y'),
                         'due_date'       => \Carbon\Carbon::create($fp->period_year, $fp->period_month, 1)->format('M Y'),
                         'proof_image'    => $fp->proof_url,
-                        'payment_method' => $fp->payment_method, // Inyectamos método
+                        'payment_method' => $fp->payment_method,
                         'is_fee'         => true,
-                        'title'          => ($fp->fee->title ?? 'Cuota') . " - " . \Carbon\Carbon::create(null, $fp->period_month)->translatedFormat('M') . " {$fp->period_year}",
+                        'title'          => ($fp->fee?->title ?? 'Cuota') . " - " . \Carbon\Carbon::create(null, $fp->period_month)->translatedFormat('M') . " {$fp->period_year}",
                     ]);
             }
 
@@ -286,14 +286,14 @@ class AuthController extends Controller
                         $feeDate = \Carbon\Carbon::create($nextFee->period_year, $nextFee->period_month, 1);
                         if ($feeDate->lt($nextRegular->due_date)) {
                             $nextDate = $feeDate->format('d M, Y');
-                            $nextAmount = $nextFee->fee->amount ?? 0;
+                            $nextAmount = $nextFee->fee?->amount ?? 0;
                         } else {
                             $nextDate = $nextRegular->due_date->format('d M, Y');
                             $nextAmount = $nextRegular->amount;
                         }
                     } elseif ($nextFee) {
                         $nextDate = \Carbon\Carbon::create($nextFee->period_year, $nextFee->period_month, 1)->format('d M, Y');
-                        $nextAmount = $nextFee->fee->amount ?? 0;
+                        $nextAmount = $nextFee->fee?->amount ?? 0;
                     } elseif ($nextRegular) {
                         $nextDate = $nextRegular->due_date->format('d M, Y');
                         $nextAmount = $nextRegular->amount;
