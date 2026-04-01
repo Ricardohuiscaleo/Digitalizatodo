@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
     CreditCard, 
     ShieldCheck, 
@@ -17,10 +17,6 @@ import {
 } from "lucide-react";
 import { initMercadoPago, CardPayment } from "@mercadopago/sdk-react";
 import { PracticalBankInfo } from "./PracticalBankInfo";
-
-if (process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY) {
-    initMercadoPago(process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY);
-}
 
 interface RefactoredPaymentCardProps {
     payment: any;
@@ -52,7 +48,16 @@ export function RefactoredPaymentCard({
     const [showBankDetails, setShowBankDetails] = useState(false);
     const [proofFile, setProofFile] = useState<File | null>(null);
     const [proofPreview, setProofPreview] = useState<string | null>(null);
+    const [mpReady, setMpReady] = useState(false);
     const fileRef = React.useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const key = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY;
+        if (key) {
+            initMercadoPago(key, { locale: 'es-CL' });
+            setMpReady(true);
+        }
+    }, []);
 
     const isProjected = payment.isProjected;
     const isOverdue = !isProjected && new Date(payment.due_date + 'T12:00:00') < new Date();
@@ -143,20 +148,25 @@ export function RefactoredPaymentCard({
                                         </button>
                                     </div>
                                     
-                                    <div className="bg-white/50 p-2 rounded-3xl border border-zinc-100/50">
-                                        <CardPayment
-                                            initialization={{
-                                                amount: amount,
-                                                payer: { email: student.email || guardianEmail }
-                                            }}
-                                            onSubmit={(formData) => handleCardSubmit(formData, payment, student)}
-                                            customization={{
-                                                paymentMethods: { maxInstallments: 1 },
-                                                visual: {
-                                                    style: { theme: 'flat' }
-                                                }
-                                            }}
-                                        />
+                                    <div className="bg-white/50 p-2 rounded-3xl border border-zinc-100/50 min-h-[200px] flex items-center justify-center">
+                                        {mpReady ? (
+                                            <CardPayment
+                                                initialization={{
+                                                    amount: amount,
+                                                    payer: { email: student.email || guardianEmail }
+                                                }}
+                                                onSubmit={(formData) => handleCardSubmit(formData, payment, student)}
+                                                customization={{
+                                                    paymentMethods: { maxInstallments: 1 },
+                                                    visual: { style: { theme: 'flat' } }
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-3 py-8">
+                                                <Loader2 className="animate-spin text-zinc-400" size={28} />
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Cargando pago seguro...</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ) : (
