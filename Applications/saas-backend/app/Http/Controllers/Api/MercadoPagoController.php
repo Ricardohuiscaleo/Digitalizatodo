@@ -162,6 +162,8 @@ class MercadoPagoController extends Controller
             Log::error("Error procesando Webhook MP: " . $e->getMessage());
             return response()->json(['status' => 'error'], 500);
         }
+    }
+
     /**
      * Procesa el primer pago y guarda la tarjeta para cobros recurrentes (Custom Engine)
      */
