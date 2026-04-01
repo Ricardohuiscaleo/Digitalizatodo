@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\MercadoPagoService;
 use App\Models\FeePayment;
+use App\Models\Guardian;
+use App\Models\Notification;
 use App\Models\Tenant;
-use App\Models\Plan; // 🥋 Importamos Plan para validar precios
+use App\Models\Plan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 
@@ -43,12 +45,6 @@ class MercadoPagoController extends Controller
         }
 
         try {
-            $collectorId = $tenant->mercadopago_user_id;
-
-            // 🚀 SWITCH TO PREFERENCES (Checkout Pro)
-            // Mercado Pago subscriptions (preapproval) don't natively support marketplace splits via API.
-            // Using Preferences ensures the 1.81% split for Digitaliza Todo works every time.
-            
             $localPlan = Plan::where('tenant_id', $tenant->id)->find($request->plan_id);
             $isProportional = false;
             if ($localPlan) {
@@ -58,13 +54,14 @@ class MercadoPagoController extends Controller
             }
 
             $title = $isProportional ? "Pago Proporcional - " . ($localPlan->name ?? "Mensualidad") : ($localPlan->name ?? "Mensualidad");
-            
+
+            // Usar el access_token del dojo (OAuth) para que MP aplique marketplace_fee correctamente
             $preference = $this->mpService->createOneTimePayment(
                 $title,
                 $request->amount,
                 $request->fee_payment_id,
                 $request->email,
-                $collectorId
+                $tenant->mercadopago_access_token
             );
             $initPoint = $preference->init_point;
 
@@ -147,12 +144,45 @@ class MercadoPagoController extends Controller
 
                 if ($feePayment && ($status === 'approved' || $status === 'authorized')) {
                     $feePayment->update([
-                        'status' => 'paid', // 🟢 MARCAR COMO PAGADO
-                        'paid_at' => now(),
+                        'status'         => 'paid',
+                        'paid_at'        => now(),
                         'payment_method' => 'mercadopago',
-                        'notes' => ($feePayment->notes ? $feePayment->notes . "\n" : "") . "MP Transaction: $id"
+                        'notes'          => ($feePayment->notes ? $feePayment->notes . "\n" : "") . "MP Transaction: $id"
                     ]);
                     Log::info("Cuota Digitaliza Todo Pay actualizada con éxito: FP_{$feePaymentId}");
+
+                    // Notificar al staff
+                    $tenantObj = Tenant::find($feePayment->tenant_id);
+                    if ($tenantObj) {
+                        $guardian = $feePayment->guardian_id ? \App\Models\Guardian::find($feePayment->guardian_id) : null;
+                        $amount = $feePayment->fee?->amount ?? 0;
+
+                        \App\Models\User::where('tenant_id', $tenantObj->id)->each(function ($staff) use ($tenantObj, $guardian, $amount, $id) {
+                            \App\Models\Notification::send(
+                                $tenantObj->id,
+                                $staff->id,
+                                '💳 Pago MP Confirmado',
+                                ($guardian ? $guardian->name : 'Un apoderado') . " pagó $" . number_format($amount, 0, ',', '.') . " vía Mercado Pago.",
+                                'payment',
+                                $tenantObj->slug
+                            );
+                        });
+
+                        // Notificar al apoderado
+                        if ($guardian) {
+                            \App\Models\Notification::send(
+                                $tenantObj->id,
+                                $guardian->id,
+                                '✅ Pago Confirmado',
+                                "Tu pago de $" . number_format($amount, 0, ',', '.') . " fue confirmado por Mercado Pago.",
+                                'payment',
+                                $tenantObj->slug
+                            );
+                        }
+
+                        // Emitir evento realtime
+                        event(new \App\Events\FeeUpdated($tenantObj->slug, $feePayment->guardian_id));
+                    }
                 }
             }
 
@@ -176,7 +206,9 @@ class MercadoPagoController extends Controller
             'student_id' => 'required',
             'email' => 'required|email',
             'amount' => 'required|numeric',
-            'fee_payment_id' => 'nullable|integer'
+            'fee_id' => 'nullable|integer',
+            'period_month' => 'nullable|integer',
+            'period_year' => 'nullable|integer',
         ]);
 
         $tenant = Tenant::where('slug', $tenantSlug)->firstOrFail();
@@ -186,56 +218,115 @@ class MercadoPagoController extends Controller
 
         try {
             $student = \App\Models\Student::findOrFail($request->student_id);
-            $collectorId = $tenant->mercadopago_user_id;
-            
-            // 💰 1. Cálculo de split (1.81%)
+
+            // 💰 1. Split
             $feeAmount = ($request->amount * (env('MERCADOPAGO_PLATFORM_FEE', 1.81))) / 100;
 
-            // 🏦 2. Vaulting: Buscar o Crear Cliente
+            // 🏦 2. Vaulting
             $customer = $this->mpService->getOrCreateCustomer($request->email, $student->name);
             if (!$customer) throw new \Exception("No se pudo crear el cliente en Mercado Pago");
 
-            // 💳 3. Guardar tarjeta en MP
+            // 💳 3. Guardar tarjeta
             $card = $this->mpService->addCardToCustomer($customer->id, $request->token);
 
-            // 💸 4. Procesar Pago Inicial (Checkout API con Split)
+            // 📝 4. Crear o buscar fee_payment para este período
+            $feePayment = null;
+            if ($request->fee_id && $request->period_month && $request->period_year) {
+                $guardian = $student->guardians()->first();
+                $feePayment = FeePayment::updateOrCreate(
+                    [
+                        'fee_id'       => $request->fee_id,
+                        'student_id'   => $student->id,
+                        'period_month' => $request->period_month,
+                        'period_year'  => $request->period_year,
+                    ],
+                    [
+                        'tenant_id'   => $tenant->id,
+                        'guardian_id' => $guardian?->id,
+                        'status'      => 'pending',
+                    ]
+                );
+            }
+
+            // 💸 5. Procesar Pago con token del tenant (split correcto)
+            \MercadoPago\MercadoPagoConfig::setAccessToken($tenant->mercadopago_access_token);
             $payment = $this->mpService->createPaymentWithToken(
                 $request->amount,
                 $feeAmount,
                 $request->email,
                 $request->token,
                 $request->payment_method_id,
-                $collectorId,
-                "Primer Pago - " . ($student->name ?? "Plan"),
-                "FP_" . $request->fee_payment_id
+                $tenant->mercadopago_user_id,
+                "Mensualidad - " . ($student->name ?? "Alumno"),
+                "FP_" . ($feePayment?->id ?? 'new')
             );
+            \MercadoPago\MercadoPagoConfig::setAccessToken(env('MERCADOPAGO_ACCESS_TOKEN'));
 
             if ($payment->status === 'approved' || $payment->status === 'authorized') {
-                // ✅ 5. Actualizar Alumno con sus Tokens
+                // ✅ 6. Guardar tarjeta en alumno
                 $student->update([
-                    'mercadopago_customer_id' => $customer->id,
-                    'mercadopago_card_id' => $card->id,
-                    'mercadopago_last_four' => $card->last_four_digits,
+                    'mercadopago_customer_id'    => $customer->id,
+                    'mercadopago_card_id'        => $card->id,
+                    'mercadopago_last_four'      => $card->last_four_digits,
                     'mercadopago_payment_method_id' => $request->payment_method_id,
                 ]);
 
-                // ✅ 6. Actualizar Cuota como pagada
-                if ($request->fee_payment_id) {
-                    $feePayment = FeePayment::find($request->fee_payment_id);
-                    if ($feePayment) {
-                        $feePayment->update([
-                            'status' => 'paid',
-                            'paid_at' => now(),
-                            'payment_method' => 'mercadopago'
-                        ]);
-                    }
+                // ✅ 7. Marcar cuota como pagada
+                if ($feePayment) {
+                    $feePayment->update([
+                        'status'         => 'paid',
+                        'paid_at'        => now(),
+                        'payment_method' => 'mercadopago',
+                        'notes'          => 'MP ID: ' . $payment->id,
+                    ]);
                 }
+
+                // ✅ 8. Notificar al staff
+                $guardian = $student->guardians()->first();
+                \App\Models\User::where('tenant_id', $tenant->id)->each(function ($staff) use ($tenant, $student, $guardian, $request, $payment) {
+                    \App\Models\Notification::send(
+                        $tenant->id,
+                        $staff->id,
+                        '💳 Pago con Tarjeta Aprobado',
+                        "{$student->name} pagó $" . number_format($request->amount, 0, ',', '.') . " con tarjeta (MP). Cobro automático activado.",
+                        'payment',
+                        $tenant->slug
+                    );
+                });
+
+                // ✅ 9. Notificar al apoderado
+                if ($guardian) {
+                    \App\Models\Notification::send(
+                        $tenant->id,
+                        $guardian->id,
+                        '✅ Pago Aprobado',
+                        "Tu pago de $" . number_format($request->amount, 0, ',', '.') . " fue aprobado. El cobro automático está activo para los próximos meses.",
+                        'payment',
+                        $tenant->slug
+                    );
+                }
+
+                // ✅ 10. Emitir evento realtime
+                event(new \App\Events\FeeUpdated($tenant->slug, $guardian?->id));
 
                 return response()->json([
                     'success' => true,
                     'status' => $payment->status,
                     'message' => 'Pago procesado y suscripción activada correctamente.'
                 ]);
+            }
+
+            // ❌ Pago rechazado — notificar al apoderado
+            $guardian = $student->guardians()->first();
+            if ($guardian) {
+                \App\Models\Notification::send(
+                    $tenant->id,
+                    $guardian->id,
+                    '❌ Pago Rechazado',
+                    "Tu pago de $" . number_format($request->amount, 0, ',', '.') . " fue rechazado. Verifica los datos de tu tarjeta e intenta nuevamente.",
+                    'payment',
+                    $tenant->slug
+                );
             }
 
             return response()->json([

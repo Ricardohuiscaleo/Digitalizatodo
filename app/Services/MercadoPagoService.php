@@ -147,10 +147,14 @@ class MercadoPagoService
     /**
      * Generar un Preference (Checkout Pro) si el usuario prefiere redirección
      */
-    public function createOneTimePayment($title, $amount, $feePaymentId, $payerEmail, $collectorId = null)
+    public function createOneTimePayment($title, $amount, $feePaymentId, $payerEmail, $tenantAccessToken = null)
     {
-        $client = new PreferenceClient();
         try {
+            // Usar el token del tenant (dojo) para que MP aplique el marketplace_fee correctamente
+            $tokenToUse = $tenantAccessToken ?: $this->accessToken;
+            MercadoPagoConfig::setAccessToken($tokenToUse);
+
+            $client = new PreferenceClient();
             $feeAmount = ($amount * $this->platformFeePercent) / 100;
             $preferenceRequest = [
                 "items" => [
@@ -165,20 +169,22 @@ class MercadoPagoService
                 "external_reference" => "FP_" . $feePaymentId,
                 "marketplace_fee" => (float) $feeAmount,
                 "back_urls" => [
-                    "success" => "https://admin.digitalizatodo.cl/dashboard?payment=success",
-                    "failure" => "https://admin.digitalizatodo.cl/dashboard?payment=failure",
+                    "success" => "https://app.digitalizatodo.cl/dashboard/student?payment=success",
+                    "failure" => "https://app.digitalizatodo.cl/dashboard/student?payment=failure",
                 ],
                 "auto_return" => "approved",
             ];
 
-            if ($collectorId) {
-                $preferenceRequest["collector_id"] = (int) $collectorId;
-            }
-
             return $client->create($preferenceRequest);
+        } catch (MPApiException $e) {
+            Log::error("Error MP Preference API: " . json_encode($e->getApiResponse()->getContent()));
+            throw new Exception("Error al crear preferencia de pago.");
         } catch (Exception $e) {
             Log::error("Error MP Preference: " . $e->getMessage());
             throw new Exception("Error al crear preferencia de pago.");
+        } finally {
+            // Restaurar token de plataforma
+            MercadoPagoConfig::setAccessToken($this->accessToken);
         }
     }
 }
