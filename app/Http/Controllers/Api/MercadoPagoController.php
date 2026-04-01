@@ -171,7 +171,9 @@ class MercadoPagoController extends Controller
             'student_id' => 'required',
             'email' => 'required|email',
             'amount' => 'required|numeric',
-            'fee_payment_id' => 'nullable|integer'
+            'fee_id' => 'nullable|integer',
+            'period_month' => 'nullable|integer',
+            'period_year' => 'nullable|integer',
         ]);
 
         $tenant = Tenant::where('slug', $tenantSlug)->firstOrFail();
@@ -181,49 +183,67 @@ class MercadoPagoController extends Controller
 
         try {
             $student = \App\Models\Student::findOrFail($request->student_id);
-            $collectorId = $tenant->mercadopago_user_id;
-            
-            // 💰 1. Cálculo de split (1.81%)
+
+            // 💰 1. Split
             $feeAmount = ($request->amount * (env('MERCADOPAGO_PLATFORM_FEE', 1.81))) / 100;
 
-            // 🏦 2. Vaulting: Buscar o Crear Cliente
+            // 🏦 2. Vaulting
             $customer = $this->mpService->getOrCreateCustomer($request->email, $student->name);
             if (!$customer) throw new \Exception("No se pudo crear el cliente en Mercado Pago");
 
-            // 💳 3. Guardar tarjeta en MP
+            // 💳 3. Guardar tarjeta
             $card = $this->mpService->addCardToCustomer($customer->id, $request->token);
 
-            // 💸 4. Procesar Pago Inicial (Checkout API con Split)
+            // 📝 4. Crear o buscar fee_payment para este período
+            $feePayment = null;
+            if ($request->fee_id && $request->period_month && $request->period_year) {
+                $guardian = $student->guardians()->first();
+                $feePayment = FeePayment::updateOrCreate(
+                    [
+                        'fee_id'       => $request->fee_id,
+                        'student_id'   => $student->id,
+                        'period_month' => $request->period_month,
+                        'period_year'  => $request->period_year,
+                    ],
+                    [
+                        'tenant_id'   => $tenant->id,
+                        'guardian_id' => $guardian?->id,
+                        'status'      => 'pending',
+                    ]
+                );
+            }
+
+            // 💸 5. Procesar Pago con token del tenant (split correcto)
+            \MercadoPago\MercadoPagoConfig::setAccessToken($tenant->mercadopago_access_token);
             $payment = $this->mpService->createPaymentWithToken(
                 $request->amount,
                 $feeAmount,
                 $request->email,
                 $request->token,
                 $request->payment_method_id,
-                $collectorId,
-                "Primer Pago - " . ($student->name ?? "Plan"),
-                "FP_" . $request->fee_payment_id
+                $tenant->mercadopago_user_id,
+                "Mensualidad - " . ($student->name ?? "Alumno"),
+                "FP_" . ($feePayment?->id ?? 'new')
             );
+            \MercadoPago\MercadoPagoConfig::setAccessToken(env('MERCADOPAGO_ACCESS_TOKEN'));
 
             if ($payment->status === 'approved' || $payment->status === 'authorized') {
-                // ✅ 5. Actualizar Alumno con sus Tokens
+                // ✅ 6. Guardar tarjeta en alumno
                 $student->update([
-                    'mercadopago_customer_id' => $customer->id,
-                    'mercadopago_card_id' => $card->id,
-                    'mercadopago_last_four' => $card->last_four_digits,
+                    'mercadopago_customer_id'    => $customer->id,
+                    'mercadopago_card_id'        => $card->id,
+                    'mercadopago_last_four'      => $card->last_four_digits,
                     'mercadopago_payment_method_id' => $request->payment_method_id,
                 ]);
 
-                // ✅ 6. Actualizar Cuota como pagada
-                if ($request->fee_payment_id) {
-                    $feePayment = FeePayment::find($request->fee_payment_id);
-                    if ($feePayment) {
-                        $feePayment->update([
-                            'status' => 'paid',
-                            'paid_at' => now(),
-                            'payment_method' => 'mercadopago'
-                        ]);
-                    }
+                // ✅ 7. Marcar cuota como pagada
+                if ($feePayment) {
+                    $feePayment->update([
+                        'status'         => 'paid',
+                        'paid_at'        => now(),
+                        'payment_method' => 'mercadopago',
+                        'notes'          => 'MP ID: ' . $payment->id,
+                    ]);
                 }
 
                 return response()->json([
