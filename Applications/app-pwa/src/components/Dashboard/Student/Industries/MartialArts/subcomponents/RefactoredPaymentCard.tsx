@@ -134,25 +134,43 @@ export function RefactoredPaymentCard({
                                     <div className="flex items-center justify-between mb-4 px-2">
                                         <div className="flex items-center gap-2">
                                             <ShieldCheck className="text-emerald-500" size={16} />
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Pago Seguro (MP) <span className="text-[8px] opacity-50 ml-1">v1.4.3</span></span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Pago Seguro (MP) <span className="text-[8px] opacity-50 ml-1">v1.4.4</span></span>
                                         </div>
+                                        {/* CSS Hack para IDs internos de MP en dispositivos móviles */}
+                                        <style dangerouslySetInnerHTML={{ __html: `
+                                            #form-checkout__cardNumber, #form-checkout__expirationDate, #form-checkout__securityCode {
+                                                min-height: 48px !important;
+                                                display: block !important;
+                                            }
+                                        ` }} />
                                         <button onClick={() => setShowCardForm(false)} className="p-2 hover:bg-zinc-100 rounded-full text-zinc-400 transition-colors">
                                             <X size={16} />
                                         </button>
                                     </div>
 
-                                    <div className="bg-white/50 p-2 rounded-3xl border border-zinc-100/50 block min-h-[350px]">
-                                        <CardPayment
-                                            initialization={{
-                                                amount: amount,
-                                                payer: { email: student.email || guardianEmail }
-                                            }}
-                                            onSubmit={(formData) => handleCardSubmit(formData, payment, student)}
-                                            customization={{
-                                                paymentMethods: { maxInstallments: 1 },
-                                                visual: { style: { theme: 'flat' } }
-                                            }}
-                                        />
+                                    <div className="bg-white/50 p-2 rounded-3xl border border-zinc-100/50 block min-h-[350px] relative z-10 overflow-visible">
+                                        <div className="min-h-[300px] w-full" id="mp-brick-container">
+                                            <CardPayment
+                                                initialization={{
+                                                    amount: amount,
+                                                    payer: { email: student.email || guardianEmail }
+                                                }}
+                                                onSubmit={(formData) => handleCardSubmit(formData, payment, student)}
+                                                customization={{
+                                                    paymentMethods: { maxInstallments: 1 },
+                                                    visual: { 
+                                                        style: { 
+                                                            theme: 'flat',
+                                                            customVariables: {
+                                                                borderRadiusMedium: '1.25rem',
+                                                                inputHorizontalPadding: '1rem',
+                                                                inputVerticalPadding: '1rem',
+                                                            }
+                                                        } 
+                                                    }
+                                                }}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             ) : (
