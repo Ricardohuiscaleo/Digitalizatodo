@@ -57,27 +57,85 @@ class StudentResource extends Resource
                         ])->columnSpan(['sm' => 2]),
                     ])->columns(['sm' => 3]),
 
-                Forms\Components\Section::make('Academia')
-                    ->description('Detalles de entrenamiento')
+                Forms\Components\Section::make('EDITAR PERFIL BJJ')
+                    ->description(fn ($record) => $record?->name)
                     ->schema([
-                        Forms\Components\Select::make('belt_rank')
-                            ->label('Grado / Cinturón')
-                            ->options([
-                                'Blanco' => 'Blanco',
-                                'Azul' => 'Azul',
-                                'Morado' => 'Morado',
-                                'Marrón' => 'Marrón',
-                                'Negro' => 'Negro',
-                            ])
-                            ->searchable(),
-                        Forms\Components\TextInput::make('category')
-                            ->label('Categoría / Clase')
-                            ->placeholder('Ej: Adultos, Niños, Competencia'),
-                        Forms\Components\Toggle::make('active')
-                            ->label('Estado Activo')
-                            ->default(true)
-                            ->required(),
-                    ])->columns(['sm' => 3]),
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\Placeholder::make('today_attendance')
+                                    ->label('ASISTENCIA HOY')
+                                    ->content(fn ($record) => $record?->belt_progress['today_status'] === 'present' ? '✅ Presente' : '❌ Ausente'),
+                                
+                                Forms\Components\Select::make('belt_rank')
+                                    ->label('CINTURÓN ACTUAL')
+                                    ->options([
+                                        'Blanco' => 'BLANCO',
+                                        'Azul' => 'AZUL',
+                                        'Morado' => 'MORADO',
+                                        'Marrón' => 'CAFÉ',
+                                        'Negro' => 'NEGRO',
+                                    ])
+                                    ->searchable(),
+
+                                Forms\Components\Select::make('degrees')
+                                    ->label('RAYAS ACTUALES')
+                                    ->options([
+                                        0 => '0',
+                                        1 => '1',
+                                        2 => '2',
+                                        3 => '3',
+                                        4 => '4',
+                                    ]),
+
+                                Forms\Components\TextInput::make('category')
+                                    ->label('CATEGORÍA')
+                                    ->placeholder('Ej: adultos, kids'),
+
+                                Forms\Components\Select::make('modality')
+                                    ->label('MODALIDAD')
+                                    ->options([
+                                        'gi' => 'GI',
+                                        'nogi' => 'NO-GI',
+                                        'both' => 'AMBAS',
+                                    ]),
+
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('weight')
+                                            ->label('PESO (KG)')
+                                            ->numeric(),
+                                        Forms\Components\TextInput::make('height')
+                                            ->label('ALTURA (M)')
+                                            ->numeric()
+                                            ->step(0.01),
+                                    ]),
+                            ]),
+
+                        Forms\Components\Section::make('CLASES ANTERIORES al sistema')
+                            ->compact()
+                            ->schema([
+                                Forms\Components\Grid::make(3)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('previous_classes')
+                                            ->label('ANTERIORES')
+                                            ->numeric()
+                                            ->default(0)
+                                            ->live(),
+
+                                        Forms\Components\Placeholder::make('system_classes')
+                                            ->label('SISTEMA')
+                                            ->content(fn ($record) => $record?->attendances()->where('status', 'present')->count() ?? 0),
+
+                                        Forms\Components\Placeholder::make('total_classes')
+                                            ->label(fn ($record) => "TOTAL / " . ($record?->belt_progress['classes_per_stripe'] ?? 30))
+                                            ->content(function ($get, $record) {
+                                                $prev = (int)$get('previous_classes');
+                                                $sys = $record?->attendances()->where('status', 'present')->count() ?? 0;
+                                                return ($prev + $sys);
+                                            }),
+                                    ]),
+                            ]),
+                    ]),
 
                 Forms\Components\Section::make('Contacto de Emergencia')
                     ->schema([
@@ -115,6 +173,20 @@ class StudentResource extends Resource
                         'Negro' => 'danger',
                         default => 'gray',
                     }),
+                Tables\Columns\TextColumn::make('belt_progress.total_effective')
+                    ->label('Acumulado')
+                    ->suffix(' clases')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('belt_progress.current_stripe')
+                    ->label('Rayas')
+                    ->formatStateUsing(fn ($state) => str_repeat('★', $state) ?: '0')
+                    ->color('emerald'),
+                Tables\Columns\IconColumn::make('belt_progress.is_ready_for_belt')
+                    ->label('Graduable')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-academic-cap')
+                    ->falseIcon('heroicon-o-minus-circle')
+                    ->color(fn ($state) => $state ? 'success' : 'gray'),
                 Tables\Columns\TextColumn::make('category')
                     ->label('Categoría')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -143,6 +215,9 @@ class StudentResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ForceDeleteAction::make(),
+                Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

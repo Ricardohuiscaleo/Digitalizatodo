@@ -24,7 +24,14 @@ class StudentRegistrationController extends Controller
      */
     public function register(Request $request, $tenantSlug)
     {
+        Log::info("StudentRegistrationController::register", [
+            'method' => $request->method(),
+            'tenantSlug' => $tenantSlug,
+            'url' => $request->fullUrl()
+        ]);
         $tenant = app('currentTenant');
+        $isSchool = $tenant->industry === 'school_treasury';
+
         $validator = Validator::make($request->all(), [
             'guardian_name' => 'required|string|max:255',
             'guardian_email' => 'required|email|max:255',
@@ -39,6 +46,10 @@ class StudentRegistrationController extends Controller
             'students.*.height' => 'nullable|numeric',
             'students.*.course_id' => 'nullable|exists:courses,id',
             'plan_id' => 'nullable|exists:plans,id',
+            'adult_plan_id' => 'nullable|exists:plans,id',
+            'kid_plan_id' => 'nullable|exists:plans,id',
+            'accept_dojo_terms' => $isSchool ? 'nullable' : 'required|accepted',
+            'accept_digitaliza_terms' => 'required|accepted',
         ]);
 
         if ($validator->fails()) {
@@ -57,41 +68,30 @@ class StudentRegistrationController extends Controller
             ]
             );
 
-            // Recuperar configuración de precios del JSON
-            $pricing = $tenant->data['pricing'] ?? ($tenant->data['prices'] ?? [
-                'kids' => 0, 'adult' => 0, 'discountThreshold' => 2, 'discountPercentage' => 0
-            ]);
+            // (Eliminado el rastro del JSON de precios legacy)
 
-            // Helper para obtener o crear plan por categoría
-            $getOrCreatePlan = function ($category) use ($tenant, $pricing) {
-                    $planName = $category === 'kids' ? 'Mensualidad Kids' : 'Mensualidad Adulto';
-                    $price = $category === 'kids' ? ($pricing['kids'] ?? 0) : ($pricing['adult'] ?? 0);
-
-                    // Buscar un plan activo que coincida en nombre para este tenant
-                    $plan = Plan::where('tenant_id', $tenant->id)
-                        ->where('name', $planName)
-                        ->first();
-
-                    if (!$plan) {
-                        $plan = Plan::create([
-                            'tenant_id' => $tenant->id,
-                            'name' => $planName,
-                            'description' => "Plan mensual para $category",
-                            'price' => $price,
-                            'currency' => 'CLP',
-                            'billing_interval' => 'monthly',
-                            'active' => true,
-                            // Guardamos el porcentaje de descuento familiar en el plan provisionalmente, 
-                            // aunque lo aplicaremos basado en la lógica general
-                            'family_discount_percent' => $pricing['discountPercentage'] ?? 0
-                        ]);
+                // Helper para obtener plan por ID o buscar existente por nombre
+                $getPlan = function ($category, $requestedPlanId = null) use ($tenant) {
+                    if ($requestedPlanId) {
+                        $plan = Plan::where('tenant_id', $tenant->id)->find($requestedPlanId);
+                        if ($plan) return $plan;
                     }
-                    return $plan;
-                }
-                    ;
+
+                    $planName = $category === 'kids' ? 'Ser parte del dojo Kids - Mensual' : 'Ser parte del dojo - Mensual';
+
+                    $plan = Plan::where('tenant_id', $tenant->id)
+                        ->where('name', 'LIKE', '%' . $planName . '%')
+                        ->first();
+                    
+                    if ($plan) return $plan;
+
+                    // Fallback para industrias no-MMA (como escuelas) o si no existen los planes por defecto
+                    return Plan::where('tenant_id', $tenant->id)->first();
+                };
 
                 $studentsToCreate = [];
 
+                if ($request->is_self_register) {
                     $selfData = $request->input('self_student', []);
                     $studentsToCreate[] = [
                         'name' => $request->guardian_name,
@@ -104,6 +104,7 @@ class StudentRegistrationController extends Controller
                         'weight' => $selfData['weight'] ?? null,
                         'height' => $selfData['height'] ?? null,
                     ];
+                }
 
                 // Añadir el resto de los alumnos si existen
                 if ($request->has('students') && is_array($request->students)) {
@@ -127,16 +128,23 @@ class StudentRegistrationController extends Controller
 
                 $studentCount = count($studentsToCreate);
 
-                // Determinar si aplica descuento global según el JSON
-                $threshold = (int)($pricing['discountThreshold'] ?? 2);
-                $discountPct = (float)($pricing['discountPercentage'] ?? 0);
-                $appliesDiscount = ($studentCount >= $threshold && $discountPct > 0);
-
                 // 2. Crear Alumnos e Inscripciones
                 foreach ($studentsToCreate as $studentData) {
                     $category = $studentData['category'];
-                    // Obtener el plan específico para la categoría de este alumno
-                    $plan = $getOrCreatePlan($category);
+                    // Determinamos qué plan usar según la categoría
+                    $requestedPlanId = ($category === 'kids') ? $request->kid_plan_id : $request->adult_plan_id;
+                    if (!$requestedPlanId) {
+                        $requestedPlanId = $request->plan_id; // Fallback al plano único
+                    }
+
+                    $plan = $getPlan($category, $requestedPlanId);
+
+                    if (!$plan) {
+                        return response()->json([
+                            'message' => 'No se encontró un plan activo para realizar la inscripción en esta institución.',
+                            'error' => 'plan_not_found'
+                        ], 422);
+                    }
 
                     $courseId = $studentData['course_id'] ?? null;
 
@@ -173,52 +181,86 @@ class StudentRegistrationController extends Controller
                     $isPrimary = (empty($studentsToCreate) || $studentData === $studentsToCreate[0]);
                     $guardian->students()->attach($student->id, ['primary' => $isPrimary]);
 
+                    $startDate = !empty($request->start_date) 
+                        ? \Carbon\Carbon::createFromFormat('d / m / Y', $request->start_date) 
+                        : now();
+
                     $enrollment = Enrollment::create([
                         'tenant_id' => $tenant->id,
                         'student_id' => $student->id,
                         'plan_id' => $plan->id,
-                        'start_date' => now(),
+                        'start_date' => $startDate,
                         'status' => 'active',
                     ]);
 
-                    // 3. Crear primer pago pendiente (Aplicando descuento dinámico)
-                    // SOLO si no es modo "VIP Only"
-                    if ($request->registration_mode !== 'vip_only') {
-                        $amount = $plan->price;
-                        if ($appliesDiscount) {
-                            $amount = round($amount * (1 - ($discountPct / 100)));
-                        }
-
-                        Payment::create([
-                            'tenant_id' => $tenant->id,
-                            'enrollment_id' => $enrollment->id,
-                            'amount' => $amount,
-                            'due_date' => now(), // Vence hoy para el primer cobro
-                            'status' => 'pending',
-                            'type' => 'monthly_fee',
-                        ]);
+                    // Asegurar que exista una plantilla de cobro recurrente (Fee) para este plan
+                    if ($plan->is_recurring) {
+                        \App\Models\Fee::updateOrCreate(
+                            ['tenant_id' => $tenant->id, 'plan_id' => $plan->id],
+                            [
+                                'title'         => $plan->name,
+                                'amount'        => $plan->price, // 🎯 Ahora siempre se sincroniza el precio real
+                                'type'          => 'recurring',
+                                'billing_cycle' => $plan->billing_cycle ?? 'monthly_fixed',
+                                'recurring_day' => $plan->billing_day ?? 1,
+                                'target'        => 'custom',
+                            ]
+                        );
                     }
 
-                    // Add Personalized Pack if requested
-                    if ($request->has('pack_type')) {
-                        $packType = $request->pack_type;
-                        $packAmount = $packType === 'pack_4' ? 65000 : ($packType === 'single' ? 18000 : ($packType === 'referral' ? 15000 : 0));
+                    // 3. Crear primer pago pendiente (Aplicando lógica PROPORCIONAL)
+                    $isVipOnly = $request->registration_mode === 'vip_only';
+                    $amount = $plan->price;
+                    
+                    // Lógica de Prorrateo (Backend)
+                    $now = now();
+                    $daysInMonth = $now->daysInMonth;
+                    $remainingDays = $daysInMonth - $now->day + 1;
+                    $ratio = $remainingDays / $daysInMonth;
+
+                    // Determinamos bases mensuales para el cálculo
+                    $isMultiMonth = in_array($plan->billing_cycle, ['quarterly', 'semiannual', 'annual']);
+                    $isMonthly = $plan->billing_cycle === 'monthly' || str_contains(strtolower($plan->name), 'mensual');
+
+                    if (!$isVipOnly && ($isMultiMonth || $isMonthly)) {
+                        // Intentamos obtener el precio base mensual si es multi-mes
+                        $monthlyBase = $plan->price;
+                        if ($plan->billing_cycle === 'quarterly') $monthlyBase = $plan->price / 3; // Estimación simple si no hay meta-data
                         
-                        if ($packAmount > 0) {
-                            Payment::create([
-                                'tenant_id' => $tenant->id,
-                                'enrollment_id' => $enrollment->id,
-                                'amount' => $packAmount,
-                                'due_date' => now(),
-                                'status' => 'pending',
-                                'type' => $packType,
-                            ]);
+                        $proRata = round($monthlyBase * $ratio);
+
+                        if ($isMultiMonth) {
+                            $amount = $plan->price + $proRata;
+                        } else {
+                            $amount = $proRata;
                         }
                     }
+
+                    // Descuento Familar (Usando columnas del Plan)
+                    $threshold = (int)($plan->family_discount_min_students ?? 2);
+                    $discountPct = (float)($plan->family_discount_percent ?? 0);
+                    $appliesDiscount = ($studentCount >= $threshold && $discountPct > 0);
+
+                    if (!$isVipOnly && $appliesDiscount) {
+                        $amount = round($amount * (1 - ($discountPct / 100)));
+                    }
+
+                    Payment::create([
+                        'tenant_id' => $tenant->id,
+                        'student_id' => $student->id,
+                        'enrollment_id' => $enrollment->id,
+                        'plan_id' => $plan->id,
+                        'amount' => $amount,
+                        'due_date' => $now, // Fecha de registro para el cobro inicial
+                        'status' => 'pending',
+                        'type' => $plan->is_recurring ? 'monthly_fee' : 'single_session',
+                    ]);
                 }
 
-                // Para el email, usamos el plan del primer alumno como referencia
-                $referencePlan = $getOrCreatePlan($studentsToCreate[0]['category'] ?? 'adults');
+                // Para el email, usamos el primer plan como referencia
+                $referencePlan = ($request->registration_mode === 'dojo') 
+                    ? $getPlan($studentsToCreate[0]['category'] ?? 'adults')
+                    : $getPlan('adults', $request->plan_id);
 
                 // 4. Notificaciones por Email
                 try {

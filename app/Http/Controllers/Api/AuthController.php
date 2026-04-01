@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Guardian;
 use App\Models\User;
+use App\Models\Tenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -66,11 +67,7 @@ class AuthController extends Controller
             // Buscar staff por email (sin filtrar tenant — soporta multi-tenant)
             $user = User::where('email', $credentials['email'])->first();
 
-            if ($user && Hash::check($credentials['password'], $user->password)) {
-                // Verificar que tiene acceso a este tenant
-                if (!$user->hasAccessToTenant($tenant->id)) {
-                    return response()->json(['message' => 'No tienes acceso a esta organización.'], 403);
-                }
+            if ($user && Hash::check($credentials['password'], $user->password) && $user->hasAccessToTenant($tenant->id)) {
                 $passwordValidated = true;
             } else {
                 // Intentar como Guardian del tenant
@@ -83,6 +80,9 @@ class AuthController extends Controller
                     $user = $guardian;
                     $userType = 'guardian';
                     $passwordValidated = true;
+                } elseif ($user && Hash::check($credentials['password'], $user->password) && !$user->hasAccessToTenant($tenant->id)) {
+                    // Si el staff no tiene acceso y tampoco es un guardián válido, damos el 403
+                    return response()->json(['message' => 'No tienes acceso a esta organización.'], 403);
                 }
             }
 
@@ -103,12 +103,14 @@ class AuthController extends Controller
             }
 
             $role = ($userType === 'staff') ? $user->getRoleForTenant($tenant->id) : null;
+            $permissions = ($userType === 'staff') ? $this->getPermissionsForRole($role, $tenant) : [];
 
             return response()->json([
                 'token' => $token,
                 'remember_token' => $rememberToken,
                 'user_type' => $userType,
                 'role' => $role,
+                'permissions' => $permissions,
                 'user' => $user->only('id', 'name', 'email', 'phone'),
                 'tenant' => [
                     'id' => $tenant->id,
@@ -116,6 +118,8 @@ class AuthController extends Controller
                     'name' => $tenant->name,
                     'primary_color' => $tenant->primary_color,
                     'logo' => $tenant->logo,
+                    'saas_plan' => $tenant->saas_plan,
+                    'mercadopago_auth_status' => $tenant->mercadopago_auth_status,
                     'force_terms_acceptance' => false,
                 ],
             ]);
@@ -139,12 +143,15 @@ class AuthController extends Controller
         if ($user instanceof User) {
             $tenant = app('currentTenant');
             $role = $user->getRoleForTenant($tenant->id);
+            $permissions = $this->getPermissionsForRole($role, $tenant);
+            
             return response()->json([
                 'user_type' => 'staff',
                 'id'        => $user->id,
                 'name'      => $user->name,
                 'email'     => $user->email,
                 'role'      => $role,
+                'permissions' => $permissions,
                 'tenant_id' => $tenant->id,
                 'tenant'    => [
                     'id'            => $tenant->id,
@@ -154,6 +161,13 @@ class AuthController extends Controller
                     'primary_color' => $tenant->primary_color,
                     'industry'      => $tenant->industry,
                     'data'          => $tenant->data,
+                    'bank_name'     => $tenant->bank_name,
+                    'bank_account_type' => $tenant->bank_account_type,
+                    'bank_account_number' => $tenant->bank_account_number,
+                    'bank_account_holder' => $tenant->bank_account_holder,
+                    'bank_rut'      => $tenant->bank_rut,
+                    'saas_plan'     => $tenant->saas_plan,
+                    'mercadopago_auth_status' => $tenant->mercadopago_auth_status,
                     'force_terms_acceptance' => false,
                 ],
             ]);
@@ -163,7 +177,13 @@ class AuthController extends Controller
         if ($user instanceof Guardian) {
             // Perfil de Guardian
             $tenant = app('currentTenant');
-            $bankInfo = $tenant->data['bank_info'] ?? null;
+            $bankInfo = [
+                'bank_name'      => $tenant->bank_name,
+                'account_type'   => $tenant->bank_account_type,
+                'account_number' => $tenant->bank_account_number,
+                'holder_name'    => $tenant->bank_account_holder,
+                'holder_rut'     => $tenant->bank_rut,
+            ];
 
             $guardian = $user->load([
                 'students.enrollments.plan',
@@ -176,16 +196,24 @@ class AuthController extends Controller
 
             $allEnrollmentIds = $guardian->students->flatMap->enrollments->pluck('id')->filter();
 
-            // Calcular total_due: solo pagos pending/overdue
-            $totalDue = $guardian->students->flatMap->enrollments->flatMap->payments
+            // Calcular total_due: pagos pending/overdue (Payments) + fee_payments pending/overdue
+            $regularDebts = $guardian->students->flatMap->enrollments->flatMap->payments
                 ->whereIn('status', ['pending', 'overdue'])
                 ->sum('amount');
+            
+            $feeDebts = \App\Models\FeePayment::where('guardian_id', $guardian->id)
+                ->whereIn('status', ['pending', 'overdue'])
+                ->with('fee')
+                ->get()
+                ->sum(fn($fp) => $fp->fee?->amount ?? 0);
+
+            $totalDue = $regularDebts + $feeDebts;
 
             $paymentHistoryQuery = \App\Models\Payment::whereIn('enrollment_id', $allEnrollmentIds)
                 ->whereIn('status', ['approved', 'pending_review']);
 
             $feePayments = collect([]);
-            if ($tenant->industry === 'school_treasury') {
+            if ($tenant->industry === 'school_treasury' || true) { // Permitir siempre para ver historial de cuotas
                 $feePayments = \App\Models\FeePayment::where('guardian_id', $guardian->id)
                     ->whereIn('status', ['paid', 'review'])
                     ->with('fee')
@@ -193,14 +221,15 @@ class AuthController extends Controller
                     ->limit(10)
                     ->get()
                     ->map(fn($fp) => [
-                        'id'          => $fp->id,
-                        'amount'      => $fp->fee->amount ?? 0,
-                        'status'      => $fp->status === 'paid' ? 'approved' : 'pending_review',
-                        'paid_at'     => $fp->paid_at?->format('d M, Y'),
-                        'due_date'    => \Carbon\Carbon::create($fp->period_year, $fp->period_month, 1)->format('M Y'),
-                        'proof_image' => $fp->proof_url, // Mapeamos proof_url a proof_image para la PWA
-                        'is_fee'      => true,
-                        'title'       => ($fp->fee->title ?? 'Cuota') . " - " . \Carbon\Carbon::create(null, $fp->period_month)->translatedFormat('M') . " {$fp->period_year}",
+                        'id'             => $fp->id,
+                        'amount'         => $fp->fee?->amount ?? 0,
+                        'status'         => $fp->status === 'paid' ? 'approved' : 'pending_review',
+                        'paid_at'        => $fp->paid_at?->format('d M, Y'),
+                        'due_date'       => \Carbon\Carbon::create($fp->period_year, $fp->period_month, 1)->format('M Y'),
+                        'proof_image'    => $fp->proof_url,
+                        'payment_method' => $fp->payment_method,
+                        'is_fee'         => true,
+                        'title'          => ($fp->fee?->title ?? 'Cuota') . " - " . \Carbon\Carbon::create(null, $fp->period_month)->translatedFormat('M') . " {$fp->period_year}",
                     ]);
             }
 
@@ -208,15 +237,17 @@ class AuthController extends Controller
                 ->limit(10)
                 ->get()
                 ->map(fn($p) => [
-                    'id'          => $p->id,
-                    'amount'      => $p->amount,
-                    'status'      => $p->status,
-                    'paid_at'     => $p->paid_at?->format('d M, Y'),
-                    'due_date'    => $p->due_date?->format('d M, Y'),
-                    'proof_image' => $toUrl($p->proof_image),
-                    'is_fee'      => false,
-                    'title'       => 'Pago de Mensualidad',
+                    'id'             => $p->id,
+                    'amount'         => $p->amount,
+                    'status'         => $p->status,
+                    'paid_at'        => $p->paid_at?->format('d M, Y'),
+                    'due_date'       => $p->due_date?->format('d M, Y'),
+                    'proof_image'    => $toUrl($p->proof_image),
+                    'payment_method' => $p->payment_method, // Inyectamos método
+                    'is_fee'         => false,
+                    'title'          => 'Pago de Mensualidad',
                 ]);
+
 
             $combinedHistory = $regularHistory->concat($feePayments)
                 ->sortByDesc(fn($item) => $item['paid_at'] ?? $item['due_date'])
@@ -235,29 +266,64 @@ class AuthController extends Controller
                     'industry'      => $tenant->industry,
                 ],
                 'bank_info' => $bankInfo,
-                'students'  => $guardian->students->map(fn($s) => [
-                    'id'                => $s->id,
-                    'name'              => $s->name,
-                    'photo'             => $toUrl($s->photo),
-                    'category'          => $s->category ?? 'Sin Categoría',
-                    'belt_rank'         => $s->belt_rank,
-                    'attendance_count'  => \App\Models\Attendance::where('student_id', $s->id)->where('status', 'present')->count(),
-                    'pending_payments'  => $s->enrollments->flatMap->payments->count(),
-                    'recent_attendance' => $s->attendances->map(fn($a) => [
-                        'date'   => $a->date->format('Y-m-d'),
-                        'status' => $a->status,
-                    ]),
-                    'payments' => $s->enrollments->flatMap->payments->map(fn($p) => [
-                        'id'          => $p->id,
-                        'amount'      => $p->amount,
-                        'due_date'    => $p->due_date?->format('d M, Y'),
-                        'status'      => $p->status,
-                        'proof_image' => $toUrl($p->proof_image),
-                    ]),
-                ]),
+                'students'  => $guardian->students->map(function($s) {
+                    // Buscar el próximo vencimiento pendiente
+                    $nextFee = \App\Models\FeePayment::where('student_id', $s->id)
+                        ->where('status', 'pending')
+                        ->orderBy('period_year')
+                        ->orderBy('period_month')
+                        ->first();
+                    
+                    $nextRegular = $s->enrollments->flatMap->payments
+                        ->where('status', 'pending')
+                        ->sortBy('due_date')
+                        ->first();
+
+                    $nextDate = null;
+                    $nextAmount = 0;
+
+                    if ($nextFee && $nextRegular) {
+                        $feeDate = \Carbon\Carbon::create($nextFee->period_year, $nextFee->period_month, 1);
+                        if ($feeDate->lt($nextRegular->due_date)) {
+                            $nextDate = $feeDate->format('d M, Y');
+                            $nextAmount = $nextFee->fee?->amount ?? 0;
+                        } else {
+                            $nextDate = $nextRegular->due_date->format('d M, Y');
+                            $nextAmount = $nextRegular->amount;
+                        }
+                    } elseif ($nextFee) {
+                        $nextDate = \Carbon\Carbon::create($nextFee->period_year, $nextFee->period_month, 1)->format('d M, Y');
+                        $nextAmount = $nextFee->fee?->amount ?? 0;
+                    } elseif ($nextRegular) {
+                        $nextDate = $nextRegular->due_date->format('d M, Y');
+                        $nextAmount = $nextRegular->amount;
+                    }
+
+                    return [
+                        'id'                => $s->id,
+                        'name'              => $s->name,
+                        'photo'             => $this->toS3Url($s->photo),
+                        'category'          => $s->category ?? 'Sin Categoría',
+                        'belt_rank'         => $s->belt_rank,
+                        'degrees'           => (int)($s->degrees ?? 0),
+                        'modality'          => $s->modality,
+                        'attendance_count'  => \App\Models\Attendance::where('student_id', $s->id)->where('status', 'present')->count(),
+                        'total_attendances' => \App\Models\Attendance::where('student_id', $s->id)->where('status', 'present')->count(),
+                        'previous_classes'  => (int)($s->previous_classes ?? 0),
+                        'payerStatus'       => $s->enrollments->contains(fn($e) => $e->payments->contains(fn($p) => in_array($p->status, ['pending', 'overdue']) && $p->due_date && $p->due_date->isPast())) ? 'overdue' : ($s->enrollments->contains(fn($e) => $e->payments->contains(fn($p) => in_array($p->status, ['pending_review', 'proof_uploaded']))) ? 'pending' : 'paid'),
+                        'pending_payments'  => $s->enrollments->flatMap->payments->whereIn('status', ['pending', 'overdue'])->count() + \App\Models\FeePayment::where('student_id', $s->id)->whereIn('status', ['pending', 'overdue'])->count(),
+                        'next_payment_date' => $nextDate,
+                        'next_payment_amount' => round($nextAmount),
+                        'recent_attendance' => $s->attendances->map(fn($a) => [
+                            'date'   => $a->date->format('Y-m-d'),
+                            'status' => $a->status,
+                        ]),
+                    ];
+                }),
                 'total_due' => round($totalDue),
                 'payment_history' => $combinedHistory,
             ]);
+
         }
 
         return response()->json(['message' => 'No autorizado'], 401);
@@ -343,5 +409,22 @@ class AuthController extends Controller
         $token = $guardian->createToken("portal-{$tenant->id}")->plainTextToken;
 
         return response()->json(['token' => $token, 'guardian' => $guardian->only('id', 'name', 'email')], 201);
+    }
+
+    /**
+     * Helper to get permissions based on the role and tenant.
+     */
+    private function getPermissionsForRole(?string $role, Tenant $tenant): array
+    {
+        if ($role === 'owner') {
+            return ['*'];
+        }
+
+        if (!$role) {
+            return [];
+        }
+
+        $permissionsMap = $tenant->role_permissions ?? [];
+        return $permissionsMap[$role] ?? [];
     }
 }

@@ -32,7 +32,7 @@ class GuardianController extends Controller
         $isHistory = $request->query('history') === 'true';
 
         $guardians = Guardian::where('tenant_id', $tenantId)
-            ->with(['students.enrollments.payments' => function ($query) use ($tenantId, $month, $year, $isHistory) {
+            ->with(['students.enrollments.plan', 'students.enrollments.payments' => function ($query) use ($tenantId, $month, $year, $isHistory) {
                 $query->where('tenant_id', $tenantId);
                 
                 if ($isHistory && $month && $year) {
@@ -54,40 +54,55 @@ class GuardianController extends Controller
             $students = $guardian->students;
             $status = 'paid';
             $tenant = Tenant::find($tenantId);
-            $pricing = $tenant->data['pricing'] ?? [
-                'cat1_name' => 'Infantil',
-                'cat1_price' => 25000,
-                'cat2_name' => 'Adulto',
-                'cat2_price' => 35000,
-                'discount_threshold' => 2,
-                'discount_percentage' => 15
-            ];
+            $pricing = $tenant->data['pricing'] ?? [];
+            
+            if (empty($pricing)) {
+                // Fetch dynamic prices from plans table if available
+                $kidsPlan = \App\Models\Plan::where('tenant_id', $tenantId)->where('target_audience', 'kids')->where('active', true)->orderBy('price', 'asc')->first();
+                $adultsPlan = \App\Models\Plan::where('tenant_id', $tenantId)->where('target_audience', 'adults')->where('active', true)->orderBy('price', 'asc')->first();
+                
+                $pricing = [
+                    'cat1_name' => 'Infantil',
+                    'cat1_price' => (int)($kidsPlan?->price ?? 35000),
+                    'cat2_name' => 'Adulto',
+                    'cat2_price' => (int)($adultsPlan?->price ?? 45000),
+                    'discount_threshold' => 2,
+                    'discount_percentage' => 15
+                ];
+            }
 
             $s3BaseUrl = 'https://' . config('services.s3.bucket', 'digitalizatodo') . '.s3.' . config('services.s3.region', 'us-east-1') . '.amazonaws.com/';
 
             $activePayments = [];
             foreach ($students as $student) {
                 foreach ($student->enrollments as $enrollment) {
-                    $payment = $enrollment->payments->first(); // ya viene ordenado desc por due_date
-                    if (!$payment) continue;
-                    $activePayments[] = [
-                        'id' => $payment->id,
-                        'student_name' => $student->name,
-                        'student_photo' => $student->photo ? (str_starts_with($student->photo, 'http') ? $student->photo : $s3BaseUrl . $student->photo) : "https://i.pravatar.cc/150?u=" . $student->id,
-                        'amount' => (float)$payment->amount,
-                        'status' => $payment->status === 'pending_review' ? 'review' : $payment->status,
-                        'due_date' => $payment->due_date?->format('d M, Y'),
-                        'proof_url' => $payment->proof_image ? (str_starts_with($payment->proof_image, 'http') ? $payment->proof_image : $s3BaseUrl . $payment->proof_image) : null,
-                        'belt_rank' => $student->belt_rank,
-                        'degrees' => (int)($student->degrees ?? 0),
-                        'total_attendances' => $student->attendances()->count(),
-                        'previous_classes' => (int)($student->previous_classes ?? 0),
-                        'belt_classes_at_promotion' => (int)($student->belt_classes_at_promotion ?? 0),
-                    ];
-                    if ($payment->status === 'pending_review') {
-                        $status = 'review';
-                    } elseif ($payment->status === 'pending' || $payment->status === 'overdue') {
-                        if ($status !== 'review') $status = 'pending';
+                    $hasAddedApproved = false;
+                    foreach ($enrollment->payments as $payment) {
+                        if ($payment->status === 'approved') {
+                            if ($hasAddedApproved && !$isHistory) continue;
+                            $hasAddedApproved = true;
+                        }
+
+                        $activePayments[] = [
+                            'id' => $payment->id,
+                            'student_name' => $student->name,
+                            'student_photo' => $student->photo ? (str_starts_with($student->photo, 'http') ? $student->photo : $s3BaseUrl . $student->photo) : "https://i.pravatar.cc/150?u=" . $student->id,
+                            'amount' => (float)$payment->amount,
+                            'status' => $payment->status === 'pending_review' ? 'review' : $payment->status,
+                            'due_date' => $payment->due_date?->format('d M, Y'),
+                            'proof_url' => $payment->proof_image ? (str_starts_with($payment->proof_image, 'http') ? $payment->proof_image : $s3BaseUrl . $payment->proof_image) : null,
+                            'belt_rank' => $student->belt_rank,
+                            'degrees' => (int)($student->degrees ?? 0),
+                            'total_attendances' => $student->attendances()->count(),
+                            'previous_classes' => (int)($student->previous_classes ?? 0),
+                            'belt_classes_at_promotion' => (int)($student->belt_classes_at_promotion ?? 0),
+                            'plan_name' => $payment->plan?->name ?? $enrollment->plan?->name ?? null,
+                        ];
+                        if ($payment->status === 'pending_review') {
+                            $status = 'review';
+                        } elseif ($payment->status === 'pending' || $payment->status === 'overdue') {
+                            if ($status !== 'review') $status = 'pending';
+                        }
                     }
                 }
             }
@@ -115,42 +130,27 @@ class GuardianController extends Controller
                 'payments' => $activePayments,
                 'pricing' => $pricing,
                 'enrolledStudents' => $students->map(function ($s) use ($s3BaseUrl) {
-                    $todayAttendance = $s->attendances->first();
+                    $bp = $s->belt_progress;
                     return [
                         'id' => $s->id,
                         'name' => $s->name,
                         'category' => $s->category,
                         'photo' => $s->photo ? (str_starts_with($s->photo, 'http') ? $s->photo : $s3BaseUrl . $s->photo) : "https://i.pravatar.cc/150?img=" . $s->id,
                         'belt_rank' => $s->belt_rank,
-                        'degrees' => (int)($s->degrees ?? 0),
-                        'total_attendances' => $s->attendances()->count(),
-                        'previous_classes' => (int)($s->previous_classes ?? 0),
+                        'degrees' => $bp['degrees'],
+                        'total_attendances' => $bp['system_classes'],
+                        'previous_classes' => $bp['real_classes'] - $bp['system_classes'],
                         'belt_classes_at_promotion' => (int)($s->belt_classes_at_promotion ?? 0),
                         'modality' => $s->modality,
                         'gender' => $s->gender,
                         'weight' => $s->weight,
                         'height' => $s->height,
-                        'payment_status' => (function() use ($s) {
-                            $now = now();
-                            $hasOverdue = $s->enrollments->contains(function($e) use ($now) {
-                                return $e->payments->contains(function($p) use ($now) {
-                                    return in_array($p->status, ['pending', 'overdue']) && $p->due_date && $p->due_date->isPast();
-                                });
-                            });
-                            
-                            $hasPendingReview = $s->enrollments->contains(function($e) {
-                                return $e->payments->contains(function($p) {
-                                    return in_array($p->status, ['pending_review', 'proof_uploaded']);
-                                });
-                            });
-                            
-                            if ($hasOverdue) return 'overdue';
-                            if ($hasPendingReview) return 'pending';
-                            return 'paid';
-                        })(),
-                        'label' => $s->belt_rank ?? '', // Keep for retro-compatibility
-                        'today_status' => $todayAttendance ? $todayAttendance->status : 'absent',
-                        'method' => $todayAttendance ? $todayAttendance->registration_method : 'manual',
+                        'payment_status' => $s->is_updated ? 'paid' : 'overdue',
+                        'label' => $s->belt_rank ?? '', 
+                        'today_status' => $bp['today_status'],
+                        'method' => $bp['registration_method'],
+                        'belt_progress' => $bp,
+                        'plan_name' => $s->enrollments->where('deleted_at', null)->sortByDesc('created_at')->first()?->plan?->name ?? null,
                     ];
                 }),
             ];
@@ -168,7 +168,12 @@ class GuardianController extends Controller
         $tenantId = $tenant->id;
 
         $data = $tenant->data ?? [];
-        $data['pricing'] = $request->except('industry');
+        $pricing = $request->except('industry');
+        
+        // Purge obsolete hardcoded pricing fields
+        unset($pricing['adult'], $pricing['kids']);
+        
+        $data['pricing'] = $pricing;
 
         $updatePayload = ['data' => $data];
         if ($request->has('industry')) {
@@ -189,32 +194,102 @@ class GuardianController extends Controller
         $tenantId = $tenant->id;
         $guardian = Guardian::where('tenant_id', $tenantId)->findOrFail($id);
 
+        $approvedCount = 0;
         foreach ($guardian->students as $student) {
             $paymentsToApprove = \App\Models\Payment::where('tenant_id', $tenantId)
                 ->whereIn('enrollment_id', $student->enrollments->pluck('id'))
-                ->where('status', 'pending_review')
+                ->whereIn('status', ['pending', 'pending_review', 'overdue'])
                 ->get();
 
             foreach ($paymentsToApprove as $payment) {
+                // Lógica de consumibles
                 if ($payment->type === 'pack_4') {
                     $student->increment('consumable_credits', 4);
                 } elseif ($payment->type === 'single') {
                     $student->increment('consumable_credits', 1);
                 }
 
+                // Lógica de UPGRADE DE PLAN o REGISTRO INICIAL (Propagar a cuotas mensuales)
+                if (in_array($payment->type, ['plan_upgrade', 'monthly_fee']) && $payment->plan_id) {
+                    $plan = \App\Models\Plan::find($payment->plan_id);
+                    if ($plan) {
+                        // 1. Actualizar el enrollment del alumno
+                        $enrollment = $payment->enrollment;
+                        if ($enrollment) {
+                            $enrollment->update(['plan_id' => $plan->id, 'status' => 'active']);
+                        }
+
+                        // 2. Determinar cobertura de meses
+                        $monthsToCover = match($plan->billing_cycle) {
+                            'quarterly'    => 3,
+                            'semi_annual'  => 6,
+                            'annual'       => 12,
+                            default        => 1,
+                        };
+
+                        // 3. Obtener o crear la plantilla de cobro (Fee) para este plan
+                        $feeTemplate = \App\Models\Fee::firstOrCreate(
+                            ['tenant_id' => $tenantId, 'plan_id' => $plan->id],
+                            [
+                                'title'         => $plan->name,
+                                'amount'        => $plan->price,
+                                'type'          => 'recurring',
+                                'billing_cycle' => $plan->billing_cycle ?? 'monthly_fixed',
+                                'recurring_day' => $plan->billing_day ?? 1,
+                                'target'        => 'custom',
+                            ]
+                        );
+
+                        // 4. Marcar los próximos N meses como pagados
+                        $currentDate = now();
+                        for ($i = 0; $i < $monthsToCover; $i++) {
+                            $targetDate = $currentDate->copy()->addMonths($i);
+                            \App\Models\FeePayment::updateOrCreate(
+                                [
+                                    'fee_id'       => $feeTemplate->id,
+                                    'tenant_id'    => $tenantId,
+                                    'guardian_id'  => $guardian->id,
+                                    'student_id'   => $student->id,
+                                    'enrollment_id'=> $enrollment?->id,
+                                    'period_month' => $targetDate->month,
+                                    'period_year'  => $targetDate->year,
+                                ],
+                                [
+                                    'status'         => 'paid',
+                                    'payment_method' => 'transfer',
+                                    'paid_at'        => now(),
+                                    'approved_by'    => $request->user()->id,
+                                    'notes'          => 'Cubierto por Plan: ' . $plan->name,
+                                ]
+                            );
+                        }
+
+                        // 5. Limpieza: Eliminar cuotas proyectadas (pending) de otros planes 
+                        // para evitar que el alumno las vea duplicadas
+                        \App\Models\FeePayment::where('student_id', $student->id)
+                            ->where('status', 'pending')
+                            ->where('fee_id', '!=', $feeTemplate->id)
+                            ->delete();
+                    }
+                }
+
                 $payment->update([
                     'status' => 'approved',
                     'paid_at' => now()
                 ]);
+                $approvedCount++;
             }
         }
 
-        event(new \App\Events\PaymentStatusUpdated($guardian->id, 'approved', $tenant->slug));
+        if ($approvedCount > 0) {
+            event(new \App\Events\PaymentStatusUpdated($guardian->id, 'approved', $tenant->slug));
 
-        // Notificar al apoderado
-        \App\Models\Notification::send($tenantId, $guardian->id, 'Pago aprobado', 'Tu pago ha sido aprobado. ¡Gracias!', 'payment', $tenant->slug);
+            // Notificar al apoderado
+            \App\Models\Notification::send($tenantId, $guardian->id, 'Pago aprobado', 'Tu pago ha sido aprobado. ¡Gracias!', 'payment', $tenant->slug);
+            return response()->json(['message' => 'Pagos aprobados correctamente', 'count' => $approvedCount]);
+        }
 
-        return response()->json(['message' => 'Pagos aprobados correctamente']);
+        return response()->json(['message' => 'No se encontraron pagos pendientes para aprobar.'], 422);
     }
 
     /**
@@ -234,16 +309,20 @@ class GuardianController extends Controller
             
             try {
                 // Optimizar logo a un máximo de 500x500px para la UI
-                $optimizedPath = $this->imageService->optimize($file, 150, 150, 80);
+                $imageInfo = $this->imageService->optimize($file, 150, 150, 80);
+                $optimizedPath = $imageInfo['path'];
+                $extension = $imageInfo['extension'];
                 
-                $filename = Str::uuid() . '.webp';
+                $filename = Str::uuid() . '.' . $extension;
                 $s3Path = 'digitalizatodo/' . $tenantId . '/logo/' . $filename;
                 
-                // Subir a S3 (sin ACL 'public' para evitar error)
+                // Subir a S3
                 Storage::disk('s3')->put($s3Path, file_get_contents($optimizedPath));
                 
                 // Limpiar temporal
-                unlink($optimizedPath);
+                if ($optimizedPath !== $file->getRealPath()) {
+                    unlink($optimizedPath);
+                }
 
                 $bucket = env('AWS_BUCKET', env('S3_BUCKET'));
                 $region = env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1'));
@@ -279,8 +358,18 @@ class GuardianController extends Controller
         ]);
 
         $data = $tenant->data ?? [];
-        $data['bank_info'] = $validated;
-        $tenant->update(['data' => $data]);
+        if (isset($data['bank_info'])) {
+            unset($data['bank_info']);
+        }
+
+        $tenant->update([
+            'bank_name' => $validated['bank_name'],
+            'bank_account_type' => $validated['account_type'],
+            'bank_account_number' => $validated['account_number'],
+            'bank_account_holder' => $validated['holder_name'],
+            'bank_rut' => $validated['holder_rut'],
+            'data' => $data
+        ]);
 
         return response()->json(['message' => 'Datos bancarios guardados correctamente.', 'bank_info' => $validated]);
     }
@@ -308,16 +397,20 @@ class GuardianController extends Controller
             
             try {
                 // Optimizar a un tamaño manejable para avatares (400x400)
-                $optimizedPath = $this->imageService->optimize($file, 150, 150, 80);
+                $imageInfo = $this->imageService->optimize($file, 150, 150, 80);
+                $optimizedPath = $imageInfo['path'];
+                $extension = $imageInfo['extension'];
                 
-                $filename = Str::uuid() . '.webp';
+                $filename = Str::uuid() . '.' . $extension;
                 $s3Path = 'digitalizatodo/' . $tenantId . '/guardians/' . $filename;
                 
                 // Subir a S3
                 Storage::disk('s3')->put($s3Path, file_get_contents($optimizedPath));
                 
                 // Limpiar temporal
-                unlink($optimizedPath);
+                if ($optimizedPath !== $file->getRealPath()) {
+                    unlink($optimizedPath);
+                }
 
                 $bucket = env('AWS_BUCKET', env('S3_BUCKET'));
                 $region = env('AWS_DEFAULT_REGION', env('S3_REGION', 'us-east-1'));
@@ -353,15 +446,15 @@ class GuardianController extends Controller
         $currentYear = $now->year;
 
         // Deudas: cuotas pendientes o en revisión
-        $debtsQuery = \App\Models\FeePayment::where('fee_payments.guardian_id', $guardian->id)
+        $debtsPayments = \App\Models\FeePayment::where('fee_payments.guardian_id', $guardian->id)
             ->whereIn('fee_payments.status', ['pending', 'review'])
-            ->join('fees', 'fee_payments.fee_id', '=', 'fees.id');
+            ->with('fee')
+            ->get();
         
-        $debtsAmount = (float) $debtsQuery->sum('fees.amount');
-        $debtsPayments = $debtsQuery->select('fee_payments.*')->with('fee')->get();
+        $debtsAmount = $debtsPayments->sum(function($p) { return (float)($p->fee->amount ?? 0); });
 
         // Devoluciones: cuotas pagadas/aprobadas de meses ESTRICTAMENTE futuros
-        $refundsQuery = \App\Models\FeePayment::where('fee_payments.guardian_id', $guardian->id)
+        $refundsPayments = \App\Models\FeePayment::where('fee_payments.guardian_id', $guardian->id)
             ->where('fee_payments.status', 'paid')
             ->where(function($q) use ($currentMonth, $currentYear) {
                 $q->where('fee_payments.period_year', '>', $currentYear)
@@ -370,10 +463,10 @@ class GuardianController extends Controller
                           ->where('fee_payments.period_month', '>', $currentMonth);
                   });
             })
-            ->join('fees', 'fee_payments.fee_id', '=', 'fees.id');
-
-        $refundsAmount = (float) $refundsQuery->sum('fees.amount');
-        $refundsPayments = $refundsQuery->select('fee_payments.*')->with('fee')->get();
+            ->with('fee')
+            ->get();
+        
+        $refundsAmount = $refundsPayments->sum(function($p) { return (float)($p->fee->amount ?? 0); });
 
         return response()->json([
             'guardian' => [
@@ -389,13 +482,79 @@ class GuardianController extends Controller
             ],
             'debts' => [
                 'total' => $debtsAmount,
-                'payments' => $debtsPayments
+                'payments' => $debtsPayments->map(fn($p) => [
+                    'id'             => $p->id,
+                    'fee_id'         => $p->fee_id,
+                    'alumno'         => $p->student->name ?? $guardian->name,
+                    'monto'          => $p->fee->amount ?? 0,
+                    'vencimiento'    => \Carbon\Carbon::create($p->period_year, $p->period_month, 1)->format('Y-m-d'),
+                    'estado'         => $p->status,
+                    'payment_method' => $p->payment_method, // Aquí inyectamos el método
+                    'proof_url'      => $p->proof_url,
+                ])
             ],
             'refunds' => [
                 'total' => $refundsAmount,
                 'payments' => $refundsPayments
             ]
         ]);
+    }
+
+    /**
+     * Aprobación masiva de pagos desde el Staff.
+     */
+    public function bulkApprove(Request $request)
+    {
+        $tenant = app('currentTenant');
+        $request->validate([
+            'payment_ids' => 'required|array',
+            'payment_ids.*' => 'integer',
+            'payment_method' => 'required|in:cash,transfer,mercadopago'
+        ]);
+
+        $paymentIds = $request->input('payment_ids');
+        $method = $request->input('payment_method');
+
+        $approvedCount = 0;
+
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            $payments = \App\Models\FeePayment::whereIn('id', $paymentIds)
+                ->where('tenant_id', $tenant->id)
+                ->get();
+
+            foreach ($payments as $payment) {
+                $payment->update([
+                    'status' => 'paid',
+                    'paid_at' => now(),
+                    'payment_method' => $method
+                ]);
+
+                // Sincronizar con la tabla payments si existe registro pendiente
+                \App\Models\Payment::where('student_id', $payment->student_id)
+                    ->where('status', 'pending')
+                    ->whereDate('due_date', \Carbon\Carbon::create($payment->period_year, $payment->period_month, 1))
+                    ->update([
+                        'status' => 'approved',
+                        'paid_at' => now(),
+                    ]);
+                
+                $approvedCount++;
+            }
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            // Notificar al Guardian de la aprobación masiva (opcional)
+            // event(new FeeUpdated($tenant->slug, ...));
+
+            return response()->json([
+                'message' => "Se han aprobado {$approvedCount} pagos exitosamente como {$method}.",
+                'approved_count' => $approvedCount
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     /**

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Enrollment;
+use App\Models\Plan;
 use App\Services\PaymentService;
 use App\Services\ImageService;
 use Illuminate\Http\JsonResponse;
@@ -62,7 +63,7 @@ class PaymentController extends Controller
         }
 
         // Aceptamos archivos hasta 50MB para ser procesados
-        $request->validate(['proof' => 'required|image|max:51200']);
+        $request->validate(['proof' => 'required|file|mimes:jpeg,png,jpg,webp,heic|max:51200']);
 
         if ($request->hasFile('proof')) {
             $file = $request->file('proof');
@@ -70,10 +71,12 @@ class PaymentController extends Controller
             $tenantId = $tenant->id;
 
             try {
-                // Optimizar y convertir a WebP
-                $optimizedPath = $this->imageService->optimize($file);
+                // Optimizar y convertir
+                $imageInfo = $this->imageService->optimize($file);
+                $optimizedPath = $imageInfo['path'];
+                $extension = $imageInfo['extension'];
                 
-                $filename = "proof_{$payment->id}_" . time() . ".webp";
+                $filename = "proof_{$payment->id}_" . time() . ".{$extension}";
                 $s3Path = "tenants/{$tenantId}/payments/{$filename}";
 
                 // Subir a S3 el archivo optimizado
@@ -177,7 +180,7 @@ class PaymentController extends Controller
         $request->validate([
             'payment_ids' => 'required|array',
             'payment_ids.*' => 'exists:payments,id',
-            'proof' => 'required|image|max:51200'
+            'proof' => 'required|file|mimes:jpeg,png,jpg,webp,heic|max:51200'
         ]);
 
         $paymentIds = $request->input('payment_ids');
@@ -196,9 +199,11 @@ class PaymentController extends Controller
             try {
                 $file = $request->file('proof');
                 $tenant = app('currentTenant');
-                $optimizedPath = $this->imageService->optimize($file);
+                $imageInfo = $this->imageService->optimize($file);
+                $optimizedPath = $imageInfo['path'];
+                $extension = $imageInfo['extension'];
                 
-                $filename = "bulk_proof_" . time() . "_" . Str::random(5) . ".webp";
+                $filename = "bulk_proof_" . time() . "_" . Str::random(5) . ".{$extension}";
                 $s3Path = "tenants/{$tenant->id}/payments/{$filename}";
                 
                 Storage::disk('s3')->put($s3Path, file_get_contents($optimizedPath));
@@ -235,7 +240,7 @@ class PaymentController extends Controller
     /**
      * Crea un pago pendiente por clases personalizadas (consumibles).
      */
-    public function storeConsumable(Request $request): JsonResponse
+    public function storeConsumable(Request $request, $tenant): JsonResponse
     {
         $guardian = $request->user();
         $request->validate([
@@ -257,9 +262,15 @@ class PaymentController extends Controller
 
         $amount = $prices[$request->type];
 
+        $enrollment = $student->enrollments()->latest()->first();
+        if (!$enrollment) {
+            return response()->json(['message' => 'El alumno no tiene una inscripción activa.'], 422);
+        }
+
         $payment = Payment::create([
             'tenant_id' => app('currentTenant')->id,
             'student_id' => $student->id,
+            'enrollment_id' => $enrollment->id,
             'amount' => $amount,
             'type' => $request->type,
             'status' => 'pending',
@@ -271,5 +282,79 @@ class PaymentController extends Controller
             'message' => 'Solicitud de compra creada. Por favor suba el comprobante de transferencia.',
             'payment' => $payment
         ]);
+    }
+
+    /**
+     * Crea un pago en revisión por la compra de un plan mensual/trimestral/anual.
+     */
+    public function storePlanPurchase(Request $request, $tenant): JsonResponse
+    {
+        $guardian = $request->user();
+        $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'plan_id' => 'required|exists:plans,id',
+            'proof' => 'required|file|mimes:jpeg,png,jpg,webp,heic|max:51200'
+        ]);
+
+        $student = $guardian->students()->find($request->student_id);
+        if (!$student) {
+            return response()->json(['message' => 'Alumno no encontrado.'], 403);
+        }
+
+        $plan = Plan::findOrFail($request->plan_id);
+        $tenant = app('currentTenant');
+
+        $enrollment = $student->enrollments()->latest()->first();
+        if (!$enrollment) {
+            return response()->json(['message' => 'El alumno no tiene una inscripción activa.'], 422);
+        }
+
+        try {
+            // Crear el registro de pago
+            $payment = Payment::create([
+                'tenant_id' => $tenant->id,
+                'student_id' => $student->id,
+                'enrollment_id' => $enrollment->id,
+                'plan_id' => $plan->id,
+                'amount' => $plan->price,
+                'type' => 'plan_upgrade',
+                'status' => 'pending_review', // Empieza en revisión porque ya trae el proof
+                'due_date' => now()->toDateString(),
+                'notes' => 'Solicitud de cambio a plan: ' . $plan->name
+            ]);
+
+            // Procesar comprobante
+            if ($request->hasFile('proof')) {
+                $file = $request->file('proof');
+                $imageInfo = $this->imageService->optimize($file);
+                $optimizedPath = $imageInfo['path'];
+                $extension = $imageInfo['extension'];
+
+                $filename = "plan_proof_{$payment->id}_" . time() . ".{$extension}";
+                $s3Path = "tenants/{$tenant->id}/payments/{$filename}";
+
+                Storage::disk('s3')->put($s3Path, file_get_contents($optimizedPath));
+                unlink($optimizedPath);
+
+                $url = Storage::disk('s3')->url($s3Path);
+                $payment->update(['proof_image' => $url]);
+
+                // Notificar a staff
+                foreach ($tenant->users as $staffUser) {
+                    \App\Models\Notification::send($tenant->id, $staffUser->id, 'Nuevo Upgrade', "{$guardian->name} solicitó el plan {$plan->name} para {$student->name}.", 'payment', $tenant->slug);
+                }
+
+                return response()->json([
+                    'message' => 'Comprobante recibido. El cambio de plan está en revisión.',
+                    'status' => 'pending_review',
+                    'proof_url' => $url
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al procesar la solicitud: ' . $e->getMessage()], 500);
+        }
+
+        return response()->json(['error' => 'No se recibió el comprobante.'], 400);
     }
 }

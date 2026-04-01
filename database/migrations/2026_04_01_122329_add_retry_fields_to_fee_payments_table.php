@@ -11,8 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('payments', function (Blueprint $table) {
-            $table->string('type')->default('monthly_fee')->after('status');
+        Schema::table('fee_payments', function (Blueprint $table) {
+            $table->integer('retry_attempts')->default(0)->after('status');
+            $table->timestamp('last_retry_at')->nullable()->after('retry_attempts');
         });
     }
 
@@ -21,8 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('payments', function (Blueprint $table) {
-            $table->dropColumn('type');
+        Schema::table('fee_payments', function (Blueprint $table) {
+            $table->dropColumn(['retry_attempts', 'last_retry_at']);
         });
     }
 };

@@ -6,10 +6,18 @@ use App\Events\TenantUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Models\AdminEmail;
+use App\Mail\CustomAdminMail;
+use Resend\Laravel\Facades\Resend;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\WelcomeTenantMail;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 class SuperAdminController extends Controller
 {
@@ -130,18 +138,109 @@ class SuperAdminController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string',
             'active' => 'sometimes|boolean',
-            'saas_plan' => 'sometimes|string|in:free,pro,enterprise',
+            'saas_plan' => 'sometimes|string',
+            'saas_plan_id' => 'sometimes|integer|exists:saas_plans,id',
+            'billing_interval' => 'sometimes|string|in:monthly,yearly',
             'force_terms_acceptance' => 'sometimes|boolean',
+            'role_permissions' => 'nullable|array',
         ]);
 
+        $oldActive = $tenant->active;
         $tenant->update($validated);
+
+        // Si se activa por primera vez (o se reactiva), enviamos el mail de bienvenida
+        if (!$oldActive && $tenant->active) {
+            $user = $tenant->users()->oldest()->first();
+            if ($user) {
+                try {
+                    Mail::to($user->email)->send(new WelcomeTenantMail($user, $tenant));
+                } catch (\Exception $e) {
+                    \Log::error("Error enviando mail de bienvenida a {$user->email}: " . $e->getMessage());
+                }
+            }
+        }
 
         event(new TenantUpdated($id, 'updated'));
 
         return response()->json([
             'message' => 'Tenant updated successfully',
-            'tenant' => $tenant
+            'tenant' => $tenant->load('saasPlan')
         ]);
+    }
+
+    /**
+     * List all dynamic SaaS Plans (Public).
+     */
+    public function plans()
+    {
+        return response()->json([
+            'plans' => \App\Models\SaasPlan::where('active', true)->get()
+        ]);
+    }
+
+    /**
+     * Update a SaaS Plan (Price, Mercado Pago ID, etc.)
+     */
+    public function updatePlan(Request $request, $id)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $plan = \App\Models\SaasPlan::findOrFail($id);
+        
+        $validated = $request->validate([
+            'name' => 'sometimes|string',
+            'price_monthly' => 'sometimes|numeric',
+            'price_yearly' => 'sometimes|numeric',
+            'mercadopago_plan_id' => 'sometimes|string|nullable',
+            'mp_plan_monthly' => 'sometimes|string|nullable',
+            'mp_plan_yearly' => 'sometimes|string|nullable',
+            'active' => 'sometimes|boolean',
+        ]);
+
+        $plan->update($validated);
+
+        return response()->json([
+            'message' => 'Plan updated successfully',
+            'plan' => $plan
+        ]);
+    }
+
+    /**
+     * Sync a SaaS Plan with Mercado Pago (Create preapproval_plan).
+     */
+    public function syncPlanWithMP(Request $request, $id)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $plan = \App\Models\SaasPlan::findOrFail($id);
+        $interval = $request->get('interval', 'months'); // 'months' o 'years'
+
+        $mpService = new \App\Services\MPService();
+        $mpResult = $mpService->createPreapprovalPlan($plan, $interval);
+
+        if (isset($mpResult['id'])) {
+            $field = ($interval === 'months') ? 'mp_plan_monthly' : 'mp_plan_yearly';
+            $plan->update([
+                $field => $mpResult['id'],
+                'mercadopago_plan_id' => $mpResult['id'] // Mantener por compatibilidad legacy
+            ]);
+
+            return response()->json([
+                'message' => 'Plan sync exitoso',
+                'mp_id' => $mpResult['id'],
+                'field_updated' => $field,
+                'plan' => $plan
+            ]);
+        }
+
+        return response()->json([
+            'error' => 'Fallo al sincronizar con MP',
+            'details' => $mpResult
+        ], 400);
     }
 
 
@@ -162,8 +261,14 @@ class SuperAdminController extends Controller
         }
 
         $newPassword = 'dt_' . Str::random(24);
-        $user->password = Hash::make($newPassword);
+        $user->password = \Hash::make($newPassword);
         $user->save();
+
+        try {
+            \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\WelcomeStaffMail($user, $tenant, $newPassword));
+        } catch (\Exception $e) {
+            \Log::error("Error enviando email de reset a {$user->email}: " . $e->getMessage());
+        }
 
         // Signal update
         event(new TenantUpdated($id, 'reset_password'));
@@ -173,5 +278,408 @@ class SuperAdminController extends Controller
             'message' => 'Password reset successfully',
             'new_password' => $newPassword
         ]);
+    }
+
+    /**
+     * List all users associated with a tenant.
+     */
+    public function getTenantUsers($id)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $tenant = Tenant::findOrFail($id);
+        
+        // Get users from pivot AND direct tenant_id
+        $users = \App\Models\User::where('tenant_id', $tenant->id)
+            ->orWhereHas('tenantUsers', fn($q) => $q->where('tenant_id', $tenant->id))
+            ->get()
+            ->map(function($user) use ($tenant) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->getRoleForTenant($tenant->id) ?? 'staff',
+                    'active' => $user->active,
+                ];
+            });
+
+        return response()->json(['users' => $users]);
+    }
+
+    /**
+     * Add a new user to a tenant.
+     */
+    public function addTenantUser(Request $request, $id)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $tenant = Tenant::findOrFail($id);
+        
+        $validated = $request->validate([
+            'name' => 'required|string',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+            'role' => 'required|string'
+        ]);
+
+        $user = \App\Models\User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => \Hash::make($validated['password']),
+            'tenant_id' => $tenant->id, // Legacy support
+            'active' => true,
+        ]);
+
+        // New multi-tenant support
+        \App\Models\TenantUser::create([
+            'tenant_id' => $tenant->id,
+            'user_id' => $user->id,
+            'role' => $validated['role'],
+        ]);
+
+        try {
+            \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\WelcomeStaffMail($user, $tenant, $validated['password']));
+        } catch (\Exception $e) {
+            \Log::error("Error enviando email de bienvenida staff a {$user->email}: " . $e->getMessage());
+        }
+
+        return response()->json([
+            'message' => 'User created and assigned to tenant successfully',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $validated['role']
+            ]
+        ]);
+    }
+
+    /**
+     * Remove a user from a tenant.
+     */
+    public function removeTenantUser($tenantId, $userId)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $tenant = Tenant::findOrFail($tenantId);
+        $user = \App\Models\User::findOrFail($userId);
+
+        // Remove from pivot
+        \App\Models\TenantUser::where('tenant_id', $tenant->id)
+            ->where('user_id', $user->id)
+            ->delete();
+
+        // If it was their primary tenant, null it out
+        if ($user->tenant_id == $tenant->id) {
+            $user->tenant_id = null;
+            $user->save();
+        }
+
+        return response()->json(['message' => 'User removed from tenant']);
+    }
+
+    /**
+     * Update a tenant user (Role or Password).
+     */
+    public function updateTenantUser(Request $request, $tenantId, $userId)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $tenant = Tenant::findOrFail($tenantId);
+        $user = \App\Models\User::findOrFail($userId);
+
+        $validated = $request->validate([
+            'name' => 'sometimes|string',
+            'role' => 'sometimes|string',
+            'password' => 'sometimes|string|min:6',
+        ]);
+
+        if (isset($validated['name'])) {
+            $user->name = $validated['name'];
+        }
+
+        if (isset($validated['password'])) {
+            $user->password = \Hash::make($validated['password']);
+        }
+
+        $user->save();
+
+        if (isset($validated['role'])) {
+            $pivot = \App\Models\TenantUser::where('tenant_id', $tenant->id)
+                ->where('user_id', $user->id)
+                ->first();
+            if ($pivot) {
+                $pivot->role = $validated['role'];
+                $pivot->save();
+            }
+        }
+
+        if (isset($validated['password'])) {
+             try {
+                \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\WelcomeStaffMail($user, $tenant, $validated['password']));
+            } catch (\Exception $e) {
+                \Log::error("Error enviando email de actualización de clave a {$user->email}: " . $e->getMessage());
+            }
+        }
+
+        return response()->json([
+            'message' => 'User updated successfully',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->getRoleForTenant($tenant->id) ?? 'staff'
+            ]
+        ]);
+    }
+
+    /**
+     * Send a custom email to a tenant or all tenants.
+     */
+    public function sendCustomEmail(Request $request)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'tenant_id' => 'nullable|string', // Null means all tenants
+            'subject' => 'required|string|max:255',
+            'content' => 'required|string',
+        ]);
+
+        $emailsSent = 0;
+
+        if ($validated['tenant_id']) {
+            // Send to a specific tenant's admin(s)
+            $tenant = Tenant::findOrFail($validated['tenant_id']);
+            $users = $tenant->users()->where('active', true)->get();
+            
+            foreach ($users as $user) {
+                Mail::to($user->email)->queue(new CustomAdminMail($validated['subject'], $validated['content']));
+                
+                // PERSISTENCIA EN GMAIL ADMIN
+                AdminEmail::create([
+                    'direction' => 'outbound',
+                    'from_email' => 'info@digitalizatodo.cl',
+                    'to_email' => $user->email,
+                    'subject' => $validated['subject'],
+                    'content_html' => $validated['content'],
+                    'is_read' => true, // Lo enviamos nosotros, ya lo "leímos"
+                ]);
+
+                $emailsSent++;
+            }
+        } else {
+            // Send to ALL active admins of ALL tenants
+            $users = User::whereNotNull('tenant_id')->where('active', true)->get();
+            
+            foreach ($users as $user) {
+                Mail::to($user->email)->queue(new CustomAdminMail($validated['subject'], $validated['content']));
+
+                // PERSISTENCIA EN GMAIL ADMIN
+                AdminEmail::create([
+                    'direction' => 'outbound',
+                    'from_email' => 'info@digitalizatodo.cl',
+                    'to_email' => $user->email,
+                    'subject' => $validated['subject'],
+                    'content_html' => $validated['content'],
+                    'is_read' => true,
+                ]);
+
+                $emailsSent++;
+            }
+        }
+
+        return response()->json([
+            'message' => 'Emails encolados exitosamente',
+            'count' => $emailsSent
+        ]);
+    }
+
+    /**
+     * List all emails for the Super Admin Gmail-like client.
+     */
+    public function indexEmails(Request $request)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $query = AdminEmail::query();
+
+        if ($request->has('direction')) {
+            $query->where('direction', $request->direction);
+        }
+
+        $emails = $query->orderBy('created_at', 'desc')->paginate(50);
+
+        return response()->json($emails);
+    }
+
+    /**
+     * Show a single email detail.
+     */
+    public function showEmail($id)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $email = AdminEmail::with(['replies', 'parent'])->findOrFail($id);
+        
+        // Mark as read if it was inbound
+        if ($email->direction === 'inbound' && !$email->is_read) {
+            $email->update(['is_read' => true]);
+        }
+
+        return response()->json($email);
+    }
+
+    /**
+     * Delete an email.
+     */
+    public function deleteEmail($id)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $email = AdminEmail::findOrFail($id);
+        $email->delete();
+
+        return response()->json(['message' => 'Email eliminado']);
+    }
+
+    public function syncEmailsFromResend()
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        set_time_limit(150);
+        $apiKey = config('services.resend.key');
+
+        try {
+            $syncedCount = 0;
+
+            // --- FASE 1: Sincronizar ENVIADOS (Outbound) ---
+            $response = Http::withToken($apiKey)->get('https://api.resend.com/emails', ['limit' => 40]);
+            $sentData = $response->json();
+            Log::info('Resend Sync HTTP: Sent emails found', ['count' => count($sentData['data'] ?? [])]);
+
+            foreach ($sentData['data'] ?? [] as $resendEmail) {
+                $resendId = $resendEmail['id'];
+                $exists = AdminEmail::where('resend_id', $resendId)->exists();
+                if (!$exists) {
+                    $detailResp = Http::withToken($apiKey)->get("https://api.resend.com/emails/$resendId");
+                    $detail = $detailResp->json();
+                    usleep(250000); // Throttling
+                    
+                    AdminEmail::create([
+                        'direction' => 'outbound',
+                        'from_email' => 'info@digitalizatodo.cl',
+                        'to_email' => $detail['to'][0] ?? '',
+                        'subject' => $detail['subject'],
+                        'content_html' => $detail['html'],
+                        'content_text' => strip_tags($detail['html'] ?? ''),
+                        'is_read' => true,
+                        'resend_id' => $detail['id'],
+                        'created_at' => Carbon::parse($detail['created_at']),
+                    ]);
+                    $syncedCount++;
+                }
+            }
+
+            // --- FASE 2: Sincronizar RECIBIDOS (Inbound) ---
+            $responseIn = Http::withToken($apiKey)->get('https://api.resend.com/emails/receiving', ['limit' => 40]);
+            $receivedData = $responseIn->json();
+            Log::info('Resend Sync HTTP: Received emails call', ['raw_count' => count($receivedData['data'] ?? [])]);
+
+            foreach ($receivedData['data'] ?? [] as $resendInbound) {
+                $resendId = $resendInbound['id'];
+                $exists = AdminEmail::where('resend_id', $resendId)->exists();
+                if (!$exists) {
+                    $detailResp = Http::withToken($apiKey)->get("https://api.resend.com/emails/receiving/$resendId");
+                    $detail = $detailResp->json();
+                    usleep(250000); // Throttling
+                    
+                    AdminEmail::create([
+                        'direction' => 'inbound',
+                        'from_email' => $detail['from'],
+                        'to_email' => $detail['to'][0] ?? 'info@digitalizatodo.cl',
+                        'subject' => $detail['subject'],
+                        'content_html' => $detail['html'],
+                        'content_text' => $detail['text'] ?: strip_tags($detail['html'] ?? ''),
+                        'is_read' => true,
+                        'resend_id' => $detail['id'],
+                        'created_at' => Carbon::parse($detail['created_at']),
+                    ]);
+                    $syncedCount++;
+                }
+            }
+
+            return response()->json([
+                'message' => "Sincronización dual (HTTP) completada: {$syncedCount} nuevos correos.",
+                'synced' => $syncedCount
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error syncing from Resend via HTTP', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['error' => 'API Error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Reply to a specific email from UI.
+     */
+    public function replyToEmail(Request $request, $id)
+    {
+        if (!is_null(auth()->user()->tenant_id)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'content' => 'required|string',
+        ]);
+
+        $originalEmail = AdminEmail::findOrFail($id);
+
+        try {
+            // Real send via Resend Facade for more control
+            Resend::emails()->send([
+                'from' => 'Digitaliza Todo <info@digitalizatodo.cl>',
+                'to' => [$originalEmail->from_email],
+                'subject' => "Re: " . $originalEmail->subject,
+                'html' => $validated['content'],
+            ]);
+
+            // Register locally
+            $reply = AdminEmail::create([
+                'direction' => 'outbound',
+                'from_email' => 'info@digitalizatodo.cl',
+                'to_email' => $originalEmail->from_email,
+                'subject' => "Re: " . $originalEmail->subject,
+                'content_html' => $validated['content'],
+                'content_text' => strip_tags($validated['content']),
+                'is_read' => true,
+                'parent_id' => $originalEmail->id
+            ]);
+
+            return response()->json($reply);
+        } catch (\Exception $e) {
+            Log::error('Error sending reply via Resend', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Send Error', 'message' => $e->getMessage()], 500);
+        }
     }
 }

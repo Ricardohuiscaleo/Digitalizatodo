@@ -10,3 +10,9 @@ Artisan::command('inspire', function () {
 
 // Recordatorios de cuotas: corre diariamente a las 9am
 Schedule::command('fees:send-reminders')->dailyAt('09:00');
+
+// Recordatorios de clases: corre cada minuto (verifica clases en T+30m)
+Schedule::command('classes:send-reminders')->everyMinute();
+
+// Cobros automáticos de Mercado Pago: corre diariamente a las 3am
+Schedule::command('payments:process-recurring')->dailyAt('03:00');

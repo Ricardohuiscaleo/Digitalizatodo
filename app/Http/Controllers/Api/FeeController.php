@@ -38,39 +38,26 @@ class FeeController extends Controller
         $result = $guardians->map(function ($guardian) use ($tenant, $fees, $now, &$metrics) {
             $payments = FeePayment::where('tenant_id', $tenant->id)
                 ->where('guardian_id', $guardian->id)
-                ->with('fee:id,title,amount,type,recurring_day,due_date')
+                ->with('fee')
                 ->get();
 
             $hasReview  = $payments->where('status', 'review')->count() > 0;
-            $hasPaid    = $payments->where('status', 'paid')->count() > 0;
             
-            // Determinar si es Moroso
             $isMoroso = false;
-            $hasFuturePending = false;
-
             foreach ($fees as $fee) {
                 $periods = $this->calculatePeriods($fee);
                 foreach ($periods as $period) {
                     $dueDate = $period['due_date'] ? \Carbon\Carbon::parse($period['due_date'])->endOfDay() : null;
-                    
                     $payment = $payments->where('fee_id', $fee->id)
                         ->where('period_month', $period['month'])
                         ->where('period_year', $period['year'])
                         ->first();
-
-                    $status = $payment?->status ?? 'pending';
-
-                    if ($status === 'pending') {
-                        if ($dueDate && $dueDate->isPast()) {
-                            $isMoroso = true;
-                        } else {
-                            $hasFuturePending = true;
-                        }
+                    if (!$payment && $dueDate && $dueDate->isPast()) {
+                        $isMoroso = true;
                     }
                 }
             }
 
-            // Status del apoderado (Prioridad: Moroso > Review > Al día)
             if ($isMoroso) {
                 $status = 'overdue';
                 $metrics['morosos']++;
@@ -78,7 +65,6 @@ class FeeController extends Controller
                 $status = 'review';
                 $metrics['en_revision']++;
             } else {
-                // No es moroso ni tiene nada en revisión => está "Al día" (tenga cuotas futuras o no tenga ninguna)
                 $status = ($fees->count() > 0) ? 'paid' : 'none';
                 $metrics['al_dia']++;
             }
@@ -89,12 +75,11 @@ class FeeController extends Controller
                 'email'    => $guardian->email,
                 'photo'    => $guardian->photo,
                 'status'   => $status,
-                'pending'  => $payments->filter(function($p) use ($now) {
-                    return $p->status === 'pending' && $p->due_date && \Carbon\Carbon::parse($p->due_date)->endOfDay()->isPast();
-                })->count(),
+                'pending'  => $payments->filter(fn($p) => $p->status === 'pending' && $p->due_date && \Carbon\Carbon::parse($p->due_date)->isPast())->count(),
                 'review'   => $payments->where('status', 'review')->count(),
                 'paid'     => $payments->where('status', 'paid')->count(),
                 'total'    => $payments->count(),
+                'payments' => $payments->values(), // Esto asegura el array en JSON
                 'students' => $guardian->students()->select('students.id', 'students.name', 'students.photo')->get(),
             ];
         });
@@ -156,6 +141,7 @@ class FeeController extends Controller
             'type'          => 'nullable|in:once,recurring',
             'recurring_day' => 'nullable|integer|min:1|max:31',
             'target'        => 'nullable|string|in:all,custom',
+            'billing_cycle' => 'nullable|string|in:monthly_fixed,quarterly,semi_annual,annual',
             'guardian_ids'  => 'nullable|array',
         ]);
 
@@ -174,6 +160,7 @@ class FeeController extends Controller
             'end_date'      => $type === 'recurring' ? ($validated['end_date'] ?? null) : null,
             'target'        => $validated['target'] ?? 'all',
             'type'          => $type,
+            'billing_cycle' => $validated['billing_cycle'] ?? 'monthly_fixed',
             'recurring_day' => $type === 'recurring' ? ($validated['recurring_day'] ?? null) : null,
             'created_by'    => $request->user()->id,
         ]);
@@ -236,12 +223,59 @@ class FeeController extends Controller
                 'approved_by'    => $request->user()->id,
                 'notes'          => $validated['notes'] ?? null,
             ]);
+
+            // SINCRONIZACIÓN: Si existe un registro gemelo en la tabla 'payments' (Artes Marciales), aprobarlo también
+            if ($payment->period_month && $payment->period_year) {
+                \App\Models\Payment::where('tenant_id', $tenant->id)
+                    ->where('student_id', $payment->student_id)
+                    ->where('status', '!=', 'approved')
+                    ->whereMonth('due_date', $payment->period_month)
+                    ->whereYear('due_date', $payment->period_year)
+                    ->update([
+                        'status' => 'approved',
+                        'paid_at' => now(),
+                        'payment_method' => $validated['payment_method']
+                    ]);
+            }
         }
 
         $guardianId = $validated['guardian_id'];
         event(new FeeUpdated($tenant->slug, $guardianId));
 
         return response()->json(['approved' => $payments->count()]);
+    }
+
+    // POST /fees/{id}/reject-payment — tesorero rechaza pago
+    public function rejectPayment(Request $request, $tenant, $id)
+    {
+        $tenant = app('currentTenant');
+
+        $validated = $request->validate([
+            'guardian_id' => 'required|integer',
+            'payment_id'  => 'required|integer',
+            'notes'       => 'nullable|string',
+        ]);
+
+        $payment = FeePayment::where('fee_id', $id)
+            ->where('tenant_id', $tenant->id)
+            ->where('guardian_id', $validated['guardian_id'])
+            ->where('id', $validated['payment_id'])
+            ->firstOrFail();
+
+        // Al rechazar, volvemos a 'pending' y limpiamos el comprobante para que lo suban de nuevo si quieren
+        // O podemos dejarlo pero el status indica que no es válido
+        $payment->update([
+            'status' => 'pending',
+            'notes'  => $validated['notes'] ?? 'Pago rechazado por el tesorero.',
+            'proof_url' => null, // Opcional: limpiar para forzar nueva subida
+        ]);
+
+        $guardianId = $validated['guardian_id'];
+        event(new FeeUpdated($tenant->slug, $guardianId));
+
+        Notification::send($tenant->id, $guardianId, 'Pago rechazado', "Tu pago para '{$payment->fee->title}' ha sido rechazado: " . ($validated['notes'] ?? 'Comprobante no legible o inválido.'), 'fee', $tenant->slug);
+
+        return response()->json(['rejected' => true]);
     }
 
     // POST /fees/{id}/upload-proof — apoderado sube comprobante
@@ -251,7 +285,7 @@ class FeeController extends Controller
         $guardian = $request->user();
 
         $request->validate([
-            'proof' => 'required|image|mimes:jpeg,png,jpg,webp,heic|max:20480',
+            'proof' => 'required|file|mimes:jpeg,png,jpg,webp,heic|max:20480',
         ]);
 
         if (!$guardian instanceof Guardian) {
@@ -265,8 +299,11 @@ class FeeController extends Controller
 
         // Subir foto
         $file      = $request->file('proof');
-        $optimized = $this->imageService->optimize($file, 1200, 1200, 85);
-        $filename  = "fee_proof_{$id}_{$guardian->id}_" . time() . ".webp";
+        $imageInfo = $this->imageService->optimize($file, 1200, 1200, 85);
+        $optimized = $imageInfo['path'];
+        $extension = $imageInfo['extension'];
+        
+        $filename  = "fee_proof_{$id}_{$guardian->id}_" . time() . ".{$extension}";
         $s3Path    = "tenants/{$tenant->id}/fees/{$filename}";
 
         Storage::disk('s3')->put($s3Path, file_get_contents($optimized));
@@ -302,45 +339,100 @@ class FeeController extends Controller
 
         if (!$guardian instanceof Guardian) return response()->json(['fees' => []]);
 
-        $fees = Fee::where('tenant_id', $tenant->id)->get();
+        // Obtener enrollments activos de los alumnos del apoderado (con student_id)
+        $studentIds = $guardian->students()->pluck('students.id');
+        $enrollments = \App\Models\Enrollment::whereIn('student_id', $studentIds)
+            ->where('status', 'active')
+            ->whereNotNull('plan_id')
+            ->get(['student_id', 'plan_id']);
+
+        // Fees globales (target = all) — se muestran una vez, sin student_id específico
+        $globalFees = Fee::where('tenant_id', $tenant->id)
+            ->where('target', 'all')
+            ->get();
+
+        // Fees por plan — una entrada por enrollment (student)
+        $planIds = $enrollments->pluck('plan_id')->unique()->filter();
+        $planFees = Fee::where('tenant_id', $tenant->id)
+            ->whereIn('plan_id', $planIds)
+            ->get()
+            ->groupBy('plan_id');
+
         $result = [];
 
-        foreach ($fees as $fee) {
-            $periods = $this->calculatePeriods($fee);
-            $paidPeriods = FeePayment::where('fee_id', $fee->id)
-                ->where('guardian_id', $guardian->id)
-                ->whereNotNull('period_month')
-                ->get()
-                ->keyBy(fn($p) => $p->period_year . '-' . $p->period_month);
+        // Procesar fees globales (una sola vez, sin student_id)
+        foreach ($globalFees as $fee) {
+            $result[] = $this->buildFeeEntry($fee, $guardian, null);
+        }
 
-            // Para fees sin period_month (legacy), buscar el pago único
-            $legacyPayment = FeePayment::where('fee_id', $fee->id)
-                ->where('guardian_id', $guardian->id)
-                ->whereNull('period_month')
-                ->first();
+        // Procesar fees por plan, TODAS LAS ENTRADAS POR ENROLLMENT (por alumno)
+        foreach ($enrollments as $enrollment) {
+            $fees = $planFees->get($enrollment->plan_id);
+            if (!$fees) continue;
 
-            $periodsWithStatus = array_map(function ($period) use ($paidPeriods, $legacyPayment) {
-                $key = $period['year'] . '-' . $period['month'];
-                $payment = $paidPeriods[$key] ?? null;
-                // Si no hay pago por período, usar legacy
-                if (!$payment && $legacyPayment) $payment = $legacyPayment;
-                return [
-                    ...$period,
-                    'status'         => $payment?->status ?? 'pending',
-                    'payment_id'     => $payment?->id,
-                    'proof_url'      => $payment?->proof_url,
-                    'payment_method' => $payment?->payment_method,
-                    'paid_at'        => $payment?->paid_at,
-                ];
-            }, $periods);
-
-            $result[] = [
-                'fee'     => $fee,
-                'periods' => $periodsWithStatus,
-            ];
+            foreach ($fees as $fee) {
+                $result[] = $this->buildFeeEntry($fee, $guardian, $enrollment->student_id, $enrollment->id);
+            }
         }
 
         return response()->json(['fees' => $result]);
+    }
+
+    private function buildFeeEntry(Fee $fee, $guardian, $studentId, $enrollmentId = null): array
+    {
+        $periods = $this->calculatePeriods($fee);
+
+        // Si tenemos studentId, filtramos periodos anteriores a su registro
+        if ($studentId) {
+            $student = \App\Models\Student::find($studentId);
+            if ($student) {
+                $regMonth = (int)$student->created_at->format('n');
+                $regYear  = (int)$student->created_at->format('Y');
+
+                // Solo mostramos periodos que sean POSTERIORES al mes de registro
+                // ya que el mes actual se cubre con el pago de inscripción (prorrata)
+                $periods = array_filter($periods, function($p) use ($regYear, $regMonth) {
+                    if ($p['year'] < $regYear) return false;
+                    if ($p['year'] == $regYear && $p['month'] <= $regMonth) return false;
+                    return true;
+                });
+                $periods = array_values($periods); // reset keys
+            }
+        }
+        $paidPeriods = FeePayment::where('fee_id', $fee->id)
+            ->where('guardian_id', $guardian->id)
+            ->when($studentId, fn($q) => $q->where('student_id', $studentId))
+            ->when($enrollmentId, fn($q) => $q->where('enrollment_id', $enrollmentId))
+            ->whereNotNull('period_month')
+            ->get()
+            ->keyBy(fn($p) => $p->period_year . '-' . $p->period_month);
+
+        $legacyPayment = FeePayment::where('fee_id', $fee->id)
+            ->where('guardian_id', $guardian->id)
+            ->when($studentId, fn($q) => $q->where('student_id', $studentId))
+            ->whereNull('period_month')
+            ->first();
+
+        $periodsWithStatus = array_map(function ($period) use ($paidPeriods, $legacyPayment) {
+            $key = $period['year'] . '-' . $period['month'];
+            $payment = $paidPeriods[$key] ?? null;
+            if (!$payment && $legacyPayment) $payment = $legacyPayment;
+            return [
+                ...$period,
+                'status'         => $payment?->status ?? 'pending',
+                'payment_id'     => $payment?->id,
+                'proof_url'      => $payment?->proof_url,
+                'payment_method' => $payment?->payment_method,
+                'paid_at'        => $payment?->paid_at,
+            ];
+        }, $periods);
+
+        return [
+            'student_id'    => $studentId,
+            'enrollment_id' => $enrollmentId, // ← NUEVO: para agrupar en el frontend
+            'fee'           => $fee,
+            'periods'       => $periodsWithStatus,
+        ];
     }
 
     // POST /fees/submit-payment — apoderado paga uno o varios períodos de una o varias fees
@@ -352,7 +444,7 @@ class FeeController extends Controller
         if (!$guardian instanceof Guardian) return response()->json(['message' => 'No autorizado'], 403);
 
         $request->validate([
-            'proof'           => 'required|image|mimes:jpeg,png,jpg,webp,heic|max:20480',
+            'proof'           => 'required|file|mimes:jpeg,png,jpg,webp,heic|max:20480',
             'items'           => 'required|array|min:1',
             'items.*.fee_id'  => 'required|integer',
             'items.*.periods' => 'required|array|min:1',
@@ -362,8 +454,11 @@ class FeeController extends Controller
 
         // Subir comprobante una sola vez
         $file      = $request->file('proof');
-        $optimized = $this->imageService->optimize($file, 1200, 1200, 85);
-        $filename  = "fee_proof_bulk_{$guardian->id}_" . time() . ".webp";
+        $imageInfo = $this->imageService->optimize($file, 1200, 1200, 85);
+        $optimized = $imageInfo['path'];
+        $extension = $imageInfo['extension'];
+        
+        $filename  = "fee_proof_bulk_{$guardian->id}_" . time() . ".{$extension}";
         $s3Path    = "tenants/{$tenant->id}/fees/{$filename}";
         Storage::disk('s3')->put($s3Path, file_get_contents($optimized));
         unlink($optimized);
@@ -477,6 +572,14 @@ class FeeController extends Controller
             ]];
         }
 
+        // Determinar intervalo según billing_cycle
+        $interval = match($fee->billing_cycle) {
+            'quarterly'    => '+3 months',
+            'semi_annual'  => '+6 months',
+            'annual'       => '+12 months',
+            default        => '+1 month',
+        };
+
         // Recurrente: desde due_date hasta end_date
         $start = $fee->due_date ? new \DateTime($fee->due_date) : new \DateTime('first day of this month');
         $end   = $fee->end_date ? new \DateTime($fee->end_date) : new \DateTime('last day of december this year');
@@ -495,7 +598,7 @@ class FeeController extends Controller
                 'due_date' => sprintf('%04d-%02d-%02d', $year, $month, min($day, (int) date('t', mktime(0, 0, 0, $month, 1, $year)))),
                 'label'    => $current->format('M Y'),
             ];
-            $current->modify('+1 month');
+            $current->modify($interval);
         }
 
         return $periods;

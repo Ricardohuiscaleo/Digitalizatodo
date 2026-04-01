@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Models\TelegramConversation;
+use App\Models\AdminEmail;
+use Resend\Laravel\Facades\Resend;
 
 class TelegramBotController extends Controller
 {
@@ -20,11 +22,29 @@ class TelegramBotController extends Controller
             Log::info('Resend Inbound Webhook Received', $payload);
 
             $data = $payload['data'] ?? $payload;
+            $emailId = $data['email_id'] ?? $data['id'] ?? null;
 
-            $from = $data['from'] ?? 'Desconocido';
-            $subject = $data['subject'] ?? 'Sin Asunto';
-            $htmlVersion = $data['html'] ?? null;
-            $textVersion = $data['text'] ?? null;
+            if ($emailId && (!isset($data['html']) || !isset($data['text']))) {
+                // Fetch full content if missing in webhook
+                try {
+                    $resendEmail = Resend::emails()->get($emailId);
+                    $from = $resendEmail->from;
+                    $subject = $resendEmail->subject;
+                    $htmlVersion = $resendEmail->html;
+                    $textVersion = $resendEmail->text;
+                } catch (\Exception $e) {
+                    Log::error('Error fetching full email from Resend', ['id' => $emailId, 'error' => $e->getMessage()]);
+                    $from = $data['from'] ?? 'Desconocido';
+                    $subject = $data['subject'] ?? 'Sin Asunto';
+                    $htmlVersion = $data['html'] ?? null;
+                    $textVersion = $data['text'] ?? null;
+                }
+            } else {
+                $from = $data['from'] ?? 'Desconocido';
+                $subject = $data['subject'] ?? 'Sin Asunto';
+                $htmlVersion = $data['html'] ?? null;
+                $textVersion = $data['text'] ?? null;
+            }
 
             // Priorizamos HTML si existe para conservar el formato
             if ($htmlVersion) {
@@ -92,6 +112,18 @@ class TelegramBotController extends Controller
                     'message_id' => $tgMessageId,
                     'from_email' => $from,
                     'subject' => $subject,
+                ]);
+
+                // PERSISTENCIA EN GMAIL ADMIN
+                AdminEmail::create([
+                    'direction' => 'inbound',
+                    'from_email' => $from,
+                    'to_email' => 'info@digitalizatodo.cl', // Destinatario admin
+                    'subject' => $subject,
+                    'content_html' => $htmlVersion,
+                    'content_text' => $textVersion ?: strip_tags($htmlVersion ?? ''),
+                    'is_read' => false,
+                    'resend_id' => $emailId,
                 ]);
             }
         }
@@ -740,6 +772,21 @@ class TelegramBotController extends Controller
                     'chat_id' => $convo->chat_id,
                     'text' => "Enviado a {$convo->from_email}",
                     'reply_to_message_id' => $update['message']['message_id']
+                ]);
+
+                // PERSISTENCIA EN GMAIL ADMIN (RESPUESTA)
+                AdminEmail::create([
+                    'direction' => 'outbound',
+                    'from_email' => 'info@digitalizatodo.cl',
+                    'to_email' => $convo->from_email,
+                    'subject' => "Re: " . ($convo->subject ?? 'Respuesta'),
+                    'content_text' => $responseText,
+                    'is_read' => true,
+                    // Buscamos el ID del correo original si existe en AdminEmail
+                    'parent_id' => AdminEmail::where('from_email', $convo->from_email)
+                                    ->where('subject', $convo->subject)
+                                    ->latest()
+                                    ->value('id'),
                 ]);
 
             }

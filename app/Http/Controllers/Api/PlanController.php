@@ -16,8 +16,7 @@ class PlanController extends Controller
     {
         $tenant = app('currentTenant');
         $plans = Plan::where('tenant_id', $tenant->id)
-            ->where('active', true)
-            ->get(['id', 'name', 'price', 'description', 'family_discount_percent', 'billing_cycle']);
+            ->get(['id', 'name', 'category', 'target_audience', 'price', 'description', 'family_discount_percent', 'family_discount_min_students', 'billing_cycle', 'is_recurring', 'active']);
 
         return response()->json($plans);
     }
@@ -27,9 +26,14 @@ class PlanController extends Controller
         $tenant = app('currentTenant');
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'category' => 'nullable|string|in:dojo,vip',
+            'target_audience' => 'nullable|string|in:adults,kids,all',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'billing_cycle' => 'required|string|in:monthly_fixed,monthly_from_enrollment,quarterly,semi_annual,annual',
+            'is_recurring' => 'nullable|boolean',
+            'family_discount_percent' => 'nullable|numeric|min:0|max:100',
+            'family_discount_min_students' => 'nullable|integer|min:1',
         ]);
 
         $plan = Plan::create(array_merge($validated, ['tenant_id' => $tenant->id]));
@@ -44,9 +48,14 @@ class PlanController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
+            'category' => 'sometimes|string|in:dojo,vip',
+            'target_audience' => 'sometimes|string|in:adults,kids,all',
             'description' => 'nullable|string',
             'price' => 'sometimes|numeric|min:0',
             'billing_cycle' => 'sometimes|string|in:monthly_fixed,monthly_from_enrollment,quarterly,semi_annual,annual',
+            'is_recurring' => 'sometimes|boolean',
+            'family_discount_percent' => 'sometimes|numeric|min:0|max:100',
+            'family_discount_min_students' => 'sometimes|integer|min:1',
             'active' => 'sometimes|boolean',
         ]);
 
