@@ -62,9 +62,9 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
     const [isBulkApproving, setIsBulkApproving] = React.useState(false);
     const [viewMode, setViewMode] = React.useState<'table' | 'cards'>('cards');
     const getPayerRealStats = (payer: any) => {
-        const reviewAmount = payer.payments?.filter((p: any) => p.status === 'review' && !p.deleted_at).reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
-        const pendingAmount = payer.payments?.filter((p: any) => (p.status === 'pending' || p.status === 'overdue') && !p.deleted_at).reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
-        const approvedAmount = payer.payments?.filter((p: any) => p.status === 'approved' && !p.deleted_at).reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
+        const reviewAmount = payer.payments?.filter((p: any) => p.status === 'review' && (p.deleted_at === undefined || !p.deleted_at)).reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
+        const pendingAmount = payer.payments?.filter((p: any) => (p.status === 'pending' || p.status === 'overdue') && (p.deleted_at === undefined || !p.deleted_at)).reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
+        const approvedAmount = payer.payments?.filter((p: any) => (p.status === 'approved' || p.status === 'paid') && (p.deleted_at === undefined || !p.deleted_at)).reduce((acc: number, p: any) => acc + p.amount, 0) || 0;
 
         // Si el backend ya calculó el status correctamente (fee_payments), usarlo
         const backendStatus = payer.status; // 'paid' | 'pending' | 'review'
@@ -72,7 +72,7 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
 
         const hasReview = backendStatus === 'review' || reviewAmount > 0;
         const effectivePending = backendStatus === 'pending' ? (backendTotalDue || pendingAmount) : pendingAmount;
-        const numEnrollments = (payer.enrolledStudents || payer.students || []).filter((s: any) => !s.deleted_at).length;
+        const numEnrollments = (payer.enrolledStudents || payer.students || []).filter((s: any) => s.deleted_at === undefined || !s.deleted_at).length;
         const displayAmount = paymentFilter === 'history'
             ? (approvedAmount + reviewAmount + effectivePending)
             : (hasReview ? reviewAmount : (effectivePending || 0));
@@ -81,7 +81,7 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
     };
 
     const filteredPayers = payers.filter(p => {
-        if (p.deleted_at) return false;
+        if (p.deleted_at === true) return false;
         const stats = getPayerRealStats(p);
         if (stats.numEnrollments === 0 && paymentFilter !== 'history') return false;
         if (paymentFilter === 'pending') return p.status === 'pending' || stats.pendingAmount > 0;
@@ -280,7 +280,7 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                         {filteredPayers.map((payer: any) => {
                             const stats = getPayerRealStats(payer);
                             const isPaid = (payer.status === 'paid') || (paymentFilter === 'history' && stats.approvedAmount > 0);
-                            const students = (payer.enrolledStudents || payer.students || []).filter((s: any) => !s.deleted_at);
+                            const students = (payer.enrolledStudents || payer.students || []).filter((s: any) => s.deleted_at === undefined || !s.deleted_at);
                             return (
                                 <tr key={payer.id} className={`transition-colors ${isDark ? 'hover:bg-zinc-800/40' : 'hover:bg-zinc-50/50'} ${selectedIds.has(String(payer.id)) ? (isDark ? 'bg-indigo-500/5' : 'bg-indigo-50/30') : ''}`}>
                                     <td className="px-6 py-4">
@@ -373,7 +373,7 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                     const stats = getPayerRealStats(payer);
                     const isReview = (payer.status === 'review');
                     const isPaid = (payer.status === 'paid');
-                    const students = (payer.enrolledStudents || payer.students || []).filter((s: any) => !s.deleted_at);
+                    const students = (payer.enrolledStudents || payer.students || []).filter((s: any) => s.deleted_at === undefined || !s.deleted_at);
                     const isPayerParticipating = students.some((s: any) => s.name === payer.name || s.id === payer.id);
                     
                     const statusColor = isPaid ? 'text-emerald-500' : isReview ? 'text-amber-400' : 'text-rose-500';
