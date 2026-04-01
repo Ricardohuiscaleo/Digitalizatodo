@@ -212,13 +212,18 @@ class Student extends Model
                 ->exists();
         }
 
-        // Fallback: payments clásicos de enrollments
+        // Fallback: payments clásicos de enrollments (Verificar que el último cubra el periodo actual)
         $lastPayment = $this->enrollments()
             ->with(['payments' => fn($q) => $q->orderBy('due_date', 'desc')])
             ->get()
             ->flatMap->payments
             ->first();
 
-        return $lastPayment?->status === 'approved';
+        if (!$lastPayment || $lastPayment->status !== 'approved') {
+            return false;
+        }
+
+        // Si el pago es aprobado, debe tener un vencimiento en este mes o futuro para contar como "Al día"
+        return $lastPayment->due_date && $lastPayment->due_date->greaterThanOrEqualTo($now->startOfMonth());
     }
 }

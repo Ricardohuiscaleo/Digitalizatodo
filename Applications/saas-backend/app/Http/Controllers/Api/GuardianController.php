@@ -28,9 +28,9 @@ class GuardianController extends Controller
         $tenant = app('currentTenant');
         $tenantId = $tenant->id;
 
-        $month = $request->query('month');
-        $year = $request->query('year');
-        $isHistory = $request->query('history') === 'true';
+        $requestedMonth = (int) ($request->query('month') ?? now()->month);
+        $requestedYear = (int) ($request->query('year') ?? now()->year);
+        $referenceDate = Carbon::create($requestedYear, $requestedMonth, 1)->startOfMonth();
 
         $guardians = Guardian::where('tenant_id', $tenantId)
             ->with(['students.enrollments.plan', 'students.enrollments.payments' => function ($query) use ($tenantId, $month, $year, $isHistory) {
@@ -49,26 +49,25 @@ class GuardianController extends Controller
                       ->where('date', now()->format('Y-m-d'));
             }])
             ->get()
-            ->map(function ($guardian) use ($tenantId, $isHistory) {
+            ->map(function ($guardian) use ($tenantId, $isHistory, $requestedMonth, $requestedYear, $referenceDate) {
             // Calculate status based on payments of their students
             $students = $guardian->students;
             $status = 'paid';
             $tenant = Tenant::find($tenantId);
 
-            // Para martial_arts: el status se basa en fee_payments del mes actual
-            $now = now();
+            // Para martial_arts: el status se basa en fee_payments del mes solicitado
             $hasFeeSystem = \App\Models\FeePayment::whereIn('student_id', $students->pluck('id'))
                 ->exists();
 
             if ($hasFeeSystem) {
                 $paidThisMonth = \App\Models\FeePayment::whereIn('student_id', $students->pluck('id'))
-                    ->where('period_month', $now->month)
-                    ->where('period_year', $now->year)
+                    ->where('period_month', $requestedMonth)
+                    ->where('period_year', $requestedYear)
                     ->where('status', 'paid')
                     ->exists();
                 $reviewThisMonth = \App\Models\FeePayment::whereIn('student_id', $students->pluck('id'))
-                    ->where('period_month', $now->month)
-                    ->where('period_year', $now->year)
+                    ->where('period_month', $requestedMonth)
+                    ->where('period_year', $requestedYear)
                     ->where('status', 'review')
                     ->exists();
 
@@ -126,9 +125,9 @@ class GuardianController extends Controller
             // Inteligencia de Estado v1.5.3 (Modo Disciplina)
             $hasPending = false;
             $hasReview = false;
-            $hasApprovedCurrent = false; // Solo cuenta si es de este mes o futuro
+            $hasApprovedCurrent = false; // Solo cuenta si es del periodo solicitado o futuro
             
-            $currentMonthStart = now()->startOfMonth();
+            $currentMonthStart = $referenceDate;
 
             // Sincronización: Traer FeePayments y agregarlos a activePayments si no están
             $feePayments = \App\Models\FeePayment::whereIn('student_id', $students->pluck('id'))
