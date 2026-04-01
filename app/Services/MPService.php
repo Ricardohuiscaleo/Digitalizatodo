@@ -75,8 +75,8 @@ class MPService
             "reason" => "Suscripción " . $tenant->name . " (" . ucfirst($interval) . ")",
             "external_reference" => "TENANT_" . $tenant->id,
             "payer_email" => $tenant->email,
-            "status" => "authorized",
-            "back_url" => "https://digitalizatodo.cl/pago-confirmado?tenant=" . $tenant->slug
+            "status" => "pending", // Cambiado de 'authorized' a 'pending' para que nos dé el link de pago
+            "back_url" => "https://app.digitalizatodo.cl/dashboard?mp_status=success"
         ];
 
         if ($cardTokenId) {
