@@ -197,6 +197,21 @@ class Student extends Model
      */
     public function getIsUpdatedAttribute(): bool
     {
+        $now = now();
+        $currentMonth = $now->month;
+        $currentYear = $now->year;
+
+        // Primero verificar fee_payments del mes actual
+        $hasFeePayment = \App\Models\FeePayment::whereHas('fee', fn($q) => $q->where('tenant_id', $this->tenant_id))
+            ->where('student_id', $this->id)
+            ->where('period_month', $currentMonth)
+            ->where('period_year', $currentYear)
+            ->where('status', 'paid')
+            ->exists();
+
+        if ($hasFeePayment) return true;
+
+        // Fallback: verificar payments clásicos de enrollments
         $lastPayment = $this->enrollments()
             ->with(['payments' => fn($q) => $q->orderBy('due_date', 'desc')])
             ->get()
