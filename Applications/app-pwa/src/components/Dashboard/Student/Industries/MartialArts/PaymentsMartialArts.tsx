@@ -6,7 +6,10 @@ import {
     History,
     CreditCard,
     Zap,
-    TrendingUp
+    TrendingUp,
+    ShieldCheck,
+    Sparkles,
+    CheckCircle2
 } from "lucide-react";
 import { createSubscription, subscribeWithCard } from "@/lib/api";
 import { RefactoredPaymentCard } from "./subcomponents/RefactoredPaymentCard";
@@ -55,6 +58,7 @@ export function PaymentsMartialArts({
 }: PaymentsMartialArtsProps) {
     const [isProcessing, setIsProcessing] = useState<string | null>(null);
     const [selectedStudentId, setSelectedStudentId] = useState<string>(students[0]?.id || "");
+    const [showSuccess, setShowSuccess] = useState(false);
 
     const PAID_STATUSES = ['approved', 'paid', 'accredited'];
 
@@ -83,8 +87,11 @@ export function PaymentsMartialArts({
                 period_year: payment.year,
             });
             if (res?.success) {
-                alert("¡Pago Exitoso! Cobro automático activado para próximos meses.");
-                window.location.reload();
+                setShowSuccess(true);
+                // Dar tiempo para disfrutar la victoria antes del reload
+                setTimeout(() => {
+                    window.location.reload();
+                }, 5000);
             } else {
                 alert("No se pudo procesar: " + (res?.message || "Revisar datos de tarjeta"));
             }
@@ -293,6 +300,49 @@ export function PaymentsMartialArts({
                     </div>
                 )}
             </div>
+
+            {/* Pantalla de Éxito Premium v1.5.0: Dojo Victory Overlay */}
+            {showSuccess && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in zoom-in duration-500">
+                    <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-2xl" />
+                    
+                    <div className="relative bg-white rounded-[3rem] p-8 w-full max-w-sm shadow-[0_0_50px_rgba(16,185,129,0.3)] border border-emerald-100 flex flex-col items-center text-center space-y-6 overflow-hidden">
+                        {/* Brillos y Efectos de fondo */}
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-emerald-500/10 blur-[50px] rounded-full" />
+                        <div className="absolute -top-10 -right-10 opacity-20">
+                            <Sparkles className="text-emerald-500 animate-pulse" size={100} />
+                        </div>
+
+                        {/* Icono de Victoria */}
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full animate-ping" />
+                            <div className="w-24 h-24 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-[2.5rem] flex items-center justify-center text-white shadow-xl shadow-emerald-200 relative z-10">
+                                <ShieldCheck size={48} strokeWidth={2.5} className="animate-in zoom-in-50 delay-300 duration-500" />
+                            </div>
+                        </div>
+
+                        {/* Texto de Éxito */}
+                        <div className="space-y-2 relative z-10">
+                            <h3 className="text-2xl font-black text-zinc-950 tracking-tight">¡Pago Exitoso!</h3>
+                            <p className="text-xs font-bold text-zinc-400 uppercase tracking-[0.15em] leading-relaxed px-4">
+                                Tu lugar en el Dojo está asegurado.<br/>
+                                <span className="text-emerald-500/60 mt-1 block lowercase first-letter:uppercase">Cobro automático activado.</span>
+                            </p>
+                        </div>
+
+                        {/* Botón de cierre manual */}
+                        <button 
+                            onClick={() => window.location.reload()}
+                            className="w-full py-4 bg-zinc-950 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl shadow-zinc-200 active:scale-95 transition-all flex items-center justify-center gap-2"
+                        >
+                            <CheckCircle2 size={14} />
+                            Entendido
+                        </button>
+                        
+                        <p className="text-[8px] font-black text-zinc-300 uppercase tracking-widest animate-pulse">Sincronizando panel...</p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
