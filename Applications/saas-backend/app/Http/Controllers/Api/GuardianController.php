@@ -100,6 +100,7 @@ class GuardianController extends Controller
             // SISTEMA INTELIGENTE DE DE-DUPLICACIÓN (VERSION 2.0)
             // 1. Recolectamos FeePayments (Prioridad Alta)
             $feePayments = \App\Models\FeePayment::whereIn('student_id', $students->pluck('id'))
+                ->where('tenant_id', $tenantId) // Blindaje por Industria
                 ->with(['fee', 'student.enrollments.plan'])
                 ->get();
 
@@ -119,47 +120,55 @@ class GuardianController extends Controller
 
                 $tempPayments[] = [
                     'id' => 'fp_' . $fp->id,
+                    'is_fee' => true,
                     'student_id' => $fp->student_id,
                     'student_name' => $fp->student->name,
                     'student_photo' => $fp->student->photo ? (str_starts_with($fp->student->photo, 'http') ? $fp->student->photo : $s3BaseUrl . $fp->student->photo) : "https://i.pravatar.cc/150?u=" . $fp->student->id,
                     'amount' => $amount,
-                    'status' => $pStatus,
+                    'status' => $pStatus, // 'paid', 'pending', 'review'
                     'due_date' => $fp->period_month ? Carbon::create($fp->period_year, $fp->period_month, 1)->format('d M, Y') : null,
                     'raw_due_date' => $fp->period_month ? Carbon::create($fp->period_year, $fp->period_month, 1) : null,
                     'proof_url' => $fp->proof_url,
                     'plan_name' => $fp->fee?->title ?? ($enrollment?->plan?->name ?? 'Mensualidad'),
-                    'is_fee' => true
+                    // Metadatos para burbujas
+                    'belt_rank' => $fp->student->belt_rank,
+                    'degrees' => (int)($fp->student->degrees ?? 0),
+                    'total_attendances' => $fp->student->attendances()->count(),
                 ];
             }
 
-            // 2. Recolectamos Payments Legados (Prioridad Baja - Solo si no hay colisión)
+            // 2. Recolectamos Payments Legados (Prioridad Baja)
             foreach ($students as $student) {
                 foreach ($student->enrollments as $enrollment) {
                     $hasAddedApproved = false;
                     foreach ($enrollment->payments as $payment) {
-                        // Sincronización inteligente: Si ya existe un FeePayment para este mes, lo ignoramos
                         $pMonth = $payment->due_date ? $payment->due_date->month : null;
                         $pYear = $payment->due_date ? $payment->due_date->year : null;
                         $pKey = $student->id . '_' . $pMonth . '_' . $pYear;
 
-                        // Solo agregamos si no hay FeePayment O si es un pago especial (Upgrade/Pack etc)
                         $isSpecial = in_array($payment->type, ['plan_upgrade', 'pack_4', 'single', 'referral']);
                         if (isset($activePeriods[$pKey]) && !$isSpecial) {
                             continue;
                         }
 
+                        // Normalización de estados: approved -> paid
+                        $normalizedStatus = $payment->status;
                         if ($payment->status === 'approved') {
+                            $normalizedStatus = 'paid';
                             if ($hasAddedApproved && !$isHistory) continue;
                             $hasAddedApproved = true;
+                        } elseif ($payment->status === 'pending_review') {
+                            $normalizedStatus = 'review';
                         }
 
                         $tempPayments[] = [
                             'id' => 'p_' . $payment->id,
+                            'is_fee' => false,
                             'student_id' => $student->id,
                             'student_name' => $student->name,
                             'student_photo' => $student->photo ? (str_starts_with($student->photo, 'http') ? $student->photo : $s3BaseUrl . $student->photo) : "https://i.pravatar.cc/150?u=" . $student->id,
                             'amount' => (float)$payment->amount,
-                            'status' => $payment->status === 'pending_review' ? 'review' : $payment->status,
+                            'status' => $normalizedStatus,
                             'due_date' => $payment->due_date?->format('d M, Y'),
                             'raw_due_date' => $payment->due_date,
                             'proof_url' => $payment->proof_image ? (str_starts_with($payment->proof_image, 'http') ? $payment->proof_image : $s3BaseUrl . $payment->proof_image) : null,
@@ -169,7 +178,6 @@ class GuardianController extends Controller
                             'previous_classes' => (int)($student->previous_classes ?? 0),
                             'belt_classes_at_promotion' => (int)($student->belt_classes_at_promotion ?? 0),
                             'plan_name' => $payment?->plan?->name ?? $enrollment?->plan?->name ?? null,
-                            'is_fee' => false
                         ];
                     }
                 }
