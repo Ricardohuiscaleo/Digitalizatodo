@@ -73,7 +73,7 @@ class MPService
         $payload = [
             "preapproval_plan_id" => $mpPlanId,
             "reason" => "Suscripción " . $tenant->name . " (" . ucfirst($interval) . ")",
-            "external_reference" => "TENANT_" . $tenant->id,
+            "external_reference" => "TENANT_" . $tenant->id . "_PLAN_" . $plan->id,
             "payer_email" => $tenant->email,
             "status" => "pending", // Cambiado de 'authorized' a 'pending' para que nos dé el link de pago
             "back_url" => "https://app.digitalizatodo.cl/dashboard?mp_status=success"

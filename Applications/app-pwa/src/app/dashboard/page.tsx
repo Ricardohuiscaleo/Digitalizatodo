@@ -517,7 +517,7 @@ export default function App() {
 
                                         {/* Fourth Column - Check-in JJB (Spans 1 column) */}
                                         <div className="xl:col-span-1 space-y-4">
-                                            {isMartialArts && !(branding as any)?.mp_active && (
+                                            {isMartialArts && branding?.mercadopago_auth_status !== 'connected' && (
                                                 <button
                                                     onClick={() => setActiveTab('settings')}
                                                     className="w-full hidden md:flex items-center justify-between p-4 bg-white border border-dashed border-zinc-200 rounded-3xl shadow-sm transition-all hover:border-blue-300 hover:bg-blue-50/50 active:scale-95 group"

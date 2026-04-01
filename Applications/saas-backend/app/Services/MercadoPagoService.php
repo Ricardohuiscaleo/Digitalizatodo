@@ -27,8 +27,15 @@ class MercadoPagoService
         $this->platformFeePercent = env('MERCADOPAGO_PLATFORM_FEE', 1.81);
 
         if ($this->accessToken) {
+            $this->applyConfig();
+        }
+    }
+
+    protected function applyConfig()
+    {
+        if ($this->accessToken) {
             MercadoPagoConfig::setAccessToken($this->accessToken);
-            MercadoPagoConfig::setRuntimeEnviroment(MercadoPagoConfig::LOCAL); // O según corresponda
+            MercadoPagoConfig::setRuntimeEnviroment(MercadoPagoConfig::LOCAL); 
         }
     }
 
@@ -70,10 +77,10 @@ class MercadoPagoService
     }
 
     /**
-     * Inicia una suscripción para un alumno específico
-     * @param int $feePaymentId ID de la cuota local para rastrear
+     * Inicia una suscripción para un alumno específico (Marketplace Split)
+     * @param string $collectorId ID de Mercado Pago de la Academia
      */
-    public function createSubscription($studentEmail, $planId, $amount, $feePaymentId, $feeAmount = 0)
+    public function createSubscription($studentEmail, $planId, $amount, $feePaymentId, $collectorId = null, $feeAmount = 0)
     {
         $client = new PreApprovalClient();
 
@@ -87,9 +94,15 @@ class MercadoPagoService
                 "preapproval_plan_id" => $planId,
                 "payer_email" => $studentEmail,
                 "status" => "pending",
-                "external_reference" => "FP_" . $feePaymentId, // 🛡️ Vinculación crucial
+                "external_reference" => "FP_" . $feePaymentId,
                 "back_url" => "https://admin.digitalizatodo.cl/dashboard?payment=success",
+                "marketplace_fee" => (float) $feeAmount, // 💰 SPLIT AUTOMÁTICO
             ];
+
+            // En modo Marketplace, el collector_id es quien recibe el dinero
+            if ($collectorId) {
+                $subscriptionRequest["collector_id"] = (int) $collectorId;
+            }
 
             $subscription = $client->create($subscriptionRequest);
             return $subscription;
@@ -101,13 +114,16 @@ class MercadoPagoService
     }
     
     /**
-     * Generar un cobro puntual para Clases Sueltas o Packs
+     * Generar un cobro puntual para Clases Sueltas o Packs (Marketplace Split)
+     * @param string $collectorId ID de Mercado Pago de la Academia
      */
-    public function createOneTimePayment($title, $amount, $feePaymentId, $payerEmail)
+    public function createOneTimePayment($title, $amount, $feePaymentId, $payerEmail, $collectorId = null)
     {
         $client = new PreferenceClient();
 
         try {
+            $feeAmount = ($amount * $this->platformFeePercent) / 100;
+
             $preferenceRequest = [
                 "items" => [
                     [
@@ -120,7 +136,8 @@ class MercadoPagoService
                 "payer" => [
                     "email" => $payerEmail
                 ],
-                "external_reference" => "FP_" . $feePaymentId, // 🛡️ RASTREO IGUAL QUE SUBS
+                "external_reference" => "FP_" . $feePaymentId,
+                "marketplace_fee" => (float) $feeAmount, // 💰 SPLIT AUTOMÁTICO
                 "back_urls" => [
                     "success" => "https://admin.digitalizatodo.cl/dashboard?payment=success",
                     "failure" => "https://admin.digitalizatodo.cl/dashboard?payment=failure",
@@ -128,6 +145,10 @@ class MercadoPagoService
                 "auto_return" => "approved",
                 "notification_url" => "https://admin.digitalizatodo.cl/api/mercadopago/webhook"
             ];
+
+            if ($collectorId) {
+                $preferenceRequest["collector_id"] = (int) $collectorId;
+            }
 
             $preference = $client->create($preferenceRequest);
             return $preference;

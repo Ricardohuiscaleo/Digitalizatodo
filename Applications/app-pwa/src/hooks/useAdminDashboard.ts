@@ -195,7 +195,8 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
                         industry: profile.tenant.industry,
                         logo: profile.tenant.logo,
                         primaryColor: profile.tenant.primary_color,
-                        saas_plan: profile.tenant.saas_plan
+                        saas_plan: profile.tenant.saas_plan,
+                        mercadopago_auth_status: profile.tenant.mercadopago_auth_status
                     });
 
                     setBankData({

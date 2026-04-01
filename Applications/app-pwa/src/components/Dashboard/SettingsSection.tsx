@@ -614,7 +614,7 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
                     />
                 )}
 
-                {branding?.industry === 'martial_arts' && hasPermission('settings.payments') && (
+                {branding?.industry === 'martial_arts' && hasPermission('settings.payments') && branding?.mercadopago_auth_status !== 'connected' && (
                     <ActionCard 
                         icon={CreditCard} 
                         title="PAGOS AUTOMÁTICOS EN DIGITALIZA TODO" 

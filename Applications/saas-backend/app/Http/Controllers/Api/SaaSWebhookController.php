@@ -59,13 +59,20 @@ class SaaSWebhookController extends Controller
         $preapprovalId = $payment['metadata']['preapproval_id'] ?? null;
 
         if (strpos($externalRef, 'TENANT_') === 0) {
-            $tenantId = str_replace('TENANT_', '', $externalRef);
+            $parts = explode('_PLAN_', str_replace('TENANT_', '', $externalRef));
+            $tenantId = $parts[0];
+            $newPlanId = $parts[1] ?? null;
+
             $tenant = Tenant::find($tenantId);
 
             if ($tenant && $payment['status'] === 'approved') {
+                $targetPlanId = $newPlanId ?? $tenant->saas_plan_id;
+                $plan = SaasPlan::find($targetPlanId);
+
+                // 1. Registramos el histórico de pago (SaasPaymentLog)
                 SaasPaymentLog::create([
                     'tenant_id' => $tenant->id,
-                    'saas_plan_id' => $tenant->saas_plan_id,
+                    'saas_plan_id' => $targetPlanId,
                     'amount' => $payment['transaction_amount'],
                     'currency' => $payment['currency_id'],
                     'status' => 'paid',
@@ -74,11 +81,16 @@ class SaaSWebhookController extends Controller
                     'paid_at' => now(),
                 ]);
 
-                // Activar Empresa Automáticamente
-                $tenant->active = true;
-                $tenant->save();
+                // 2. Actualizamos el Plan y lo Activamos
+                $tenant->update([
+                    'saas_plan_id' => $targetPlanId,
+                    'saas_plan' => $plan ? $plan->slug : $tenant->saas_plan,
+                    'active' => true,
+                    'saas_status' => 'active',
+                    'mercadopago_subscription_id' => $preapprovalId
+                ]);
 
-                Log::info("SaaS: Payment registered and Tenant {$tenant->id} activated");
+                Log::info("SaaS: Webhook procesado. Tenant {$tenant->id} activado con Plan {$targetPlanId}.");
             }
         }
 

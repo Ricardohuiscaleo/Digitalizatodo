@@ -9,6 +9,7 @@ interface TenantBranding {
     industry?: string;
     logo: string;
     primaryColor: string;
+    mercadopago_auth_status?: string;
 }
 
 interface BrandingContextType {
