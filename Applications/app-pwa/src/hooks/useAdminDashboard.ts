@@ -138,10 +138,16 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
     const allStudents = useMemo(() => {
         return common.payers.flatMap((payer: any) => {
             const students = payer.enrolledStudents || payer.students || [];
+            
+            // Inteligencia de Estado v1.5.1:
+            // Si el pagador está marcado como 'paid' O si detectamos un pago aprobado recientemente
+            const hasApprovedPayment = payer.payments?.some((p: any) => p.status === 'approved');
+            const resolvedStatus = (payer.status === 'paid' || hasApprovedPayment) ? 'paid' : payer.status;
+
             return students.map((student: any) => ({
                 ...student,
                 payerId: payer.id,
-                payerStatus: payer.status
+                payerStatus: resolvedStatus
             }));
         });
     }, [common.payers]);
