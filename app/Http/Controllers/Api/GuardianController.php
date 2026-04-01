@@ -32,7 +32,7 @@ class GuardianController extends Controller
         $isHistory = $request->query('history') === 'true';
 
         $guardians = Guardian::where('tenant_id', $tenantId)
-            ->with(['students.enrollments.payments' => function ($query) use ($tenantId, $month, $year, $isHistory) {
+            ->with(['students.enrollments.plan', 'students.enrollments.payments' => function ($query) use ($tenantId, $month, $year, $isHistory) {
                 $query->where('tenant_id', $tenantId);
                 
                 if ($isHistory && $month && $year) {
@@ -54,14 +54,22 @@ class GuardianController extends Controller
             $students = $guardian->students;
             $status = 'paid';
             $tenant = Tenant::find($tenantId);
-            $pricing = $tenant->data['pricing'] ?? [
-                'cat1_name' => 'Infantil',
-                'cat1_price' => 25000,
-                'cat2_name' => 'Adulto',
-                'cat2_price' => 35000,
-                'discount_threshold' => 2,
-                'discount_percentage' => 15
-            ];
+            $pricing = $tenant->data['pricing'] ?? [];
+            
+            if (empty($pricing)) {
+                // Fetch dynamic prices from plans table if available
+                $kidsPlan = \App\Models\Plan::where('tenant_id', $tenantId)->where('target_audience', 'kids')->where('active', true)->orderBy('price', 'asc')->first();
+                $adultsPlan = \App\Models\Plan::where('tenant_id', $tenantId)->where('target_audience', 'adults')->where('active', true)->orderBy('price', 'asc')->first();
+                
+                $pricing = [
+                    'cat1_name' => 'Infantil',
+                    'cat1_price' => (int)($kidsPlan?->price ?? 35000),
+                    'cat2_name' => 'Adulto',
+                    'cat2_price' => (int)($adultsPlan?->price ?? 45000),
+                    'discount_threshold' => 2,
+                    'discount_percentage' => 15
+                ];
+            }
 
             $s3BaseUrl = 'https://' . config('services.s3.bucket', 'digitalizatodo') . '.s3.' . config('services.s3.region', 'us-east-1') . '.amazonaws.com/';
 
@@ -88,6 +96,7 @@ class GuardianController extends Controller
                             'total_attendances' => $student->attendances()->count(),
                             'previous_classes' => (int)($student->previous_classes ?? 0),
                             'belt_classes_at_promotion' => (int)($student->belt_classes_at_promotion ?? 0),
+                            'plan_name' => $payment->plan?->name ?? $enrollment->plan?->name ?? null,
                         ];
                         if ($payment->status === 'pending_review') {
                             $status = 'review';
@@ -141,6 +150,7 @@ class GuardianController extends Controller
                         'today_status' => $bp['today_status'],
                         'method' => $bp['registration_method'],
                         'belt_progress' => $bp,
+                        'plan_name' => $s->enrollments->where('deleted_at', null)->sortByDesc('created_at')->first()?->plan?->name ?? null,
                     ];
                 }),
             ];
