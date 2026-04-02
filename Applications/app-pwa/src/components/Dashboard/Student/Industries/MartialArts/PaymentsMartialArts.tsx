@@ -11,7 +11,7 @@ import {
     Sparkles,
     CheckCircle2
 } from "lucide-react";
-import { createSubscription, subscribeWithCard } from "@/lib/api";
+import { createSubscription, subscribeWithCard, cancelAutoBilling } from "@/lib/api";
 import { RefactoredPaymentCard } from "./subcomponents/RefactoredPaymentCard";
 import { PlanUpgradeGrid } from "./subcomponents/PlanUpgradeGrid";
 
@@ -114,6 +114,20 @@ export function PaymentsMartialArts({
             alert("Error de conexión con Mercado Pago.");
         } finally {
             setIsProcessing(null);
+        }
+    };
+
+    const [cancellingCard, setCancellingCard] = useState(false);
+
+    const handleCancelAutoBilling = async (studentId: number) => {
+        if (!token || !confirm('¿Desactivar el cobro automático? Tendrás que pagar manualmente cada mes.')) return;
+        setCancellingCard(true);
+        try {
+            const res = await cancelAutoBilling(slug, token, studentId);
+            if (res?.success) window.location.reload();
+            else alert('No se pudo cancelar: ' + (res?.message || 'Error'));
+        } finally {
+            setCancellingCard(false);
         }
     };
 
@@ -255,6 +269,13 @@ export function PaymentsMartialArts({
                                                     </p>
                                                 )}
                                             </div>
+                                            <button
+                                                onClick={() => handleCancelAutoBilling(group.student.id)}
+                                                disabled={cancellingCard}
+                                                className="text-[9px] font-black uppercase text-rose-400 border border-rose-200 px-3 py-2 rounded-xl active:scale-95 transition-all disabled:opacity-40 shrink-0"
+                                            >
+                                                {cancellingCard ? '...' : 'Cancelar'}
+                                            </button>
                                         </div>
                                     ) : (
                                         group.pendingPeriods.map((p: any) => (

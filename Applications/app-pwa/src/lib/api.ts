@@ -274,6 +274,22 @@ export async function subscribeWithCard(tenantId: string, token: string, data: a
     }
 }
 
+export async function cancelAutoBilling(tenantId: string, token: string, studentId: number) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/mercadopago/cancel-auto-billing`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ student_id: studentId }),
+        });
+        return await safeJson(response);
+    } catch (error) {
+        return { success: false, message: 'Error de conexión' };
+    }
+}
+
 export async function initiateSaasSubscription(tenantSlug: string, token: string, planId: number | string, interval: 'monthly' | 'yearly') {
     try {
         const response = await fetch(`${API_URL}/${tenantSlug}/saas/subscribe`, {
