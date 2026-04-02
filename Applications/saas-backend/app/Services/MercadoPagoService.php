@@ -54,13 +54,27 @@ class MercadoPagoService
                 return $search->results[0];
             }
 
+            // 🛡️ INDUSTRIAL: Fragmentamos el nombre para cumplir calidad 73+
+            $nameParts = explode(' ', trim($name));
+            $firstName = $nameParts[0] ?? 'Student';
+            $lastName = (count($nameParts) > 1) ? implode(' ', array_slice($nameParts, 1)) : '---';
+
             // Si no existe, lo creamos
             return $client->create([
                 "email" => $email,
-                "first_name" => $name
+                "first_name" => $firstName,
+                "last_name" => $lastName
             ]);
         } catch (MPApiException $e) {
-            Log::error("Error MP Customer (API): " . json_encode($e->getApiResponse()->getContent()));
+            $content = $e->getApiResponse()->getContent();
+            Log::error("Error MP Customer (API): " . json_encode($content));
+            
+            // Si el error es "Email ya existe", intentamos buscarlo de nuevo (doble check)
+            if (isset($content['message']) && str_contains($content['message'], 'already exists')) {
+                 $searchRequest = new \MercadoPago\Net\MPSearchRequest(0, 1, ["email" => $email]);
+                 $search = $client->search($searchRequest);
+                 if (!empty($search->results)) return $search->results[0];
+            }
             return null;
         } catch (Exception $e) {
             Log::error("Error MP Customer: " . $e->getMessage());
@@ -146,6 +160,47 @@ class MercadoPagoService
         } catch (MPApiException $e) {
             Log::error("Error MP Payment Token: " . json_encode($e->getApiResponse()->getContent()));
             throw new Exception("Error al procesar pago con tarjeta.");
+        }
+    }
+
+    /**
+     * 💳 Cobro Industrial: Genera el pago usando token de tarjeta y cliente
+     */
+    public function createSubscriptionPayment($data)
+    {
+        $client = new PaymentClient();
+
+        try {
+            $paymentRequest = [
+                "transaction_amount" => (float) ($data['transaction_amount'] ?? 0),
+                "token" => $data['token'] ?? null,
+                "description" => $data['description'] ?? 'Pago de Cuota',
+                "installments" => (int) ($data['installments'] ?? 1),
+                "payment_method_id" => $data['payment_method_id'] ?? null,
+                "issuer_id" => $data['issuer_id'] ?? null, // ✅ CALIDAD 73+
+                "statement_descriptor" => "DIGITALIZATODO", // ✅ CALIDAD 73+ (Aparece en el resumen de tarjeta)
+                "payer" => [
+                    "email" => $data['payer']['email'] ?? null,
+                    "first_name" => $data['payer']['first_name'] ?? null, // ✅ CALIDAD 73+
+                    "last_name" => $data['payer']['last_name'] ?? null,   // ✅ CALIDAD 73+
+                    // Si tenemos el payer.id del cliente, lo incluimos para calidad 73+
+                    "id" => $data['payer']['id'] ?? null,
+                ],
+                "items" => $data['items'] ?? [], // ✅ INDUSTRIAL: Detalle de productos/servicios
+                "external_reference" => $data['external_reference'] ?? null,
+            ];
+
+            // 🛡️ SEGURIDAD: Inyectar Device ID si está disponible
+            $options = new RequestOptions();
+            if (isset($data['device_id'])) {
+                $options->setCustomHeaders(["X-Meli-Session-Id: " . $data['device_id']]);
+            }
+
+            return $client->create($paymentRequest, $options);
+
+        } catch (MPApiException $e) {
+            Log::error("Error MP Global Payment: " . json_encode($e->getApiResponse()->getContent()));
+            throw new Exception("Error al procesar el pago con Mercado Pago.");
         }
     }
 

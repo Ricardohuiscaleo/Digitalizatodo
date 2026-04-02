@@ -220,8 +220,11 @@ export async function createSubscription(tenantId: string, token: string, data: 
                 plan_id: data.plan_id,
                 student_id: data.student_id,
                 email: data.email,
+                first_name: data.first_name, // ✅ CALIDAD 73+
+                last_name: data.last_name,   // ✅ CALIDAD 73+
                 amount: data.amount,
-                fee_payment_id: data.fee_payment_id
+                fee_payment_id: data.fee_payment_id,
+                device_id: data.device_id // 🛡️ INDUSTRIAL
             }),
         });
         return await safeJson(response);
@@ -243,11 +246,15 @@ export async function subscribeWithCard(tenantId: string, token: string, data: a
             body: JSON.stringify({
                 token: data.token,
                 payment_method_id: data.payment_method_id,
+                issuer_id: data.issuer_id, // ✅ CALIDAD 73+
                 plan_id: data.plan_id,
                 student_id: data.student_id,
                 email: data.email,
+                first_name: data.first_name, // ✅ CALIDAD 73+
+                last_name: data.last_name,   // ✅ CALIDAD 73+
                 amount: data.amount,
-                fee_payment_id: data.fee_payment_id
+                fee_payment_id: data.fee_payment_id,
+                device_id: data.device_id // 🛡️ INDUSTRIAL
             }),
         });
         return await safeJson(response);

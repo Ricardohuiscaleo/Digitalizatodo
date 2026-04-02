@@ -102,6 +102,11 @@ class MercadoPagoController extends Controller
 
             // Lógica de cliente y tarjeta...
             $customer = $this->mpService->getOrCreateCustomer($student->email, $student->name);
+            
+            if (!$customer) {
+                 return response()->json(['success' => false, 'message' => 'No se pudo vincular el cliente en Mercado Pago.'], 500);
+            }
+
             $this->mpService->addCardToCustomer($customer->id, $request->token);
 
             // Crear registro de pago PENDIENTE
@@ -118,12 +123,31 @@ class MercadoPagoController extends Controller
                 ]
             );
 
+            // 🛡️ INDUSTRIAL: Incluir device_id, payer.id e items detallados para calidad 73+
             $payment = $this->mpService->createSubscriptionPayment([
                 'transaction_amount' => (float)$request->amount,
                 'token' => $request->token,
                 'description' => "Pago de Cuota - " . $student->name,
                 'installments' => 1,
-                'payer' => ['email' => $student->email],
+                'payment_method_id' => $request->payment_method_id,
+                'issuer_id' => $request->issuer_id, // ✅ CALIDAD 73+
+                'payer' => [
+                    'email' => $student->email,
+                    'id'    => $customer->id,  // ✅ OBLIGATORIO para calidad 73+
+                    'first_name' => $request->first_name, // ✅ CALIDAD 73+
+                    'last_name'  => $request->last_name,  // ✅ CALIDAD 73+
+                ],
+                'device_id' => $request->device_id, // ✅ SEGURIDAD para pagos reales
+                'items' => [
+                    [
+                        'id' => $request->fee_id,
+                        'title' => "Cuota Mensual - " . $student->name,
+                        'description' => "Pago de mensualidad industrializada para el Alumno " . $student->id,
+                        'category_id' => 'services',
+                        'quantity' => 1,
+                        'unit_price' => (float)$request->amount
+                    ]
+                ],
                 'external_reference' => "{$tenant->id}:{$student->id}:{$request->fee_id}:{$request->period_month}:{$request->period_year}"
             ]);
 

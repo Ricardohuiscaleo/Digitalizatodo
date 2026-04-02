@@ -75,16 +75,28 @@ export function PaymentsMartialArts({
         if (!token) return;
         setIsProcessing(payment.id);
         try {
+            // 🛡️ INDUSTRIAL: Capturar Device ID para calidad 73+
+            const deviceId = (window as any).MP_DEVICE_SESSION_ID || null;
+
+            // Dividir nombre para calidad 73+
+            const nameParts = (student.name || "").trim().split(" ");
+            const firstName = nameParts[0] || "Estudiante";
+            const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "---";
+
             const res = await subscribeWithCard(slug, token, {
                 token: formData.token,
                 payment_method_id: formData.payment_method_id,
+                issuer_id: formData.issuer_id, // ✅ CALIDAD 73+
                 plan_id: payment.plan_id || payment.fee_id,
                 student_id: student.id,
                 email: student.email || guardianEmail,
+                first_name: firstName, // ✅ CALIDAD 73+
+                last_name: lastName,   // ✅ CALIDAD 73+
                 amount: payment.amount,
                 fee_id: payment.fee_id,
                 period_month: payment.month,
                 period_year: payment.year,
+                device_id: deviceId, // ✅ SEGURIDAD INDUSTRIAL
             });
             if (res?.success) {
                 setShowSuccess(true);
