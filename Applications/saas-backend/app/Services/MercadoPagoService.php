@@ -136,6 +136,10 @@ class MercadoPagoService
                     'email' => $data['payer']['email'] ?? null,
                     'first_name' => $data['payer']['first_name'] ?? null,
                     'last_name' => $data['payer']['last_name'] ?? null,
+                    'identification' => [
+                        'type' => $data['payer']['identification_type'] ?? 'RUT',
+                        'number' => $data['payer']['identification_number'] ?? null,
+                    ],
                 ], isset($data['payer']['id']) ? ['id' => $data['payer']['id']] : []),
                 "external_reference" => $data['external_reference'] ?? null,
                 "application_fee" => (float) ($data['application_fee'] ?? 0),
@@ -146,7 +150,16 @@ class MercadoPagoService
                         "quantity" => 1,
                         "unit_price" => (float) ($data['transaction_amount'] ?? 0),
                         "category_id" => "learning",
-                    ]]
+                    ]],
+                    "payer" => [
+                        "first_name" => $data['payer']['first_name'] ?? null,
+                        "last_name" => $data['payer']['last_name'] ?? null,
+                        "phone" => [
+                            "area_code" => null,
+                            "number" => $data['payer']['phone_number'] ?? null,
+                        ],
+                        "address" => null,
+                    ]
                 ]
             ];
 
