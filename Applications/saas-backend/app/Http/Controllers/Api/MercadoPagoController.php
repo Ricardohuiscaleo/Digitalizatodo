@@ -144,6 +144,13 @@ class MercadoPagoController extends Controller
             );
 
             // 🛡️ INDUSTRIAL: Incluir device_id, payer.id e items detallados para calidad 73+
+            // Fallback: Si el alumno no tiene email, usamos el del tutor (Obligatorio para MP)
+            $guardian = Guardian::find($guardianId);
+            $payerEmail = $student->email ?? $guardian?->email ?? $request->email;
+
+            // Sanitizar RUT (solo números)
+            $idNumber = preg_replace('/[^0-9Kk]/', '', $request->identification_number);
+
             $payment = $this->mpService->createSubscriptionPayment([
                 'transaction_amount' => (float)$request->amount,
                 'token' => $request->token,
@@ -152,13 +159,13 @@ class MercadoPagoController extends Controller
                 'payment_method_id' => $request->payment_method_id,
                 'issuer_id' => $request->issuer_id, // ✅ CALIDAD 73+
                 'payer' => [
-                    'email' => $student->email,
+                    'email' => $payerEmail,
                     'id'    => $customer->id,  // ✅ OBLIGATORIO para calidad 73+
                     'first_name' => $request->first_name, // ✅ CALIDAD 73+
                     'last_name'  => $request->last_name,  // ✅ CALIDAD 73+
-                    'identification_number' => $request->identification_number, // ✅ CALIDAD 73+
-                    'identification_type'   => $request->identification_type,   // ✅ CALIDAD 73+
-                    'phone_number'          => $request->phone_number,          // ✅ CALIDAD 73+
+                    'identification_number' => $idNumber, // ✅ CALIDAD 73+
+                    'identification_type'   => $request->identification_type ?? 'RUT',
+                    'phone_number'          => $request->phone_number,
                 ],
                 'device_id' => $request->device_id, // ✅ SEGURIDAD para pagos reales
                 'items' => [
