@@ -30,8 +30,8 @@ class GuardianController extends Controller
 
         $month = $request->query('month');
         $year = $request->query('year');
-        $requestedMonth = (int) ($month ?? now()->month);
-        $requestedYear = (int) ($year ?? now()->year);
+        $requestedMonth = (int) ($month ?? \Carbon\Carbon::now('America/Santiago')->month);
+        $requestedYear = (int) ($year ?? \Carbon\Carbon::now('America/Santiago')->year);
         $isHistory = $request->query('history') === 'true';
         $referenceDate = Carbon::create($requestedYear, $requestedMonth, 1)->startOfMonth();
 
@@ -229,9 +229,9 @@ class GuardianController extends Controller
                         'belt_rank' => $s->belt_rank ?? 'Blanco',
                         'degrees' => (int)($s->degrees ?? 0),
                         'photo' => $s->photo ? (str_starts_with($s->photo, 'http') ? $s->photo : $s3BaseUrl . $s->photo) : "https://i.pravatar.cc/150?u=" . $s->id,
-                        'today_status' => $s->attendances()->where('date', now()->format('Y-m-d'))->where('status', 'present')->exists() ? 'present' : 'absent',
+                        'today_status' => $s->attendances()->where('date', \Carbon\Carbon::now('America/Santiago')->toDateString())->where('status', 'present')->exists() ? 'present' : 'absent',
                         'payment_status' => (function() use ($s) {
-                            $now = now();
+                            $now = \Carbon\Carbon::now('America/Santiago');
                             $hasOverdue = $s->enrollments->contains(function($e) use ($now) {
                                 return $e->payments->contains(function($p) use ($now) {
                                     return in_array($p->status, ['pending', 'overdue']) && $p->due_date && $p->due_date->isPast();
@@ -291,8 +291,8 @@ class GuardianController extends Controller
             return response()->json(['message' => 'No se encontró el apoderado especificado para este tenant'], 404);
         }
 
-        $month = $request->input('month', now()->month);
-        $year = $request->input('year', now()->year);
+        $month = $request->input('month', \Carbon\Carbon::now('America/Santiago')->month);
+        $year = $request->input('year', \Carbon\Carbon::now('America/Santiago')->year);
         $method = $request->input('payment_method', 'cash');
         $notes = $request->input('notes', 'Aprobado manualmente por Staff');
 

@@ -52,7 +52,7 @@ export default function CheckinPage() {
                 getPayers(tenantSlug, storedToken, { month: nowCL().getMonth() + 1, year: nowCL().getFullYear() }),
                 getSchedules(tenantSlug, storedToken),
                 getStudents(tenantSlug, storedToken),
-                getAttendanceHistory(tenantSlug, storedToken, undefined, today)
+                getAttendanceHistory(tenantSlug, storedToken, undefined, undefined, today)
             ]);
 
             if (attendanceRes?.attendance) {

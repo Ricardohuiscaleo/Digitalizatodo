@@ -43,6 +43,11 @@ class AttendanceController extends Controller
             $query->whereRaw("DATE_FORMAT(date, '%Y-%m') = ?", [$month]);
         }
 
+        // Filtro por fecha exacta: ?date=2025-03-31
+        if ($date = $request->query('date')) {
+            $query->where('date', $date);
+        }
+
         $attendances = $query->get();
 
         return response()->json([
@@ -102,7 +107,7 @@ class AttendanceController extends Controller
             [
                 'tenant_id' => $tenantId,
                 'student_id' => $request->student_id,
-                'date' => now()->format('Y-m-d'),
+                'date' => \Carbon\Carbon::now('America/Santiago')->toDateString(),
             ],
             [
                 'status' => $request->status,
@@ -185,7 +190,7 @@ class AttendanceController extends Controller
             $isPersonalized = filter_var($request->is_personalized, FILTER_VALIDATE_BOOLEAN);
 
             if (!$isPersonalized) {
-                $now = now();
+                $now = \Carbon\Carbon::now('America/Santiago');
                 $dayOfWeek = $now->dayOfWeek; // Carbon: 0 (Dom) a 6 (Sáb)
                 $schedules = $student->schedules()->where('day_of_week', $dayOfWeek)->get();
 
@@ -222,7 +227,7 @@ class AttendanceController extends Controller
                 [
                     'tenant_id' => $tenant->id,
                     'student_id' => $student->id,
-                    'date' => now()->format('Y-m-d'),
+                    'date' => \Carbon\Carbon::now('America/Santiago')->toDateString(),
                 ],
                 [
                     'status' => 'present',
@@ -294,7 +299,7 @@ class AttendanceController extends Controller
         
         $attendance = Attendance::where('tenant_id', $tenantModel->id)
             ->where('student_id', $studentId)
-            ->where('date', now()->format('Y-m-d'))
+            ->where('date', \Carbon\Carbon::now('America/Santiago')->toDateString())
             ->first();
 
         if (!$attendance) {

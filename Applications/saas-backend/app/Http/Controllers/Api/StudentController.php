@@ -40,7 +40,7 @@ class StudentController extends Controller
                 'course',
                 'guardians',
                 'enrollments.payments',
-                'attendances' => fn($q) => $q->where('date', now()->format('Y-m-d'))
+                'attendances' => fn($q) => $q->where('date', \Carbon\Carbon::now('America/Santiago')->toDateString())
             ])
             ->get()
             ->map(function ($student) {

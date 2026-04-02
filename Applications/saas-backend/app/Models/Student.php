@@ -154,7 +154,7 @@ class Student extends Model
 
             $age = $this->birth_date ? $this->birth_date->age : 20;
 
-            $todayAttendance = $this->attendances()->where('date', now()->format('Y-m-d'))->first();
+            $todayAttendance = $this->attendances()->where('date', \Carbon\Carbon::now('America/Santiago')->toDateString())->first();
 
             return [
                 'category' => $category,
