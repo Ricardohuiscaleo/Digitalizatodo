@@ -148,6 +148,8 @@ class MercadoPagoService
                 ], isset($data['payer']['id']) ? ['id' => $data['payer']['id']] : []),
                 "external_reference" => $data['external_reference'] ?? null,
                 "application_fee" => (float) ($data['application_fee'] ?? 0),
+                "binary_mode" => true,
+                "statement_descriptor" => "DIGITALIZA",
                 "additional_info" => [
                     "items" => [[
                         "id" => "sub_" . ($data['external_reference'] ?? '0'),

@@ -138,6 +138,7 @@ class MercadoPagoController extends Controller
                     'phone_number' => $request->phone_number,
                 ],
                 'device_id' => $request->device_id,
+                'ip_address' => $request->ip(),
                 'external_reference' => "{$tenant->id}:{$student->id}:{$request->fee_id}:{$request->period_month}:{$request->period_year}",
                 'application_fee' => $platformFee,
             ]);
