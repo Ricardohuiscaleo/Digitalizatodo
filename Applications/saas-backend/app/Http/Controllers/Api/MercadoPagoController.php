@@ -329,11 +329,29 @@ class MercadoPagoController extends Controller
                 );
             }
 
-            return response()->json([
-                'success' => false,
-                'status' => $payment->status,
-                'message' => 'El pago fue rechazado o está pendiente: ' . $payment->status_detail
-            ], 400);
+            // 🚀 10. Respuesta final amigable
+            if ($payment->status !== 'approved') {
+                $friendlyMessages = [
+                    'cc_rejected_insufficient_amount' => 'Tu tarjeta no tiene saldo suficiente.',
+                    'cc_rejected_bad_filled_security_code' => 'El código de seguridad (CVV) es incorrecto.',
+                    'cc_rejected_bad_filled_date' => 'La fecha de vencimiento es incorrecta.',
+                    'cc_rejected_call_for_authorize' => 'Debes autorizar el pago con tu banco.',
+                    'cc_rejected_card_disabled' => 'Tu tarjeta está desactivada o bloqueada.',
+                    'cc_rejected_invalid_installments' => 'Tu tarjeta no permite pagos en 1 cuota.',
+                    'cc_rejected_duplicated_payment' => 'Ya hiciste un pago idéntico recientemente.',
+                    'cc_rejected_high_risk' => 'El pago fue rechazado por seguridad (Riesgo alto).',
+                    'pending_review_manual' => 'Estamos procesando tu pago. Mercado Pago lo está revisando por seguridad.',
+                    'pending_contingency' => 'Estamos procesando tu pago. Te avisaremos en breve.',
+                ];
+
+                $errorMessage = $friendlyMessages[$payment->status_detail] ?? 'El pago fue rechazado por tu banco (' . $payment->status_detail . ').';
+
+                return response()->json([
+                    'success' => false,
+                    'status' => $payment->status,
+                    'message' => $errorMessage
+                ], 400);
+            }
 
         } catch (\Exception $e) {
             Log::error("Error en subscribeWithCard: " . $e->getMessage());
