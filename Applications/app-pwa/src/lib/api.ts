@@ -223,7 +223,9 @@ export async function createSubscription(tenantId: string, token: string, data: 
                 first_name: data.first_name, // ✅ CALIDAD 73+
                 last_name: data.last_name,   // ✅ CALIDAD 73+
                 amount: data.amount,
-                fee_payment_id: data.fee_payment_id,
+                fee_id: data.fee_id,
+                period_month: data.period_month,
+                period_year: data.period_year,
                 device_id: data.device_id // 🛡️ INDUSTRIAL
             }),
         });
@@ -253,7 +255,9 @@ export async function subscribeWithCard(tenantId: string, token: string, data: a
                 first_name: data.first_name, // ✅ CALIDAD 73+
                 last_name: data.last_name,   // ✅ CALIDAD 73+
                 amount: data.amount,
-                fee_payment_id: data.fee_payment_id,
+                fee_id: data.fee_id,
+                period_month: data.period_month,
+                period_year: data.period_year,
                 device_id: data.device_id // 🛡️ INDUSTRIAL
             }),
         });
