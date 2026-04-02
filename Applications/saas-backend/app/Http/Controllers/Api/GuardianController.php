@@ -229,6 +229,25 @@ class GuardianController extends Controller
                         'belt_rank' => $s->belt_rank ?? 'Blanco',
                         'degrees' => (int)($s->degrees ?? 0),
                         'photo' => $s->photo ? (str_starts_with($s->photo, 'http') ? $s->photo : $s3BaseUrl . $s->photo) : "https://i.pravatar.cc/150?u=" . $s->id,
+                        'today_status' => $s->attendances()->where('date', now()->format('Y-m-d'))->where('status', 'present')->exists() ? 'present' : 'absent',
+                        'payment_status' => (function() use ($s) {
+                            $now = now();
+                            $hasOverdue = $s->enrollments->contains(function($e) use ($now) {
+                                return $e->payments->contains(function($p) use ($now) {
+                                    return in_array($p->status, ['pending', 'overdue']) && $p->due_date && $p->due_date->isPast();
+                                });
+                            });
+                            
+                            $hasPendingReview = $s->enrollments->contains(function($e) {
+                                return $e->payments->contains(function($p) {
+                                    return in_array($p->status, ['pending_review', 'proof_uploaded']);
+                                });
+                            });
+                            
+                            if ($hasOverdue) return 'overdue';
+                            if ($hasPendingReview) return 'pending';
+                            return 'paid';
+                        })()
                     ];
                 })
             ];
