@@ -155,6 +155,7 @@ class MercadoPagoService
                     "items" => [[
                         "id" => "sub_" . ($data['external_reference'] ?? '0'),
                         "title" => $data['description'] ?? 'Pago de Cuota',
+                        "description" => $data['description'] ?? 'Pago de cuota mensual de servicio - ID Alumno: ' . ($data['metadata']['student_id'] ?? 'unknown'),
                         "quantity" => 1,
                         "unit_price" => (float) ($data['transaction_amount'] ?? 0),
                         "category_id" => "others",
@@ -163,7 +164,7 @@ class MercadoPagoService
                         "first_name" => $data['payer']['first_name'] ?? null,
                         "last_name" => $data['payer']['last_name'] ?? null,
                         "phone" => [
-                            "area_code" => null,
+                            "area_code" => "56", // Chile area code for improved scoring
                             "number" => (string) ($data['payer']['phone_number'] ?? null),
                         ],
                         "address" => [
