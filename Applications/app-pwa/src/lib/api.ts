@@ -277,7 +277,7 @@ export async function subscribeWithCard(tenantId: string, token: string, data: a
 export async function cancelAutoBilling(tenantId: string, token: string, studentId: number) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/mercadopago/cancel-auto-billing`, {
-            method: 'DELETE',
+            method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
