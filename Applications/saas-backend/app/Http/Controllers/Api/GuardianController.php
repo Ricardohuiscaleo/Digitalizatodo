@@ -238,10 +238,143 @@ class GuardianController extends Controller
     }
 
     /**
-     * Approve a pending payment review.
+     * Approve a pending payment review or mark as paid manually.
      */
     public function approvePayment(Request $request, $id)
     {
-        // ... (resto del controlador)
+        $tenant = app('currentTenant');
+        $guardian = Guardian::where('tenant_id', $tenant->id)->findOrFail($id);
+
+        $month = $request->input('month', now()->month);
+        $year = $request->input('year', now()->year);
+        $method = $request->input('payment_method', 'cash');
+        $notes = $request->input('notes', 'Aprobado manualmente por Staff');
+
+        // Buscar la cuota mensual estándar (billing_cycle = monthly_fixed)
+        $fee = \App\Models\Fee::where('tenant_id', $tenant->id)
+            ->where('billing_cycle', 'monthly_fixed')
+            ->first();
+
+        // Si no existe una fee configurada como mensual fija, buscamos la primera vigente
+        if (!$fee) {
+            $fee = \App\Models\Fee::where('tenant_id', $tenant->id)->first();
+        }
+
+        if (!$fee) {
+            return response()->json(['message' => 'No hay cuotas configuradas para este gimnasio.'], 422);
+        }
+
+        $count = 0;
+        foreach ($guardian->students as $student) {
+            // 1. Actualizar o Crear FeePayment
+            \App\Models\FeePayment::updateOrCreate(
+                [
+                    'tenant_id'    => $tenant->id,
+                    'guardian_id'  => $guardian->id,
+                    'student_id'   => $student->id,
+                    'fee_id'       => $fee->id,
+                    'period_month' => $month,
+                    'period_year'  => $year,
+                ],
+                [
+                    'status'         => 'paid',
+                    'payment_method' => $method,
+                    'paid_at'        => now(),
+                    'approved_by'    => $request->user()?->id,
+                    'notes'          => $notes,
+                ]
+            );
+
+            // 2. Sincronizar con tabla 'payments' (Artes Marciales)
+            \App\Models\Payment::where('tenant_id', $tenant->id)
+                ->where('student_id', $student->id)
+                ->where('status', '!=', 'approved')
+                ->whereMonth('due_date', $month)
+                ->whereYear('due_date', $year)
+                ->update([
+                    'status'         => 'approved',
+                    'paid_at'        => now(),
+                    'payment_method' => $method
+                ]);
+
+            $count++;
+        }
+
+        event(new \App\Events\FeeUpdated($tenant->slug, $guardian->id));
+
+        return response()->json([
+            'success'   => true,
+            'message'   => "Se han marcado $count mensualidades como pagadas.",
+            'guardian_id' => $guardian->id
+        ]);
+    }
+
+    /**
+     * Bulk approve payments for multiple guardians.
+     */
+    public function bulkApprove(Request $request)
+    {
+        $tenant = app('currentTenant');
+        $ids = $request->input('guardian_ids', []);
+        
+        if (empty($ids)) {
+            return response()->json(['message' => 'No se seleccionaron apoderados.'], 422);
+        }
+
+        $month = $request->input('month', now()->month);
+        $year = $request->input('year', now()->year);
+        $method = $request->input('payment_method', 'cash');
+
+        $fee = \App\Models\Fee::where('tenant_id', $tenant->id)
+            ->where('billing_cycle', 'monthly_fixed')
+            ->first() ?: \App\Models\Fee::where('tenant_id', $tenant->id)->first();
+
+        if (!$fee) {
+            return response()->json(['message' => 'No hay cuotas configuradas.'], 422);
+        }
+
+        $guardians = Guardian::where('tenant_id', $tenant->id)
+            ->whereIn('id', $ids)
+            ->get();
+
+        $totalApproved = 0;
+        foreach ($guardians as $guardian) {
+            foreach ($guardian->students as $student) {
+                \App\Models\FeePayment::updateOrCreate(
+                    [
+                        'tenant_id'    => $tenant->id,
+                        'guardian_id'  => $guardian->id,
+                        'student_id'   => $student->id,
+                        'fee_id'       => $fee->id,
+                        'period_month' => $month,
+                        'period_year'  => $year,
+                    ],
+                    [
+                        'status'         => 'paid',
+                        'payment_method' => $method,
+                        'paid_at'        => now(),
+                        'approved_by'    => $request->user()?->id,
+                    ]
+                );
+
+                \App\Models\Payment::where('tenant_id', $tenant->id)
+                    ->where('student_id', $student->id)
+                    ->whereMonth('due_date', $month)
+                    ->whereYear('due_date', $year)
+                    ->update([
+                        'status' => 'approved',
+                        'paid_at'     => now(),
+                    ]);
+
+                $totalApproved++;
+            }
+            event(new \App\Events\FeeUpdated($tenant->slug, $guardian->id));
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Se aprobaron $totalApproved pagos exitosamente."
+        ]);
     }
 }
+

@@ -181,7 +181,35 @@ class AttendanceController extends Controller
                 return response()->json(['message' => 'Estudiante no pertenece a este tenant o no existe'], 404);
             }
 
+            // Validar Horario (1h antes y 1h después de la clase)
             $isPersonalized = filter_var($request->is_personalized, FILTER_VALIDATE_BOOLEAN);
+
+            if (!$isPersonalized) {
+                $now = now();
+                $dayOfWeek = $now->dayOfWeek; // Carbon: 0 (Dom) a 6 (Sáb)
+                $schedules = $student->schedules()->where('day_of_week', $dayOfWeek)->get();
+
+                if ($schedules->isEmpty()) {
+                    return response()->json(['message' => 'No tienes clases programadas para hoy.'], 422);
+                }
+
+                $inWindow = false;
+                foreach ($schedules as $sch) {
+                    $startWindow = now()->setTimeFrom(\Carbon\Carbon::createFromFormat('H:i:s', $sch->start_time))->subHour();
+                    $endWindow = now()->setTimeFrom(\Carbon\Carbon::createFromFormat('H:i:s', $sch->end_time))->addHour();
+
+                    if ($now->between($startWindow, $endWindow)) {
+                        $inWindow = true;
+                        break;
+                    }
+                }
+
+                if (!$inWindow) {
+                    return response()->json([
+                        'message' => 'No estás en horario de clase (puedes marcar hasta 1h antes y 1h después).'
+                    ], 422);
+                }
+            }
 
             if ($isPersonalized) {
                 if ($student->consumable_credits <= 0) {
