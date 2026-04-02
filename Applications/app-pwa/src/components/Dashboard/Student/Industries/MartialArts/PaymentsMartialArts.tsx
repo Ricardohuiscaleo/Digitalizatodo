@@ -239,21 +239,40 @@ export function PaymentsMartialArts({
                                             Pagos de {group.student.name} • <span className="text-zinc-600 underline decoration-zinc-200 underline-offset-4">{group.planName}</span>
                                         </p>
                                     </div>
-                                    {group.pendingPeriods.map((p: any) => (
-                                        <RefactoredPaymentCard
-                                            key={p.id}
-                                            payment={p}
-                                            student={group.student}
-                                            primaryColor={primaryColor}
-                                            guardianEmail={guardianEmail}
-                                            slug={slug}
-                                            token={token}
-                                            isUploading={isProcessing === p.id}
-                                            handleCardSubmit={handleCardSubmit}
-                                            handleUploadProof={handleUploadProof}
-                                            bankInfo={bankInfo}
-                                        />
-                                    ))}
+                                    {hasCard ? (
+                                        <div className="bg-emerald-50 border border-emerald-100 rounded-[2rem] p-6 flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+                                                <CreditCard size={20} className="text-emerald-600" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-sm font-black text-zinc-900">✅ Cobro automático activo</p>
+                                                <p className="text-[10px] font-bold text-zinc-400 mt-0.5">
+                                                    •••• {students[0]?.mercadopago_last_four} — El sistema cobrará automáticamente cada mes
+                                                </p>
+                                                {group.pendingPeriods[0] && (
+                                                    <p className="text-[10px] font-black text-emerald-600 mt-1">
+                                                        Próximo cobro: {group.pendingPeriods[0].label} — ${Number(group.pendingPeriods[0].amount).toLocaleString('es-CL')}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        group.pendingPeriods.map((p: any) => (
+                                            <RefactoredPaymentCard
+                                                key={p.id}
+                                                payment={p}
+                                                student={group.student}
+                                                primaryColor={primaryColor}
+                                                guardianEmail={guardianEmail}
+                                                slug={slug}
+                                                token={token}
+                                                isUploading={isProcessing === p.id}
+                                                handleCardSubmit={handleCardSubmit}
+                                                handleUploadProof={handleUploadProof}
+                                                bankInfo={bankInfo}
+                                            />
+                                        ))
+                                    )}
                                 </div>
                             ));
                         })()}
