@@ -150,6 +150,7 @@ class MercadoPagoService
                 "application_fee" => (float) ($data['application_fee'] ?? 0),
                 "binary_mode" => true,
                 "statement_descriptor" => "DIGITALIZA",
+                "metadata" => $data['metadata'] ?? [],
                 "additional_info" => [
                     "items" => [[
                         "id" => "sub_" . ($data['external_reference'] ?? '0'),
@@ -163,7 +164,7 @@ class MercadoPagoService
                         "last_name" => $data['payer']['last_name'] ?? null,
                         "phone" => [
                             "area_code" => null,
-                            "number" => $data['payer']['phone_number'] ?? null,
+                            "number" => (string) ($data['payer']['phone_number'] ?? null),
                         ],
                         "address" => [
                             "zip_code" => "8320000",

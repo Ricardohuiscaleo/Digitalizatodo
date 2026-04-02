@@ -121,6 +121,9 @@ class MercadoPagoController extends Controller
 
             \MercadoPago\MercadoPagoConfig::setAccessToken($tenant->mercadopago_access_token);
 
+            // 🛡️ SHIELD: Fallback para el teléfono (MP lo exige para bajar el riesgo)
+            $payerPhone = $request->phone_number ?? $student->phone ?? $guardian?->phone ?? null;
+
             $payment = $this->mpService->createSubscriptionPayment([
                 'transaction_amount' => (float) $request->amount,
                 'token' => $request->token,
@@ -135,12 +138,18 @@ class MercadoPagoController extends Controller
                     'last_name' => $request->last_name ?? '---',
                     'identification_number' => $request->identification_number,
                     'identification_type' => $request->identification_type,
-                    'phone_number' => $request->phone_number,
+                    'phone_number' => $payerPhone, 
                 ],
                 'device_id' => $request->device_id,
                 'ip_address' => $request->ip(),
                 'external_reference' => "{$tenant->id}:{$student->id}:{$request->fee_id}:{$request->period_month}:{$request->period_year}",
                 'application_fee' => $platformFee,
+                'metadata' => [
+                    'student_id' => $student->id,
+                    'fee_id' => $request->fee_id,
+                    'tenant_id' => $tenant->id,
+                    'period' => $request->period_month . "/" . $request->period_year,
+                ]
             ]);
 
             \MercadoPago\MercadoPagoConfig::setAccessToken(env('MERCADOPAGO_ACCESS_TOKEN'));

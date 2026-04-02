@@ -5,7 +5,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:3001', 'http://localhost:3002', 'https://app.digitalizatodo.cl', 'https://admin.digitalizatodo.cl'],
+    'allowed_origins' => ['http://localhost:3001', 'http://localhost:3002', 'https://app.digitalizatodo.cl', 'https://admin.digitalizatodo.cl', 'https://mi.digitalizatodo.cl'],
 
     'allowed_origins_patterns' => [],
 

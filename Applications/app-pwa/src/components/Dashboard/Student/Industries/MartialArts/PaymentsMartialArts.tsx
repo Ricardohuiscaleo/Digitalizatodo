@@ -73,6 +73,13 @@ export function PaymentsMartialArts({
 
     const handleCardSubmit = async (formData: any, payment: any, student: any) => {
         if (!token) return;
+
+        // 🛡️ SHIELD: Validar teléfono antes de cobrar (Evita cc_rejected_high_risk)
+        const currentPhone = student.phone || null;
+        if (!currentPhone && !confirm("No hemos detectado un teléfono en tu perfil. Mercado Pago podría rechazar el pago por seguridad. ¿Deseas intentar de todas formas? (Te recomendamos actualizar tu perfil primero)")) {
+            return;
+        }
+
         setIsProcessing(payment.id);
         try {
             // 🛡️ INDUSTRIAL: Capturar Device ID para calidad 73+
