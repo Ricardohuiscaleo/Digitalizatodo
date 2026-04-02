@@ -21,18 +21,13 @@ class MercadoPagoController extends Controller
         $this->mpService = $mpService;
     }
 
-    public function initiateSubscription(Request $request, $tenantSlug)
-    {
-        // Lógica existente...
-    }
-
     public function handleWebhook(Request $request)
     {
         $data = $request->all();
         $topic = $data['type'] ?? $data['topic'] ?? null;
         $id = $data['data']['id'] ?? $data['id'] ?? null;
 
-        Log::info("Mercado Pago Webhook: " . json_encode($data));
+        Log::info("Mercado Pago Webhook Recibido: " . json_encode($data));
 
         if ($topic === 'payment' && $id) {
             try {
@@ -40,173 +35,164 @@ class MercadoPagoController extends Controller
                 $status = $payment->status;
                 $externalReference = $payment->external_reference;
 
-                Log::info("Procesando pago webhook ID {$id} | Status: {$status} | Ref: {$externalReference}");
+                // 🛡️ SEGURIDAD: Bloquear Webhooks de prueba en Producción
+                if (env('MERCADOPAGO_MODE') === 'production' && $payment->live_mode === false) {
+                    Log::warning("⚠️ Webhook Ignorado: Intento de pago Sandbox en Producción ID {$id}");
+                    return response()->json(['status' => 'ignored_test'], 200);
+                }
 
-                // 🔍 AUTO-RESCATE: Si no hay registro previo, lo creamos desde la referencia externa
+                $feePayment = null;
+
                 if ($externalReference && str_contains($externalReference, ':')) {
                     $parts = explode(':', $externalReference);
                     if (count($parts) === 5) {
-                        $tId = $parts[0];
-                        $sId = $parts[1];
-                        $fId = $parts[2];
-                        $pM = $parts[3];
-                        $pY = $parts[4];
-
-                        $feePayment = FeePayment::updateOrCreate(
-                            [
-                                'tenant_id' => $tId,
-                                'student_id' => $sId,
-                                'fee_id' => $fId,
-                                'period_month' => $pM,
-                                'period_year' => $pY
-                            ],
-                            ['payment_id' => $id]
-                        );
-
-                        if ($status === 'approved') {
-                            // ⚠️ Enum safety: Verificar si la DB soporta 'mercadopago'
-                            $updateData = [
-                                'status' => 'paid',
-                                'paid_at' => now(),
-                            ];
-                            
-                            // Solo intentar guardar mercadopago si no rompe la DB (basado en el describe previo)
-                            // El usuario debe correr el ALTER TABLE para que esto no se pierda.
-                            try {
-                                $feePayment->update(array_merge($updateData, ['payment_method' => 'mercadopago']));
-                            } catch (\Exception $e) {
-                                $feePayment->update($updateData); 
-                            }
-
-                            // Activar alumno
-                            $student = Student::find($sId);
-                            if ($student) {
-                                $student->update(['status' => 'active']);
-                            }
-                            
-                            Log::info("Pago y Alumno {$sId} activados vía Auto-Rescate Webhook.");
-                        }
+                        [$tId, $sId, $fId, $pM, $pY] = $parts;
+                        $feePayment = FeePayment::where('tenant_id', $tId)
+                            ->where('student_id', $sId)
+                            ->where('fee_id', $fId)
+                            ->where('period_month', $pM)
+                            ->where('period_year', $pY)
+                            ->first();
                     }
                 }
-                
-                return response()->json(['status' => 'ok'], 200);
+
+                if (!$feePayment) {
+                    $feePayment = FeePayment::where('payment_id', (string) $id)->first();
+                }
+
+                if ($feePayment && ($status === 'approved' || $status === 'authorized')) {
+                    $feePayment->update([
+                        'status' => 'paid',
+                        'paid_at' => $feePayment->paid_at ?? now(),
+                        'payment_method' => 'mercadopago',
+                        'payment_id' => (string) $id,
+                        'payment_amount' => $payment->transaction_amount,
+                    ]);
+
+                    $student = Student::find($feePayment->student_id);
+                    if ($student)
+                        $student->update(['status' => 'active']);
+
+                    Log::info("Cuota {$feePayment->id} pagada vía Webhook.");
+                }
+
+                return response()->json(['status' => 'ok']);
 
             } catch (\Exception $e) {
-                Log::error("Error procesando webhook: " . $e->getMessage());
+                Log::error("Error Webhook: " . $e->getMessage());
                 return response()->json(['error' => $e->getMessage()], 500);
             }
         }
 
-        return response()->json(['status' => 'ok'], 200);
+        return response()->json(['status' => 'ok']);
     }
 
     public function subscribeWithCard(Request $request, $tenantSlug)
     {
         $tenant = Tenant::where('slug', $tenantSlug)->firstOrFail();
         $student = Student::findOrFail($request->student_id);
+        $platformFee = ($request->amount * (float) env('MERCADOPAGO_PLATFORM_FEE', 1.81)) / 100;
 
         try {
             DB::beginTransaction();
 
-            // Lógica de cliente y tarjeta...
             $customer = $this->mpService->getOrCreateCustomer($student->email, $student->name);
-            
-            if (!$customer) {
-                 return response()->json(['success' => false, 'message' => 'No se pudo vincular el cliente en Mercado Pago.'], 500);
-            }
+            if (!$customer)
+                throw new \Exception("Error al vincular cliente en Mercado Pago.");
 
-            $this->mpService->addCardToCustomer($customer->id, $request->token);
+            // ✅ CORRECCIÓN: Asignar variable $card
+            $card = $this->mpService->addCardToCustomer($customer->id, $request->token);
 
-            // Obtener el ID del tutor (guardian) para cumplir con la integridad de la DB
-            $guardianId = $student->guardians()->wherePivot('primary', true)->first()?->id 
-                        ?? $student->guardians()->first()?->id;
+            $guardianId = $student->guardians()->wherePivot('primary', true)->first()?->id
+                ?? $student->guardians()->first()?->id;
 
             if (!$guardianId) {
-                return response()->json([
-                    'success' => false, 
-                    'message' => "El alumno no tiene un tutor (Guardian) asignado. Por favor, asigne un tutor en el perfil del alumno antes de pagar."
-                ], 422);
+                return response()->json(['success' => false, 'message' => "El alumno no tiene un tutor asignado."], 422);
             }
 
-            // Crear registro de pago PENDIENTE
             $feePayment = FeePayment::updateOrCreate(
-                [
-                    'fee_id' => $request->fee_id,
-                    'student_id' => $student->id,
-                    'period_month' => $request->period_month,
-                    'period_year' => $request->period_year,
-                ],
-                [
-                    'tenant_id' => $tenant->id,
-                    'guardian_id' => $guardianId, // ✅ OBLIGATORIO en la DB
-                    'status' => 'pending',
-                ]
+                ['fee_id' => $request->fee_id, 'student_id' => $student->id, 'period_month' => $request->period_month, 'period_year' => $request->period_year],
+                ['tenant_id' => $tenant->id, 'guardian_id' => $guardianId, 'status' => 'pending']
             );
 
-            // 🛡️ INDUSTRIAL: Incluir device_id, payer.id e items detallados para calidad 73+
-            // Fallback: Si el alumno no tiene email, usamos el del tutor (Obligatorio para MP)
             $guardian = Guardian::find($guardianId);
-            $payerEmail = $student->email ?? $guardian?->email ?? $request->email;
+            $payerEmail = $student->email ?? $guardian?->email ?? $request->payer_email;
 
-            // Sanitizar RUT (solo números)
-            $idNumber = preg_replace('/[^0-9Kk]/', '', $request->identification_number);
+            \MercadoPago\MercadoPagoConfig::setAccessToken($tenant->mercadopago_access_token);
 
             $payment = $this->mpService->createSubscriptionPayment([
-                'transaction_amount' => (float)$request->amount,
+                'transaction_amount' => (float) $request->amount,
                 'token' => $request->token,
-                'description' => "Pago de Cuota - " . $student->name,
+                'description' => "Cuota " . $request->period_month . "/" . $request->period_year . " - " . $student->name,
                 'installments' => 1,
                 'payment_method_id' => $request->payment_method_id,
-                'issuer_id' => $request->issuer_id, // ✅ CALIDAD 73+
+                'issuer_id' => $request->issuer_id,
                 'payer' => [
                     'email' => $payerEmail,
-                    'id'    => $customer->id,  // ✅ OBLIGATORIO para calidad 73+
-                    'first_name' => $request->first_name, // ✅ CALIDAD 73+
-                    'last_name'  => $request->last_name,  // ✅ CALIDAD 73+
-                    'identification_number' => $idNumber, // ✅ CALIDAD 73+
-                    'identification_type'   => $request->identification_type ?? 'RUT',
-                    'phone_number'          => $request->phone_number,
+                    'id' => $customer->id,
+                    'first_name' => $request->first_name ?? $student->name,
+                    'last_name' => $request->last_name ?? '---',
                 ],
-                'device_id' => $request->device_id, // ✅ SEGURIDAD para pagos reales
-                'items' => [
-                    [
-                        'id' => $request->fee_id,
-                        'title' => "Cuota Mensual - " . $student->name,
-                        'description' => "Pago de mensualidad industrializada para el Alumno " . $student->id,
-                        'category_id' => 'services',
-                        'quantity' => 1,
-                        'unit_price' => (float)$request->amount
-                    ]
-                ],
-                'external_reference' => "{$tenant->id}:{$student->id}:{$request->fee_id}:{$request->period_month}:{$request->period_year}"
+                'device_id' => $request->device_id,
+                'external_reference' => "{$tenant->id}:{$student->id}:{$request->fee_id}:{$request->period_month}:{$request->period_year}",
+                'application_fee' => $platformFee,
             ]);
 
-            $feePayment->update(['payment_id' => $payment->id]);
+            \MercadoPago\MercadoPagoConfig::setAccessToken(env('MERCADOPAGO_ACCESS_TOKEN'));
 
-            if ($payment->status === 'approved') {
-                $feePayment->update(['status' => 'paid', 'paid_at' => now()]);
-                $student->update(['status' => 'active']);
+            $feePayment->update(['payment_id' => (string) $payment->id]);
+
+            if ($payment->status === 'approved' || $payment->status === 'authorized') {
+                $feePayment->update([
+                    'status' => 'paid',
+                    'paid_at' => now(),
+                    'payment_method' => 'mercadopago',
+                    'payment_amount' => $request->amount,
+                ]);
+
+                $student->update([
+                    'status' => 'active',
+                    'mercadopago_customer_id' => $customer->id,
+                    'mercadopago_card_id' => $card->id,
+                    'mercadopago_last_four' => $card->last_four_digits ?? null,
+                    'mercadopago_payment_method_id' => $request->payment_method_id,
+                ]);
+
                 DB::commit();
-                return response()->json(['success' => true, 'message' => 'Pago aprobado.']);
+                return response()->json(['success' => true, 'status' => 'approved']);
             }
 
             if ($payment->status === 'in_process') {
-                // ✅ RESCATE: Guardamos el registro aunque esté en revisión
-                DB::commit(); 
+                DB::commit();
                 return response()->json([
                     'success' => true,
                     'status' => 'in_process',
-                    'message' => 'Estamos procesando tu pago. Ricardo se activará en cuanto MP apruebe la revisión.'
-                ], 200); // 200 OK — NO BLOQUEAMOS NADA
+                    'message' => 'Pago en revisión. Se activará automáticamente al ser aprobado.'
+                ]);
             }
 
-            DB::rollBack();
-            return response()->json(['success' => false, 'message' => 'Pago rechazado.'], 400);
+            throw new \Exception("Pago rechazado: " . ($payment->status_detail ?? $payment->status));
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error: " . $e->getMessage());
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            Log::error("Error Pago: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
+    }
+
+    public function cancelAutoBilling(Request $request, $tenantSlug)
+    {
+        $student = Student::where('id', $request->student_id)
+            ->where('tenant_id', Tenant::where('slug', $tenantSlug)->value('id'))
+            ->firstOrFail();
+
+        $student->update([
+            'mercadopago_customer_id' => null,
+            'mercadopago_card_id' => null,
+            'mercadopago_last_four' => null,
+            'mercadopago_payment_method_id' => null,
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Cobro automático desactivado.']);
     }
 }
