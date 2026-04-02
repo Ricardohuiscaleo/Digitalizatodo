@@ -92,8 +92,8 @@ export function PaymentsMartialArts({
                 email: student.email || guardianEmail,
                 first_name: firstName, // ✅ CALIDAD 73+
                 last_name: lastName,   // ✅ CALIDAD 73+
-                identification_number: formData.cardholder?.identification?.number || student.rut || null, // ✅ CALIDAD 73+
-                identification_type: formData.cardholder?.identification?.type || 'RUT', // ✅ CALIDAD 73+
+                identification_number: formData.payer?.identification?.number || formData.cardholder?.identification?.number || student.rut || null,
+                identification_type: formData.payer?.identification?.type || formData.cardholder?.identification?.type || 'RUT',
                 phone_number: student.phone || null, // ✅ CALIDAD 73+
                 amount: payment.amount,
                 fee_id: payment.fee_id,
