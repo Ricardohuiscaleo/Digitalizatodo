@@ -109,6 +109,10 @@ class MercadoPagoController extends Controller
 
             $this->mpService->addCardToCustomer($customer->id, $request->token);
 
+            // Obtener el ID del tutor (guardian) para cumplir con la integridad de la DB
+            $guardianId = $student->guardians()->wherePivot('primary', true)->first()?->id 
+                        ?? $student->guardians()->first()?->id;
+
             // Crear registro de pago PENDIENTE
             $feePayment = FeePayment::updateOrCreate(
                 [
@@ -119,6 +123,7 @@ class MercadoPagoController extends Controller
                 ],
                 [
                     'tenant_id' => $tenant->id,
+                    'guardian_id' => $guardianId, // ✅ OBLIGATORIO en la DB
                     'status' => 'pending',
                 ]
             );
