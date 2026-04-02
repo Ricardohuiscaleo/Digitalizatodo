@@ -262,7 +262,34 @@ class GuardianController extends Controller
     public function approvePayment(Request $request, $id)
     {
         $tenant = app('currentTenant');
-        $guardian = Guardian::where('tenant_id', $tenant->id)->findOrFail($id);
+        
+        Log::debug("[DEBUG-APPROVE] Iniciando aprobación de pago", [
+            'tenant_id' => $tenant->id,
+            'tenant_slug' => $tenant->slug,
+            'guardian_id' => $id,
+            'user' => $request->user()?->email
+        ]);
+
+        $guardian = Guardian::where('tenant_id', $tenant->id)->find($id);
+
+        if (!$guardian) {
+            Log::warning("[DEBUG-APPROVE] Guardian no encontrado para el tenant", [
+                'tenant_id' => $tenant->id,
+                'guardian_id' => $id
+            ]);
+            
+            // Si no se encuentra, buscar por ID global solo para diagnóstico (sin exponer datos)
+            $globalGuardian = Guardian::find($id);
+            if ($globalGuardian) {
+                Log::warning("[DEBUG-APPROVE] Guardian existe pero pertenece a otro tenant", [
+                    'actual_tenant_id' => $globalGuardian->tenant_id
+                ]);
+            } else {
+                Log::warning("[DEBUG-APPROVE] Guardian no existe en la base de datos (ID $id)");
+            }
+
+            return response()->json(['message' => 'No se encontró el apoderado especificado para este tenant'], 404);
+        }
 
         $month = $request->input('month', now()->month);
         $year = $request->input('year', now()->year);
