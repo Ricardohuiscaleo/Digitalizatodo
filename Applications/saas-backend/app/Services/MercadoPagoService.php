@@ -140,6 +140,11 @@ class MercadoPagoService
                         'type' => $data['payer']['identification_type'] ?? 'RUT',
                         'number' => $data['payer']['identification_number'] ?? null,
                     ],
+                    'address' => [
+                        'zip_code' => '8320000',
+                        'street_name' => 'Alameda',
+                        'street_number' => 100,
+                    ],
                 ], isset($data['payer']['id']) ? ['id' => $data['payer']['id']] : []),
                 "external_reference" => $data['external_reference'] ?? null,
                 "application_fee" => (float) ($data['application_fee'] ?? 0),
@@ -149,7 +154,7 @@ class MercadoPagoService
                         "title" => $data['description'] ?? 'Pago de Cuota',
                         "quantity" => 1,
                         "unit_price" => (float) ($data['transaction_amount'] ?? 0),
-                        "category_id" => "learning",
+                        "category_id" => "others",
                     ]],
                     "payer" => [
                         "first_name" => $data['payer']['first_name'] ?? null,
@@ -158,7 +163,12 @@ class MercadoPagoService
                             "area_code" => null,
                             "number" => $data['payer']['phone_number'] ?? null,
                         ],
-                        "address" => null,
+                        "address" => [
+                            "zip_code" => "8320000",
+                            "street_name" => "Alameda",
+                            "street_number" => 100
+                        ],
+                        "registration_date" => now()->toIso8601String(),
                     ]
                 ]
             ];
