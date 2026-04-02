@@ -180,6 +180,9 @@ class MercadoPagoService
 
             $payment = $client->create($paymentRequest, $options);
 
+            // 🔍 SUPER LOG DE EVIDENCIA: Esto guardará la respuesta REAL de Mercado Pago
+            Log::debug("RAW MP RESPONSE: " . json_encode($payment));
+
             if (env('MERCADOPAGO_MODE') === 'production' && $payment->live_mode === false) {
                 throw new Exception("Error: No se permiten tarjetas de prueba en este entorno real.");
             }
