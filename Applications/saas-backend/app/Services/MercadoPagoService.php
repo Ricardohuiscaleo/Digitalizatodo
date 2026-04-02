@@ -176,16 +176,21 @@ class MercadoPagoService
                 "token" => $data['token'] ?? null,
                 "description" => $data['description'] ?? 'Pago de Cuota',
                 "installments" => (int) ($data['installments'] ?? 1),
-                "payment_method_id" => $data['payment_method_id'] ?? null,
-                "issuer_id" => $data['issuer_id'] ?? null, // ✅ CALIDAD 73+
-                "statement_descriptor" => "DIGITALIZATODO", // ✅ CALIDAD 73+ (Aparece en el resumen de tarjeta)
-                "payer" => [
-                    "email" => $data['payer']['email'] ?? null,
-                    "first_name" => $data['payer']['first_name'] ?? null, // ✅ CALIDAD 73+
-                    "last_name" => $data['payer']['last_name'] ?? null,   // ✅ CALIDAD 73+
-                    // Si tenemos el payer.id del cliente, lo incluimos para calidad 73+
-                    "id" => $data['payer']['id'] ?? null,
-                ],
+                'payment_method_id' => $data['payment_method_id'],
+                'issuer_id' => $data['issuer_id'] ?? null, // ✅ CALIDAD 73+
+                'payer' => array_merge([
+                    'email' => $data['payer']['email'],
+                    'first_name' => $data['payer']['first_name'] ?? null,
+                    'last_name'  => $data['payer']['last_name'] ?? null,
+                    'phone'      => [
+                        'area_code' => $data['payer']['area_code'] ?? null,
+                        'number'    => $data['payer']['phone_number'] ?? null,
+                    ],
+                    'identification' => [
+                        'type'   => $data['payer']['identification_type'] ?? 'RUT',
+                        'number' => $data['payer']['identification_number'] ?? null,
+                    ],
+                ], isset($data['payer']['id']) ? ['id' => $data['payer']['id']] : []),
                 "items" => $data['items'] ?? [], // ✅ INDUSTRIAL: Detalle de productos/servicios
                 "external_reference" => $data['external_reference'] ?? null,
             ];

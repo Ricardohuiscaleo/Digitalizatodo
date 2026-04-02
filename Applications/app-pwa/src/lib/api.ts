@@ -222,6 +222,9 @@ export async function createSubscription(tenantId: string, token: string, data: 
                 email: data.email,
                 first_name: data.first_name, // ✅ CALIDAD 73+
                 last_name: data.last_name,   // ✅ CALIDAD 73+
+                identification_number: data.identification_number, // ✅ CALIDAD 73+
+                identification_type: data.identification_type,     // ✅ CALIDAD 73+
+                phone_number: data.phone_number,                   // ✅ CALIDAD 73+
                 amount: data.amount,
                 fee_id: data.fee_id,
                 period_month: data.period_month,
@@ -254,6 +257,9 @@ export async function subscribeWithCard(tenantId: string, token: string, data: a
                 email: data.email,
                 first_name: data.first_name, // ✅ CALIDAD 73+
                 last_name: data.last_name,   // ✅ CALIDAD 73+
+                identification_number: data.identification_number, // ✅ CALIDAD 73+
+                identification_type: data.identification_type,     // ✅ CALIDAD 73+
+                phone_number: data.phone_number,                   // ✅ CALIDAD 73+
                 amount: data.amount,
                 fee_id: data.fee_id,
                 period_month: data.period_month,

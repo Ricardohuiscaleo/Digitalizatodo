@@ -64,11 +64,19 @@ class MercadoPagoController extends Controller
                         );
 
                         if ($status === 'approved') {
-                            $feePayment->update([
+                            // ⚠️ Enum safety: Verificar si la DB soporta 'mercadopago'
+                            $updateData = [
                                 'status' => 'paid',
-                                'payment_method' => 'mercadopago',
                                 'paid_at' => now(),
-                            ]);
+                            ];
+                            
+                            // Solo intentar guardar mercadopago si no rompe la DB (basado en el describe previo)
+                            // El usuario debe correr el ALTER TABLE para que esto no se pierda.
+                            try {
+                                $feePayment->update(array_merge($updateData, ['payment_method' => 'mercadopago']));
+                            } catch (\Exception $e) {
+                                $feePayment->update($updateData); 
+                            }
 
                             // Activar alumno
                             $student = Student::find($sId);
@@ -113,6 +121,13 @@ class MercadoPagoController extends Controller
             $guardianId = $student->guardians()->wherePivot('primary', true)->first()?->id 
                         ?? $student->guardians()->first()?->id;
 
+            if (!$guardianId) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => "El alumno no tiene un tutor (Guardian) asignado. Por favor, asigne un tutor en el perfil del alumno antes de pagar."
+                ], 422);
+            }
+
             // Crear registro de pago PENDIENTE
             $feePayment = FeePayment::updateOrCreate(
                 [
@@ -141,6 +156,9 @@ class MercadoPagoController extends Controller
                     'id'    => $customer->id,  // ✅ OBLIGATORIO para calidad 73+
                     'first_name' => $request->first_name, // ✅ CALIDAD 73+
                     'last_name'  => $request->last_name,  // ✅ CALIDAD 73+
+                    'identification_number' => $request->identification_number, // ✅ CALIDAD 73+
+                    'identification_type'   => $request->identification_type,   // ✅ CALIDAD 73+
+                    'phone_number'          => $request->phone_number,          // ✅ CALIDAD 73+
                 ],
                 'device_id' => $request->device_id, // ✅ SEGURIDAD para pagos reales
                 'items' => [
