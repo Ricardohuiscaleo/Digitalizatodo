@@ -118,10 +118,13 @@ export function PaymentsMartialArts({
     };
 
     const [cancellingCard, setCancellingCard] = useState(false);
+    const [confirmCancel, setConfirmCancel] = useState(false);
 
     const handleCancelAutoBilling = async (studentId: number) => {
-        if (!token || !confirm('¿Desactivar el cobro automático? Tendrás que pagar manualmente cada mes.')) return;
+        if (!token) return;
+        if (!confirmCancel) { setConfirmCancel(true); return; }
         setCancellingCard(true);
+        setConfirmCancel(false);
         try {
             const res = await cancelAutoBilling(slug, token, studentId);
             if (res?.success) window.location.reload();
@@ -272,9 +275,13 @@ export function PaymentsMartialArts({
                                             <button
                                                 onClick={() => handleCancelAutoBilling(group.student.id)}
                                                 disabled={cancellingCard}
-                                                className="text-[9px] font-black uppercase text-rose-400 border border-rose-200 px-3 py-2 rounded-xl active:scale-95 transition-all disabled:opacity-40 shrink-0"
+                                                className={`text-[9px] font-black uppercase px-3 py-2 rounded-xl active:scale-95 transition-all disabled:opacity-40 shrink-0 ${
+                                                    confirmCancel
+                                                        ? 'bg-rose-500 text-white border border-rose-500'
+                                                        : 'text-rose-400 border border-rose-200'
+                                                }`}
                                             >
-                                                {cancellingCard ? '...' : 'Cancelar'}
+                                                {cancellingCard ? '...' : confirmCancel ? '¿Confirmar?' : 'Cancelar'}
                                             </button>
                                         </div>
                                     ) : (
