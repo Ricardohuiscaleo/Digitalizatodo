@@ -86,17 +86,14 @@ class GuardianController extends Controller
 
             $s3BaseUrl = 'https://' . config('services.s3.bucket', 'digitalizatodo') . '.s3.' . config('services.s3.region', 'us-east-1') . '.amazonaws.com/';
 
-            $activePayments
-            
-            // Recolectamos FeePayments (Prioridad Alta)
-            $feePayments = AppModelsFeePayment::whereIn("student_id", $students->pluck("id"))->where("status", "pending")->get();
+            $activePeriods = [];
+            $tempPayments = [];
 
+            // Recolectamos FeePayments (Prioridad Alta)
+            $feePayments = \App\Models\FeePayment::whereIn("student_id", $students->pluck("id"))
                 ->where('tenant_id', $tenantId)
                 ->with(['fee', 'student'])
                 ->get();
-
-            $activePeriods 
-            $tempPayments
 
             foreach ($feePayments as $fp) {
                 if (!$fp->student) continue; // Blindaje Null
@@ -222,7 +219,7 @@ class GuardianController extends Controller
                 'photo' => $guardian->photo ? (str_starts_with($guardian->photo, 'http') ? $guardian->photo : $s3BaseUrl . $guardian->photo) : "https://i.pravatar.cc/150?u=" . $guardian->id,
                 'status' => $status,
                 'total_due' => round($totalDue),
-                'payments' => $activePayments, 'fees' => $activePayments, 'fees' => $activePayments,
+                'payments' => $activePayments,
                 'pricing' => $pricing,
                 'enrolledStudents' => $students->map(function ($s) use ($s3BaseUrl) {
                     return [
