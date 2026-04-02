@@ -92,6 +92,7 @@ class MercadoPagoController extends Controller
         $tenant = Tenant::where('slug', $tenantSlug)->firstOrFail();
         $student = Student::findOrFail($request->student_id);
         $platformFee = ($request->amount * (float) env('MERCADOPAGO_PLATFORM_FEE', 1.81)) / 100;
+        $card = null;
 
         try {
             DB::beginTransaction();
