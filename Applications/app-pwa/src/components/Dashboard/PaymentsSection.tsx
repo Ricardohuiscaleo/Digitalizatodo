@@ -21,7 +21,7 @@ interface PaymentsSectionProps {
     setExpandedPayerId: (id: string | null) => void;
     branding: any;
     formatMoney: (n: number) => string;
-    handlePaymentApprove: (id: string) => void;
+    handlePaymentApprove: (payer: any) => void;
     handleLongPressStart: (id: string) => void;
     handleLongPressEnd: () => void;
     setBubbleModalPayer: (p: any) => void;
@@ -333,7 +333,7 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <button onClick={() => handlePaymentApprove(payer.id)}
+                                        <button onClick={() => handlePaymentApprove(payer)}
                                             style={{ backgroundColor: branding?.primaryColor || '#6366f1' }}
                                             className="px-4 py-2 rounded-xl text-white text-[9px] font-black uppercase shadow-md active:scale-95 transition-all"
                                         >{stats.hasReview ? 'Aprobar' : 'Pagar'}</button>

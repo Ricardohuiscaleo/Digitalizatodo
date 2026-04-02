@@ -11,7 +11,7 @@ interface BubblePaymentModalProps {
     primaryColor: string;
     getPayerRealStats: (p: any) => any;
     onClose: () => void;
-    onApprove: (id: string) => void;
+    onApprove: (payer: any) => void;
     onViewProof: (url: string) => void;
     isDark?: boolean;
     industry?: string;
@@ -188,7 +188,7 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
                             </p>
                         )}
                         <button
-                            onClick={() => onApprove(payer.id)}
+                            onClick={() => onApprove(payer)}
                             className="w-full h-14 rounded-2xl text-white font-black text-[12px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg"
                             style={{ backgroundColor: isReview ? '#f59e0b' : primaryColor }}
                         >
