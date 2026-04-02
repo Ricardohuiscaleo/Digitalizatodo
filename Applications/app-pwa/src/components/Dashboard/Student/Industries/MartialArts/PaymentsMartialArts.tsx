@@ -66,7 +66,7 @@ export function PaymentsMartialArts({
     const nextPendingPeriods = (myFees || []).flatMap(f => {
         const first = (f.periods || []).find((p: any) => p.status === 'pending');
         if (!first) return [];
-        return [{ ...first, amount: f.fee?.amount || 0, fee_id: f.fee?.id, plan_id: f.fee?.plan_id, title: f.fee?.title || 'Mensualidad', student_id: f.student_id }];
+        return [{ ...first, amount: first.amount || f.fee?.amount || 0, fee_id: f.fee?.id, plan_id: f.fee?.plan_id, title: f.fee?.title || 'Mensualidad', student_id: f.student_id }];
     });
     const overdueCount = nextPendingPeriods.filter(p => new Date(p.due_date) < new Date()).length;
     const totalPendingAmount = nextPendingPeriods.reduce((sum, p) => sum + Number(p.amount || 0), 0);
