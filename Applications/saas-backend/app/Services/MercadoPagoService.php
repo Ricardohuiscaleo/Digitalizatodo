@@ -167,9 +167,9 @@ class MercadoPagoService
                             "number" => (string) ($data['payer']['phone_number'] ?? null),
                         ],
                         "address" => [
-                            "zip_code" => "8320000",
-                            "street_name" => "Alameda",
-                            "street_number" => 100
+                            "zip_code" => $data['payer']['address']['zip_code'] ?? "8320000",
+                            "street_name" => $data['payer']['address']['street_name'] ?? "Alameda",
+                            "street_number" => (int) ($data['payer']['address']['street_number'] ?? 100)
                         ],
                         "registration_date" => now()->toIso8601String(),
                     ]

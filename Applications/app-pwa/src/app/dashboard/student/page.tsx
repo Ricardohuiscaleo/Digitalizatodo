@@ -352,6 +352,7 @@ export default function StudentDashboard() {
                         vocab={vocab} 
                         onBuyPack={handleBuyPack}
                         guardianEmail={common.data?.guardian?.email} 
+                        guardianPhone={common.data?.guardian?.phone}
                         token={token}
                         slug={slug || ""}
                     />

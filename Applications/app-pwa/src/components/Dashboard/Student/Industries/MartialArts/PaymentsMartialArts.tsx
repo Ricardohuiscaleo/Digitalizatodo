@@ -37,6 +37,7 @@ interface PaymentsMartialArtsProps {
     vocab?: any;
     onBuyPack?: any;
     guardianEmail?: string;
+    guardianPhone?: string;
     handleUploadProof: (id: string, file: File) => void;
     primaryColor: string;
     paymentHistory: any[];
@@ -52,6 +53,7 @@ export function PaymentsMartialArts({
     slug,
     bankInfo,
     guardianEmail,
+    guardianPhone,
     handleUploadProof,
     primaryColor,
     paymentHistory
@@ -75,7 +77,7 @@ export function PaymentsMartialArts({
         if (!token) return;
 
         // 🛡️ SHIELD: Validar teléfono antes de cobrar (Evita cc_rejected_high_risk)
-        const currentPhone = student.phone || null;
+        const currentPhone = student.phone || guardianPhone || null;
         if (!currentPhone && !confirm("No hemos detectado un teléfono en tu perfil. Mercado Pago podría rechazar el pago por seguridad. ¿Deseas intentar de todas formas? (Te recomendamos actualizar tu perfil primero)")) {
             return;
         }
@@ -101,7 +103,7 @@ export function PaymentsMartialArts({
                 last_name: lastName,   // ✅ CALIDAD 73+
                 identification_number: formData.payer?.identification?.number || formData.cardholder?.identification?.number || student.rut || null,
                 identification_type: formData.payer?.identification?.type || formData.cardholder?.identification?.type || 'RUT',
-                phone_number: student.phone || null, // ✅ CALIDAD 73+
+                phone_number: student.phone || guardianPhone || null, // ✅ CALIDAD 73+ (Fallback Guardian)
                 amount: payment.amount,
                 fee_id: payment.fee_id,
                 period_month: payment.month,

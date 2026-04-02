@@ -133,12 +133,15 @@ class MercadoPagoController extends Controller
                 'issuer_id' => $request->issuer_id,
                 'payer' => [
                     'email' => $payerEmail,
-                    'id' => $customer->id,
-                    'first_name' => $request->first_name ?? $student->name,
-                    'last_name' => $request->last_name ?? '---',
+                    'first_name' => $request->first_name ?? explode(' ', $student->name)[0],
+                    'last_name' => $request->last_name ?? (explode(' ', $student->name)[1] ?? $student->name),
                     'identification_number' => $request->identification_number,
-                    'identification_type' => $request->identification_type,
-                    'phone_number' => $payerPhone, 
+                    'phone_number' => $payerPhone,
+                    'address' => [
+                        'street_name' => $tenant->address ?? 'Alameda',
+                        'street_number' => 100,
+                        'zip_code' => '8320000',
+                    ]
                 ],
                 'device_id' => $request->device_id,
                 'ip_address' => $request->ip(),
