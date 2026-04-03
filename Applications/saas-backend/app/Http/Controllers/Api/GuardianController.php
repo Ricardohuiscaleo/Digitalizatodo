@@ -100,18 +100,19 @@ class GuardianController extends Controller
                 if (!$fp->student) continue; // Blindaje Null
                 
                 $pStatus = $fp->status === 'review' ? 'review' : $fp->status;
-                $amount = (float)($fp->fee?->amount ?? 0);
-                
+
                 // Obtener el plan real del alumno desde enrollment (fuente de verdad)
                 $activeEnrollment = $fp->student->enrollments->where('status', 'active')->first();
                 $realPlanName = $activeEnrollment?->plan?->name ?? 'Mensualidad';
                 $planBillingCycle = $activeEnrollment?->plan?->billing_cycle ?? 'monthly_from_enrollment';
-                
-                // Si el monto es 0, intentar sacar el precio del plan
-                if ($amount <= 0) {
-                    $amount = (float)($activeEnrollment?->plan?->price ?? 0);
-                }
-                
+
+                // Prioridad de amount:
+                // 1. payment_amount: lo que el alumno REALMENTE pagó (corregido en DB)
+                // 2. Precio del plan activo del alumno (fuente de verdad de cuánto debería pagar)
+                // 3. fee->amount: fallback (puede ser erróneo si el fee era de otro ciclo)
+                $enrollmentPrice = (float)($activeEnrollment?->custom_price ?? $activeEnrollment?->plan?->price ?? 0);
+                $amount = (float)($fp->payment_amount ?? ($enrollmentPrice > 0 ? $enrollmentPrice : $fp->fee?->amount) ?? 0);
+
                 if ($amount <= 0) $amount = 45000; // Fallback extremo
 
                 // Marcar el período activo del fee
