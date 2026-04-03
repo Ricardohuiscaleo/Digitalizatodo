@@ -310,31 +310,43 @@ export default function CheckinPage() {
     };
 
     return (
-        <div className={`min-h-screen transition-colors duration-700 overflow-hidden flex flex-col ${
-            detectedStudent ? (isDebtor ? 'bg-rose-600' : 'bg-emerald-600') : 'bg-[#09090b]'
+        <div className={`min-h-screen transition-all duration-1000 overflow-hidden flex flex-col relative ${
+            detectedStudent ? (isDebtor ? 'bg-rose-600' : 'bg-emerald-600') : 'bg-[#050505]'
         }`}>
+            {/* Fondo Atmosférico (Marca de Agua) */}
+            {!detectedStudent && (
+                <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
+                    <img 
+                        src="/integracao/2.png" 
+                        className="w-[80vw] h-[80vw] object-contain animate-spin-extra-slow" 
+                        style={{ filter: 'grayscale(1) invert(1)' }}
+                        alt="" 
+                    />
+                </div>
+            )}
+
             {/* Header */}
-            <div className={`flex items-center justify-between px-10 py-6 border-b transition-colors ${
+            <div className={`flex items-center justify-between px-10 py-1 border-b transition-colors relative z-50 ${
                 detectedStudent ? 'border-white/10 bg-black/10' : 'border-zinc-800 bg-zinc-900/10'
             }`}>
                 <div className="flex items-center gap-6">
                     <button onClick={() => window.location.href = '/dashboard'} className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white">
                         <ArrowLeft size={24} />
                     </button>
-                    <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-2xl overflow-hidden bg-white/10 p-1">
-                            <img src={branding?.logo || "/icon.webp"} className="w-full h-full object-cover rounded-xl" alt="" />
-                        </div>
-                        <div>
-                            <h1 className="text-xl font-black text-white uppercase tracking-tighter leading-none">{branding?.name}</h1>
-                            <p className="text-[10px] font-black text-white/50 uppercase tracking-widest mt-1.5 flex items-center gap-2">
-                                <Monitor size={12} /> Terminal Punto de Marcación
-                            </p>
+                    <div className="flex items-center gap-6">
+                        <div className="flex flex-col">
+                            <h1 className="text-2xl font-black text-white uppercase tracking-tighter leading-none flex items-center gap-4">
+                                <div className="h-16 overflow-hidden flex items-center">
+                                    <img src="/integracao/4.png" className="h-[14rem] w-auto object-contain" alt="" />
+                                </div>
+                                <span className="opacity-40 font-thin">|</span>
+                                {branding?.name}
+                            </h1>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-8">
+                <div className="flex items-center gap-10">
                     <div className="text-right">
                         <p className="text-3xl font-black text-white tabular-nums tracking-tighter leading-none">
                             {now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
@@ -354,6 +366,7 @@ export default function CheckinPage() {
                     </div>
                 </div>
             </div>
+
 
             {/* Main */}
             <div className="flex-1 flex items-center justify-center p-10">
@@ -520,18 +533,23 @@ export default function CheckinPage() {
                                 })()}
                             </div>
                         </div>
-                        <div className="flex flex-col items-center">
-                            <div className="relative p-12 bg-white rounded-[4rem] border-[16px] border-zinc-900 overflow-hidden">
+                        <div className="flex flex-col items-center relative z-30">
+                            <div className="relative p-4 bg-white rounded-[4rem] border-8 border-zinc-200 shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden scale-110">
+                                {/* Sutil logo detrás del QR */}
+                                <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none p-10">
+                                    <img src="/integracao/4.png" className="w-full h-auto" alt="" />
+                                </div>
+
                                 {qrData ? (
                                     <div className="relative z-10 p-2">
-                                        <QRCodeCanvas value={qrData} size={380} level="H" fgColor={primaryColor} />
+                                        <QRCodeCanvas value={qrData} size={380} level="H" fgColor="#f97316" marginSize={0} />
                                     </div>
                                 ) : (
                                     <div className="w-[380px] h-[380px] flex flex-col items-center justify-center gap-4 text-zinc-300">
                                         <Loader2 className="animate-spin" size={48} />
                                     </div>
                                 )}
-                                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-indigo-500/10 to-transparent h-full w-full pointer-events-none line-scan-animation z-20" />
+                                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/5 to-transparent h-full w-full pointer-events-none line-scan-animation z-20" />
                             </div>
                             <div className="mt-8 w-full max-w-sm">
                                 <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 px-1">
@@ -550,17 +568,40 @@ export default function CheckinPage() {
                 )}
             </div>
 
-            <div className="px-12 py-10 border-t border-zinc-900 flex justify-between items-center bg-black/20">
-                <img src="/DLogo-v2.webp" className="h-6 opacity-20 grayscale" alt="" />
-                <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                    <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Digitalizatodo Core v5.1</span>
+            <div className="px-12 py-10 border-t border-zinc-900 flex justify-between items-center bg-black/20 relative z-50">
+                <div className="flex items-center gap-6">
+                    <img src="/DLogo-v2.webp" className="h-8 w-auto" alt="" />
+                    <div className="h-8 w-[1px] bg-white/10 hidden md:block" />
+                    <div className="flex flex-col">
+                        <span className="text-[12px] font-black text-white/90 uppercase tracking-widest leading-none">
+                            Digitaliza Todo
+                        </span>
+                        <span className="text-[10px] font-medium text-white/30 uppercase tracking-[0.2em] mt-1">
+                            Desarrollo de software — Arica, Chile
+                        </span>
+                    </div>
+                </div>
+                <div className="flex items-center gap-6">
+                    <span className="text-[10px] font-black text-orange-500 uppercase tracking-[0.4em] flex items-center gap-2">
+                        <Monitor size={14} /> TERMINAL PUNTO DE MARCACIÓN
+                    </span>
+                    <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-xl border border-white/5">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse outline outline-4 outline-emerald-500/20"></div>
+                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Core v5.1</span>
+                    </div>
                 </div>
             </div>
 
             <style jsx>{`
                 @keyframes scanLine { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
-                .line-scan-animation { animation: scanLine 4s linear infinite; border-top: 2px solid rgba(99, 102, 241, 0.4); }
+                @keyframes spinExtraSlow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                .line-scan-animation { 
+                    animation: scanLine 3s linear infinite; 
+                    border-bottom: 3px solid rgba(16, 185, 129, 0.8); 
+                    background: linear-gradient(to top, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0.02) 30%, transparent 100%);
+                    box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.3);
+                }
+                .animate-spin-extra-slow { animation: spinExtraSlow 120s linear infinite; }
             `}</style>
         </div>
     );
