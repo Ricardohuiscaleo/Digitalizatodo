@@ -52,17 +52,24 @@ class TimerController extends Controller
             'started_at' => 'nullable' // ISO String or null
         ]);
 
-        $state = TimerState::updateOrCreate(
-            ['tenant_id' => $tenant->id],
-            [
-                'status' => $request->status,
-                'view' => $request->view ?? 'timer', // Default a timer si se está actualizando el estado de tiempo
-                'initial_seconds' => $request->initial_seconds,
-                'remaining_seconds' => $request->remaining_seconds,
-                'started_at' => $request->status === 'running' ? ($request->started_at ?? now()) : null,
-                'last_synced_at' => now(),
-            ]
-        );
+        // Validar que si el estado es de cronómetro, la vista sea de cronómetro
+        $view = $request->view ?? 'timer';
+        if (in_array($request->status, ['running', 'paused', 'finished'])) {
+            $view = 'timer';
+        }
+
+        $state = TimerState::firstOrCreate(['tenant_id' => $tenant->id]);
+        $serverTime = now('UTC');
+        $startedAt = $request->status === 'running' ? ($request->started_at ? \Carbon\Carbon::parse($request->started_at) : $serverTime) : null;
+
+        $state->update([
+            'status' => $request->status,
+            'view' => $view,
+            'initial_seconds' => $request->initial_seconds,
+            'remaining_seconds' => $request->remaining_seconds,
+            'started_at' => $startedAt,
+            'last_synced_at' => $serverTime,
+        ]);
 
         // Broadcast the update
         try {
@@ -70,7 +77,7 @@ class TimerController extends Controller
                 $state->status,
                 $state->initial_seconds,
                 $state->remaining_seconds,
-                $state->status === 'running' ? ($state->started_at ? $state->started_at->toISOString() : now()->toISOString()) : null,
+                $state->started_at ? $state->started_at->toISOString() : null,
                 $tenant->slug,
                 $state->view
             ));
@@ -80,7 +87,7 @@ class TimerController extends Controller
 
         return response()->json([
             'success' => true,
-            'state' => $state
+            'state' => $state->fresh()
         ]);
     }
 }

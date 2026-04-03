@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Settings, TimerReset, Wind, Tv, Play, Pause, RotateCcw, Smartphone, Monitor, Clock, Maximize, Minimize, Volume2, VolumeX, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Settings, TimerReset, Wind, Tv, Play, Pause, RotateCcw, Smartphone, Monitor, Clock, Maximize, Minimize, Volume2, VolumeX, ChevronRight, ChevronLeft, LogOut } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
 import { useBranding } from '@/context/BrandingContext';
 import { getEcho } from '@/lib/echo';
@@ -17,6 +18,7 @@ type ViewState = 'clock' | 'menu' | 'timer';
 
 export default function TimerPage() {
   const { branding, setBranding } = useBranding();
+  const router = useRouter();
   const { token } = useAdminDashboard(branding, setBranding);
   const [status, setStatus] = useState('idle'); // 'idle', 'running', 'paused', 'finished'
   const [view, setView] = useState<ViewState>('clock'); // 'clock', 'menu', 'timer'
@@ -28,12 +30,31 @@ export default function TimerPage() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [focusedIndex, setFocusedIndex] = useState(5); // 5:00 por defecto en el menú
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const [focusedControl, setFocusedControl] = useState(-1);
   const [isMounted, setIsMounted] = useState(false);
+  const focusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const controlTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const footerControls = ['mute', 'fullscreen', 'minus10', 'playpause', 'plus10', 'reset', 'logout'];
+
+  const setFocusWithTimeout = (idx: number) => {
+    setFocusedIndex(idx);
+    if (focusTimeoutRef.current) clearTimeout(focusTimeoutRef.current);
+    focusTimeoutRef.current = setTimeout(() => setFocusedIndex(-1), 5000);
+  };
+
+  const setControlWithTimeout = (idx: number) => {
+    setFocusedControl(idx);
+    if (controlTimeoutRef.current) clearTimeout(controlTimeoutRef.current);
+    controlTimeoutRef.current = setTimeout(() => setFocusedControl(-1), 5000);
+  };
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const wakeLockRef = useRef<any>(null);
+  const ignoreNextWsRef = useRef(false);
+  const hasLocalActionRef = useRef(false);
 
   // Inicialización y Montaje
   useEffect(() => {
@@ -103,56 +124,80 @@ export default function TimerPage() {
   }, []);
 
   // API para actualizar estado integral
-  const syncState = async (updates: any) => {
+  const syncState = useCallback(async (updates: any) => {
       if (!branding?.slug || !token) return;
       try {
+          const newStatus = updates.status ?? status;
           await updateTimerState(branding.slug, token, {
-              status: updates.status ?? status,
+              status: newStatus,
               initial_seconds: updates.initialSeconds ?? initialSeconds,
               remaining_seconds: updates.remainingSeconds ?? timeLeft,
-              started_at: (updates.status === 'running' || (status === 'running' && !updates.status)) ? (updates.startedAt || new Date().toISOString()) : null,
+              started_at: (newStatus === 'running') ? (updates.startedAt || new Date().toISOString()) : null,
               view: updates.view ?? view
           });
       } catch (error) {
           console.error("Error syncing timer:", error);
       }
-  };
+  }, [branding?.slug, token, status, initialSeconds, timeLeft, view]);
 
   // Manejo de teclado (Control Remoto TV)
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     const isEnter = e.key === 'Enter' || e.key === 'OK' || e.key === 'Select';
 
-    if (view === 'menu') {
-      if (e.key === 'ArrowRight') setFocusedIndex((prev) => (prev + 1) % gridTimes.length);
-      if (e.key === 'ArrowLeft') setFocusedIndex((prev) => (prev - 1 + gridTimes.length) % gridTimes.length);
-      if (e.key === 'ArrowDown') setFocusedIndex((prev) => (prev + 5) % gridTimes.length);
-      if (e.key === 'ArrowUp') setFocusedIndex((prev) => (prev - 5 + gridTimes.length) % gridTimes.length);
-      if (isEnter) {
-        handleTimeSelect(gridTimes[focusedIndex]);
+    // Arriba/Abajo siempre abren/cierran el menú de tiempos
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (view === 'menu') {
+        if (e.key === 'ArrowDown') setFocusWithTimeout((focusedIndex < 0 ? 0 : focusedIndex + 5) % gridTimes.length);
+        if (e.key === 'ArrowUp') setFocusWithTimeout((focusedIndex < 0 ? 0 : (focusedIndex - 5 + gridTimes.length)) % gridTimes.length);
+      } else {
+        setView('menu');
       }
-      if (e.key === 'Escape') setView('clock');
-    } else if (view === 'clock') {
-        if (isEnter || e.key === ' ' || e.key === 'ArrowUp') setView('menu');
-    } else if (view === 'timer') {
-        if (e.key === 'Escape') {
-            setStatus('paused');
-            setView('menu');
-            syncState({ view: 'menu', status: 'paused' });
-        }
-        if (isEnter || e.key === ' ') {
-            toggleTimer();
-        }
+      return;
     }
-  }, [view, focusedIndex, status, isRemoteMode, isMobile, initialSeconds, timeLeft]);
+
+    if (view === 'menu') {
+      e.preventDefault();
+      if (e.key === 'ArrowRight') setFocusWithTimeout((focusedIndex < 0 ? 0 : focusedIndex + 1) % gridTimes.length);
+      if (e.key === 'ArrowLeft') setFocusWithTimeout((focusedIndex < 0 ? 0 : (focusedIndex - 1 + gridTimes.length)) % gridTimes.length);
+      if (isEnter && focusedIndex >= 0) handleTimeSelect(gridTimes[focusedIndex]);
+      if (e.key === 'Escape') setView(status === 'running' || status === 'paused' ? 'timer' : 'clock');
+    } else {
+      // clock o timer: izquierda/derecha navegan controles del footer
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setControlWithTimeout(focusedControl < 0 ? 0 : (focusedControl + 1) % footerControls.length);
+      }
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setControlWithTimeout(focusedControl < 0 ? footerControls.length - 1 : (focusedControl - 1 + footerControls.length) % footerControls.length);
+      }
+      if (isEnter || e.key === ' ') {
+        e.preventDefault();
+        const ctrl = footerControls[focusedControl];
+        if (ctrl === 'mute') setIsMuted(m => !m);
+        else if (ctrl === 'fullscreen') toggleFullscreen();
+        else if (ctrl === 'minus10') setTimeLeft(prev => Math.max(0, prev - 10));
+        else if (ctrl === 'playpause') toggleTimer();
+        else if (ctrl === 'plus10') setTimeLeft(prev => prev + 10);
+        else if (ctrl === 'reset') resetTimer();
+        else if (ctrl === 'logout') router.push('/dashboard');
+      }
+      if (e.key === 'Escape' && view === 'menu') {
+        setView(status === 'running' || status === 'paused' ? 'timer' : 'clock');
+      }
+    }
+  }, [view, focusedIndex, focusedControl, status, initialSeconds, timeLeft, isMuted]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  // Cargar estado inicial
+  // Cargar estado inicial (solo si no hay acción local activa)
   const fetchState = useCallback(async () => {
     if (!branding?.slug || !token) return;
+    if (hasLocalActionRef.current) return;
     try {
       const response = await getTimerState(branding.slug, token);
       if (response && response.state) {
@@ -187,6 +232,10 @@ export default function TimerPage() {
     if (!echo) return;
     const channel = echo.channel(`timer.${branding.slug}`);
     channel.listen('.timer.updated', (data: any) => {
+      if (ignoreNextWsRef.current) {
+        ignoreNextWsRef.current = false;
+        return;
+      }
       setStatus(data.status);
       setView(data.view as ViewState);
       setInitialSeconds(data.initialSeconds);
@@ -205,30 +254,35 @@ export default function TimerPage() {
 
   // Lógica local del cronómetro (para fluidez visual)
   useEffect(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
     if (status === 'running' && timeLeft > 0) {
       timerRef.current = setInterval(() => {
-        setTimeLeft(prev => Math.max(0, prev - 1));
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current!);
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
     }
-    
-    if (timeLeft === 0 && status === 'running') {
-        setStatus('finished');
-        if (!isMuted && audioRef.current) {
-            audioRef.current.play().catch(e => console.log("Audio block:", e));
-        }
-        if (navigator.vibrate) {
-            navigator.vibrate([300, 100, 300]);
-        }
-        setTimeout(() => {
-            setView('clock');
-            syncState({ view: 'clock' });
-        }, 10000);
-    }
-    
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [status, timeLeft, isMuted]);
+  }, [status]);
+
+  // Detectar fin del tiempo
+  useEffect(() => {
+    if (timeLeft === 0 && status === 'running') {
+      setStatus('finished');
+      if (!isMuted && audioRef.current) {
+        audioRef.current.play().catch(e => console.log("Audio block:", e));
+      }
+      if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+      setTimeout(() => {
+        setView('clock');
+        syncState({ view: 'clock' });
+      }, 10000);
+    }
+  }, [timeLeft, status]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -241,11 +295,20 @@ export default function TimerPage() {
   };
 
   const handleTimeSelect = (seconds: number) => {
+    hasLocalActionRef.current = true;
+    ignoreNextWsRef.current = true;
     setInitialSeconds(seconds);
     setTimeLeft(seconds);
     setStatus('running');
     setView('timer');
-    syncState({ view: 'timer', status: 'running', initialSeconds: seconds, remainingSeconds: seconds, startedAt: new Date().toISOString() });
+    if (!branding?.slug || !token) return;
+    updateTimerState(branding.slug, token, {
+      status: 'running',
+      initial_seconds: seconds,
+      remaining_seconds: seconds,
+      started_at: new Date().toISOString(),
+      view: 'timer'
+    }).catch(e => console.error('syncState error:', e));
   };
 
   const toggleTimer = () => {
@@ -277,143 +340,157 @@ export default function TimerPage() {
   };
 
   const getDisplayColors = () => {
-     if (timeLeft === 0 && status === 'finished' && view === 'timer') return 'bg-red-600 animate-pulse';
-     if (timeLeft <= 30 && status === 'running' && view === 'timer') return 'bg-yellow-500';
+     if (timeLeft === 0 && status === 'finished' && view === 'timer') return 'bg-red-600';
+     if (timeLeft <= 15 && status === 'running' && view === 'timer') return 'bg-yellow-500';
      return 'bg-zinc-950';
   };
 
   // VISTA PROYECTOR (PC/TV)
   if (!isRemoteMode) {
+    const menuOpen = view === 'menu';
     return (
       <div 
         onClick={handleFirstInteraction}
         className={`min-h-screen flex flex-col items-center justify-between overflow-hidden font-sans transition-all duration-1000 relative ${getDisplayColors()}`}
       >
-        
-        {/* HEADER: FRANJA DE MANDO INDUSTRIAL (Versión Final Sólida) */}
-        <header className="w-full grid grid-cols-3 items-center z-10 border-b border-white/5 py-4 px-10 bg-zinc-900/90 backdrop-blur-md shadow-[0_10px_50px_rgba(0,0,0,0.5)] overflow-hidden">
-             {/* COL 1: LOGOS IZQUIERDA */}
-             <div className="flex items-center gap-6">
-                <img src="/integracao/2.png" alt="Collab" className="h-16 md:h-24 w-auto object-contain" />
-                {branding?.logo && (
-                    <div className="h-14 w-[1px] bg-white/10 mx-2" />
-                )}
-                {branding?.logo && (
-                    <img src={branding.logo} alt="Tenant" className="h-16 md:h-24 w-auto object-contain rounded-full" />
-                )}
-             </div>
-             
-             {/* COL 2: ACADEMIA CENTRO */}
-             <div className="flex flex-col items-center drop-shadow-2xl">
-                 <h1 className="text-[clamp(1.5rem,4vw,3.5rem)] font-black tracking-tighter leading-none text-white uppercase whitespace-nowrap text-center">
-                     {branding?.name || 'SALA'}
-                 </h1>
-                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300 mt-2 opacity-90">
-                    JIU JITSU BRASILEÑO TIMER PROFESIONAL
-                 </p>
-             </div>
-
-             {/* COL 3: LOGO BRANDING DERECHA (80x50px via style inline) */}
-             <div className="flex justify-end pr-8">
-                <img 
-                    src="/integracao/4.png" 
-                    alt="Branding" 
-                    style={{ width: '160px', height: '100px', objectFit: 'contain' }}
-                    className="drop-shadow-2xl brightness-110 flex-shrink-0" 
-                />
-             </div>
+        {/* HEADER */}
+        <header className="w-full grid grid-cols-3 items-center z-10 py-4 px-10">
+          <div className="flex items-center gap-6">
+            <img src="/integracao/2.png" alt="Collab" className="h-16 md:h-24 w-auto object-contain" />
+            {branding?.logo && <div className="h-14 w-[1px] bg-white/10 mx-2" />}
+            {branding?.logo && <img src={branding.logo} alt="Tenant" className="h-16 md:h-24 w-auto object-contain rounded-full" />}
+          </div>
+          <div className="flex flex-col items-center">
+            <h1 className="text-[clamp(1.5rem,4vw,3.5rem)] font-black tracking-tighter leading-none text-white uppercase whitespace-nowrap text-center">
+              {branding?.name || 'SALA'}
+            </h1>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300 mt-2 opacity-90">JIU JITSU BRASILEÑO TIMER PROFESIONAL</p>
+          </div>
+          <div className="flex justify-end pr-8">
+            <img src="/integracao/4.png" alt="Branding" style={{ width: '160px', height: '100px', objectFit: 'contain' }} className="drop-shadow-2xl brightness-110 flex-shrink-0" />
+          </div>
         </header>
 
         {/* MAIN: CRONÓMETRO */}
-        <main className="flex-1 w-full flex flex-col items-center justify-center relative transition-all duration-700 px-24 py-12">
-            {view === 'clock' && (
-                <div className="flex flex-col items-center">
-                    <div 
-                        className="text-[22vw] font-black tracking-tighter leading-none cursor-pointer text-white drop-shadow-[0_20px_100px_rgba(255,255,255,0.1)] transition-all tabular-nums"
-                        onClick={() => changeView('menu')}
-                    >
-                        {isMounted ? formatRealTime(currentTime) : '00:00:00'}
-                    </div>
-                </div>
-            )}
-
-            {view === 'menu' && (
-                <div className="grid grid-cols-5 gap-4 w-full max-w-7xl animate-in zoom-in-95 duration-500 relative z-20">
-                    {gridTimes.map((time, index) => {
-                        const isFocused = index === focusedIndex;
-                        return (
-                            <button 
-                                key={index}
-                                onClick={() => handleTimeSelect(time)}
-                                className={`
-                                    border-4 flex items-center justify-center py-12 cursor-pointer
-                                    transition-all duration-300 ease-out rounded-3xl active:scale-95
-                                    ${isFocused 
-                                        ? 'border-white bg-white text-black scale-105 z-10 shadow-[0_0_50px_rgba(255,255,255,0.3)]' 
-                                        : 'border-white/10 bg-transparent text-white/40 hover:border-white/40 hover:text-white'}
-                                `}
-                            >
-                                <span className="text-6xl font-black tracking-tighter">
-                                    {time < 60 ? `${time}s` : `${time / 60}:00`}
-                                </span>
-                            </button>
-                        );
-                    })}
-                </div>
-            )}
-
-            {view === 'timer' && (
-                <div className="flex flex-col items-center animate-in fade-in zoom-in duration-500">
-                    <h2 className="text-[28vw] font-black tracking-tighter leading-none select-none tabular-nums text-white drop-shadow-[0_30px_100px_rgba(0,0,0,0.8)]">
-                        {formatTime(timeLeft)}
-                    </h2>
-                    <div className="flex flex-col items-center -mt-10">
-                        <div className={`px-12 py-4 rounded-3xl text-xl font-black uppercase tracking-widest border-2 transition-all ${status === 'running' ? 'bg-white/10 border-white text-white' : status === 'finished' ? 'bg-black border-red-500 text-red-500 animate-pulse shadow-2xl scale-110' : 'bg-black/40 border-white/20 text-white/40'}`}>
-                            {status === 'running' ? '• COMBATE EN CURSO' : status === 'finished' ? '¡TIEMPO AGOTADO!' : 'SISTEMA EN PAUSA'}
-                        </div>
-                    </div>
-                </div>
-            )}
+        <main className="flex-1 w-full flex flex-col items-center justify-center relative px-24" style={{ paddingBottom: '100px' }}>
+          {view === 'clock' && (
+            <div
+              className="text-[22vw] font-black tracking-tighter leading-none cursor-pointer text-white tabular-nums"
+              onClick={() => setView('menu')}
+            >
+              {isMounted ? formatRealTime(currentTime) : '00:00:00'}
+            </div>
+          )}
+          {(view === 'timer' || view === 'menu') && (
+            <div className="flex flex-col items-center">
+              <p className="text-[11px] font-black uppercase tracking-[0.4em] text-white/40 mb-4">
+                {status === 'running' ? 'combate en curso' : status === 'finished' ? 'tiempo agotado' : status === 'paused' ? 'en pausa' : 'listo'}
+              </p>
+              <h2 className="text-[28vw] font-black tracking-tighter leading-none select-none tabular-nums text-white">
+                {formatTime(timeLeft)}
+              </h2>
+            </div>
+          )}
         </main>
 
-        {/* FOOTER: CONTROLES */}
-        <footer className="w-full flex justify-between items-end z-10 px-12 pb-10 pt-6 relative border-t border-white/5">
-             <div className="flex gap-4">
-                 <button onClick={() => setIsMuted(!isMuted)} className="p-4 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-white transition-all active:scale-90">
-                     {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
-                 </button>
-                 <button onClick={toggleFullscreen} className="p-4 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-white transition-all active:scale-90">
-                     {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
-                 </button>
-                 <button onClick={() => setView('menu')} className="p-4 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-white transition-all active:scale-90">
-                     <Settings size={24} />
-                 </button>
-             </div>
+        {/* CONTENEDOR INFERIOR: sheet + navbar */}
+        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-40 flex flex-col gap-2" style={{ width: 'min(900px, 95vw)', paddingBottom: '1.5rem' }}>
 
-             <div className="flex flex-col items-center gap-3">
-                 <div className="flex gap-4 p-2 bg-white/5 rounded-2xl border border-white/5">
-                    <button onClick={() => setTimeLeft(prev => Math.max(0, prev - 10))} className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/20 text-white transition-all active:scale-90">
-                        <span className="text-xs font-bold">-10s</span>
+          {/* SELECTOR DE TIEMPOS — aparece encima del navbar */}
+          <div className={`transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+            menuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+          }`}>
+            <div className="bg-zinc-900/95 backdrop-blur-2xl rounded-[1.5rem] border border-white/10 shadow-[0_-8px_40px_rgba(0,0,0,0.5)] p-5">
+              <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 mb-3 px-1">Seleccionar tiempo</p>
+              <div className="grid grid-cols-5 gap-2">
+                {gridTimes.map((time, index) => {
+                  const isFocused = index === focusedIndex;
+                  const isActive = initialSeconds === time && (status === 'running' || status === 'paused');
+                  return (
+                    <button key={index} onClick={() => handleTimeSelect(time)}
+                      className={`py-4 rounded-2xl font-black text-lg tracking-tight transition-all duration-300 active:scale-95 ${
+                        isFocused ? 'bg-yellow-400/20 border-2 border-yellow-400 text-white scale-105'
+                        : isActive ? 'bg-white text-black border-2 border-transparent'
+                        : 'bg-white/5 border-2 border-transparent text-white/50 hover:bg-white/10 hover:text-white'
+                      }`}>
+                      {time < 60 ? `${time}s` : `${time / 60}:00`}
                     </button>
-                    <button onClick={toggleTimer} className={`p-4 px-10 rounded-xl transition-all active:scale-95 flex items-center gap-3 text-sm font-black uppercase tracking-widest ${status === 'running' ? 'bg-white text-black' : 'bg-white/10 text-white border border-white/20'}`}>
-                        {status === 'running' ? <><Pause size={18} fill="currentColor" /> PAUSAR</> : <><Play size={18} fill="currentColor" /> INICIAR</>}
-                    </button>
-                    <button onClick={() => setTimeLeft(prev => prev + 10)} className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/20 text-white transition-all active:scale-90">
-                        <span className="text-xs font-bold">+10s</span>
-                    </button>
-                    <button onClick={resetTimer} className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/20 text-white transition-all active:scale-90 group">
-                        <RotateCcw size={20} className="group-hover:rotate-180 transition-all duration-500" />
-                    </button>
-                 </div>
-             </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
 
-             <div className="flex flex-col items-end">
-                 <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em] mb-3">Hora Local del Dojo</p>
-                 <div className="text-6xl font-black text-white/40 drop-shadow-xl tabular-nums tracking-tighter">
-                    {isMounted ? formatRealTime(currentTime) : '00:00:00'}
-                 </div>
-             </div>
-        </footer>
+          {/* NAVBAR */}
+          <nav>
+            <div className="bg-zinc-900/95 backdrop-blur-2xl rounded-[1.5rem] border border-white/10 shadow-[0_-4px_30px_rgba(0,0,0,0.4)] px-5 py-3 flex items-center justify-between gap-3">
+            {/* Utilidades */}
+            <div className="flex gap-2 items-center">
+              {[
+                { id: 0, icon: isMuted ? <VolumeX size={18}/> : <Volume2 size={18}/>, action: () => setIsMuted(m => !m) },
+                { id: 1, icon: isFullscreen ? <Minimize size={18}/> : <Maximize size={18}/>, action: toggleFullscreen },
+              ].map(({ id, icon, action }) => (
+                <button key={id} onClick={action}
+                  className={`p-2.5 rounded-xl border transition-all active:scale-90 text-white ${
+                    focusedControl === id ? 'bg-yellow-400/20 border-yellow-400' : 'bg-white/5 border-white/10 hover:bg-white/10'
+                  }`}>
+                  {icon}
+                </button>
+              ))}
+            </div>
+
+            {/* Controles principales */}
+            <div className="flex items-center gap-2">
+              <button onClick={() => setTimeLeft(prev => Math.max(0, prev - 10))}
+                className={`px-4 py-2.5 rounded-xl border text-white font-black text-sm transition-all active:scale-90 ${
+                  focusedControl === 2 ? 'bg-yellow-400/20 border-yellow-400' : 'bg-white/5 border-white/10'
+                }`}>−10s</button>
+              <button onClick={toggleTimer}
+                className={`px-8 py-2.5 rounded-xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 ${
+                  focusedControl === 3 ? 'ring-2 ring-yellow-400 ring-offset-1 ring-offset-zinc-900' : ''
+                } ${status === 'running' ? 'bg-white text-black' : 'bg-white/10 text-white border border-white/20'}`}>
+                {status === 'running' ? <><Pause size={14} fill="currentColor"/>PAUSAR</> : <><Play size={14} fill="currentColor"/>INICIAR</>}
+              </button>
+              <button onClick={() => setTimeLeft(prev => prev + 10)}
+                className={`px-4 py-2.5 rounded-xl border text-white font-black text-sm transition-all active:scale-90 ${
+                  focusedControl === 4 ? 'bg-yellow-400/20 border-yellow-400' : 'bg-white/5 border-white/10'
+                }`}>+10s</button>
+              <button onClick={resetTimer}
+                className={`p-2.5 rounded-xl border text-white transition-all active:scale-90 group ${
+                  focusedControl === 5 ? 'bg-yellow-400/20 border-yellow-400' : 'bg-white/5 border-white/10'
+                }`}>
+                <RotateCcw size={16} className="group-hover:rotate-180 transition-all duration-500"/>
+              </button>
+            </div>
+
+            {/* Hora + logout */}
+            <div className="flex items-center gap-2">
+              <div className="text-right">
+                <div className="text-lg font-black text-white/40 tabular-nums tracking-tighter">
+                  {isMounted ? formatRealTime(currentTime) : '00:00:00'}
+                </div>
+              </div>
+              <button
+                onClick={() => router.push('/dashboard')}
+                className={`p-2.5 rounded-xl border transition-all active:scale-90 ${
+                  focusedControl === 6 ? 'bg-red-600 border-red-600 text-white' : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                }`}>
+                <LogOut size={18}/>
+              </button>
+            </div>
+          </div>
+          {/* Footer debajo del navbar */}
+          <div className="flex items-center justify-center gap-2 pointer-events-none select-none">
+            <img src="/DLogo-v2.webp" alt="" className="w-5 h-5 rounded-full object-cover opacity-50" />
+            <p className="text-[8px] font-black uppercase tracking-[0.25em] text-white/40">Digitaliza Todo &middot; Desarrollo de Software &middot; Arica Chile</p>
+          </div>
+        </nav>
+        </div>
+
+        {/* Overlay para cerrar selector */}
+        {menuOpen && (
+          <div className="fixed inset-0 z-30" onClick={() => setView(status === 'running' || status === 'paused' ? 'timer' : 'clock')} />
+        )}
       </div>
     );
   }
