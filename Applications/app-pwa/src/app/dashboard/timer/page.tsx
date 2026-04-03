@@ -29,7 +29,6 @@ export default function TimerPage() {
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
-      // Por defecto, en móvil iniciamos en modo remoto
       if (window.innerWidth < 768) setIsRemoteMode(true);
     };
     checkMobile();
@@ -69,18 +68,13 @@ export default function TimerPage() {
   // Suscribirse a cambios en tiempo real
   useEffect(() => {
     if (!branding?.slug) return;
-    
     const echo = getEcho();
     if (!echo) return;
-
     const channel = echo.channel(`timer.${branding.slug}`);
-    
     channel.listen('.timer.updated', (data: any) => {
-      console.log("Timer updated via Echo:", data);
       setStatus(data.status);
       setInitialSeconds(data.initialSeconds);
       setServerStartedAt(data.startedAt);
-      
       if (data.status === 'running' && data.startedAt) {
           const started = new Date(data.startedAt).getTime();
           const now = new Date().getTime();
@@ -90,10 +84,7 @@ export default function TimerPage() {
           setTimeLeft(data.remainingSeconds);
       }
     });
-
-    return () => {
-      echo.leave(`timer.${branding.slug}`);
-    };
+    return () => { echo.leave(`timer.${branding.slug}`); };
   }, [branding?.slug]);
 
   // Lógica local del cronómetro (para fluidez visual)
@@ -105,14 +96,10 @@ export default function TimerPage() {
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
     }
-    
     if (timeLeft === 0 && status === 'running') {
         setStatus('finished');
     }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [status, timeLeft]);
 
   // API para actualizar estado
@@ -145,9 +132,8 @@ export default function TimerPage() {
 
   const toggleTimer = () => {
     const newStatus = status === 'running' ? 'paused' : 'running';
-    const currentRemaining = timeLeft;
     setStatus(newStatus);
-    syncState({ status: newStatus, remainingSeconds: currentRemaining });
+    syncState({ status: newStatus, remainingSeconds: timeLeft });
   };
 
   const resetTimer = () => {
@@ -156,38 +142,48 @@ export default function TimerPage() {
     syncState({ status: 'idle', remainingSeconds: initialSeconds });
   };
 
+  // Lógica de colores Dinámicos
+  const getDisplayColors = () => {
+     if (timeLeft === 0 && status === 'finished') return 'bg-red-600 text-white animate-pulse';
+     if (timeLeft <= 30 && status === 'running') return 'bg-yellow-500 text-white'; // Profesor: Aviso Últimos 30s
+     return 'bg-zinc-950 text-white';
+  };
+
   // VISTA PROYECTOR (PC/TV)
   if (!isRemoteMode) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center p-10 overflow-hidden font-sans">
+      <div className={`min-h-screen flex flex-col items-center justify-center p-10 overflow-hidden font-sans transition-colors duration-1000 ${getDisplayColors()}`}>
         {/* Header UI */}
-        <div className="absolute top-10 left-10 right-10 flex justify-between items-center opacity-40">
-           <img src="/4.png" alt="Logo" className="h-12 invert brightness-200" />
+        <div className="absolute top-10 left-10 right-10 flex justify-between items-center opacity-60">
+           <img src="/integracao/4.png" alt="Logo Digitalizatodo" className="h-10 invert brightness-200" />
            <div className="text-right">
                 <p className="text-xs font-black tracking-widest uppercase">Cronómetro Oficial</p>
-                <p className="text-[10px] font-bold opacity-50 uppercase tracking-tighter">{branding?.name} — SALA</p>
+                <p className="text-[10px] font-bold opacity-70 uppercase tracking-tighter">{branding?.name} — SALA</p>
            </div>
         </div>
 
         {/* Timer Display */}
         <div className={`relative flex flex-col items-center transition-all duration-700 ${status === 'running' ? 'scale-110' : 'scale-100 opacity-80'}`}>
-            <h1 className="text-[25vw] md:text-[20rem] font-black tracking-tighter leading-none select-none tabular-nums">
+            <h1 className="text-[25vw] md:text-[22rem] font-black tracking-tighter leading-none select-none tabular-nums drop-shadow-[0_0_50px_rgba(255,255,255,0.1)]">
                 {formatTime(timeLeft)}
             </h1>
-            <div className="flex gap-4 mt-4">
-               <div className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${status === 'running' ? 'bg-green-500/10 border-green-500 text-green-500' : 'bg-white/5 border-white/10 text-white/40'}`}>
-                    {status === 'running' ? '• Combate en curso' : 'En pausa'}
+            <div className="flex gap-4 mt-8">
+               <div className={`px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest border-2 ${status === 'running' ? 'bg-white/10 border-white text-white' : 'bg-white/5 border-white/20 text-white/40'}`}>
+                    {status === 'running' ? '• Combate en curso' : status === 'finished' ? 'TIEMPO AGOTADO' : 'En pausa'}
                </div>
             </div>
         </div>
 
-        {/* Floating Controls Overlay (Visible al mover mouse) */}
-        <div className="fixed bottom-10 flex gap-4 opacity-0 hover:opacity-100 transition-opacity bg-white/5 backdrop-blur-xl p-3 rounded-3xl border border-white/10">
+        {/* Floating Controls Overlay */}
+        <div className="fixed bottom-10 flex gap-4 opacity-0 hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xl p-3 rounded-3xl border border-white/10">
              <button onClick={() => setIsRemoteMode(true)} className="p-3 bg-white/10 rounded-2xl hover:bg-white/20 transition-colors">
                   <Smartphone size={20} />
              </button>
-             <button onClick={toggleTimer} className="px-6 py-3 bg-white text-black rounded-2xl font-black uppercase text-xs tracking-widest">
+             <button onClick={toggleTimer} className="px-8 py-3 bg-white text-black rounded-2xl font-black uppercase text-xs tracking-widest active:scale-95 transition-transform">
                   {status === 'running' ? 'Pausar' : 'Iniciar'}
+             </button>
+             <button onClick={resetTimer} className="p-3 bg-white/10 rounded-2xl hover:bg-white/20 transition-colors">
+                  <RotateCcw size={20} />
              </button>
         </div>
       </div>
@@ -196,55 +192,61 @@ export default function TimerPage() {
 
   // VISTA CONTROL REMOTO (MÓVIL)
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-6 pb-24 font-sans select-none overflow-y-auto">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h2 className="text-xl font-black uppercase tracking-tight">S A L A</h2>
-          <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest tracking-tighter">Control Remoto</p>
+    <div className={`min-h-screen p-6 pb-24 font-sans select-none overflow-y-auto transition-colors duration-500 ${getDisplayColors()}`}>
+      <div className="flex justify-between items-center mb-10">
+        <div className="flex items-center gap-3">
+          <img src="/integracao/4.png" alt="Logo" className="h-6 invert brightness-200" />
+          <div>
+            <h2 className="text-lg font-black uppercase tracking-tight leading-none">S A L A</h2>
+            <p className="text-[8px] font-bold opacity-60 uppercase tracking-widest">Digitalizatodo Remote</p>
+          </div>
         </div>
-        <button onClick={() => setIsRemoteMode(false)} className="p-3 bg-white/5 border border-white/10 rounded-2xl">
-          <Monitor size={20} className="text-zinc-400" />
+        <button onClick={() => setIsRemoteMode(false)} className="p-3 bg-white/10 border border-white/20 rounded-2xl active:scale-90 transition-transform">
+          <Monitor size={20} className="text-white" />
         </button>
       </div>
 
       {/* Primary Display Remoto */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-8 text-center mb-6 relative overflow-hidden">
-        <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/5 rounded-full blur-3xl" />
-        <h3 className="text-6xl font-black tracking-tighter tabular-nums mb-2">
+      <div className={`border border-white/10 rounded-[2.5rem] p-10 text-center mb-8 relative overflow-hidden transition-colors ${status === 'running' ? 'bg-white/5' : 'bg-black/20'}`}>
+        <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/5 rounded-full blur-3xl opacity-50" />
+        <h3 className="text-7xl font-black tracking-tighter tabular-nums mb-2 drop-shadow-2xl">
             {formatTime(timeLeft)}
         </h3>
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
-            {status === 'running' ? 'Corriendo' : 'Pausado'}
+        <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${status === 'running' ? 'text-white' : 'text-white/30'}`}>
+            {status === 'running' ? '• Cronómetro Activo' : status === 'finished' ? 'Fin del tiempo' : 'Pausado'}
         </p>
       </div>
 
-      {/* Main Controls */}
-      <div className="grid grid-cols-2 gap-4 mb-8">
+      {/* Main Controls - MÁS VISIBLES Y GRANDES */}
+      <div className="grid grid-cols-2 gap-4 mb-10">
         <button 
           onClick={toggleTimer}
-          className={`h-20 rounded-[2rem] flex items-center justify-center gap-3 transition-all active:scale-95 ${status === 'running' ? 'bg-zinc-800 text-white' : 'bg-white text-black'}`}
+          className={`h-28 rounded-[2rem] flex flex-col items-center justify-center gap-2 shadow-2xl transition-all active:scale-90 ${status === 'running' ? 'bg-zinc-800 text-white' : 'bg-white text-black'}`}
         >
-          {status === 'running' ? <Pause fill="currentColor" /> : <Play fill="currentColor" />}
-          <span className="font-black uppercase text-xs tracking-widest">{status === 'running' ? 'Pausar' : 'Iniciar'}</span>
+          {status === 'running' ? <Pause size={32} fill="currentColor" /> : <Play size={32} fill="currentColor" />}
+          <span className="font-black uppercase text-[10px] tracking-widest">{status === 'running' ? 'Pausar' : 'Iniciar'}</span>
         </button>
         <button 
           onClick={resetTimer}
-          className="h-20 bg-zinc-900 border border-zinc-800 rounded-[2rem] flex items-center justify-center gap-3 transition-all active:scale-95"
+          className="h-28 bg-white/10 border border-white/20 rounded-[2rem] flex flex-col items-center justify-center gap-2 transition-all active:scale-90 backdrop-blur-md"
         >
-          <RotateCcw size={20} />
-          <span className="font-black uppercase text-xs tracking-widest">Reiniciar</span>
+          <RotateCcw size={32} />
+          <span className="font-black uppercase text-[10px] tracking-widest">Reiniciar</span>
         </button>
       </div>
 
       {/* Quick Select Times */}
-      <div className="mb-4">
-        <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 px-2">Ajuste de Tiempo</h4>
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-6 px-2">
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50">Configurar Tiempo</h4>
+            <div className="h-[1px] flex-1 bg-white/10 ml-4" />
+        </div>
         <div className="grid grid-cols-3 gap-3">
             {gridTimes.map(time => (
                 <button 
                   key={time}
                   onClick={() => handleTimeSelect(time)}
-                  className={`h-16 rounded-2xl font-bold text-sm border transition-all active:scale-95 ${initialSeconds === time ? 'bg-white text-black border-white' : 'bg-white/5 border-white/5 text-white/60'}`}
+                  className={`h-16 rounded-2xl font-black text-sm border-2 transition-all active:scale-90 ${initialSeconds === time ? 'bg-white text-black border-white shadow-xl' : 'bg-white/5 border-white/10 text-white/50'}`}
                 >
                   {time < 60 ? `${time}s` : `${time / 60}m`}
                 </button>
@@ -253,8 +255,9 @@ export default function TimerPage() {
       </div>
 
       {/* Footer Branding */}
-      <div className="mt-8 pt-8 border-t border-white/5 text-center opacity-20">
-          <p className="text-[8px] font-black uppercase tracking-widest">Powered by Digitalizatodo</p>
+      <div className="mt-12 py-8 border-t border-white/5 text-center flex flex-col items-center gap-4">
+          <img src="/integracao/4.png" alt="Digitalizatodo" className="h-4 opacity-30 invert" />
+          <p className="text-[8px] font-black uppercase tracking-[0.5em] opacity-40">Industrial Grade System</p>
       </div>
     </div>
   );
