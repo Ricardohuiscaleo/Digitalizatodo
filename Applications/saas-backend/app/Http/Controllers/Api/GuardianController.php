@@ -147,7 +147,8 @@ class GuardianController extends Controller
                     'plan_name' => $realPlanName,
                     'belt_rank' => $fp->student->belt_rank ?? 'Blanco',
                     'degrees' => (int)($fp->student->degrees ?? 0),
-                    'category' => $fp->student->category ?? 'adults'
+                    'category' => $fp->student->category ?? 'adults',
+                    'payment_method' => $fp->payment_method
                 ];
             }
 
@@ -188,7 +189,8 @@ class GuardianController extends Controller
                             'belt_rank' => $student->belt_rank ?? 'Blanco',
                             'degrees' => (int)($student->degrees ?? 0),
                             'plan_name' => $payment?->plan?->name ?? $enrollment?->plan?->name ?? 'Sin plan',
-                            'category' => $student->category ?? 'adults'
+                            'category' => $student->category ?? 'adults',
+                            'payment_method' => $payment->payment_method
                         ];
                     }
                 }
