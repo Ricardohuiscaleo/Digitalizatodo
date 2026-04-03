@@ -8,6 +8,7 @@ use App\Models\Guardian;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
@@ -261,103 +262,104 @@ class GuardianController extends Controller
      */
     public function approvePayment($tenantSlug, $id, Request $request)
     {
-        $tenant = app('currentTenant');
-        
-        Log::debug("[DEBUG-APPROVE] Iniciando aprobación de pago", [
-            'tenant_id' => $tenant->id,
-            'tenant_slug' => $tenant->slug,
-            'route_tenant' => $tenantSlug,
-            'guardian_id' => $id,
-            'user' => $request->user()?->email
-        ]);
-
-        // Intentar encontrar el guardian bajo el tenant actual
-        $guardian = Guardian::where('tenant_id', $tenant->id)->find($id);
-
-        if (!$guardian) {
-            Log::warning("[DEBUG-APPROVE] Guardian no encontrado para el tenant, buscando globalmente", [
+        try {
+            $tenant = app('currentTenant');
+            
+            Log::debug("[DEBUG-APPROVE] Iniciando aprobación de pago", [
                 'tenant_id' => $tenant->id,
                 'guardian_id' => $id
             ]);
-            
-            // Búsqueda permisiva: si el admin de este tenant lo está viendo, es porque tiene acceso o por inconsistencia de datos
-            $guardian = Guardian::find($id);
+
+            // Intentar encontrar el guardian bajo el tenant actual
+            $guardian = Guardian::where('tenant_id', $tenant->id)->find($id);
 
             if (!$guardian) {
-                return response()->json(['message' => 'No se encontró el apoderado especificado.'], 404);
+                // Búsqueda permisiva global por ID si falla la búsqueda por tenant
+                $guardian = Guardian::find($id);
+
+                if (!$guardian) {
+                    return response()->json(['message' => 'No se encontró el apoderado especificado.'], 404);
+                }
+
+                Log::info("[DEBUG-APPROVE] Guardian encontrado globalmente tras fallo por tenant", [
+                    'db_tenant_id' => $guardian->tenant_id,
+                    'active_tenant_id' => $tenant->id
+                ]);
+                
+                // Corregimos el tenant del apoderado de inmediato
+                $guardian->update(['tenant_id' => $tenant->id]);
             }
 
-            Log::info("[DEBUG-APPROVE] Guardian encontrado globalmente tras fallo por tenant", [
-                'attached_tenant_id' => $guardian->tenant_id,
-                'current_tenant_id' => $tenant->id
+            $now = Carbon::now('America/Santiago');
+            $month = $request->input('month', $now->month);
+            $year = $request->input('year', $now->year);
+            $method = $request->input('payment_method', 'cash');
+            $notes = $request->input('notes', 'Aprobado manualmente por Staff');
+
+            // Validar que el método de pago sea compatible con el ENUM de fee_payments
+            // enum('transfer','cash','mercadopago')
+            if (!in_array($method, ['transfer', 'cash', 'mercadopago'])) {
+                $method = 'cash'; // Fallback seguro
+            }
+
+            // Buscar la cuota mensual estándar
+            $fee = \App\Models\Fee::where('tenant_id', $tenant->id)
+                ->where('billing_cycle', 'monthly_fixed')
+                ->first() ?: \App\Models\Fee::where('tenant_id', $tenant->id)->first();
+
+            if (!$fee) {
+                return response()->json(['message' => 'No hay cuotas configuradas para este gimnasio.'], 422);
+            }
+
+            foreach ($guardian->students as $student) {
+                // 1. FeePayment (SaaS)
+                \App\Models\FeePayment::updateOrCreate(
+                    [
+                        'guardian_id'  => $guardian->id,
+                        'student_id'   => $student->id,
+                        'period_month' => $month,
+                        'period_year'  => $year,
+                    ],
+                    [
+                        'tenant_id'      => $tenant->id,
+                        'fee_id'         => $fee->id,
+                        'status'         => 'paid',
+                        'payment_method' => $method,
+                        'paid_at'        => $now,
+                        'approved_by'    => $request->user()?->id,
+                        'notes'          => $notes,
+                    ]
+                );
+
+                // 2. Payment (Artes Marciales)
+                \App\Models\Payment::where('student_id', $student->id)
+                    ->where('status', '!=', 'approved')
+                    ->whereMonth('due_date', $month)
+                    ->whereYear('due_date', $year)
+                    ->update([
+                        'tenant_id'      => $tenant->id,
+                        'status'         => 'approved',
+                        'payment_method' => $method,
+                        'paid_at'        => $now,
+                        'approved_by'    => $request->user()?->id,
+                    ]);
+            }
+
+            return response()->json([
+                'message' => 'Pago aprobado correctamente y datos sincronizados.'
             ]);
+
+        } catch (\Exception $e) {
+            Log::error("[DEBUG-APPROVE] Error crítico en aprobación", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'message' => 'Error interno al procesar el pago.',
+                'debug' => $e->getMessage()
+            ], 500);
         }
-
-        $month = $request->input('month', \Carbon\Carbon::now('America/Santiago')->month);
-        $year = $request->input('year', \Carbon\Carbon::now('America/Santiago')->year);
-        $method = $request->input('payment_method', 'cash');
-        $notes = $request->input('notes', 'Aprobado manualmente por Staff');
-
-        // Buscar la cuota mensual estándar (billing_cycle = monthly_fixed)
-        $fee = \App\Models\Fee::where('tenant_id', $tenant->id)
-            ->where('billing_cycle', 'monthly_fixed')
-            ->first();
-
-        // Si no existe una fee configurada como mensual fija, buscamos la primera vigente
-        if (!$fee) {
-            $fee = \App\Models\Fee::where('tenant_id', $tenant->id)->first();
-        }
-
-        // Si aún no hay fee, intentamos buscar una global o simplemente fallar con 422
-        if (!$fee) {
-            Log::error("[DEBUG-APPROVE] No se encontró configuración de Fee para el tenant", ['tenant_id' => $tenant->id]);
-            return response()->json(['message' => 'No hay cuotas configuradas para este gimnasio.'], 422);
-        }
-
-        $count = 0;
-        foreach ($guardian->students as $student) {
-            // 1. Actualizar o Crear FeePayment
-            // Buscamos sin el tenant_id en la restricción inicial para poder "corregirlo" si estaba mal
-            $feePayment = \App\Models\FeePayment::where('guardian_id', $guardian->id)
-                ->where('student_id', $student->id)
-                ->where('period_month', $month)
-                ->where('period_year', $year)
-                ->first();
-
-            if ($feePayment) {
-                $feePayment->update([
-                    'tenant_id'      => $tenant->id, // Corregimos el tenant al de la academia actual
-                    'status'         => 'paid',
-                    'payment_method' => $method,
-                    'paid_at'        => \Carbon\Carbon::now('America/Santiago'),
-                    'approved_by'    => $request->user()?->id,
-                    'notes'          => $notes,
-                ]);
-            } else {
-                \App\Models\FeePayment::create([
-                    'tenant_id'      => $tenant->id,
-                    'guardian_id'    => $guardian->id,
-                    'student_id'     => $student->id,
-                    'fee_id'         => $fee->id,
-                    'period_month'   => $month,
-                    'period_year'    => $year,
-                    'status'         => 'paid',
-                    'payment_method' => $method,
-                    'paid_at'        => \Carbon\Carbon::now('America/Santiago'),
-                    'approved_by'    => $request->user()?->id,
-                    'notes'          => $notes,
-                ]);
-            }
-
-            // 2. Sincronizar con tabla 'payments' (Artes Marciales)
-            // Aquí somos más permisivos con el tenant_id también
-            \App\Models\Payment::where('student_id', $student->id)
-                ->where('status', '!=', 'approved')
-                ->whereMonth('due_date', $month)
-                ->whereYear('due_date', $year)
-                ->update([
-                    'tenant_id'      => $tenant->id, // Aseguramos el tenant correcto
-                    'status'         => 'approved',
+    }
                     'paid_at'        => \Carbon\Carbon::now('America/Santiago'),
                     'payment_method' => $method
                 ]);
