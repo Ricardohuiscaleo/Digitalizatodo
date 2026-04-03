@@ -93,7 +93,7 @@ class GuardianController extends Controller
             // Recolectamos FeePayments (Prioridad Alta)
             $feePayments = \App\Models\FeePayment::whereIn("student_id", $students->pluck("id"))
                 ->where('tenant_id', $tenantId)
-                ->with(['fee', 'student'])
+                ->with(['fee', 'student', 'student.enrollments.plan'])
                 ->get();
 
             foreach ($feePayments as $fp) {
@@ -102,16 +102,37 @@ class GuardianController extends Controller
                 $pStatus = $fp->status === 'review' ? 'review' : $fp->status;
                 $amount = (float)($fp->fee?->amount ?? 0);
                 
+                // Obtener el plan real del alumno desde enrollment (fuente de verdad)
+                $activeEnrollment = $fp->student->enrollments->where('status', 'active')->first();
+                $realPlanName = $activeEnrollment?->plan?->name ?? 'Mensualidad';
+                $planBillingCycle = $activeEnrollment?->plan?->billing_cycle ?? 'monthly_from_enrollment';
+                
                 // Si el monto es 0, intentar sacar el precio del plan
                 if ($amount <= 0) {
-                    $enrollment = $fp->student->enrollments()->where('status', 'active')->first();
-                    $amount = (float)($enrollment?->plan?->price ?? 0);
+                    $amount = (float)($activeEnrollment?->plan?->price ?? 0);
                 }
                 
                 if ($amount <= 0) $amount = 45000; // Fallback extremo
 
+                // Marcar el período activo del fee
                 $pKey = $fp->student_id . '_' . $fp->period_month . '_' . $fp->period_year;
                 $activePeriods[$pKey] = true;
+
+                // Si el fee cubre múltiples meses (trimestral, semestral, anual),
+                // marcar todos los meses cubiertos para suprimir pagos legacy duplicados
+                $monthsCovered = match($planBillingCycle) {
+                    'quarterly'    => 3,
+                    'semi_annual'  => 6,
+                    'annual'       => 12,
+                    default        => 1,
+                };
+                if ($monthsCovered > 1 && $fp->period_month && $fp->period_year) {
+                    $baseDate = Carbon::create($fp->period_year, $fp->period_month, 1);
+                    for ($m = 1; $m < $monthsCovered; $m++) {
+                        $nextDate = $baseDate->copy()->addMonths($m);
+                        $activePeriods[$fp->student_id . '_' . $nextDate->month . '_' . $nextDate->year] = true;
+                    }
+                }
 
                 $tempPayments[] = [
                     'id' => 'fp_' . $fp->id,
@@ -124,7 +145,7 @@ class GuardianController extends Controller
                     'due_date' => $fp->period_month ? Carbon::create($fp->period_year, $fp->period_month, 1)->format('d M, Y') : null,
                     'raw_due_date' => $fp->period_month ? Carbon::create($fp->period_year, $fp->period_month, 1) : null,
                     'proof_url' => $fp->proof_url,
-                    'plan_name' => $fp->fee?->title ?? 'Mensualidad',
+                    'plan_name' => $realPlanName, // Usar el plan real del alumno, NO el título del fee
                     'belt_rank' => $fp->student->belt_rank ?? 'Blanco',
                     'degrees' => (int)($fp->student->degrees ?? 0)
                 ];
