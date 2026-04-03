@@ -440,7 +440,43 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                                                 ))}
                                             </div>
                                         </td>
-                                        <td className={`px-6 py-5 text-sm font-black ${isPaid ? 'text-emerald-500' : isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>{formatMoney(stats.displayAmount)}</td>
+                                         <td className="px-6 py-5">
+                                             <div className="flex flex-col">
+                                                 <span className={`text-sm font-black ${isPaid ? 'text-emerald-500' : isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>
+                                                     {formatMoney(stats.displayAmount)}
+                                                 </span>
+                                                 {isPaid && (() => {
+                                                     const currentPayment = (payer.payments ?? []).find((p: any) => {
+                                                         // Usar raw_due_date para comparar mes/año de forma más segura
+                                                         if (!p.raw_due_date) return false;
+                                                         const d = new Date(p.raw_due_date);
+                                                         return (d.getMonth() + 1) === selectedMonth && d.getFullYear() === selectedYear;
+                                                     });
+                                                     
+                                                     const method = currentPayment?.payment_method?.toLowerCase() || '';
+                                                     if (!method) return null;
+
+                                                     const isMercadoPago = method.includes('mercadopago') || method.includes('mp') || method.includes('card');
+                                                     const isCash = method === 'cash' || method === 'efectivo';
+                                                     const isTransfer = method === 'transfer' || method === 'transferencia';
+                                                     
+                                                     let label = method;
+                                                     if (isMercadoPago) label = 'Mercado Pago';
+                                                     else if (isCash) label = 'Efectivo';
+                                                     else if (isTransfer) label = 'Transferencia';
+
+                                                     return (
+                                                         <span className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded-md border self-start mt-1 shadow-sm ${
+                                                             isMercadoPago 
+                                                                 ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' 
+                                                                 : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                                                         }`}>
+                                                             {label}
+                                                         </span>
+                                                     );
+                                                 })()}
+                                             </div>
+                                         </td>
                                         <td className="px-6 py-5">
                                             <div className="flex flex-col gap-1">
                                                 {isPaid ? <span className="text-emerald-500 font-black text-[10px] uppercase">✓ Al Día</span>
