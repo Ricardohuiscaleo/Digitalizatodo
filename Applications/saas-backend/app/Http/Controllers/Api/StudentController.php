@@ -275,6 +275,11 @@ class StudentController extends Controller
         $tenantModel = app('currentTenant');
         $student = Student::where('tenant_id', $tenantModel->id)->findOrFail($id);
 
+        // Normalizar custom_price: si viene vacío, tratarlo como null
+        if ($request->has('custom_price') && $request->custom_price === '') {
+            $request->merge(['custom_price' => null]);
+        }
+
         $validated = $request->validate([
             'plan_id' => 'required|exists:plans,id',
             'custom_price' => 'nullable|numeric|min:0',
