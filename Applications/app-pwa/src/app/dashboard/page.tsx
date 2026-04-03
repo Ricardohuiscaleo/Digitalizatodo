@@ -582,7 +582,7 @@ export default function App() {
                                             )}
 
                                             {isMartialArts && (
-                                                <div className={`hidden md:block ${isDark ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-zinc-800 border-zinc-700 text-white shadow-xl shadow-zinc-200'} p-5 rounded-3xl relative overflow-hidden group border`}>
+                                                <div className={`${isDark ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-zinc-800 border-zinc-700 text-white shadow-xl shadow-zinc-200'} p-5 rounded-3xl relative overflow-hidden group border`}>
                                                     <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-all duration-700" />
                                                     <div className="relative z-10 flex flex-col items-center text-center">
                                                         <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm border border-white/10">
