@@ -10,6 +10,7 @@ import {
     getProfile,
     getPayers,
     approvePayment,
+    revertPayment,
     updateLogo,
     updatePricing,
     updateBankInfo,
@@ -447,7 +448,8 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         if (isDemo) {
             common.setPayers(common.payers.map((p: any) => p.id === payerId ? { ...p, status: 'paid' } : p));
         } else {
-            await approvePayment(branding.slug, token, String(payerId), paymentApproveMethod);
+            // Pasar selectedMonth y selectedYear para que la aprobación sea precisa
+            await approvePayment(branding.slug, token, String(payerId), paymentApproveMethod, selectedMonth, selectedYear);
             await common.refreshPayers(selectedMonth, selectedYear, paymentFilter);
         }
         setPaymentActionPayer(null);
@@ -460,8 +462,22 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         if (isDemo) {
             common.setPayers(common.payers.map((p: any) => p.id === payerId ? { ...p, status: 'paid' } : p));
         } else {
-            await approvePayment(branding.slug, token, String(payerId), method);
+            // Forzar aprobación del mes/año seleccionado en el dashboard
+            await approvePayment(branding.slug, token, String(payerId), method, selectedMonth, selectedYear);
             await common.refreshPayers(selectedMonth, selectedYear, paymentFilter);
+        }
+    };
+
+    const handleRevertPayment = async (payer: any) => {
+        if (!token || !branding?.slug) return;
+        const payerId = payer.id;
+        if (isDemo) {
+            common.setPayers(common.payers.map((p: any) => p.id === payerId ? { ...p, status: 'pending' } : p));
+        } else {
+            const result = await revertPayment(branding.slug, token, String(payerId), selectedMonth, selectedYear);
+            if (result) {
+                await common.refreshPayers(selectedMonth, selectedYear, paymentFilter);
+            }
         }
     };
 
@@ -494,20 +510,22 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         showSchedulesModal, setShowSchedulesModal,
         lastCheckedInStudent, setLastCheckedInStudent,
 
-        // Spread specialized hooks (Common, Treasury, Martial Arts)
         ...common,
         ...treasury,
         ...martialArts,
 
         // Overrides and computed values
+        handleBulkApprove, 
+        handlePaymentApprove,
+        handleApproveWithMethod,
+        handleRevertPayment,
         filteredFees: treasury.filteredFees(treasury.feesSearch),
         vocab: industryConfig[branding?.industry || 'default'] || industryConfig.default,
         handleLogout, 
         allStudents, toggleAttendance,
         handlePriceInput, handleSavePrices, handleSaveBankInfo, handleLogoUpload,
-        handlePaymentApprove, handleActivatePush, handleLoadDemo, handleConfirmPayment,
-        handleApproveWithMethod,
-        handleAcceptTerms, handleBulkApprove,
+        handleActivatePush, handleLoadDemo, handleConfirmPayment,
+        handleAcceptTerms,
         hasPermission,
         formatMoney: (a: number) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(a),
         STATUS_LABEL,

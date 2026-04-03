@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Eye, RefreshCw, DollarSign, CreditCard } from 'lucide-react';
+import { Eye, RefreshCw, Banknote, ArrowRightLeft } from 'lucide-react';
 import { StudentAvatar } from './Industries/MartialArts/StudentAvatar';
 
 interface BubblePaymentModalProps {
@@ -12,9 +12,12 @@ interface BubblePaymentModalProps {
     getPayerRealStats: (p: any) => any;
     onClose: () => void;
     onApprove: (payer: any, method?: string) => void;
+    onRevert?: (payer: any) => void;
     onViewProof: (url: string) => void;
     isDark?: boolean;
     industry?: string;
+    selectedMonth?: number;
+    selectedYear?: number;
 }
 
 const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({ 
@@ -25,9 +28,12 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
     getPayerRealStats, 
     onClose, 
     onApprove, 
+    onRevert,
     onViewProof,
     isDark = false,
-    industry = 'martial_arts'
+    industry = 'martial_arts',
+    selectedMonth,
+    selectedYear
 }) => {
     const [dragY, setDragY] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
@@ -87,16 +93,9 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
 
                 <div className={`px-6 pb-4 border-b ${isDark ? 'border-zinc-800/50' : 'border-zinc-100'}`}>
                     <p className={`text-[9px] font-black uppercase tracking-[0.2em] mb-3 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>Desglose del Pago</p>
-                    <div className="flex items-center gap-3">
-                        <StudentAvatar 
-                            photo={payer.photo} 
-                            name={payer.name} 
-                            size={48} 
-                            isDark={isDark} 
-                            industry={industry}
-                        />
-                        <div>
-                            <p className={`text-base font-black uppercase leading-none ${isDark ? 'text-white' : 'text-zinc-900'}`}>{payer.name}</p>
+            <div className="flex items-center gap-3">
+                <div>
+                    <p className={`text-base font-black uppercase leading-none ${isDark ? 'text-white' : 'text-zinc-900'}`}>{payer.name}</p>
                                 {payer.is_automatic ? (
                                     <span className="text-[7px] font-black uppercase bg-indigo-500/10 text-indigo-500 px-2 py-0.5 rounded-full border border-indigo-500/20 animate-pulse flex items-center gap-1 mt-1.5 w-max">
                                         <RefreshCw size={8} /> PAGO AUTOMÁTICO
@@ -168,7 +167,7 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
                                 {payment.proof_url && (
                                     <button
                                         onClick={() => onViewProof(payment.proof_url)}
-                                        className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 active:scale-95 border transition-all ${
+                                        className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border transition-all ${
                                             isDark ? 'bg-amber-400/10 border-amber-400/20 text-amber-500 hover:bg-amber-400/20' : 'bg-amber-50 border-amber-100 text-amber-500 hover:bg-amber-100'
                                         }`}
                                     >
@@ -184,23 +183,23 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
                     <div className="px-6 pt-4 pb-10">
                         {!payer.is_automatic && (
                             <p className={`text-center text-[9px] font-bold uppercase tracking-tight mb-3 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>
-                                ¿Te pagaron en efectivo o por transferencia? Márcalo aquí:
+                                ¿Te pagaron el periodo {selectedMonth && selectedYear ? `${new Intl.DateTimeFormat('es', { month: 'long' }).format(new Date(selectedYear, selectedMonth - 1)).toUpperCase()} ${selectedYear}` : 'actual'}? Márcalo aquí:
                             </p>
                         )}
                         <div className="flex gap-3">
                             <button
                                 onClick={() => onApprove(payer, 'cash')}
-                                className="flex-1 h-14 rounded-2xl text-white font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg text-center leading-tight"
+                                className="flex-1 h-14 rounded-2xl text-white font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg text-center leading-tight hover:brightness-110"
                                 style={{ backgroundColor: isReview ? '#f59e0b' : '#10b981' }}
                             >
-                                <DollarSign size={16} /> {isReview ? 'Aprobar Efectivo' : 'Efectivo'}
+                                <Banknote size={16} /> {isReview ? 'Aprobar Efectivo' : 'Efectivo'}
                             </button>
                             <button
                                 onClick={() => onApprove(payer, 'transfer')}
-                                className="flex-1 h-14 rounded-2xl text-white font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg text-center leading-tight"
+                                className="flex-1 h-14 rounded-2xl text-white font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg text-center leading-tight hover:brightness-110"
                                 style={{ backgroundColor: isReview ? '#d97706' : '#6366f1' }}
                             >
-                                <CreditCard size={16} /> {isReview ? 'Aprobar Transf.' : 'Transferencia'}
+                                <ArrowRightLeft size={16} /> {isReview ? 'Aprobar Transf.' : 'Transferencia'}
                             </button>
                         </div>
                         {payer.is_automatic && (
@@ -210,7 +209,28 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
                         )}
                     </div>
                 )}
-                {isPaid && <div className="pb-10" />}
+                {isPaid && onRevert && (
+                    <div className="px-6 pt-4 pb-10">
+                        <p className={`text-center text-[9px] font-bold uppercase tracking-tight mb-3 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>
+                            ¿Hubo un error? Puedes anular la aprobación de {selectedMonth && selectedYear ? `${new Intl.DateTimeFormat('es', { month: 'long' }).format(new Date(selectedYear, selectedMonth - 1)).toUpperCase()} ${selectedYear}` : 'este periodo'}:
+                        </p>
+                        <button
+                            onClick={() => {
+                                if (confirm('¿Estás seguro de anular esta aprobación?')) {
+                                    onRevert(payer);
+                                    onClose();
+                                }
+                            }}
+                            className={`w-full h-12 rounded-2xl font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-2 transition-all border ${
+                                isDark ? 'border-amber-500/20 text-amber-500 bg-amber-500/10' : 'border-amber-200 text-amber-600 bg-amber-50'
+                            }`}
+                        >
+                            <RefreshCw size={14} /> Anular Aprobación
+                        </button>
+                    </div>
+                )}
+                {isPaid && !onRevert && <div className="pb-10" />}
+                {!isPaid && <div className="pb-10" />}
             </div>
         </div>
     );

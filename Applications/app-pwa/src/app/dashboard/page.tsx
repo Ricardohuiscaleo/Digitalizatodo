@@ -117,6 +117,15 @@ export default function App() {
         if (typeof window === 'undefined') return false;
         return localStorage.getItem('tenant_industry') === 'martial_arts';
     });
+    const [isSidebarExpanded, setIsSidebarExpanded] = useState(() => {
+        if (typeof window === 'undefined') return true;
+        return localStorage.getItem('sidebar_expanded') !== 'false';
+    });
+    const toggleSidebar = () => setIsSidebarExpanded(prev => {
+        const next = !prev;
+        localStorage.setItem('sidebar_expanded', String(next));
+        return next;
+    });
     const isMartialArts = branding?.industry === 'martial_arts';
     const isTreasury = branding?.industry === 'school_treasury';
 
@@ -164,12 +173,12 @@ export default function App() {
         tenantTerms, termsLoading,
         loadTenantTerms, handleUpdateTenantTerms,
 
-        toggleAttendance, handleConfirmPayment, handleCreateExpense, handleDeleteExpense,
+        toggleAttendance, handleConfirmPayment, handleApproveWithMethod, handleRevertPayment, handleCreateExpense, handleDeleteExpense,
         handleCreateFee, handleApproveFeePayment, handleRejectFeePayment, handlePriceInput, handleSavePrices,
         guardianPayments, guardianPaymentsLoading, openGuardianPayments,
         handleSaveBankInfo, handleLogoUpload, openFee, markAllNotificationsRead, markNotificationRead,
         loadExpenses, loadSchedules, loadPlans, loadFees,
-        formatMoney, formatCLP, parseCLP, handlePaymentApprove, handleApproveWithMethod, handleBulkApprove, handleActivatePush,
+        formatMoney, formatCLP, parseCLP, handlePaymentApprove, handleBulkApprove, handleActivatePush,
         handleDeleteFee, handleLongPressStart, handleLongPressEnd, handleLoadDemo,
         handleCreatePlan, handleUpdatePlan, handleDeletePlan,
         handleCreateSchedule, handleUpdateSchedule, handleDeleteSchedule,
@@ -356,9 +365,24 @@ export default function App() {
 
             <div className="flex flex-1 overflow-hidden">
                 {/* SIDEBAR DESKTOP */}
-                <aside className={`hidden md:flex flex-col w-64 border-r p-6 gap-8 transition-colors duration-500 ${isMartialArts && isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-zinc-100'
-                    }`}>
-                    <div className="flex items-center gap-3 px-2">
+                <aside className={`hidden md:flex flex-col border-r gap-6 transition-all duration-300 ease-in-out relative shrink-0 ${
+                    isSidebarExpanded ? 'w-64 p-6' : 'w-20 p-4'
+                } ${isMartialArts && isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-zinc-100'}`}>
+                    {/* Toggle Button */}
+                    <button
+                        onClick={toggleSidebar}
+                        className={`absolute -right-3.5 top-8 z-10 w-7 h-7 rounded-full border flex items-center justify-center transition-all duration-300 shadow-md hover:scale-110 active:scale-95 ${
+                            isDark ? 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-white' : 'bg-white border-zinc-200 text-zinc-400 hover:text-zinc-700'
+                        }`}
+                    >
+                        {isSidebarExpanded
+                            ? <ChevronLeft size={14} strokeWidth={2.5} />
+                            : <ChevronRight size={14} strokeWidth={2.5} />
+                        }
+                    </button>
+
+                    {/* Header: Logo + Name */}
+                    <div className={`flex items-center gap-3 overflow-hidden ${isSidebarExpanded ? 'px-2' : 'justify-center px-0'}`}>
                         <div className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full overflow-hidden border-2 border-zinc-100">
                             {branding?.logo ? (
                                 <img src={branding.logo} className="w-full h-full object-cover" alt="L" />
@@ -366,23 +390,23 @@ export default function App() {
                                 <span className="font-black text-xl uppercase tracking-tighter text-zinc-950">{branding?.name?.[0] || 'D'}</span>
                             )}
                         </div>
-                        <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                                <h2 className={`text-sm font-black uppercase tracking-tighter text-zinc-950 truncate leading-none ${isDark ? 'text-white' : 'text-zinc-950'}`}>{branding?.name || 'Academy'}</h2>
-                                <button onClick={() => setShowPushModal(true)} className="shrink-0">
-                                    <div className={`w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm transition-colors duration-500 ${pushPermission === 'granted' ? 'bg-emerald-500 animate-pulse' :
-                                            pushPermission === 'denied' ? 'bg-red-500' :
-                                                'bg-amber-400'
-                                        }`} />
-                                </button>
+                        {isSidebarExpanded && (
+                            <div className="min-w-0 animate-in fade-in duration-200">
+                                <div className="flex items-center gap-2">
+                                    <h2 className={`text-sm font-black uppercase tracking-tighter truncate leading-none ${isDark ? 'text-white' : 'text-zinc-950'}`}>{branding?.name || 'Academy'}</h2>
+                                    <button onClick={() => setShowPushModal(true)} className="shrink-0">
+                                        <div className={`w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm transition-colors duration-500 ${pushPermission === 'granted' ? 'bg-emerald-500 animate-pulse' : pushPermission === 'denied' ? 'bg-red-500' : 'bg-amber-400'}`} />
+                                    </button>
+                                </div>
+                                <p className="text-[8px] font-black uppercase tracking-widest mt-1" style={{ color: branding?.primaryColor || '#6366f1' }}>Software de Gestión</p>
                             </div>
-                            <p className="text-[8px] font-black uppercase tracking-widest mt-1" style={{ color: branding?.primaryColor || '#6366f1' }}>Software de Gestión</p>
-                        </div>
+                        )}
                     </div>
 
+                    {/* Navigation */}
                     <nav className="flex flex-col gap-2">
-                        <SidebarButton icon={LayoutDashboard} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} primaryColor={branding?.primaryColor} isDark={isDark} />
-                        {hasPermission('attendance') && branding?.industry !== 'school_treasury' && <SidebarButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} isDark={isDark} />}
+                        <SidebarButton icon={LayoutDashboard} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => changeTab('dashboard')} primaryColor={branding?.primaryColor} isDark={isDark} collapsed={!isSidebarExpanded} />
+                        {hasPermission('attendance') && branding?.industry !== 'school_treasury' && <SidebarButton icon={Users} label={vocab.attendance} active={activeTab === 'attendance'} onClick={() => changeTab('attendance')} primaryColor={branding?.primaryColor} isDark={isDark} collapsed={!isSidebarExpanded} />}
                         {hasPermission('payments') && (
                             <SidebarButton
                                 icon={CreditCard}
@@ -392,23 +416,29 @@ export default function App() {
                                 primaryColor={branding?.primaryColor}
                                 isDark={isDark}
                                 badge={branding?.industry === 'school_treasury' ? feesSummary?.metrics?.en_revision : undefined}
+                                collapsed={!isSidebarExpanded}
                             />
                         )}
-                        {hasPermission('settings') && <SidebarButton icon={Settings} label="Ajustes" active={activeTab === 'settings'} onClick={() => changeTab('settings')} primaryColor={branding?.primaryColor} isDark={isDark} />}
-                        {hasPermission('attendance') && branding?.industry === 'school_treasury' && <SidebarButton icon={Calendar} label="Horario" active={activeTab === 'schedule'} onClick={() => changeTab('schedule')} primaryColor={branding?.primaryColor} isDark={isDark} />}
+                        {hasPermission('settings') && <SidebarButton icon={Settings} label="Ajustes" active={activeTab === 'settings'} onClick={() => changeTab('settings')} primaryColor={branding?.primaryColor} isDark={isDark} collapsed={!isSidebarExpanded} />}
+                        {hasPermission('attendance') && branding?.industry === 'school_treasury' && <SidebarButton icon={Calendar} label="Horario" active={activeTab === 'schedule'} onClick={() => changeTab('schedule')} primaryColor={branding?.primaryColor} isDark={isDark} collapsed={!isSidebarExpanded} />}
                     </nav>
 
-                    <div className={`mt-auto pt-6 border-t flex items-center gap-3 ${isDark ? 'border-zinc-800' : 'border-zinc-50'}`}>
-                        <div className={`w-8 h-8 rounded-full overflow-hidden border ${isDark ? 'border-zinc-700' : 'border-zinc-100'}`}>
+                    {/* Footer: User Info */}
+                    <div className={`mt-auto pt-4 border-t flex items-center gap-3 overflow-hidden ${isDark ? 'border-zinc-800' : 'border-zinc-50'} ${!isSidebarExpanded ? 'justify-center' : ''}`}>
+                        <div className={`shrink-0 rounded-full overflow-hidden border ${isDark ? 'border-zinc-700' : 'border-zinc-100'} ${isSidebarExpanded ? 'w-8 h-8' : 'w-10 h-10'}`}>
                             <img src="/DLogo-v2.webp" className="w-full h-full object-cover" alt="D" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <p className={`text-[10px] font-black truncate leading-none uppercase ${isDark ? 'text-white' : 'text-zinc-900'}`}>{user?.name || 'Admin'}</p>
-                            <p className={`text-[8px] font-bold uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Administrator</p>
-                        </div>
-                        <button onClick={() => { localStorage.clear(); window.location.href = "/"; }} className="text-zinc-300 hover:text-rose-500 transition-colors">
-                            <LogOut size={16} />
-                        </button>
+                        {isSidebarExpanded && (
+                            <>
+                                <div className="flex-1 min-w-0 animate-in fade-in duration-200">
+                                    <p className={`text-[10px] font-black truncate leading-none uppercase ${isDark ? 'text-white' : 'text-zinc-900'}`}>{user?.name || 'Admin'}</p>
+                                    <p className={`text-[8px] font-bold uppercase tracking-widest ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>Administrator</p>
+                                </div>
+                                <button onClick={() => { localStorage.clear(); window.location.href = "/"; }} className="text-zinc-300 hover:text-rose-500 transition-colors">
+                                    <LogOut size={16} />
+                                </button>
+                            </>
+                        )}
                     </div>
                 </aside>
 
@@ -448,10 +478,6 @@ export default function App() {
                                     </div>
 
                                     {isDemo && <span className="bg-emerald-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg shadow-emerald-500/20">Modo Demo Activo</span>}
-                                    <div className="hidden xl:flex items-center gap-2 px-4 py-2 bg-zinc-50 dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800">
-                                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Live Sync Engaged</span>
-                                    </div>
                                 </div>
                             </div>
                             {activeTab === 'dashboard' && (
@@ -658,6 +684,7 @@ export default function App() {
                                         formatMoney={formatMoney}
                                         handlePaymentApprove={handlePaymentApprove}
                                         handleApproveWithMethod={handleApproveWithMethod}
+                                         handleRevertPayment={handleRevertPayment}
                                         handleLongPressStart={handleLongPressStart}
                                         handleLongPressEnd={handleLongPressEnd}
                                         setBubbleModalPayer={setBubbleModalPayer}
@@ -996,20 +1023,29 @@ export default function App() {
     );
 }
 
-function SidebarButton({ icon: Icon, label, active, onClick, primaryColor, isDark, badge }: { icon: any, label: string, active: boolean, onClick: () => void, primaryColor?: string, isDark?: boolean, badge?: number }) {
+function SidebarButton({ icon: Icon, label, active, onClick, primaryColor, isDark, badge, collapsed }: { icon: any, label: string, active: boolean, onClick: () => void, primaryColor?: string, isDark?: boolean, badge?: number, collapsed?: boolean }) {
     return (
-        <button onClick={onClick}
+        <button
+            onClick={onClick}
+            title={collapsed ? label : undefined}
             style={active ? { backgroundColor: primaryColor || '#6366f1' } : {}}
-            className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 w-full group relative ${active
+            className={`flex items-center rounded-2xl transition-all duration-300 w-full group relative ${
+                collapsed ? 'justify-center px-3 py-3' : 'gap-3 px-4 py-3'
+            } ${active
                     ? 'text-white shadow-lg'
                     : isDark
                         ? 'text-zinc-500 hover:bg-zinc-800 hover:text-white'
                         : 'text-zinc-400 hover:bg-zinc-50 hover:text-zinc-600'
-                }`}>
-            <Icon size={20} strokeWidth={active ? 3 : 2} className={`transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`} />
-            <span className="text-[11px] font-black uppercase tracking-widest">{label}</span>
+                }`}
+        >
+            <Icon size={20} strokeWidth={active ? 3 : 2} className={`shrink-0 transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`} />
+            {!collapsed && (
+                <span className="text-[11px] font-black uppercase tracking-widest animate-in fade-in duration-200 truncate">{label}</span>
+            )}
             {badge && badge > 0 && (
-                <div className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-amber-400 text-zinc-950 text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                <div className={`absolute min-w-[18px] h-[18px] bg-amber-400 text-zinc-950 text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-sm ${
+                    collapsed ? 'top-1 right-1' : 'top-1 right-1'
+                }`}>
                     {badge}
                 </div>
             )}

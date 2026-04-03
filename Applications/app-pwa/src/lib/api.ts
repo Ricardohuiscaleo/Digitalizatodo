@@ -538,7 +538,7 @@ export async function getPayers(tenantId: string, token: string, filters?: { mon
     }
 }
 
-export async function approvePayment(tenantId: string, token: string, payerId: string | number, method: string = 'cash') {
+export async function approvePayment(tenantId: string, token: string, payerId: string | number, method: string = 'cash', month?: number, year?: number) {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/payers/${payerId}/approve`, {
             method: 'POST',
@@ -547,12 +547,38 @@ export async function approvePayment(tenantId: string, token: string, payerId: s
                 'Authorization': `Bearer ${token}`,
                 'X-Tenant-Id': tenantId,
             },
-            body: JSON.stringify({ payment_method: method })
+            body: JSON.stringify({ 
+                payment_method: method,
+                month: month,
+                year: year
+            })
         });
 
         return await safeJson(response);
     } catch (error) {
         console.error('Error approving payment:', error);
+        return { message: 'Error de conexión' };
+    }
+}
+
+export async function revertPayment(tenantId: string, token: string, payerId: string | number, month?: number, year?: number) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantId}/payers/${payerId}/revert`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'X-Tenant-Id': tenantId,
+            },
+            body: JSON.stringify({ 
+                month: month,
+                year: year
+            })
+        });
+
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error reverting payment:', error);
         return { message: 'Error de conexión' };
     }
 }

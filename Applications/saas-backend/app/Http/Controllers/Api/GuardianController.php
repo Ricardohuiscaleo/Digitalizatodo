@@ -103,17 +103,15 @@ class GuardianController extends Controller
 
                 // Obtener el plan real del alumno desde enrollment (fuente de verdad)
                 $activeEnrollment = $fp->student->enrollments->where('status', 'active')->first();
-                $realPlanName = $activeEnrollment?->plan?->name ?? 'Mensualidad';
+                $realPlanName = $activeEnrollment?->plan?->name ?? ($fp->student->enrollments->first()?->plan?->name ?? 'Sin plan');
                 $planBillingCycle = $activeEnrollment?->plan?->billing_cycle ?? 'monthly_from_enrollment';
 
                 // Prioridad de amount:
                 // 1. payment_amount: lo que el alumno REALMENTE pagó (corregido en DB)
                 // 2. Precio del plan activo del alumno (fuente de verdad de cuánto debería pagar)
-                // 3. fee->amount: fallback (puede ser erróneo si el fee era de otro ciclo)
+                // 3. fee->amount: fallback
                 $enrollmentPrice = (float)($activeEnrollment?->custom_price ?? $activeEnrollment?->plan?->price ?? 0);
                 $amount = (float)($fp->payment_amount ?? ($enrollmentPrice > 0 ? $enrollmentPrice : $fp->fee?->amount) ?? 0);
-
-                if ($amount <= 0) $amount = 45000; // Fallback extremo
 
                 // Marcar el período activo del fee
                 $pKey = $fp->student_id . '_' . $fp->period_month . '_' . $fp->period_year;
@@ -146,9 +144,10 @@ class GuardianController extends Controller
                     'due_date' => $fp->period_month ? Carbon::create($fp->period_year, $fp->period_month, 1)->format('d M, Y') : null,
                     'raw_due_date' => $fp->period_month ? Carbon::create($fp->period_year, $fp->period_month, 1) : null,
                     'proof_url' => $fp->proof_url,
-                    'plan_name' => $realPlanName, // Usar el plan real del alumno, NO el título del fee
+                    'plan_name' => $realPlanName,
                     'belt_rank' => $fp->student->belt_rank ?? 'Blanco',
-                    'degrees' => (int)($fp->student->degrees ?? 0)
+                    'degrees' => (int)($fp->student->degrees ?? 0),
+                    'category' => $fp->student->category ?? 'adults'
                 ];
             }
 
@@ -188,7 +187,8 @@ class GuardianController extends Controller
                             'proof_url' => $payment->proof_image ? (str_starts_with($payment->proof_image, 'http') ? $payment->proof_image : $s3BaseUrl . $payment->proof_image) : null,
                             'belt_rank' => $student->belt_rank ?? 'Blanco',
                             'degrees' => (int)($student->degrees ?? 0),
-                            'plan_name' => $payment?->plan?->name ?? $enrollment?->plan?->name ?? 'Mensualidad',
+                            'plan_name' => $payment?->plan?->name ?? $enrollment?->plan?->name ?? 'Sin plan',
+                            'category' => $student->category ?? 'adults'
                         ];
                     }
                 }
@@ -230,8 +230,8 @@ class GuardianController extends Controller
                     }
 
                     if (!$hasMonthPaid) {
-                        $enrollment = $s->enrollments?->first();
-                        $totalDue += (float)($enrollment?->plan?->price ?? 45000);
+                        $enrollment = $s->enrollments?->where('status', 'active')->first() ?? $s->enrollments?->first();
+                        $totalDue += (float)($enrollment?->plan?->price ?? 0);
                     }
                 }
             }
@@ -245,6 +245,7 @@ class GuardianController extends Controller
                 'payments' => $activePayments,
                 'pricing' => $pricing,
                 'enrolledStudents' => $students->map(function ($s) use ($s3BaseUrl) {
+                    $activeEnrollment = $s->enrollments?->where('status', 'active')->first() ?? $s->enrollments?->first();
                     return [
                         'id' => $s->id,
                         'name' => $s->name,
@@ -253,6 +254,8 @@ class GuardianController extends Controller
                         'degrees' => (int)($s->degrees ?? 0),
                         'photo' => $s->photo ? (str_starts_with($s->photo, 'http') ? $s->photo : $s3BaseUrl . $s->photo) : "https://i.pravatar.cc/150?u=" . $s->id,
                         'today_status' => $s->attendances()->where('date', \Carbon\Carbon::now('America/Santiago')->toDateString())->where('status', 'present')->exists() ? 'present' : 'absent',
+                        'plan_name' => $activeEnrollment?->plan?->name ?? 'Sin plan',
+                        'amount' => (float)($activeEnrollment?->plan?->price ?? 0),
                         'payment_status' => (function() use ($s) {
                             $now = \Carbon\Carbon::now('America/Santiago');
                             $hasOverdue = $s->enrollments->contains(function($e) use ($now) {
@@ -387,6 +390,59 @@ class GuardianController extends Controller
     /**
      * Bulk approve payments for multiple guardians.
      */
+    /**
+     * Revert a previously approved payment (manual or proof) back to pending.
+     */
+    public function revertPayment($tenantSlug, $id, Request $request)
+    {
+        try {
+            $tenant = app('currentTenant');
+            $guardian = Guardian::where('tenant_id', $tenant->id)->find($id);
+
+            if (!$guardian) {
+                $guardian = Guardian::find($id);
+                if (!$guardian) return response()->json(['message' => 'No se encontró el apoderado.'], 404);
+            }
+
+            $now = Carbon::now('America/Santiago');
+            $month = (int)$request->input('month', $now->month);
+            $year = (int)$request->input('year', $now->year);
+
+            foreach ($guardian->students as $student) {
+                // 1. Revert FeePayment (SaaS/Subscription)
+                \App\Models\FeePayment::where('student_id', $student->id)
+                    ->where('period_month', $month)
+                    ->where('period_year', $year)
+                    ->update([
+                        'status'         => 'review', // Si queremos que se revise de nuevo, o 'pending'
+                        'paid_at'        => null,
+                        'payment_method' => null,
+                        'approved_by'    => null,
+                        'notes'          => 'Pago anulado manualmente por Staff'
+                    ]);
+
+                // 2. Revert Legacy Payment (Dojo)
+                \App\Models\Payment::where('student_id', $student->id)
+                    ->whereMonth('due_date', $month)
+                    ->whereYear('due_date', $year)
+                    ->update([
+                        'status'         => 'pending',
+                        'paid_at'        => null,
+                        'payment_method' => null,
+                        'approved_by'    => null,
+                    ]);
+            }
+
+            return response()->json([
+                'message' => 'Aprobación de ' . Carbon::create($year, $month, 1)->format('M Y') . ' anulada exitosamente.'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("[DEBUG-REVERT] Error en reversión", ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Error al anular pago.'], 500);
+        }
+    }
+
     public function bulkApprove(Request $request)
     {
         $tenant = app('currentTenant');
