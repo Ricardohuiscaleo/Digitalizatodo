@@ -68,7 +68,28 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
     const isPaid = (payer.status === 'paid') || (approvedAmount > 0 && pendingAmount === 0 && reviewAmount === 0);
     const isReview = !isPaid && (payer.status === 'review' || reviewAmount > 0);
 
-    const payments = payer.payments ?? [];
+    const payments = (payer.payments ?? []).filter((p: any) => {
+        if (!selectedMonth || !selectedYear) return true;
+        
+        // Versión robusta para detectar el mes/año del pago
+        let pMonth: number | null = null;
+        let pYear: number | null = null;
+
+        if (p.raw_due_date) {
+            const d = new Date(p.raw_due_date);
+            pMonth = d.getMonth() + 1;
+            pYear = d.getFullYear();
+        } else if (p.due_date) {
+            // Fallback para fechas formateadas "01 May, 2026"
+            const d = new Date(p.due_date);
+            if (!isNaN(d.getTime())) {
+                pMonth = d.getMonth() + 1;
+                pYear = d.getFullYear();
+            }
+        }
+
+        return pMonth === selectedMonth && pYear === selectedYear;
+    });
 
     return (
         <div
