@@ -279,10 +279,22 @@ export default function TimerPage() {
         ignoreNextWsRef.current = false;
         return;
       }
-      console.log('📡 Evento Sync:', { status: data.status, view: data.view, time: data.remainingSeconds });
-      setStatus(data.status);
-      setView(data.view as ViewState);
+      
+      const incomingView = (data.view as ViewState) || 'timer';
+      const incomingStatus = data.status;
+
+      console.log(`📡 [SYNC] Status: ${incomingStatus} | View: ${incomingView} | Time: ${data.remainingSeconds}`);
+      
+      setStatus(incomingStatus);
       setInitialSeconds(data.initialSeconds);
+      
+      // LOGICA DE AUTO-CAMBIO DE VISTA: 
+      // Si el cronómetro está activo, el proyector DEBE mostrar el timer
+      if (incomingStatus === 'running' || incomingStatus === 'paused') {
+        setView('timer');
+      } else {
+        setView(incomingView);
+      }
       setServerStartedAt(data.startedAt);
       serverStartedAtRef.current = data.startedAt;
       initialSecondsRef.current = data.initialSeconds;
