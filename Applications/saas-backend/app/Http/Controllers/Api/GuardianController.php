@@ -360,21 +360,7 @@ class GuardianController extends Controller
             ], 500);
         }
     }
-                    'paid_at'        => \Carbon\Carbon::now('America/Santiago'),
-                    'payment_method' => $method
-                ]);
 
-            $count++;
-        }
-
-        event(new \App\Events\FeeUpdated($tenant->slug, $guardian->id));
-
-        return response()->json([
-            'success'   => true,
-            'message'   => "Se han marcado $count mensualidades como pagadas.",
-            'guardian_id' => $guardian->id
-        ]);
-    }
 
     /**
      * Bulk approve payments for multiple guardians.
