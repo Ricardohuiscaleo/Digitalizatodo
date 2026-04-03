@@ -1208,3 +1208,37 @@ export async function resetPassword(tenantId: string, data: any) {
         return { message: 'Error de conexión' };
     }
 }
+
+export async function getTimerState(tenantSlug: string, token: string) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantSlug}/timer`, {
+            method: 'GET',
+            cache: 'no-store' as RequestCache,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error fetching timer state:', error);
+        return null;
+    }
+}
+
+export async function updateTimerState(tenantSlug: string, token: string, data: any) {
+    try {
+        const response = await fetch(`${API_URL}/${tenantSlug}/timer/update`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(data),
+        });
+        return await safeJson(response);
+    } catch (error) {
+        console.error('Error updating timer:', error);
+        return { success: false };
+    }
+}

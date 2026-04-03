@@ -3,8 +3,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Settings, TimerReset, Wind, Tv, Play, Pause, RotateCcw, Smartphone, Monitor } from 'lucide-react';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
+import { useBranding } from '@/context/BrandingContext';
 import { getEcho } from '@/lib/echo';
-import api from '@/lib/api';
+import { getTimerState, updateTimerState } from '@/lib/api';
 
 const gridTimes = [
   30, 60, 120, 180, 240, 
@@ -13,7 +14,8 @@ const gridTimes = [
 ];
 
 export default function TimerPage() {
-  const { tenant } = useAdminDashboard();
+  const { branding, setBranding } = useBranding();
+  const { token } = useAdminDashboard(branding, setBranding);
   const [status, setStatus] = useState('idle'); // 'idle', 'running', 'paused', 'finished'
   const [timeLeft, setTimeLeft] = useState(300);
   const [initialSeconds, setInitialSeconds] = useState(300);
@@ -37,26 +39,28 @@ export default function TimerPage() {
 
   // Cargar estado inicial
   const fetchState = useCallback(async () => {
-    if (!tenant?.slug) return;
+    if (!branding?.slug || !token) return;
     try {
-      const response = await api.get(`/${tenant.slug}/timer`);
-      const { state } = response.data;
-      setStatus(state.status);
-      setInitialSeconds(state.initial_seconds);
-      setServerStartedAt(state.started_at);
-      
-      if (state.status === 'running' && state.started_at) {
-          const started = new Date(state.started_at).getTime();
-          const now = new Date().getTime();
-          const diff = Math.floor((now - started) / 1000);
-          setTimeLeft(Math.max(0, state.remaining_seconds - diff));
-      } else {
-          setTimeLeft(state.remaining_seconds);
+      const response = await getTimerState(branding.slug, token);
+      if (response && response.state) {
+          const { state } = response;
+          setStatus(state.status);
+          setInitialSeconds(state.initial_seconds);
+          setServerStartedAt(state.started_at);
+          
+          if (state.status === 'running' && state.started_at) {
+              const started = new Date(state.started_at).getTime();
+              const now = new Date().getTime();
+              const diff = Math.floor((now - started) / 1000);
+              setTimeLeft(Math.max(0, state.remaining_seconds - diff));
+          } else {
+              setTimeLeft(state.remaining_seconds);
+          }
       }
     } catch (error) {
       console.error("Error fetching timer state:", error);
     }
-  }, [tenant]);
+  }, [branding?.slug, token]);
 
   useEffect(() => {
     fetchState();
@@ -64,12 +68,12 @@ export default function TimerPage() {
 
   // Suscribirse a cambios en tiempo real
   useEffect(() => {
-    if (!tenant?.slug) return;
+    if (!branding?.slug) return;
     
     const echo = getEcho();
     if (!echo) return;
 
-    const channel = echo.channel(`timer.${tenant.slug}`);
+    const channel = echo.channel(`timer.${branding.slug}`);
     
     channel.listen('.timer.updated', (data: any) => {
       console.log("Timer updated via Echo:", data);
@@ -88,9 +92,9 @@ export default function TimerPage() {
     });
 
     return () => {
-      echo.leave(`timer.${tenant.slug}`);
+      echo.leave(`timer.${branding.slug}`);
     };
-  }, [tenant]);
+  }, [branding?.slug]);
 
   // Lógica local del cronómetro (para fluidez visual)
   useEffect(() => {
@@ -113,13 +117,13 @@ export default function TimerPage() {
 
   // API para actualizar estado
   const syncState = async (updates: any) => {
-      if (!tenant?.slug) return;
+      if (!branding?.slug || !token) return;
       try {
-          await api.post(`/${tenant.slug}/timer/update`, {
+          await updateTimerState(branding.slug, token, {
               status: updates.status ?? status,
               initial_seconds: updates.initialSeconds ?? initialSeconds,
               remaining_seconds: updates.remainingSeconds ?? timeLeft,
-              started_at: updates.status === 'running' ? new Date().toISOString() : null
+              started_at: (updates.status === 'running' || (status === 'running' && !updates.status)) ? new Date().toISOString() : null
           });
       } catch (error) {
           console.error("Error syncing timer:", error);
@@ -141,8 +145,9 @@ export default function TimerPage() {
 
   const toggleTimer = () => {
     const newStatus = status === 'running' ? 'paused' : 'running';
+    const currentRemaining = timeLeft;
     setStatus(newStatus);
-    syncState({ status: newStatus, remainingSeconds: timeLeft });
+    syncState({ status: newStatus, remainingSeconds: currentRemaining });
   };
 
   const resetTimer = () => {
@@ -160,7 +165,7 @@ export default function TimerPage() {
            <img src="/4.png" alt="Logo" className="h-12 invert brightness-200" />
            <div className="text-right">
                 <p className="text-xs font-black tracking-widest uppercase">Cronómetro Oficial</p>
-                <p className="text-[10px] font-bold opacity-50 uppercase tracking-tighter">{tenant?.name} — SALA</p>
+                <p className="text-[10px] font-bold opacity-50 uppercase tracking-tighter">{branding?.name} — SALA</p>
            </div>
         </div>
 
