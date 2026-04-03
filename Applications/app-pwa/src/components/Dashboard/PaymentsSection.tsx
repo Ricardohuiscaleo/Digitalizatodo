@@ -447,18 +447,25 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                                                  </span>
                                                  {isPaid && (() => {
                                                      const currentPayment = (payer.payments ?? []).find((p: any) => {
-                                                         // Usar raw_due_date para comparar mes/año de forma más segura
-                                                         if (!p.raw_due_date) return false;
-                                                         const d = new Date(p.raw_due_date);
-                                                         return (d.getMonth() + 1) === selectedMonth && d.getFullYear() === selectedYear;
+                                                         const dateStr = p.raw_due_date || p.due_date;
+                                                         if (!dateStr) return false;
+                                                         
+                                                         // Parsing robusto para evitar problemas de zona horaria
+                                                         const parts = dateStr.includes('T') ? dateStr.split('T')[0].split('-') : dateStr.split('-');
+                                                         if (parts.length < 3) return false;
+                                                         
+                                                         const pYear = parseInt(parts[0]);
+                                                         const pMonth = parseInt(parts[1]);
+                                                         
+                                                         return pMonth === selectedMonth && pYear === selectedYear;
                                                      });
                                                      
                                                      const method = currentPayment?.payment_method?.toLowerCase() || '';
                                                      if (!method) return null;
 
                                                      const isMercadoPago = method.includes('mercadopago') || method.includes('mp') || method.includes('card');
-                                                     const isCash = method === 'cash' || method === 'efectivo';
-                                                     const isTransfer = method === 'transfer' || method === 'transferencia';
+                                                     const isCash = method === 'cash' || method === 'efectivo' || method === 'manual';
+                                                     const isTransfer = method === 'transfer' || method === 'transferencia' || method === 'transferencia bancaria';
                                                      
                                                      let label = method;
                                                      if (isMercadoPago) label = 'Mercado Pago';
