@@ -233,6 +233,10 @@ Route::group(['middleware' => [ResolveTenantFromPath::class], 'prefix' => '{tena
                     // Gestión de Cursos
                     Route::post('courses', [CourseController::class, 'store']);
                     Route::delete('courses/{id}', [CourseController::class, 'destroy']);
+
+                    // Gestión de Cronómetro (Real-time)
+                    Route::get('timer', [\App\Http\Controllers\Api\TimerController::class, 'getState']);
+                    Route::post('timer/update', [\App\Http\Controllers\Api\TimerController::class, 'updateState']);
                 }
                 );
             }

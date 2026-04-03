@@ -48,7 +48,8 @@ import {
     UserPlus,
     ClipboardCheck,
     Zap,
-    ArrowRight
+    ArrowRight,
+    Tv
 } from 'lucide-react';
 import { useBranding } from "@/context/BrandingContext";
 import NotificationToast from "@/components/Notifications/NotificationToast";
@@ -575,6 +576,25 @@ export default function App() {
                                                             className="w-full py-2.5 bg-white text-zinc-950 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-zinc-100 transition-all active:scale-95 flex items-center justify-center gap-2"
                                                         >
                                                             Abrir Terminal
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {isMartialArts && (
+                                                <div className={`hidden md:block ${isDark ? 'bg-zinc-900 border-zinc-800 text-white' : 'bg-zinc-800 border-zinc-700 text-white shadow-xl shadow-zinc-200'} p-5 rounded-3xl relative overflow-hidden group border`}>
+                                                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-all duration-700" />
+                                                    <div className="relative z-10 flex flex-col items-center text-center">
+                                                        <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm border border-white/10">
+                                                            <Tv size={24} className="text-white" />
+                                                        </div>
+                                                        <h3 className="text-xs font-black uppercase tracking-widest mb-1">Terminal de Sala</h3>
+                                                        <p className="text-[8px] font-bold opacity-50 uppercase tracking-tighter mb-4">Cronómetro y Control Remoto</p>
+                                                        <button
+                                                            onClick={() => window.location.href = '/dashboard/timer'}
+                                                            className="w-full py-2.5 bg-blue-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-500 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20"
+                                                        >
+                                                            Abrir SALA
                                                         </button>
                                                     </div>
                                                 </div>
