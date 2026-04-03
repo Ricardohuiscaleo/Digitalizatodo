@@ -279,7 +279,7 @@ export default function TimerPage() {
         ignoreNextWsRef.current = false;
         return;
       }
-      console.log('📡 Evento Sync recibido:', data);
+      console.log('📡 Evento Sync:', { status: data.status, view: data.view, time: data.remainingSeconds });
       setStatus(data.status);
       setView(data.view as ViewState);
       setInitialSeconds(data.initialSeconds);
@@ -373,10 +373,12 @@ export default function TimerPage() {
       serverStartedAtRef.current = now;
       setInitialSeconds(timeLeft);
       setServerStartedAt(now);
+      setView('timer');
       syncState({ 
         status: 'running', 
         initialSeconds: timeLeft, 
-        startedAt: now 
+        startedAt: now,
+        view: 'timer'
       });
     } else {
       syncState({ status: 'paused', remainingSeconds: timeLeft });
@@ -596,6 +598,9 @@ export default function TimerPage() {
         <div className="flex gap-2">
              <button onClick={() => changeView('clock')} className={`p-3 rounded-2xl active:scale-90 transition-all ${view === 'clock' ? 'bg-white text-black' : 'bg-white/10 text-white'}`}>
                 <Clock size={20} />
+             </button>
+             <button onClick={() => changeView('timer')} className={`p-3 rounded-2xl active:scale-90 transition-all ${view === 'timer' ? 'bg-white text-black' : 'bg-white/10 text-white'}`}>
+                <TimerReset size={20} />
              </button>
              <button onClick={() => setIsRemoteMode(false)} className="p-3 bg-white/10 border border-white/20 rounded-2xl active:scale-90 transition-transform text-white">
                 <Monitor size={20} />
