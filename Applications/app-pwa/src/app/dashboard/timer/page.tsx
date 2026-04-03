@@ -279,6 +279,7 @@ export default function TimerPage() {
         ignoreNextWsRef.current = false;
         return;
       }
+      console.log('📡 Evento Sync recibido:', data);
       setStatus(data.status);
       setView(data.view as ViewState);
       setInitialSeconds(data.initialSeconds);

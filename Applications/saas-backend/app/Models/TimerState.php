@@ -29,4 +29,26 @@ class TimerState extends Model
     {
         return $this->belongsTo(Tenant::class);
     }
+
+    // Asegurar que las fechas siempre se traten como UTC ignorando el app.timezone local
+    public function setStartedAtAttribute($value)
+    {
+        $this->attributes['started_at'] = $value ? \Carbon\Carbon::parse($value)->utc() : null;
+    }
+
+    public function getStartedAtAttribute($value)
+    {
+        // Si el valor viene de la DB (que no tiene zona horaria), le forzamos UTC
+        return $value ? \Carbon\Carbon::parse($value, 'UTC') : null;
+    }
+
+    public function setLastSyncedAtAttribute($value)
+    {
+        $this->attributes['last_synced_at'] = $value ? \Carbon\Carbon::parse($value)->utc() : null;
+    }
+
+    public function getLastSyncedAtAttribute($value)
+    {
+        return $value ? \Carbon\Carbon::parse($value, 'UTC') : null;
+    }
 }
