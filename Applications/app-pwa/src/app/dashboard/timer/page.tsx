@@ -398,19 +398,30 @@ export default function TimerPage() {
   };
 
   const adjustTime = (delta: number) => {
-    const newTime = Math.max(0, timeLeft + delta);
-    setTimeLeft(newTime);
+    // Calculamos el tiempo real exacto en este instante usando los refs para evitar lag de estado
+    let currentActual = timeLeft;
+    if (status === 'running' && serverStartedAtRef.current && initialSecondsRef.current > 0) {
+      const elapsed = Math.floor((getSyncedNow() - parseUTC(serverStartedAtRef.current)) / 1000);
+      currentActual = Math.max(0, initialSecondsRef.current - elapsed);
+    }
+
+    const newTime = Math.max(0, currentActual + delta);
     
     if (status === 'running') {
       const now = new Date(getSyncedNow()).toISOString();
+      // Actualizamos refs para que el setInterval use los valores nuevos inmediatamente
       initialSecondsRef.current = newTime;
       serverStartedAtRef.current = now;
+      
       setInitialSeconds(newTime);
       setServerStartedAt(now);
+      setTimeLeft(newTime);
+      
       syncState({ status: 'running', initialSeconds: newTime, startedAt: now });
     } else {
       setInitialSeconds(newTime);
       initialSecondsRef.current = newTime;
+      setTimeLeft(newTime);
       syncState({ remainingSeconds: newTime, initialSeconds: newTime });
     }
   };
