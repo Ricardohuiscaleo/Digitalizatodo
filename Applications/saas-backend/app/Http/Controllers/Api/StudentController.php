@@ -294,7 +294,7 @@ class StudentController extends Controller
             ]);
         } else {
             // Plan distinto: Desactivar planes anteriores
-            $student->enrollments()->where('status', 'active')->update(['status' => 'inactive']);
+            $student->enrollments()->where('status', 'active')->update(['status' => 'cancelled']);
 
             // Crear nueva inscripción
             $student->enrollments()->create([
