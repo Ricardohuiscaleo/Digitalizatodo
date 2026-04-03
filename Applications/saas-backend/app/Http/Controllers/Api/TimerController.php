@@ -30,9 +30,12 @@ class TimerController extends Controller
             ]
         );
 
+        $stateData = $state->toArray();
+        $stateData['started_at'] = $state->started_at ? $state->started_at->toISOString() : null;
+
         return response()->json([
-            'state' => $state,
-            'server_time' => now()->toISOString()
+            'state' => $stateData,
+            'server_time' => now('UTC')->toISOString()
         ]);
     }
 
@@ -60,7 +63,9 @@ class TimerController extends Controller
 
         $state = TimerState::firstOrCreate(['tenant_id' => $tenant->id]);
         $serverTime = now('UTC');
-        $startedAt = $request->status === 'running' ? ($request->started_at ? \Carbon\Carbon::parse($request->started_at) : $serverTime) : null;
+        $startedAt = $request->status === 'running' 
+            ? ($request->started_at ? \Carbon\Carbon::parse($request->started_at)->setTimezone('UTC') : $serverTime) 
+            : null;
 
         $state->update([
             'status' => $request->status,
@@ -85,9 +90,13 @@ class TimerController extends Controller
             Log::warning('Broadcast timer-update failed', ['error' => $e->getMessage()]);
         }
 
+        $freshState = $state->fresh();
+        $stateData = $freshState->toArray();
+        $stateData['started_at'] = $freshState->started_at ? $freshState->started_at->toISOString() : null;
+
         return response()->json([
             'success' => true,
-            'state' => $state->fresh()
+            'state' => $stateData
         ]);
     }
 }

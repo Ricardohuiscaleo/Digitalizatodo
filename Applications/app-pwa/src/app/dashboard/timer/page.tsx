@@ -22,8 +22,10 @@ export default function TimerPage() {
   const { token } = useAdminDashboard(branding, setBranding);
   const [status, setStatus] = useState('idle'); // 'idle', 'running', 'paused', 'finished'
   const [view, setView] = useState<ViewState>('clock'); // 'clock', 'menu', 'timer'
-  const [timeLeft, setTimeLeft] = useState(300);
-  const [initialSeconds, setInitialSeconds] = useState(300);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [initialSeconds, setInitialSeconds] = useState(0);
+  const [isStateLoaded, setIsStateLoaded] = useState(false);
+  const [timerKey, setTimerKey] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [isRemoteMode, setIsRemoteMode] = useState(false);
   const [serverStartedAt, setServerStartedAt] = useState<string | null>(null);
@@ -33,6 +35,7 @@ export default function TimerPage() {
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [focusedControl, setFocusedControl] = useState(-1);
   const [isMounted, setIsMounted] = useState(false);
+  const [clockOffset, setClockOffset] = useState(0);
   const focusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const controlTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -54,7 +57,21 @@ export default function TimerPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const wakeLockRef = useRef<any>(null);
   const ignoreNextWsRef = useRef(false);
-  const hasLocalActionRef = useRef(false);
+  const serverStartedAtRef = useRef<string | null>(null);
+  const initialSecondsRef = useRef(0);
+  const clockOffsetRef = useRef(0);
+  
+  const parseUTC = useCallback((dateStr: string | null) => {
+    if (!dateStr) return 0;
+    // Si la cadena no termina en Z y no tiene un desfase (+/-), le añadimos Z para que el navegador la lea como UTC
+    let normalized = dateStr;
+    if (!normalized.endsWith('Z') && !normalized.includes('+') && !normalized.match(/-\d{2}:\d{2}$/)) {
+        normalized = normalized.replace(' ', 'T') + 'Z';
+    }
+    return new Date(normalized).getTime();
+  }, []);
+
+  const getSyncedNow = useCallback(() => Date.now() + clockOffsetRef.current, []);
 
   // Inicialización y Montaje
   useEffect(() => {
@@ -62,13 +79,13 @@ export default function TimerPage() {
     audioRef.current = new Audio('/notification.wav');
   }, []);
 
-  // Reloj tiempo real
+  // Reloj tiempo real (sincronizado)
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentTime(new Date());
+      setCurrentTime(new Date(getSyncedNow()));
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [getSyncedNow]);
 
   // Mantener pantalla encendida (Wake Lock)
   useEffect(() => {
@@ -132,7 +149,7 @@ export default function TimerPage() {
               status: newStatus,
               initial_seconds: updates.initialSeconds ?? initialSeconds,
               remaining_seconds: updates.remainingSeconds ?? timeLeft,
-              started_at: (newStatus === 'running') ? (updates.startedAt || new Date().toISOString()) : null,
+              started_at: (newStatus === 'running') ? (updates.startedAt || new Date(getSyncedNow()).toISOString()) : null,
               view: updates.view ?? view
           });
       } catch (error) {
@@ -177,13 +194,13 @@ export default function TimerPage() {
         const ctrl = footerControls[focusedControl];
         if (ctrl === 'mute') setIsMuted(m => !m);
         else if (ctrl === 'fullscreen') toggleFullscreen();
-        else if (ctrl === 'minus10') setTimeLeft(prev => Math.max(0, prev - 10));
+        else if (ctrl === 'minus10') adjustTime(-10);
         else if (ctrl === 'playpause') toggleTimer();
-        else if (ctrl === 'plus10') setTimeLeft(prev => prev + 10);
+        else if (ctrl === 'plus10') adjustTime(10);
         else if (ctrl === 'reset') resetTimer();
         else if (ctrl === 'logout') router.push('/dashboard');
       }
-      if (e.key === 'Escape' && view === 'menu') {
+      if (e.key === 'Escape') {
         setView(status === 'running' || status === 'paused' ? 'timer' : 'clock');
       }
     }
@@ -197,23 +214,49 @@ export default function TimerPage() {
   // Cargar estado inicial (solo si no hay acción local activa)
   const fetchState = useCallback(async () => {
     if (!branding?.slug || !token) return;
-    if (hasLocalActionRef.current) return;
     try {
       const response = await getTimerState(branding.slug, token);
       if (response && response.state) {
-          const { state } = response;
-          setStatus(state.status);
-          setView(state.view as ViewState || 'clock');
-          setInitialSeconds(state.initial_seconds);
-          setServerStartedAt(state.started_at);
+          const { state, server_time } = response;
           
+          // Calcular desfase de reloj (Server - Local)
+          if (server_time) {
+            const serverMs = new Date(server_time).getTime();
+            const localMs = Date.now();
+            const offset = serverMs - localMs;
+            setClockOffset(offset);
+            clockOffsetRef.current = offset;
+          }
+
           if (state.status === 'running' && state.started_at) {
-              const started = new Date(state.started_at).getTime();
-              const now = new Date().getTime();
-              const diff = Math.floor((now - started) / 1000);
-              setTimeLeft(Math.max(0, state.remaining_seconds - diff));
+              const elapsed = Math.floor((getSyncedNow() - parseUTC(state.started_at)) / 1000);
+              const remaining = state.initial_seconds - elapsed;
+              if (remaining <= 0) {
+                  // Timer ya expiró, resetear
+                  setStatus('idle');
+                  setView('clock');
+                  setInitialSeconds(state.initial_seconds);
+                  setTimeLeft(0);
+                  setIsStateLoaded(true);
+                  return;
+              }
+              setStatus('running');
+              setView(state.view as ViewState || 'timer');
+              setInitialSeconds(state.initial_seconds);
+              initialSecondsRef.current = state.initial_seconds;
+              setServerStartedAt(state.started_at);
+              serverStartedAtRef.current = state.started_at;
+              setTimeLeft(remaining);
+              setIsStateLoaded(true);
           } else {
+              setStatus(state.status);
+              setView(state.view as ViewState || 'clock');
+              setInitialSeconds(state.initial_seconds);
+              initialSecondsRef.current = state.initial_seconds;
+              setServerStartedAt(state.started_at);
+              serverStartedAtRef.current = state.started_at;
               setTimeLeft(state.remaining_seconds);
+              setIsStateLoaded(true);
           }
       }
     } catch (error) {
@@ -240,11 +283,14 @@ export default function TimerPage() {
       setView(data.view as ViewState);
       setInitialSeconds(data.initialSeconds);
       setServerStartedAt(data.startedAt);
-      if (data.status === 'running' && data.startedAt) {
-          const started = new Date(data.startedAt).getTime();
-          const now = new Date().getTime();
-          const diff = Math.floor((now - started) / 1000);
-          setTimeLeft(Math.max(0, data.remainingSeconds - diff));
+      serverStartedAtRef.current = data.startedAt;
+      initialSecondsRef.current = data.initialSeconds;
+      setIsStateLoaded(true);
+      if (data.status === 'idle' || data.status === 'finished') {
+          setTimeLeft(0);
+      } else if (data.status === 'running' && data.startedAt) {
+          const elapsed = Math.floor((getSyncedNow() - parseUTC(data.startedAt)) / 1000);
+          setTimeLeft(Math.max(0, data.initialSeconds - elapsed));
       } else {
           setTimeLeft(data.remainingSeconds);
       }
@@ -252,18 +298,18 @@ export default function TimerPage() {
     return () => { echo.leave(`timer.${branding.slug}`); };
   }, [branding?.slug]);
 
-  // Lógica local del cronómetro (para fluidez visual)
+  // Cronómetro sincronizado con servidor via refs
   useEffect(() => {
     if (timerRef.current) clearInterval(timerRef.current);
-    if (status === 'running' && timeLeft > 0) {
+    if (status === 'running') {
       timerRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current!);
-            return 0;
-          }
-          return prev - 1;
-        });
+        const startedAt = serverStartedAtRef.current;
+        const initSecs = initialSecondsRef.current;
+        if (startedAt && initSecs > 0) {
+          const elapsed = Math.floor((getSyncedNow() - parseUTC(startedAt)) / 1000);
+          const remaining = Math.max(0, initSecs - elapsed);
+          setTimeLeft(remaining);
+        }
       }, 1000);
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
@@ -273,6 +319,7 @@ export default function TimerPage() {
   useEffect(() => {
     if (timeLeft === 0 && status === 'running') {
       setStatus('finished');
+      syncState({ status: 'finished', remainingSeconds: 0 });
       if (!isMuted && audioRef.current) {
         audioRef.current.play().catch(e => console.log("Audio block:", e));
       }
@@ -282,7 +329,7 @@ export default function TimerPage() {
         syncState({ view: 'clock' });
       }, 10000);
     }
-  }, [timeLeft, status]);
+  }, [timeLeft, status, syncState]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -295,18 +342,21 @@ export default function TimerPage() {
   };
 
   const handleTimeSelect = (seconds: number) => {
-    hasLocalActionRef.current = true;
+    const startedAt = new Date(getSyncedNow()).toISOString();
     ignoreNextWsRef.current = true;
+    initialSecondsRef.current = seconds;
+    serverStartedAtRef.current = startedAt;
     setInitialSeconds(seconds);
     setTimeLeft(seconds);
     setStatus('running');
     setView('timer');
+    setServerStartedAt(startedAt);
     if (!branding?.slug || !token) return;
     updateTimerState(branding.slug, token, {
       status: 'running',
       initial_seconds: seconds,
       remaining_seconds: seconds,
-      started_at: new Date().toISOString(),
+      started_at: startedAt,
       view: 'timer'
     }).catch(e => console.error('syncState error:', e));
   };
@@ -314,13 +364,47 @@ export default function TimerPage() {
   const toggleTimer = () => {
     const newStatus = status === 'running' ? 'paused' : 'running';
     setStatus(newStatus);
-    syncState({ status: newStatus, remainingSeconds: timeLeft });
+    
+    if (newStatus === 'running') {
+      const now = new Date(getSyncedNow()).toISOString();
+      // Al reanudar, el residuo se convierte en la nueva base
+      initialSecondsRef.current = timeLeft;
+      serverStartedAtRef.current = now;
+      setInitialSeconds(timeLeft);
+      setServerStartedAt(now);
+      syncState({ 
+        status: 'running', 
+        initialSeconds: timeLeft, 
+        startedAt: now 
+      });
+    } else {
+      syncState({ status: 'paused', remainingSeconds: timeLeft });
+    }
+  };
+
+  const adjustTime = (delta: number) => {
+    const newTime = Math.max(0, timeLeft + delta);
+    setTimeLeft(newTime);
+    
+    if (status === 'running') {
+      const now = new Date(getSyncedNow()).toISOString();
+      initialSecondsRef.current = newTime;
+      serverStartedAtRef.current = now;
+      setInitialSeconds(newTime);
+      setServerStartedAt(now);
+      syncState({ status: 'running', initialSeconds: newTime, startedAt: now });
+    } else {
+      setInitialSeconds(newTime);
+      initialSecondsRef.current = newTime;
+      syncState({ remainingSeconds: newTime, initialSeconds: newTime });
+    }
   };
 
   const resetTimer = () => {
-    setTimeLeft(initialSeconds);
+    if (initialSecondsRef.current <= 0) return;
+    setTimeLeft(initialSecondsRef.current);
     setStatus('idle');
-    syncState({ status: 'idle', remainingSeconds: initialSeconds });
+    syncState({ status: 'idle', remainingSeconds: initialSecondsRef.current });
   };
 
   const changeView = (newView: ViewState) => {
@@ -441,7 +525,7 @@ export default function TimerPage() {
 
             {/* Controles principales */}
             <div className="flex items-center gap-2">
-              <button onClick={() => setTimeLeft(prev => Math.max(0, prev - 10))}
+              <button onClick={() => adjustTime(-10)}
                 className={`px-4 py-2.5 rounded-xl border text-white font-black text-sm transition-all active:scale-90 ${
                   focusedControl === 2 ? 'bg-yellow-400/20 border-yellow-400' : 'bg-white/5 border-white/10'
                 }`}>−10s</button>
@@ -451,7 +535,7 @@ export default function TimerPage() {
                 } ${status === 'running' ? 'bg-white text-black' : 'bg-white/10 text-white border border-white/20'}`}>
                 {status === 'running' ? <><Pause size={14} fill="currentColor"/>PAUSAR</> : <><Play size={14} fill="currentColor"/>INICIAR</>}
               </button>
-              <button onClick={() => setTimeLeft(prev => prev + 10)}
+              <button onClick={() => adjustTime(10)}
                 className={`px-4 py-2.5 rounded-xl border text-white font-black text-sm transition-all active:scale-90 ${
                   focusedControl === 4 ? 'bg-yellow-400/20 border-yellow-400' : 'bg-white/5 border-white/10'
                 }`}>+10s</button>
@@ -527,10 +611,10 @@ export default function TimerPage() {
       <div className={`border border-white/10 rounded-[2.5rem] p-10 text-center mb-8 relative overflow-hidden transition-all shadow-2xl ${status === 'running' ? 'bg-white/10' : 'bg-black/80'}`}>
         <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/5 rounded-full blur-3xl opacity-50" />
         <h3 className="text-7xl font-black tracking-tighter tabular-nums mb-2 text-white drop-shadow-lg">
-            {formatTime(timeLeft)}
+            {!isStateLoaded ? (isMounted ? formatRealTime(currentTime) : '--:--:--') : status === 'idle' ? (isMounted ? formatRealTime(currentTime) : '--:--:--') : formatTime(timeLeft)}
         </h3>
         <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${status === 'running' ? 'text-white' : 'text-white/30'}`}>
-            {status === 'running' ? '• Combate Activo' : status === 'finished' ? 'Fin del tiempo' : 'Sistema en Pausa'}
+            {status === 'running' ? '• Combate Activo' : status === 'finished' ? 'Fin del tiempo' : status === 'paused' ? 'En Pausa' : 'Hora actual'}
         </p>
       </div>
 
@@ -570,8 +654,8 @@ export default function TimerPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-10">
-          <button onClick={() => { setTimeLeft(prev => Math.max(0, prev - 10)); syncState({ remainingSeconds: timeLeft - 10 }); }} className="h-14 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-xs uppercase tracking-widest">-10 Segundos</button>
-          <button onClick={() => { setTimeLeft(prev => prev + 10); syncState({ remainingSeconds: timeLeft + 10 }); }} className="h-14 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-xs uppercase tracking-widest">+10 Segundos</button>
+          <button onClick={() => adjustTime(-10)} className="h-14 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-xs uppercase tracking-widest">-10 Segundos</button>
+          <button onClick={() => adjustTime(10)} className="h-14 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-xs uppercase tracking-widest">+10 Segundos</button>
       </div>
 
       <div className="mt-12 py-8 border-t border-white/10 text-center flex flex-col items-center gap-4">
