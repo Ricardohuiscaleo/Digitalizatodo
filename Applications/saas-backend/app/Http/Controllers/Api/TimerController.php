@@ -23,6 +23,7 @@ class TimerController extends Controller
             ['tenant_id' => $tenant->id],
             [
                 'status' => 'idle',
+                'view' => 'clock',
                 'initial_seconds' => 300,
                 'remaining_seconds' => 300,
                 'started_at' => null,
@@ -45,6 +46,7 @@ class TimerController extends Controller
         
         $request->validate([
             'status' => 'required|in:idle,running,paused,finished',
+            'view' => 'sometimes|string|in:clock,menu,timer',
             'initial_seconds' => 'required|integer',
             'remaining_seconds' => 'required|integer',
             'started_at' => 'nullable' // ISO String or null
@@ -54,6 +56,7 @@ class TimerController extends Controller
             ['tenant_id' => $tenant->id],
             [
                 'status' => $request->status,
+                'view' => $request->view ?? 'timer', // Default a timer si se está actualizando el estado de tiempo
                 'initial_seconds' => $request->initial_seconds,
                 'remaining_seconds' => $request->remaining_seconds,
                 'started_at' => $request->status === 'running' ? ($request->started_at ?? now()) : null,
@@ -68,7 +71,8 @@ class TimerController extends Controller
                 $state->initial_seconds,
                 $state->remaining_seconds,
                 $state->status === 'running' ? ($state->started_at ? $state->started_at->toISOString() : now()->toISOString()) : null,
-                $tenant->slug
+                $tenant->slug,
+                $state->view
             ));
         } catch (\Throwable $e) {
             Log::warning('Broadcast timer-update failed', ['error' => $e->getMessage()]);

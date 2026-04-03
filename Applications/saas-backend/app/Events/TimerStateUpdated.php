@@ -17,17 +17,19 @@ class TimerStateUpdated implements ShouldBroadcastNow
     public $remainingSeconds;
     public $startedAt;
     public $tenantSlug;
+    public $view;
 
     /**
      * Create a new event instance.
      */
-    public function __construct($status, $initialSeconds, $remainingSeconds, $startedAt, $tenantSlug)
+    public function __construct($status, $initialSeconds, $remainingSeconds, $startedAt, $tenantSlug, $view = 'clock')
     {
         $this->status = $status;
         $this->initialSeconds = (int)$initialSeconds;
         $this->remainingSeconds = (int)$remainingSeconds;
         $this->startedAt = $startedAt;
         $this->tenantSlug = $tenantSlug;
+        $this->view = $view;
     }
 
     /**
