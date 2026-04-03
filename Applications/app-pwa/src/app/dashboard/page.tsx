@@ -169,7 +169,7 @@ export default function App() {
         guardianPayments, guardianPaymentsLoading, openGuardianPayments,
         handleSaveBankInfo, handleLogoUpload, openFee, markAllNotificationsRead, markNotificationRead,
         loadExpenses, loadSchedules, loadPlans, loadFees,
-        formatMoney, formatCLP, parseCLP, handlePaymentApprove, handleBulkApprove, handleActivatePush,
+        formatMoney, formatCLP, parseCLP, handlePaymentApprove, handleApproveWithMethod, handleBulkApprove, handleActivatePush,
         handleDeleteFee, handleLongPressStart, handleLongPressEnd, handleLoadDemo,
         handleCreatePlan, handleUpdatePlan, handleDeletePlan,
         handleCreateSchedule, handleUpdateSchedule, handleDeleteSchedule,
@@ -657,6 +657,7 @@ export default function App() {
                                         branding={branding}
                                         formatMoney={formatMoney}
                                         handlePaymentApprove={handlePaymentApprove}
+                                        handleApproveWithMethod={handleApproveWithMethod}
                                         handleLongPressStart={handleLongPressStart}
                                         handleLongPressEnd={handleLongPressEnd}
                                         setBubbleModalPayer={setBubbleModalPayer}

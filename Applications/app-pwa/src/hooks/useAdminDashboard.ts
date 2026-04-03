@@ -75,6 +75,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
     const [showQRModal, setShowQRModal] = useState(false);
     const [proofModalUrl, setProofModalUrl] = useState<string | null>(null);
     const [paymentActionPayer, setPaymentActionPayer] = useState<any>(null);
+    const [paymentApproveMethod, setPaymentApproveMethod] = useState<string>('cash');
     const [selectedHistoryDate, setSelectedHistoryDate] = useState<string | null>(null);
     const [showNotifications, setShowNotifications] = useState(false);
     const [toastNotification, setToastNotification] = useState<any>(null);
@@ -321,7 +322,8 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         if (res?.logo) setBranding({ ...branding, logo: res.logo });
     };
 
-    const handlePaymentApprove = (payer: any) => {
+    const handlePaymentApprove = (payer: any, method: string = 'cash') => {
+        setPaymentApproveMethod(method);
         setPaymentActionPayer(payer);
     };
 
@@ -445,10 +447,22 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         if (isDemo) {
             common.setPayers(common.payers.map((p: any) => p.id === payerId ? { ...p, status: 'paid' } : p));
         } else {
-            await approvePayment(branding.slug, token, String(payerId));
+            await approvePayment(branding.slug, token, String(payerId), paymentApproveMethod);
             await common.refreshPayers(selectedMonth, selectedYear, paymentFilter);
         }
         setPaymentActionPayer(null);
+    };
+
+    // Función directa: aprueba inmediatamente sin esperar estado async
+    const handleApproveWithMethod = async (payer: any, method: string = 'cash') => {
+        if (!token || !branding?.slug) return;
+        const payerId = payer.id;
+        if (isDemo) {
+            common.setPayers(common.payers.map((p: any) => p.id === payerId ? { ...p, status: 'paid' } : p));
+        } else {
+            await approvePayment(branding.slug, token, String(payerId), method);
+            await common.refreshPayers(selectedMonth, selectedYear, paymentFilter);
+        }
     };
 
     const isTreasury = branding?.industry === 'school_treasury';
@@ -469,6 +483,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         now, setNow, regPageCode, setRegPageCode,
         showQRModal, setShowQRModal,
         proofModalUrl, setProofModalUrl, paymentActionPayer, setPaymentActionPayer,
+        paymentApproveMethod, setPaymentApproveMethod,
         selectedHistoryDate, setSelectedHistoryDate,
         showNotifications, setShowNotifications,
         toastNotification, setToastNotification,
@@ -491,6 +506,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         allStudents, toggleAttendance,
         handlePriceInput, handleSavePrices, handleSaveBankInfo, handleLogoUpload,
         handlePaymentApprove, handleActivatePush, handleLoadDemo, handleConfirmPayment,
+        handleApproveWithMethod,
         handleAcceptTerms, handleBulkApprove,
         hasPermission,
         formatMoney: (a: number) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(a),
@@ -501,7 +517,7 @@ export function useAdminDashboard(branding: any, setBranding: (b: any) => void) 
         prices, bankData, searchTerm, paymentFilter, 
         selectedMonth, selectedYear, historyMonth, historyYear, 
         now, regPageCode, showQRModal, proofModalUrl, paymentActionPayer, 
-        selectedHistoryDate, showNotifications, toastNotification, 
+        paymentApproveMethod,        selectedHistoryDate, showNotifications, toastNotification, 
         showCreateExpense, showCreateFee, showPushModal, showTermsModal,
         lastCheckedInStudent,
         hasPermission,

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Eye, RefreshCw, DollarSign } from 'lucide-react';
+import { Eye, RefreshCw, DollarSign, CreditCard } from 'lucide-react';
 import { StudentAvatar } from './Industries/MartialArts/StudentAvatar';
 
 interface BubblePaymentModalProps {
@@ -11,7 +11,7 @@ interface BubblePaymentModalProps {
     primaryColor: string;
     getPayerRealStats: (p: any) => any;
     onClose: () => void;
-    onApprove: (payer: any) => void;
+    onApprove: (payer: any, method?: string) => void;
     onViewProof: (url: string) => void;
     isDark?: boolean;
     industry?: string;
@@ -187,13 +187,22 @@ const BubblePaymentModal: React.FC<BubblePaymentModalProps> = ({
                                 ¿Te pagaron en efectivo o por transferencia? Márcalo aquí:
                             </p>
                         )}
-                        <button
-                            onClick={() => onApprove(payer)}
-                            className="w-full h-14 rounded-2xl text-white font-black text-[12px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg"
-                            style={{ backgroundColor: isReview ? '#f59e0b' : primaryColor }}
-                        >
-                            {isReview ? <><RefreshCw size={18} /> Aprobar Pago</> : <><DollarSign size={18} /> Marcar como Pagado</>}
-                        </button>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => onApprove(payer, 'cash')}
+                                className="flex-1 h-14 rounded-2xl text-white font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg text-center leading-tight"
+                                style={{ backgroundColor: isReview ? '#f59e0b' : '#10b981' }}
+                            >
+                                <DollarSign size={16} /> {isReview ? 'Aprobar Efectivo' : 'Efectivo'}
+                            </button>
+                            <button
+                                onClick={() => onApprove(payer, 'transfer')}
+                                className="flex-1 h-14 rounded-2xl text-white font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg text-center leading-tight"
+                                style={{ backgroundColor: isReview ? '#d97706' : '#6366f1' }}
+                            >
+                                <CreditCard size={16} /> {isReview ? 'Aprobar Transf.' : 'Transferencia'}
+                            </button>
+                        </div>
                         {payer.is_automatic && (
                             <p className={`text-center text-[9px] font-bold uppercase tracking-tight mt-3 ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>
                                 * Este apoderado tiene pagos automáticos activados.

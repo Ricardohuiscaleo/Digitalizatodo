@@ -21,7 +21,8 @@ interface PaymentsSectionProps {
     setExpandedPayerId: (id: string | null) => void;
     branding: any;
     formatMoney: (n: number) => string;
-    handlePaymentApprove: (payer: any) => void;
+    handlePaymentApprove: (payer: any, method?: string) => void;
+    handleApproveWithMethod?: (payer: any, method: string) => Promise<void>;
     handleLongPressStart: (id: string) => void;
     handleLongPressEnd: () => void;
     setBubbleModalPayer: (p: any) => void;
@@ -49,6 +50,7 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
     branding,
     formatMoney,
     handlePaymentApprove,
+    handleApproveWithMethod,
     handleLongPressStart,
     handleLongPressEnd,
     setBubbleModalPayer,
@@ -354,7 +356,7 @@ const PaymentsSection: React.FC<PaymentsSectionProps> = ({
                     primaryColor={branding?.primaryColor || '#6366f1'}
                     getPayerRealStats={getPayerRealStats}
                     onClose={() => setBubbleModalPayer(null)}
-                    onApprove={(id) => { handlePaymentApprove(id); setBubbleModalPayer(null); }}
+                    onApprove={async (payer, method = 'cash') => { setBubbleModalPayer(null); if (handleApproveWithMethod) { await handleApproveWithMethod(payer, method); } else { handlePaymentApprove(payer, method); } }}
                     onViewProof={(url) => setProofModalUrl(url)}
                     isDark={isDark}
                     industry={branding?.industry}

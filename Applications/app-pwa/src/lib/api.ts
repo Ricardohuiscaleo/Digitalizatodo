@@ -538,7 +538,7 @@ export async function getPayers(tenantId: string, token: string, filters?: { mon
     }
 }
 
-export async function approvePayment(tenantId: string, token: string, payerId: string | number) {
+export async function approvePayment(tenantId: string, token: string, payerId: string | number, method: string = 'cash') {
     try {
         const response = await fetch(`${API_URL}/${tenantId}/payers/${payerId}/approve`, {
             method: 'POST',
@@ -547,6 +547,7 @@ export async function approvePayment(tenantId: string, token: string, payerId: s
                 'Authorization': `Bearer ${token}`,
                 'X-Tenant-Id': tenantId,
             },
+            body: JSON.stringify({ payment_method: method })
         });
 
         return await safeJson(response);
