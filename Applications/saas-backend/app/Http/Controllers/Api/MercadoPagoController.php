@@ -142,50 +142,48 @@ class MercadoPagoController extends Controller
         $tenant = Tenant::where('slug', $tenantSlug)->firstOrFail();
         $student = Student::findOrFail($request->student_id);
         $platformFee = round(($request->amount * (float) env('MERCADOPAGO_PLATFORM_FEE', 1.81)) / 100);
-        $card = null;
+
+        // 1. OBTENER EL TUTOR (ID E INSTANCIA) 🎯 FIX APLICADO
+        $guardianId = $student->guardians()->wherePivot('primary', true)->first()?->id
+            ?? $student->guardians()->first()?->id;
+
+        if (!$guardianId) {
+            return response()->json(['success' => false, 'message' => "El alumno no tiene un tutor asignado."], 422);
+        }
+
+        $guardian = Guardian::find($guardianId); // <--- Instancia capturada y lista
+
+        // 2. EVIDENCIA CONSTANTE: Crear el FeePayment afuera
+        $feePayment = FeePayment::updateOrCreate(
+            ['fee_id' => $request->fee_id, 'student_id' => $student->id, 'period_month' => $request->period_month, 'period_year' => $request->period_year],
+            ['tenant_id' => $tenant->id, 'guardian_id' => $guardianId, 'status' => 'pending']
+        );
 
         try {
-            DB::beginTransaction();
-
+            // 3. VINCULAR TARJETA A FUEGO (Independiente del cobro)
             $customer = $this->mpService->getOrCreateCustomer($student->email, $student->name);
-            if (!$customer)
-                throw new \Exception("Error al vincular cliente en Mercado Pago.");
+            if (!$customer) {
+                throw new \Exception("Error al crear o vincular cliente en Mercado Pago.");
+            }
 
-            // ✅ CORRECCIÓN: Asignar variable $card e INMEDIATAMENTE hacer COMMIT
+            // Si esto falla (ej. token expirado), saltará al catch antes de guardar basura.
             $card = $this->mpService->addCardToCustomer($customer->id, $request->token);
             
             if ($customer && $card) {
+                // Eloquent guarda esto directamente en MySQL. No hay rollback que lo borre. 🔥
                 $student->update([
                     'mercadopago_customer_id' => $customer->id,
                     'mercadopago_card_id' => $card->id,
                     'mercadopago_last_four' => $card->last_four_digits ?? null,
                     'mercadopago_payment_method_id' => $request->payment_method_id,
                 ]);
-                
-                // 🔥 COMMIT TEMPRANO: Asegurar que los datos del cliente y su tarjeta sean persistentes
-                // INCLUSO si createSubscriptionPayment lanza una excepción después.
-                DB::commit();
             }
 
-            $guardianId = $student->guardians()->wherePivot('primary', true)->first()?->id
-                ?? $student->guardians()->first()?->id;
-
-            if (!$guardianId) {
-                return response()->json(['success' => false, 'message' => "El alumno no tiene un tutor asignado."], 422);
-            }
-
-            $feePayment = FeePayment::updateOrCreate(
-                ['fee_id' => $request->fee_id, 'student_id' => $student->id, 'period_month' => $request->period_month, 'period_year' => $request->period_year],
-                ['tenant_id' => $tenant->id, 'guardian_id' => $guardianId, 'status' => 'pending']
-            );
-
-            $guardian = Guardian::find($guardianId);
-            $payerEmail = $student->email ?? $guardian?->email ?? $request->payer_email;
+            // 4. PROCESO DE COBRO INDEPENDIENTE
+            $payerEmail = $student->email ?? $guardian->email ?? $request->payer_email;
+            $payerPhone = $request->phone_number ?? $student->phone ?? $guardian->phone ?? null;
 
             \MercadoPago\MercadoPagoConfig::setAccessToken($tenant->mercadopago_access_token);
-
-            // 🛡️ SHIELD: Fallback para el teléfono (MP lo exige para bajar el riesgo)
-            $payerPhone = $request->phone_number ?? $student->phone ?? $guardian?->phone ?? null;
 
             $payment = $this->mpService->createSubscriptionPayment([
                 'transaction_amount' => (float) $request->amount,
@@ -220,22 +218,18 @@ class MercadoPagoController extends Controller
 
             \MercadoPago\MercadoPagoConfig::setAccessToken(env('MERCADOPAGO_ACCESS_TOKEN'));
 
+            // Actualizar ID del pago en el registro
             $feePayment->update(['payment_id' => (string) $payment->id]);
 
             if ($payment->status === 'approved' || $payment->status === 'authorized') {
-                // Iniciar nueva transacción para el estado del pago si el anterior ya se cerró
-                if (!DB::transactionLevel()) DB::beginTransaction();
-                
                 $feePayment->update([
                     'status' => 'paid',
                     'paid_at' => now(),
                     'payment_method' => 'mercadopago',
                     'payment_amount' => $request->amount,
                 ]);
-                
                 $student->update(['status' => 'active']);
 
-                DB::commit();
                 return response()->json([
                     'success' => true,
                     'status' => 'approved',
@@ -251,12 +245,22 @@ class MercadoPagoController extends Controller
                 ]);
             }
 
+            // Si es rechazado por MercadoPago, lanzamos error intencional para caer al catch
             throw new \Exception("Pago rechazado: " . ($payment->status_detail ?? $payment->status));
 
         } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error("Error Pago: " . $e->getMessage());
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            // 5. EL CATCH: Si falla el cobro, la tarjeta YA ESTÁ SEGURA en MySQL.
+            Log::error("Error Pago MP: " . $e->getMessage());
+
+            // Solo marcamos el intento como fallido.
+            $feePayment->update([
+                'status' => 'rejected'
+            ]);
+
+            return response()->json([
+                'success' => false, 
+                'message' => 'Hubo un problema con el pago: ' . $e->getMessage()
+            ], 400);
         }
     }
 
