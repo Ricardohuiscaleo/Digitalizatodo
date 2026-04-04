@@ -141,7 +141,7 @@ export function RefactoredPaymentCard({
                                     <div className="flex items-center justify-between mb-4 px-2">
                                         <div className="flex items-center gap-2">
                                             <ShieldCheck className="text-emerald-500" size={16} />
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Pago Seguro (MP) <span className="text-[8px] font-black bg-blue-600 text-white px-1.5 py-0.5 rounded ml-1">v1.4.8</span></span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Pago Seguro (MP) <span className="text-[8px] font-black bg-blue-600 text-white px-1.5 py-0.5 rounded ml-1">v1.5.1</span></span>
                                         </div>
                                         {/* CSS Hack para IDs internos y estabilidad de scroll en PWA */}
                                         <style dangerouslySetInnerHTML={{ __html: `
@@ -152,6 +152,9 @@ export function RefactoredPaymentCard({
                                             #mp-brick-container {
                                                 overscroll-behavior: contain !important;
                                                 touch-action: pan-y !important;
+                                                background: #fff;
+                                                border-radius: 12px;
+                                                padding: 8px;
                                             }
                                         ` }} />
                                         <button onClick={() => setShowCardForm(false)} className="p-2 hover:bg-zinc-100 rounded-full text-zinc-400 transition-colors">
@@ -159,39 +162,46 @@ export function RefactoredPaymentCard({
                                         </button>
                                     </div>
 
-                                    <div className="bg-white/50 p-2 rounded-3xl border border-zinc-100/50 block min-h-[350px] relative z-10 overflow-visible">
-                                        <div className="min-h-[300px] w-full" id="mp-brick-container">
-                                            {key ? (
+                                    <div id="mp-brick-container" className="mb-6">
+                                        {mpReady && (
+                                            <div className="animate-in fade-in zoom-in-95 duration-500">
                                                 <CardPayment
                                                     initialization={{
                                                         amount: amount,
-                                                        payer: { email: student.email || guardianEmail || 'pagos@digitalizatodo.cl' }
+                                                        payer: { 
+                                                            email: student.email || guardianEmail || 'pagos@digitalizatodo.cl'
+                                                        }
+                                                    }}
+                                                    onReady={() => {
+                                                        const pEmail = student.email || guardianEmail || 'pagos@digitalizatodo.cl';
+                                                        console.log("[MP-Debug] CardPayment Brick Ready - v1.5.1");
+                                                        console.log("[MP-Debug] Intended Payer Email:", pEmail);
+                                                        console.log("[MP-Debug] Intended Payer Name:", student.name);
                                                     }}
                                                     onSubmit={(formData) => handleCardSubmit(formData, payment, student)}
+                                                    onError={(err) => {
+                                                        console.error("[MP-Debug] CardPayment Error:", err);
+                                                        // Intentar recargar si hay error de red o inicialización
+                                                        if (err?.message?.includes("network") || err?.cause?.includes("init")) {
+                                                            window.location.reload();
+                                                        }
+                                                    }}
                                                     customization={{
-                                                        paymentMethods: { maxInstallments: 1 },
-                                                        visual: { 
-                                                            style: { 
-                                                                theme: 'flat',
+                                                        visual: {
+                                                            style: {
+                                                                theme: 'default',
                                                                 customVariables: {
-                                                                    borderRadiusMedium: '1.25rem',
-                                                                    inputHorizontalPadding: '1rem',
-                                                                    inputVerticalPadding: '1rem',
+                                                                    borderRadiusLarge: '12px',
+                                                                    colorPrimary: '#2563eb',
+                                                                    inputBackgroundColor: '#f8fafc',
+                                                                    formPadding: '16px'
                                                                 }
-                                                            } 
+                                                            }
                                                         }
                                                     }}
                                                 />
-                                            ) : (
-                                                <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
-                                                    <ShieldCheck className="text-rose-500 opacity-20" size={48} />
-                                                    <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest leading-relaxed">
-                                                        ⚠️ Clave de Pago No Encontrada<br/>
-                                                        <span className="text-zinc-400 font-medium normal-case">Por favor, configura NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY en Coolify.</span>
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ) : (
