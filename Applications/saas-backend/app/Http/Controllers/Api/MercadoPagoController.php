@@ -219,24 +219,34 @@ class MercadoPagoController extends Controller
                     'mercadopago_last_four' => $card->last_four_digits ?? null,
                     'mercadopago_payment_method_id' => $request->payment_method_id,
                 ]);
+                
+                // 🔥 COMMIT TEMPRANO: Asegurar que los datos del cliente y su tarjeta sean persistentes
+                // incluso si el pago posterior es rechazado por razones externas (fraude, saldo, etc.)
+                DB::commit();
             }
 
             if ($payment->status === 'approved' || $payment->status === 'authorized') {
+                // Iniciar nueva transacción para el estado del pago si el anterior ya se cerró
+                if (!DB::transactionLevel()) DB::beginTransaction();
+                
                 $feePayment->update([
                     'status' => 'paid',
                     'paid_at' => now(),
                     'payment_method' => 'mercadopago',
                     'payment_amount' => $request->amount,
                 ]);
-
+                
                 $student->update(['status' => 'active']);
 
                 DB::commit();
-                return response()->json(['success' => true, 'status' => 'approved']);
+                return response()->json([
+                    'success' => true,
+                    'status' => 'approved',
+                    'message' => '¡Pago exitoso y tarjeta vinculada!'
+                ]);
             }
 
             if ($payment->status === 'in_process') {
-                DB::commit();
                 return response()->json([
                     'success' => true,
                     'status' => 'in_process',
