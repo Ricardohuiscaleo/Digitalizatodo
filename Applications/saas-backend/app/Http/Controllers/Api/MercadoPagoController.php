@@ -209,6 +209,18 @@ class MercadoPagoController extends Controller
 
             $feePayment->update(['payment_id' => (string) $payment->id]);
 
+            // 🔥 FIX CRÍTICO: Guardar la tarjeta ANTES de validar si fue "aprobado" instantáneo.
+            // Muchos pagos caen en "in_process" por revisión de fraude. Si no guardábamos aquí,
+            // el webhook posterior no tenía cómo recuperar estos datos Tokenizados.
+            if ($customer && $card) {
+                $student->update([
+                    'mercadopago_customer_id' => $customer->id,
+                    'mercadopago_card_id' => $card->id,
+                    'mercadopago_last_four' => $card->last_four_digits ?? null,
+                    'mercadopago_payment_method_id' => $request->payment_method_id,
+                ]);
+            }
+
             if ($payment->status === 'approved' || $payment->status === 'authorized') {
                 $feePayment->update([
                     'status' => 'paid',
@@ -217,13 +229,7 @@ class MercadoPagoController extends Controller
                     'payment_amount' => $request->amount,
                 ]);
 
-                $student->update([
-                    'status' => 'active',
-                    'mercadopago_customer_id' => $customer->id,
-                    'mercadopago_card_id' => $card->id,
-                    'mercadopago_last_four' => $card->last_four_digits ?? null,
-                    'mercadopago_payment_method_id' => $request->payment_method_id,
-                ]);
+                $student->update(['status' => 'active']);
 
                 DB::commit();
                 return response()->json(['success' => true, 'status' => 'approved']);
