@@ -165,7 +165,7 @@ export function RefactoredPaymentCard({
                                                 <CardPayment
                                                     initialization={{
                                                         amount: amount,
-                                                        payer: { email: student.email || guardianEmail }
+                                                        payer: { email: student.email || guardianEmail || 'pagos@digitalizatodo.cl' }
                                                     }}
                                                     onSubmit={(formData) => handleCardSubmit(formData, payment, student)}
                                                     customization={{
