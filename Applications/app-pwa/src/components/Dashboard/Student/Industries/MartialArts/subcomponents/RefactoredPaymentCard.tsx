@@ -141,7 +141,7 @@ export function RefactoredPaymentCard({
                                     <div className="flex items-center justify-between mb-4 px-2">
                                         <div className="flex items-center gap-2">
                                             <ShieldCheck className="text-emerald-500" size={16} />
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Pago Seguro (MP) <span className="text-[8px] font-black bg-blue-600 text-white px-1.5 py-0.5 rounded ml-1">v1.5.1</span></span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Pago Seguro (MP) <span className="text-[8px] font-black bg-blue-600 text-white px-1.5 py-0.5 rounded ml-1">v1.6.0</span></span>
                                         </div>
                                         {/* CSS Hack para IDs internos y estabilidad de scroll en PWA */}
                                         <style dangerouslySetInnerHTML={{ __html: `
@@ -155,6 +155,9 @@ export function RefactoredPaymentCard({
                                                 background: #fff;
                                                 border-radius: 12px;
                                                 padding: 8px;
+                                                min-height: 380px;
+                                                position: relative;
+                                                z-index: 10;
                                             }
                                         ` }} />
                                         <button onClick={() => setShowCardForm(false)} className="p-2 hover:bg-zinc-100 rounded-full text-zinc-400 transition-colors">
@@ -166,6 +169,7 @@ export function RefactoredPaymentCard({
                                         {mpReady && (
                                             <div className="animate-in fade-in zoom-in-95 duration-500">
                                                 <CardPayment
+                                                    key={`mp-card-${amount}-${student.id}`}
                                                     initialization={{
                                                         amount: amount,
                                                         payer: { 
@@ -174,17 +178,13 @@ export function RefactoredPaymentCard({
                                                     }}
                                                     onReady={() => {
                                                         const pEmail = student.email || guardianEmail || 'pagos@digitalizatodo.cl';
-                                                        console.log("[MP-Debug] CardPayment Brick Ready - v1.5.1");
-                                                        console.log("[MP-Debug] Intended Payer Email:", pEmail);
-                                                        console.log("[MP-Debug] Intended Payer Name:", student.name);
+                                                        console.log("[MP-Debug] CardPayment Brick Ready - v1.6.0");
+                                                        console.log("[MP-Debug] Payer Email:", pEmail);
                                                     }}
                                                     onSubmit={(formData) => handleCardSubmit(formData, payment, student)}
                                                     onError={(err) => {
                                                         console.error("[MP-Debug] CardPayment Error:", err);
-                                                        // Intentar recargar si hay error de red o inicialización
-                                                        if (err?.message?.includes("network") || err?.cause?.includes("init")) {
-                                                            window.location.reload();
-                                                        }
+                                                        // No recargar automáticamente para no fastidiar al usuario si es solo un warning
                                                     }}
                                                     customization={{
                                                         visual: {
