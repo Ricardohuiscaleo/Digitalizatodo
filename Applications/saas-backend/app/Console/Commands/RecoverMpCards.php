@@ -35,22 +35,16 @@ class RecoverMpCards extends Command
         $customerClient = new CustomerClient();
 
         // Obtener estudiantes activos que todavía no tengan su tarjeta configurada
-        $students = Student::whereNull('mercadopago_card_id')
-                            ->whereNotNull('email')
-                            ->orWhereHas('guardians', function ($q) {
-                                $q->whereNotNull('email');
-                            })
-                            ->get();
+        // Validamos el email directamente en PHP para no quebrar por diferencias de esquema (la tabla students no tiene columna email)
+        $students = Student::whereNull('mercadopago_card_id')->get();
 
         $recoveredCount = 0;
 
         foreach ($students as $student) {
-            // Priority: Student email, then primary guardian email
-            $email = $student->email;
-            if (!$email) {
-                $guardian = $student->guardians()->wherePivot('primary', true)->first() ?? $student->guardians()->first();
-                $email = $guardian?->email;
-            }
+            $email = null;
+            // Solo obtenemos el email a través de su Guardian principal
+            $guardian = $student->guardians()->wherePivot('primary', true)->first() ?? $student->guardians()->first();
+            $email = $guardian?->email;
 
             if (!$email) {
                 continue;
