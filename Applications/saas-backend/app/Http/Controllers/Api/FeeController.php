@@ -220,6 +220,7 @@ class FeeController extends Controller
                 'status'         => 'paid',
                 'payment_method' => $validated['payment_method'],
                 'paid_at'        => now(),
+                'payment_amount' => $payment->fee->amount ?? 0,
                 'approved_by'    => $request->user()->id,
                 'notes'          => $validated['notes'] ?? null,
             ]);
@@ -389,11 +390,11 @@ class FeeController extends Controller
                 $regMonth = (int)$student->created_at->format('n');
                 $regYear  = (int)$student->created_at->format('Y');
 
-                // Solo mostramos periodos que sean POSTERIORES al mes de registro
-                // ya que el mes actual se cubre con el pago de inscripción (prorrata)
+                // Mostramos periodos desde el mes de registro inclusive
+                // ya que se cobra el mes completo aunque ingresen después
                 $periods = array_filter($periods, function($p) use ($regYear, $regMonth) {
                     if ($p['year'] < $regYear) return false;
-                    if ($p['year'] == $regYear && $p['month'] <= $regMonth) return false;
+                    if ($p['year'] == $regYear && $p['month'] < $regMonth) return false;
                     return true;
                 });
                 $periods = array_values($periods); // reset keys
@@ -417,9 +418,11 @@ class FeeController extends Controller
             $key = $period['year'] . '-' . $period['month'];
             $payment = $paidPeriods[$key] ?? null;
             if (!$payment && $legacyPayment) $payment = $legacyPayment;
+            
             return [
                 ...$period,
                 'status'         => $payment?->status ?? 'pending',
+                'amount_paid'    => $payment?->payment_amount, // Añado esto para el frontend
                 'payment_id'     => $payment?->id,
                 'proof_url'      => $payment?->proof_url,
                 'payment_method' => $payment?->payment_method,

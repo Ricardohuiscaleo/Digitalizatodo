@@ -8,6 +8,7 @@ use App\Models\Student;
 use App\Models\Tenant;
 use App\Models\Guardian;
 use App\Services\MercadoPagoService;
+use App\Services\TelegramService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -53,10 +54,41 @@ class MercadoPagoController extends Controller
                             ->where('period_month', $pM)
                             ->where('period_year', $pY)
                             ->first();
+
+                        // 🛡️ REFUERZO: Si el registro no existe, lo creamos de inmediato con los datos del MP External Reference
+                        if (!$feePayment) {
+                            Log::info("Webhook: Registro de pago no encontrado para Estudiante $sId, Periodo $pM/$pY. Generando registro de emergencia.");
+                            
+                            $student = Student::find($sId);
+                            $guardianId = Guardian::whereHas('students', function ($q) use ($sId) {
+                                $q->where('students.id', $sId);
+                            })->value('id') ?? 1;
+
+                            $feePayment = FeePayment::create([
+                                'tenant_id'    => $tId,
+                                'student_id'   => $sId,
+                                'fee_id'       => $fId,
+                                'guardian_id'  => $guardianId,
+                                'period_month' => $pM,
+                                'period_year'  => $pY,
+                                'status'       => 'pending',
+                                'payment_amount' => $payment->transaction_amount ?? \App\Models\Fee::find($fId)?->amount ?? 0,
+                                'payment_method' => 'mercadopago',
+                                'external_reference' => $externalReference
+                            ]);
+
+                            // 🚨 Notificar por Telegram que se rescató un pago "perdido"
+                            try {
+                                $studentName = $student ? $student->name : "Desconocido (ID: $sId)";
+                                TelegramService::sendMessage("🚨 *Pago Rescatado:* Se detectó un pago de Mercado Pago por **$studentName** que no estaba en la base de datos (Referencia: $externalReference). Se ha creado y procesado correctamente.");
+                            } catch (\Exception $e) {
+                                Log::error("Error enviando notificación Telegram: " . $e->getMessage());
+                            }
+                        }
                     }
                 }
 
-                if (!$feePayment) {
+                if (!$feePayment && $id) {
                     $feePayment = FeePayment::where('payment_id', (string) $id)->first();
                 }
 
@@ -66,14 +98,32 @@ class MercadoPagoController extends Controller
                         'paid_at' => $feePayment->paid_at ?? now(),
                         'payment_method' => 'mercadopago',
                         'payment_id' => (string) $id,
-                        'payment_amount' => $payment->transaction_amount,
+                        'payment_amount' => $payment->transaction_amount ?? $feePayment->fee->amount ?? 0,
+                        'external_reference' => $externalReference,
                     ]);
 
                     $student = Student::find($feePayment->student_id);
                     if ($student)
                         $student->update(['status' => 'active']);
 
+                    $amountFormatted = number_format($payment->transaction_amount ?? $feePayment->fee->amount ?? 0, 0, ',', '.');
+                    $studentName = $student ? $student->name : "Desconocido";
+                    $periodStr = str_pad($feePayment->period_month, 2, '0', STR_PAD_LEFT) . '/' . $feePayment->period_year;
+
                     Log::info("Cuota {$feePayment->id} pagada vía Webhook.");
+
+                    try {
+                        $mensaje = "✅ *¡Nuevo Pago Registrado!*\n\n";
+                        $mensaje .= "👤 *Alumno:* {$studentName}\n";
+                        $mensaje .= "💰 *Monto:* $ {$amountFormatted}\n";
+                        $mensaje .= "📅 *Período:* {$periodStr}\n";
+                        $mensaje .= "💳 *Medio:* Mercado Pago\n";
+                        $mensaje .= "🧾 *Operación:* {$id}";
+
+                        \App\Services\TelegramService::sendMessage($mensaje);
+                    } catch (\Exception $e) {
+                        Log::error("Error enviando notificación Telegram de pago normal: " . $e->getMessage());
+                    }
                 }
 
                 return response()->json(['status' => 'ok']);
