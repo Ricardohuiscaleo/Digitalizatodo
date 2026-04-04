@@ -151,8 +151,21 @@ class MercadoPagoController extends Controller
             if (!$customer)
                 throw new \Exception("Error al vincular cliente en Mercado Pago.");
 
-            // ✅ CORRECCIÓN: Asignar variable $card
+            // ✅ CORRECCIÓN: Asignar variable $card e INMEDIATAMENTE hacer COMMIT
             $card = $this->mpService->addCardToCustomer($customer->id, $request->token);
+            
+            if ($customer && $card) {
+                $student->update([
+                    'mercadopago_customer_id' => $customer->id,
+                    'mercadopago_card_id' => $card->id,
+                    'mercadopago_last_four' => $card->last_four_digits ?? null,
+                    'mercadopago_payment_method_id' => $request->payment_method_id,
+                ]);
+                
+                // 🔥 COMMIT TEMPRANO: Asegurar que los datos del cliente y su tarjeta sean persistentes
+                // INCLUSO si createSubscriptionPayment lanza una excepción después.
+                DB::commit();
+            }
 
             $guardianId = $student->guardians()->wherePivot('primary', true)->first()?->id
                 ?? $student->guardians()->first()?->id;
@@ -208,22 +221,6 @@ class MercadoPagoController extends Controller
             \MercadoPago\MercadoPagoConfig::setAccessToken(env('MERCADOPAGO_ACCESS_TOKEN'));
 
             $feePayment->update(['payment_id' => (string) $payment->id]);
-
-            // 🔥 FIX CRÍTICO: Guardar la tarjeta ANTES de validar si fue "aprobado" instantáneo.
-            // Muchos pagos caen en "in_process" por revisión de fraude. Si no guardábamos aquí,
-            // el webhook posterior no tenía cómo recuperar estos datos Tokenizados.
-            if ($customer && $card) {
-                $student->update([
-                    'mercadopago_customer_id' => $customer->id,
-                    'mercadopago_card_id' => $card->id,
-                    'mercadopago_last_four' => $card->last_four_digits ?? null,
-                    'mercadopago_payment_method_id' => $request->payment_method_id,
-                ]);
-                
-                // 🔥 COMMIT TEMPRANO: Asegurar que los datos del cliente y su tarjeta sean persistentes
-                // incluso si el pago posterior es rechazado por razones externas (fraude, saldo, etc.)
-                DB::commit();
-            }
 
             if ($payment->status === 'approved' || $payment->status === 'authorized') {
                 // Iniciar nueva transacción para el estado del pago si el anterior ya se cerró
